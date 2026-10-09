@@ -1,0 +1,45 @@
+.....F.F................................................................ [ 56%]
+........................................................                 [100%]
+=================================== FAILURES ===================================
+________ test_walk_probability_does_not_depend_on_its_number_of_rounds _________
+test/test_operators_round2d.py:15: in test_walk_probability_does_not_depend_on_its_number_of_rounds
+    draw=departure(reading,torch.tensor([[True,True,True]]).expand(count,-1),
+bin/SentenceCredit.py:46: in departure
+    compose_round = departure_at(compose)
+                    ^^^^^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:8: in departure_at
+    rank=(torch.rand(eligible.shape[0],device=eligible.device)*eligible.sum(-1)).long()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_operators_round2d.py:13: in <lambda>
+    monkeypatch.setattr(torch,'rand',lambda *args,**kwargs:next(draws))
+                                                           ^^^^^^^^^^^
+E   StopIteration
+___________________ test_compose_only_and_no_eligible_rounds ___________________
+test/test_operators_round2d.py:51: in test_compose_only_and_no_eligible_rounds
+    empty=departure(None,torch.zeros(2,0,dtype=torch.bool),active=torch.tensor([True,False]))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/SentenceCredit.py:46: in departure
+    compose_round = departure_at(compose)
+                    ^^^^^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:10: in departure_at
+    return torch.where(eligible.any(-1),selected.long().argmax(-1),-1)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: argmax(): Expected reduction dim 1 to have non-zero size.
+=============================== warnings summary ===============================
+test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[narrowing-XOR_grammar]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round2d.py::test_walk_probability_does_not_depend_on_its_number_of_rounds
+FAILED test/test_operators_round2d.py::test_compose_only_and_no_eligible_rounds
+2 failed, 126 passed, 2 warnings in 12.89s

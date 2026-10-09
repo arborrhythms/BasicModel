@@ -1,0 +1,187 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 15,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 14,
+    "sentences": 16
+  },
+  "operations": {},
+  "credit": {
+    "document_end_answer_and_work": 14,
+    "nonzero_graph": 0,
+    "ties": 14,
+    "nonzero_chooser_gradients": 0
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

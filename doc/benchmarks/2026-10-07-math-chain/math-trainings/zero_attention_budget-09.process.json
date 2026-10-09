@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+    "train",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-09",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+    "zero_attention_budget",
+    "9"
+  ],
+  "pid": 32370,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2213595608,
+  "elapsed_seconds": 184.87331687496044,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-09.log"
+}

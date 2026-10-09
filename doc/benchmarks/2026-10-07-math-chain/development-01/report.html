@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 7/7 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002162919845432043</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0014588750200346112</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00013404199853539467</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0011175420368090272</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00010970898438245058</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.009499500039964914</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0211690419819206</pre></td><td><pre>test/test_math_chain.py:107: in test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+    model = build_model()
+            ^^^^^^^^^^^^^
+test/test_math_chain.py:99: in build_model
+    init_config(path=str(config), defaults_path=str(ROOT / &#x27;data/model.xml&#x27;))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /Users/arogers/github/WikiOracle/basicmodel/data/MM_math_chain.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /Users/arogers/github/WikiOracle/basicmodel/data/MM_math_chain.xml:21: element outputInLoop: Schemas validity error : Element &#x27;outputInLoop&#x27;: This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/MM_math_chain.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr></table></body></html>

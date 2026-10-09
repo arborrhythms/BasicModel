@@ -1,0 +1,36 @@
+{
+  "kind": "development",
+  "condition": "zero_attention_budget",
+  "seed": null,
+  "attention_budget": 0,
+  "ltm_capacity": 32768,
+  "completed_epochs": 0,
+  "status": "interrupted_development",
+  "elapsed_seconds": 634.4962007079739,
+  "counts": {
+    "plain": 226,
+    "declaratives_observed": 226,
+    "declaratives_open": 202,
+    "declaratives_references_open": 205,
+    "declaratives_episodes": 202,
+    "batches": 45,
+    "question_with_episode": 30,
+    "questions_observed": 30,
+    "questions_open": 30,
+    "questions_references_open": 30,
+    "questions_episodes": 30,
+    "answer_line": 22,
+    "answer_lines_observed": 22,
+    "answer_lines_open": 21,
+    "answer_lines_references_open": 21,
+    "answer_lines_episodes": 21
+  },
+  "timing_seconds": {
+    "plain": 518.2374806269072,
+    "question_with_episode": 68.03793279197998,
+    "answer_line": 47.1049785411451
+  },
+  "occupancy": 2466,
+  "reason": "Candidate comparison was compacted during the partial timing run; preserve this outcome and perform full development timing on the revised source.",
+  "measurement": false
+}

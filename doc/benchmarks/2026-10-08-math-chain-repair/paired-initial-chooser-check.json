@@ -1,0 +1,62 @@
+[
+  {
+    "run": 1,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 2,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 3,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 4,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 5,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 6,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 7,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 8,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 9,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  },
+  {
+    "run": 10,
+    "three_initial_choosers_identical": true,
+    "parameter_tensors": 44,
+    "parameters": 270135
+  }
+]

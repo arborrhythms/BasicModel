@@ -1,0 +1,5 @@
+test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate
+test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]
+test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]
+
+3 tests collected in 0.85s

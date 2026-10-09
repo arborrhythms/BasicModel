@@ -1,0 +1,123 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MATRIX VARIANT of data/MM_20M_xor.xml (config-matrix Task 7, plan
+       doc/plans/2026-07-03-reconstruction-fidelity-execution.md). ONE FLAG
+       FLIPPED: mereologyRaise true (parent) to false (here). With raising off,
+       perception's autobind hook allocates no ramsification table and mints no
+       order-0 word-whole binding; the analyser still stages word spans but no
+       word-granularity concepts are minted from them. Smoke tier only (builds,
+       one capped epoch, finite losses, decode executes). Everything else is
+       verbatim from the parent. -->
+  <architecture>
+    <!-- symbolicOrder=0: the sO=0 CONTROL for the XOR experiments. The
+         symbolic wave phase is disabled (no snap, no AttentionLayer); the
+         head trains on the purely subsymbolic pipeline. The sO>=1 sibling
+         is MM_sparse_concept.xml. -->
+    <conceptLayers>1</conceptLayers>
+
+    <symbolTower>true</symbolTower>
+    <bindingDepth>3</bindingDepth>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <!-- FLIPPED for this variant: mereologyRaise OFF (parent MM_20M_xor sets
+         true). Off means no meronymic lattice is built in perception and no
+         order-0 word-whole concepts are minted. -->
+    <mereologyRaise>false</mereologyRaise>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>200</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.005</learningRate>
+      <!-- 5a rebalance (2026-07-04): 0.5 to 0.85 lifts the scaled recon channel
+           into a decade of the output term at init (ratio 0.018 to 0.102; the
+           blend is convex so parity would starve the head to 2%). Config-local:
+           other configs keep their own values. -->
+      <reconstructionScale>0.85</reconstructionScale>
+      <!-- JOINT: jointly train the word embeddings (every working XOR config
+           sets this; without it the embedding params are excluded from the
+           optimizer, Models.py:1126, so the word vectors stay frozen and the
+           readout cannot shape an XOR-separable representation). -->
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+    <synthesis>meronomy</synthesis>
+    <!-- Promote a recurring word to a SINGLE percept after 2 sightings (default
+         4) so PS climbs to word-size parts quickly: the "largest part" PS
+         supplies becomes the word, matching the WS word-whole .where. -->
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+  </WholeSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+    <!-- nonlinear=true: make the per-stage ConceptualCombine apply tanh(W@x+b)
+         AFTER the cross-word mixing. This is the joint nonlinearity XOR needs;
+         without it the only nonlinearity is the per-word tanh in PartSpace
+         (before mixing) and the head path is a GLM over per-word features. -->
+    <nonlinear>true</nonlinear>
+  </ConceptualSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+    <!-- lrScale=0.5: train the readout at HALF the model LR so it is a slow,
+         stable target the faster-moving upstream features organise toward ->
+         crisp 0/1 instead of the data-mean collapse (mirrors XOR_exact). -->
+    <lrScale>0.5</lrScale>
+  </OutputSpace>
+
+  <!-- Explicit (no-op): SS is already constructed at model build regardless of
+       this tag; downwardGeneration=false matches model.xml's default. -->
+  <SymbolSpace>
+    <downwardGeneration>false</downwardGeneration>
+  </SymbolSpace>
+
+</model>

@@ -1,0 +1,85 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations"
+  ],
+  "completed": [
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002257500309497118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014663749607279897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013712490908801556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010660840198397636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011145800817757845,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00962483393959701,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.3380746659822762,
+      "message": "test/test_math_chain.py:109: in test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations\n    assert model.outputSpace.outputShape == (1, 1)\nE   assert [1, 1] == (1, 1)\nE     \nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

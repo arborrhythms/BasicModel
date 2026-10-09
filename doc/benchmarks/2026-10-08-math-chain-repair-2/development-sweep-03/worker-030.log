@@ -1,0 +1,25 @@
+......ss...sssss...............sssss.s..s..ssss.s.s..................... [ 67%]
+................s..................                                      [100%]
+=============================== warnings summary ===============================
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_recon_bench.py::test_run_record_schema_smoke
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7099: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7099: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7099: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/idempotent.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 10, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7099: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3943/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+86 passed, 21 skipped, 5 warnings in 29.62s

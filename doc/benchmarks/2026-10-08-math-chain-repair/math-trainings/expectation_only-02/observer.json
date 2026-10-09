@@ -1,0 +1,398 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 24,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 32,
+    "sentences": 68
+  },
+  "operations": {
+    "query": 50,
+    "part": 104,
+    "not": 411,
+    "conclude": 1,
+    "implies": 32
+  },
+  "credit": {
+    "document_end_answer_and_work": 19,
+    "nonzero_graph": 2,
+    "ties": 29,
+    "nonzero_chooser_gradients": 2,
+    "answer_expectation_and_work": 12
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7948013448715212,
+        1.7948013448715212
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8075547361373903,
+        1.8075547361373903
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.800475528240204,
+        1.800475528240204
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8012884879112245,
+        1.8012884879112245
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8180561804771425,
+        1.8180561804771425
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3939389848709107,
+        1.5439389848709109
+      ],
+      "graph": true,
+      "surrogate": 0.719005823135376,
+      "raw_chooser_gradient_l2": 1.154035403402612
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8135860705375673,
+        1.8135860705375673
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8303618574142457,
+        1.8303618574142457
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8329526805877687,
+        1.803666605949402
+      ],
+      "graph": true,
+      "surrogate": -0.4927234351634979,
+      "raw_chooser_gradient_l2": 0.3280090475268685
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8474499607086183,
+        1.8474499607086183
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.85477210521698,
+        1.85477210521698
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.83493705034256,
+        1.83493705034256
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 1.4820444509294803,
+  "raw_chooser_gradient_l2_max": 1.154035403402612
+}

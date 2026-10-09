@@ -1,0 +1,1 @@
+{"original_entry": "standing-launch-failure/sum-03/unseeded-entry.pt", "original_entry_sha256": "30d70aeff1ddf508dda7159b1c26bdc797d99467b0b74e7029c76936dfeec75e", "reason": "missing audit import before model construction", "prior_training_epochs": 0, "fresh_initialization_draws": 0}

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "test/test_operators_round2d.py",
+    "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit"
+  ],
+  "pid": 75586,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1623230600,
+  "elapsed_seconds": 9.840000708005391,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-sweep-repairs-01.log"
+}

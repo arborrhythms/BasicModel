@@ -1,0 +1,9 @@
+{
+  "changed": [
+    "bin/BindingAnswers.py",
+    "test/test_math_chain.py",
+    "test/test_math_chain_repair.py",
+    "data/MM_math_chain.xml"
+  ],
+  "learner_change": "BindingAnswers verifier restored byte-for-byte from frozen source; equivalent extracted identity traversal retained solely for cost. Other changes are the declared config and literal config substitutions in two tests."
+}

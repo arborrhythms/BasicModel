@@ -1,0 +1,22 @@
+........................................s............................... [ 56%]
+........................................................                 [100%]
+=============================== warnings summary ===============================
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7136: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:395: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+127 passed, 1 skipped, 8 warnings in 5.22s

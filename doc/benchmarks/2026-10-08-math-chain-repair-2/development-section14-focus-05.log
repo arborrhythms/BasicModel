@@ -1,0 +1,33 @@
+....................................................F................... [ 82%]
+...............                                                          [100%]
+=================================== FAILURES ===================================
+____ test_policy_records_work_but_departure_uses_reconstruction_and_answer _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x125a8ea80>
+
+    def test_policy_records_work_but_departure_uses_reconstruction_and_answer(monkeypatch):
+        from test_item6_2_thinking import credit_chain_world, run
+        model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+        result = run(model, goal, work_budget=64)
+        audit = model._last_thought_comparison
+        assert result.work.spent > 0
+>       assert audit['costs']==(0.,0.)
+E       assert (0.64, 0.14) == (0.0, 0.0)
+E         
+E         At index 0 diff: 0.64 != 0.0
+E         Use -v to get more diff
+
+test/test_unified_thought_controller.py:135: AssertionError
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7135: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmprhqwmhtw/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_unified_thought_controller.py::test_policy_records_work_but_departure_uses_reconstruction_and_answer
+1 failed, 86 passed, 2 warnings in 55.74s

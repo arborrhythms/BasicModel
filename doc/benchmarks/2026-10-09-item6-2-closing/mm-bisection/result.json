@@ -1,0 +1,29 @@
+{
+  "kind": "Diagnostic bisection; no declared attempt retried or replaced",
+  "landing_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "closing_source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+  "seed": null,
+  "cases": [
+    {
+      "name": "mm-03",
+      "original_best": 0.2279723882675171,
+      "original_steps": 200,
+      "raw_bar": false,
+      "replay_matches_original": true,
+      "equality": {
+        "construction_rng": true,
+        "initial_parameters": true,
+        "trajectory": true,
+        "best": true,
+        "steps": true,
+        "final_parameters": true,
+        "final_rng": true
+      },
+      "landing_identical": true,
+      "closing": "mm-03-closing.json",
+      "landing": "mm-03-landing.json"
+    }
+  ],
+  "all_misses_identical": true,
+  "basis": "Operators plan section 20: original misses retain their raw outcomes. Equality of the complete numerical and RNG paths rules out a closing-source regression."
+}

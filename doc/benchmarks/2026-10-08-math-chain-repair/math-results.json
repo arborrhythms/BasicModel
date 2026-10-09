@@ -1,0 +1,1294 @@
+{
+  "attempts": 30,
+  "completed_trainings": 0,
+  "completed_epochs": 0,
+  "errors": {
+    "RuntimeError('compose has no legal alternative at the selected exploration round')": 27,
+    "ValueError('a sentence end state occupies one or three slots')": 1,
+    "RuntimeError('index 54 is out of bounds for dimension 1 with size 47')": 1,
+    "RuntimeError('index 36 is out of bounds for dimension 1 with size 35')": 1
+  },
+  "first_epoch_questions_expected_per_condition": 1170,
+  "observation_limit": "The frozen observer records remaining open slots after the episode, and whether an episode ran; it does not record the binder's initial slot count separately.",
+  "learning_result": "Unavailable: all thirty attempts failed in epoch one before held-out or beyond-range evaluation and before the frozen driver saves final chooser displacement.",
+  "gradient_limit": "Raw thought-credit gradients cover all observed closings, not just corpus questions, and do not establish final chooser displacement or learned chaining.",
+  "conditions": {
+    "answer_and_expectation": {
+      "attempts": 10,
+      "completed": 0,
+      "held_out_evaluations": 0,
+      "all_four_held_out": null,
+      "all_four_chains": null,
+      "complete_first_epochs": 0,
+      "first_epoch": {
+        "questions_observed": 59,
+        "questions_still_open_after_episode": 5,
+        "open_slots_remaining": 7,
+        "episodes_opened": 6,
+        "bindings_correct": 0
+      },
+      "counts": {
+        "equality_loss_trial_acts": 108,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 200,
+        "sentences": 604
+      },
+      "credit": {
+        "answer_expectation_and_work": 95,
+        "nonzero_graph": 45,
+        "ties": 144,
+        "nonzero_chooser_gradients": 45,
+        "document_end_answer_and_work": 94
+      },
+      "operations": {
+        "ask": 64,
+        "equal": 1289,
+        "not": 1430,
+        "query": 158,
+        "part": 381,
+        "conclude": 29,
+        "exist": 1,
+        "implies": 9
+      },
+      "open_slot_kinds": {
+        "['referent', 0]": 3,
+        "['referent', 2]": 4
+      },
+      "question_inference_rows": 1,
+      "question_chains_correct": 0,
+      "question_work": 384,
+      "raw_chooser_gradient_l2_sum": 78.45653979168453,
+      "raw_chooser_gradient_l2_max": 18.690544021251096
+    },
+    "expectation_only": {
+      "attempts": 10,
+      "completed": 0,
+      "held_out_evaluations": 0,
+      "all_four_held_out": null,
+      "all_four_chains": null,
+      "complete_first_epochs": 0,
+      "first_epoch": {
+        "questions_observed": 61,
+        "questions_still_open_after_episode": 15,
+        "open_slots_remaining": 15,
+        "episodes_opened": 18,
+        "bindings_correct": 0
+      },
+      "counts": {
+        "equality_loss_trial_acts": 221,
+        "equality_trials_with_verb_shift_gradient": 1,
+        "episodes": 242,
+        "sentences": 597
+      },
+      "credit": {
+        "answer_expectation_and_work": 136,
+        "nonzero_graph": 43,
+        "ties": 181,
+        "nonzero_chooser_gradients": 43,
+        "document_end_answer_and_work": 88
+      },
+      "operations": {
+        "ask": 43,
+        "equal": 643,
+        "query": 316,
+        "not": 2461,
+        "conclude": 36,
+        "part": 411,
+        "implies": 35,
+        "gain": 1,
+        "exist": 1
+      },
+      "open_slot_kinds": {
+        "['referent', 2]": 13,
+        "['referent', 0]": 2
+      },
+      "question_inference_rows": 3,
+      "question_chains_correct": 0,
+      "question_work": 1152,
+      "raw_chooser_gradient_l2_sum": 97.74194217805456,
+      "raw_chooser_gradient_l2_max": 21.747848099787838
+    },
+    "zero_attention_budget": {
+      "attempts": 10,
+      "completed": 0,
+      "held_out_evaluations": 0,
+      "all_four_held_out": null,
+      "all_four_chains": null,
+      "complete_first_epochs": 0,
+      "first_epoch": {
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "counts": {
+        "equality_loss_trial_acts": 76,
+        "equality_trials_with_verb_shift_gradient": 2,
+        "episodes": 37,
+        "sentences": 56
+      },
+      "credit": {
+        "answer_expectation_and_work": 6,
+        "nonzero_graph": 0,
+        "ties": 20,
+        "nonzero_chooser_gradients": 0,
+        "document_end_answer_and_work": 14
+      },
+      "operations": {},
+      "open_slot_kinds": {},
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0
+    }
+  },
+  "runs": [
+    {
+      "condition": "answer_and_expectation",
+      "run": 1,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 11,
+        "questions_still_open_after_episode": 3,
+        "open_slots_remaining": 5,
+        "episodes_opened": 3,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 192,
+      "open_slot_kinds": {
+        "['referent', 0]": 3,
+        "['referent', 2]": 2
+      },
+      "counts": {
+        "equality_loss_trial_acts": 24,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 65,
+        "sentences": 86
+      },
+      "credit": {
+        "answer_expectation_and_work": 36,
+        "nonzero_graph": 16,
+        "ties": 49,
+        "nonzero_chooser_gradients": 16,
+        "document_end_answer_and_work": 29
+      },
+      "operations": {
+        "ask": 41,
+        "equal": 990,
+        "not": 220
+      },
+      "raw_chooser_gradient_l2_sum": 4.412081378653835,
+      "raw_chooser_gradient_l2_max": 0.5087107747812816,
+      "elapsed_seconds": 1221.385327041964,
+      "peak_memory_bytes": 5375038240
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 2,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "ValueError('a sentence end state occupies one or three slots')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 18,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 29,
+        "sentences": 52
+      },
+      "credit": {
+        "document_end_answer_and_work": 19,
+        "nonzero_graph": 1,
+        "ties": 28,
+        "nonzero_chooser_gradients": 1,
+        "answer_expectation_and_work": 10
+      },
+      "operations": {
+        "query": 43,
+        "part": 112,
+        "not": 389,
+        "conclude": 1
+      },
+      "raw_chooser_gradient_l2_sum": 0.6910047630093761,
+      "raw_chooser_gradient_l2_max": 0.6910047630093761,
+      "elapsed_seconds": 564.6735397080192,
+      "peak_memory_bytes": 4748514416
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 3,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 24,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 16,
+        "sentences": 16
+      },
+      "credit": {
+        "document_end_answer_and_work": 16,
+        "nonzero_graph": 2,
+        "ties": 14,
+        "nonzero_chooser_gradients": 2
+      },
+      "operations": {
+        "part": 198,
+        "not": 125,
+        "query": 2,
+        "conclude": 2
+      },
+      "raw_chooser_gradient_l2_sum": 18.856984739733075,
+      "raw_chooser_gradient_l2_max": 14.072154377657327,
+      "elapsed_seconds": 287.053344749962,
+      "peak_memory_bytes": 5100704376
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 4,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 18,
+        "questions_still_open_after_episode": 2,
+        "open_slots_remaining": 2,
+        "episodes_opened": 2,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 128,
+      "open_slot_kinds": {
+        "['referent', 2]": 2
+      },
+      "counts": {
+        "equality_loss_trial_acts": 23,
+        "episodes": 35,
+        "sentences": 140,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "answer_expectation_and_work": 32,
+        "nonzero_graph": 16,
+        "ties": 17,
+        "nonzero_chooser_gradients": 16,
+        "document_end_answer_and_work": 1
+      },
+      "operations": {
+        "query": 52,
+        "conclude": 16,
+        "equal": 83,
+        "not": 218,
+        "exist": 1
+      },
+      "raw_chooser_gradient_l2_sum": 12.497260540289833,
+      "raw_chooser_gradient_l2_max": 8.600685213951772,
+      "elapsed_seconds": 416.4704869580455,
+      "peak_memory_bytes": 5217834120
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 5,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 9,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 13,
+        "sentences": 16
+      },
+      "credit": {
+        "document_end_answer_and_work": 13,
+        "nonzero_graph": 1,
+        "ties": 12,
+        "nonzero_chooser_gradients": 1
+      },
+      "operations": {
+        "query": 26,
+        "not": 201,
+        "conclude": 1
+      },
+      "raw_chooser_gradient_l2_sum": 6.717854007526882,
+      "raw_chooser_gradient_l2_max": 6.717854007526882,
+      "elapsed_seconds": 178.28414204204455,
+      "peak_memory_bytes": 4943499944
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 6,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 1,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 3,
+        "sentences": 16
+      },
+      "credit": {
+        "answer_expectation_and_work": 2,
+        "nonzero_graph": 0,
+        "ties": 2,
+        "nonzero_chooser_gradients": 0
+      },
+      "operations": {
+        "part": 41,
+        "not": 25
+      },
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 63.36644120910205,
+      "peak_memory_bytes": 5062496984
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 7,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 0,
+        "sentences": 16,
+        "episodes": 4
+      },
+      "credit": {},
+      "operations": {
+        "query": 6,
+        "conclude": 4
+      },
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 22.374462167033926,
+      "peak_memory_bytes": 4712796936
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 8,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 22,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 1,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 1,
+      "question_chains_correct": 0,
+      "question_work": 64,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 7,
+        "sentences": 162,
+        "episodes": 12,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "answer_expectation_and_work": 8,
+        "nonzero_graph": 1,
+        "ties": 10,
+        "nonzero_chooser_gradients": 1,
+        "document_end_answer_and_work": 3
+      },
+      "operations": {
+        "query": 17,
+        "not": 171,
+        "implies": 9,
+        "conclude": 1
+      },
+      "raw_chooser_gradient_l2_sum": 0.9974873014343655,
+      "raw_chooser_gradient_l2_max": 0.9974873014343655,
+      "elapsed_seconds": 276.50879583403,
+      "peak_memory_bytes": 5376971648
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 9,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 1,
+        "episodes": 14,
+        "sentences": 36,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "document_end_answer_and_work": 13,
+        "nonzero_graph": 3,
+        "ties": 11,
+        "nonzero_chooser_gradients": 3,
+        "answer_expectation_and_work": 1
+      },
+      "operations": {
+        "equal": 216,
+        "not": 53,
+        "query": 2,
+        "conclude": 2,
+        "ask": 5
+      },
+      "raw_chooser_gradient_l2_sum": 19.377668923707393,
+      "raw_chooser_gradient_l2_max": 18.690544021251096,
+      "elapsed_seconds": 251.09773262497038,
+      "peak_memory_bytes": 5155902192
+    },
+    {
+      "condition": "answer_and_expectation",
+      "run": 10,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 8,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 1,
+        "episodes": 9,
+        "sentences": 64,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "answer_expectation_and_work": 6,
+        "nonzero_graph": 5,
+        "ties": 1,
+        "nonzero_chooser_gradients": 5
+      },
+      "operations": {
+        "ask": 18,
+        "query": 10,
+        "not": 28,
+        "conclude": 2,
+        "part": 30
+      },
+      "raw_chooser_gradient_l2_sum": 14.906198137329772,
+      "raw_chooser_gradient_l2_max": 8.26083041056036,
+      "elapsed_seconds": 110.46599970804527,
+      "peak_memory_bytes": 5385360184
+    },
+    {
+      "condition": "expectation_only",
+      "run": 1,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 11,
+        "questions_still_open_after_episode": 2,
+        "open_slots_remaining": 2,
+        "episodes_opened": 2,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 128,
+      "open_slot_kinds": {
+        "['referent', 2]": 2
+      },
+      "counts": {
+        "equality_loss_trial_acts": 72,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 48,
+        "sentences": 75
+      },
+      "credit": {
+        "answer_expectation_and_work": 28,
+        "nonzero_graph": 7,
+        "ties": 41,
+        "nonzero_chooser_gradients": 7,
+        "document_end_answer_and_work": 20
+      },
+      "operations": {
+        "ask": 20,
+        "equal": 242,
+        "query": 57,
+        "not": 483,
+        "conclude": 1
+      },
+      "raw_chooser_gradient_l2_sum": 21.775700605087028,
+      "raw_chooser_gradient_l2_max": 11.085848755213322,
+      "elapsed_seconds": 752.2722190419445,
+      "peak_memory_bytes": 5445882752
+    },
+    {
+      "condition": "expectation_only",
+      "run": 2,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 8,
+        "questions_still_open_after_episode": 5,
+        "open_slots_remaining": 5,
+        "episodes_opened": 6,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 1,
+      "question_chains_correct": 0,
+      "question_work": 384,
+      "open_slot_kinds": {
+        "['referent', 2]": 5
+      },
+      "counts": {
+        "equality_loss_trial_acts": 24,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 32,
+        "sentences": 68
+      },
+      "credit": {
+        "document_end_answer_and_work": 19,
+        "nonzero_graph": 2,
+        "ties": 29,
+        "nonzero_chooser_gradients": 2,
+        "answer_expectation_and_work": 12
+      },
+      "operations": {
+        "query": 50,
+        "part": 104,
+        "not": 411,
+        "conclude": 1,
+        "implies": 32
+      },
+      "raw_chooser_gradient_l2_sum": 1.4820444509294803,
+      "raw_chooser_gradient_l2_max": 1.154035403402612,
+      "elapsed_seconds": 541.9738976669032,
+      "peak_memory_bytes": 4727772176
+    },
+    {
+      "condition": "expectation_only",
+      "run": 3,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 8,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 79,
+        "equality_trials_with_verb_shift_gradient": 1,
+        "episodes": 37,
+        "sentences": 84
+      },
+      "credit": {
+        "document_end_answer_and_work": 19,
+        "nonzero_graph": 7,
+        "ties": 30,
+        "nonzero_chooser_gradients": 7,
+        "answer_expectation_and_work": 18
+      },
+      "operations": {
+        "part": 220,
+        "not": 417,
+        "gain": 1,
+        "query": 24,
+        "conclude": 5,
+        "exist": 1
+      },
+      "raw_chooser_gradient_l2_sum": 32.886027335540255,
+      "raw_chooser_gradient_l2_max": 21.747848099787838,
+      "elapsed_seconds": 619.5842450000346,
+      "peak_memory_bytes": 5305340776
+    },
+    {
+      "condition": "expectation_only",
+      "run": 4,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 18,
+        "questions_still_open_after_episode": 4,
+        "open_slots_remaining": 4,
+        "episodes_opened": 4,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 256,
+      "open_slot_kinds": {
+        "['referent', 0]": 2,
+        "['referent', 2]": 2
+      },
+      "counts": {
+        "equality_loss_trial_acts": 15,
+        "episodes": 34,
+        "sentences": 138,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "answer_expectation_and_work": 32,
+        "nonzero_graph": 15,
+        "ties": 19,
+        "nonzero_chooser_gradients": 15,
+        "document_end_answer_and_work": 2
+      },
+      "operations": {
+        "query": 33,
+        "conclude": 14,
+        "equal": 180,
+        "not": 209
+      },
+      "raw_chooser_gradient_l2_sum": 3.995081087480623,
+      "raw_chooser_gradient_l2_max": 2.0903608000713563,
+      "elapsed_seconds": 486.8614570419304,
+      "peak_memory_bytes": 5513074040
+    },
+    {
+      "condition": "expectation_only",
+      "run": 5,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('index 54 is out of bounds for dimension 1 with size 47')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 8,
+        "questions_still_open_after_episode": 4,
+        "open_slots_remaining": 4,
+        "episodes_opened": 6,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 2,
+      "question_chains_correct": 0,
+      "question_work": 384,
+      "open_slot_kinds": {
+        "['referent', 2]": 4
+      },
+      "counts": {
+        "equality_loss_trial_acts": 17,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 56,
+        "sentences": 76
+      },
+      "credit": {
+        "document_end_answer_and_work": 16,
+        "nonzero_graph": 3,
+        "ties": 45,
+        "nonzero_chooser_gradients": 3,
+        "answer_expectation_and_work": 32
+      },
+      "operations": {
+        "query": 124,
+        "not": 835,
+        "conclude": 4
+      },
+      "raw_chooser_gradient_l2_sum": 9.787352884782836,
+      "raw_chooser_gradient_l2_max": 5.343063344938757,
+      "elapsed_seconds": 856.4650508749764,
+      "peak_memory_bytes": 5671556592
+    },
+    {
+      "condition": "expectation_only",
+      "run": 6,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 1,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 5,
+        "sentences": 24
+      },
+      "credit": {
+        "answer_expectation_and_work": 2,
+        "nonzero_graph": 0,
+        "ties": 2,
+        "nonzero_chooser_gradients": 0
+      },
+      "operations": {
+        "part": 66,
+        "not": 22,
+        "ask": 5
+      },
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 89.09686145791784,
+      "peak_memory_bytes": 5433136024
+    },
+    {
+      "condition": "expectation_only",
+      "run": 7,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 1,
+        "sentences": 24,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 7
+      },
+      "credit": {
+        "answer_expectation_and_work": 4,
+        "nonzero_graph": 4,
+        "ties": 0,
+        "nonzero_chooser_gradients": 4
+      },
+      "operations": {
+        "query": 11,
+        "conclude": 7
+      },
+      "raw_chooser_gradient_l2_sum": 0.39006489862441146,
+      "raw_chooser_gradient_l2_max": 0.28101522128124834,
+      "elapsed_seconds": 31.151512625045143,
+      "peak_memory_bytes": 4939486128
+    },
+    {
+      "condition": "expectation_only",
+      "run": 8,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 3,
+        "sentences": 32,
+        "episodes": 3,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "answer_expectation_and_work": 1,
+        "nonzero_graph": 0,
+        "ties": 1,
+        "nonzero_chooser_gradients": 0
+      },
+      "operations": {
+        "query": 5,
+        "not": 16,
+        "implies": 2,
+        "conclude": 2
+      },
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 45.977261666907,
+      "peak_memory_bytes": 5181444872
+    },
+    {
+      "condition": "expectation_only",
+      "run": 9,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 4,
+        "episodes": 15,
+        "sentences": 36,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "document_end_answer_and_work": 12,
+        "nonzero_graph": 1,
+        "ties": 13,
+        "nonzero_chooser_gradients": 1,
+        "answer_expectation_and_work": 2
+      },
+      "operations": {
+        "equal": 221,
+        "not": 67,
+        "query": 11,
+        "conclude": 1
+      },
+      "raw_chooser_gradient_l2_sum": 18.690544021251096,
+      "raw_chooser_gradient_l2_max": 18.690544021251096,
+      "elapsed_seconds": 280.63583033310715,
+      "peak_memory_bytes": 5056811616
+    },
+    {
+      "condition": "expectation_only",
+      "run": 10,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 8,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 5,
+        "episodes": 5,
+        "sentences": 40,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {
+        "answer_expectation_and_work": 5,
+        "nonzero_graph": 4,
+        "ties": 1,
+        "nonzero_chooser_gradients": 4
+      },
+      "operations": {
+        "ask": 18,
+        "query": 1,
+        "not": 1,
+        "conclude": 1,
+        "implies": 1,
+        "part": 21
+      },
+      "raw_chooser_gradient_l2_sum": 8.735126894358825,
+      "raw_chooser_gradient_l2_max": 8.26083041056036,
+      "elapsed_seconds": 51.290112916962244,
+      "peak_memory_bytes": 5111714424
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 1,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 13,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 10,
+        "sentences": 16
+      },
+      "credit": {
+        "answer_expectation_and_work": 6,
+        "nonzero_graph": 0,
+        "ties": 6,
+        "nonzero_chooser_gradients": 0
+      },
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 23.54035229200963,
+      "peak_memory_bytes": 3736358488
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 2,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 24,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 7.613482124987058,
+      "peak_memory_bytes": 3176582312
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 3,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 4,
+        "equality_trials_with_verb_shift_gradient": 0
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 7.041973790968768,
+      "peak_memory_bytes": 3142044816
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 4,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 0
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 6.494826999958605,
+      "peak_memory_bytes": 3173829704
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 5,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 15,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 14,
+        "sentences": 16
+      },
+      "credit": {
+        "document_end_answer_and_work": 14,
+        "nonzero_graph": 0,
+        "ties": 14,
+        "nonzero_chooser_gradients": 0
+      },
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 25.654148708912544,
+      "peak_memory_bytes": 3545632224
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 6,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 3,
+        "equality_trials_with_verb_shift_gradient": 1,
+        "episodes": 5,
+        "sentences": 8
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 11.430101208970882,
+      "peak_memory_bytes": 3458928024
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 7,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 16,
+        "equality_trials_with_verb_shift_gradient": 0,
+        "episodes": 5,
+        "sentences": 8
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 13.06910520803649,
+      "peak_memory_bytes": 3603025376
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 8,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 0
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 6.482549000065774,
+      "peak_memory_bytes": 3181087864
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 9,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('index 36 is out of bounds for dimension 1 with size 35')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 0
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 6.483634541044012,
+      "peak_memory_bytes": 3158133808
+    },
+    {
+      "condition": "zero_attention_budget",
+      "run": 10,
+      "status": "failed",
+      "completed_epochs": 0,
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "first_epoch": {
+        "complete": false,
+        "questions_observed": 0,
+        "questions_still_open_after_episode": 0,
+        "open_slots_remaining": 0,
+        "episodes_opened": 0,
+        "bindings_correct": 0
+      },
+      "question_inference_rows": 0,
+      "question_chains_correct": 0,
+      "question_work": 0,
+      "open_slot_kinds": {},
+      "counts": {
+        "equality_loss_trial_acts": 1,
+        "equality_trials_with_verb_shift_gradient": 1,
+        "episodes": 3,
+        "sentences": 8
+      },
+      "credit": {},
+      "operations": {},
+      "raw_chooser_gradient_l2_sum": 0.0,
+      "raw_chooser_gradient_l2_max": 0.0,
+      "elapsed_seconds": 12.45854591706302,
+      "peak_memory_bytes": 3555249584
+    }
+  ]
+}

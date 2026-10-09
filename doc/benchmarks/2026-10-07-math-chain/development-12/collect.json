@@ -1,0 +1,12 @@
+{
+  "exit_code": 4,
+  "selected": [],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

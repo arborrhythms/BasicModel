@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-09-item6-2-closing/mm_bisection.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/mm-bisection/landing-source",
+    "landing",
+    "mm-03"
+  ],
+  "pid": 37302,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 589448536,
+  "elapsed_seconds": 22.250337832956575,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-09-item6-2-closing/mm-bisection/mm-03-landing.log"
+}

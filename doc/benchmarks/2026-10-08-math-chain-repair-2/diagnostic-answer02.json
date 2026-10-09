@@ -1,0 +1,835 @@
+{
+  "development": true,
+  "error": "ValueError('a sentence end state occupies one or three slots')",
+  "row": 0,
+  "batch": {
+    "rows": [
+      5,
+      115,
+      134,
+      308,
+      376,
+      384,
+      413,
+      521
+    ],
+    "texts": [
+      "what is y ?",
+      "what is y ?",
+      "what is y ?",
+      "what is y ?",
+      "what is y ?",
+      "what is y ?",
+      "what is y ?",
+      "what is y ?"
+    ]
+  },
+  "role_mask": [
+    true,
+    true,
+    false
+  ],
+  "role_refs": [
+    null,
+    [
+      "sym",
+      2
+    ],
+    null
+  ],
+  "bindings": {
+    "_bound_roles": [
+      [
+        "relation",
+        1
+      ]
+    ],
+    "_evidence_pair": [
+      1.0,
+      0.0
+    ],
+    "_forward_references": [],
+    "_open_references": [
+      [
+        "relation",
+        1
+      ]
+    ],
+    "_pending": true,
+    "_producing_operation": "query",
+    "_thought_witnesses": []
+  },
+  "open_slots": [],
+  "operations": [
+    {
+      "kind": "begin",
+      "operation": "",
+      "meaning": {
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "role_refs": [
+          null,
+          null,
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            1.0,
+            0.0
+          ],
+          "_forward_references": [],
+          "_open_references": [
+            [
+              "relation",
+              1
+            ]
+          ],
+          "_pending": true
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "query",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          [
+            "constituent",
+            0
+          ],
+          [
+            "sym",
+            2
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "thought",
+      "operation": "not",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            3
+          ],
+          null
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_open_references": [
+            [
+              "evidence",
+              -1
+            ]
+          ],
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    },
+    {
+      "kind": "cutoff",
+      "operation": "",
+      "meaning": null
+    },
+    {
+      "kind": "finish",
+      "operation": "finish",
+      "meaning": {
+        "role_mask": [
+          true,
+          true,
+          false
+        ],
+        "role_refs": [
+          null,
+          [
+            "sym",
+            2
+          ],
+          null
+        ],
+        "bindings": {
+          "_bound_roles": [
+            [
+              "relation",
+              1
+            ]
+          ],
+          "_evidence_pair": [
+            1.0,
+            0.0
+          ],
+          "_forward_references": [],
+          "_open_references": [
+            [
+              "relation",
+              1
+            ]
+          ],
+          "_pending": true,
+          "_producing_operation": "query",
+          "_thought_witnesses": []
+        }
+      }
+    }
+  ]
+}

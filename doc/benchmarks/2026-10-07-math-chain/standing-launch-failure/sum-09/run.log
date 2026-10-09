@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/campaign.py", line 163, in <module>
+    sum_child(Path(sys.argv[2]))
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/campaign.py", line 47, in sum_child
+    with observe(folder/'thinking.json'), switches(), capture_final_derivations() as derivations, observe_run() as run_audit:
+                                                                                                  ^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/operators_run_audit.py", line 217, in observe_run
+    from round2_score_probe import observe_score_function
+ModuleNotFoundError: No module named 'round2_score_probe'

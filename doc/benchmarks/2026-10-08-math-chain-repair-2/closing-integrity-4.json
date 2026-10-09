@@ -1,0 +1,34 @@
+{
+  "stopped_files": {
+    "files": 59,
+    "unchanged": true,
+    "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/retained-files-sha256.json"
+  },
+  "stopped_receipt": {
+    "files": 9,
+    "unchanged": true,
+    "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/receipt-sha256.json"
+  },
+  "campaign_helpers": {
+    "files": 222,
+    "unchanged": true,
+    "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/measured-source/measurement-helpers.json"
+  },
+  "closing_helpers": {
+    "files": 8,
+    "unchanged": true,
+    "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/closing-source-4/helpers.json"
+  },
+  "prior_receipts": [
+    {
+      "files": 2393,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-07-math-chain/receipt-sha256.json"
+    },
+    {
+      "files": 1967,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair/receipt-sha256.json"
+    }
+  ]
+}

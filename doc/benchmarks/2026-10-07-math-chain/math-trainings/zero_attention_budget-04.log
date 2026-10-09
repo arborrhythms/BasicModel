@@ -1,0 +1,147 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=5.838s)
+batch = 16 (Δ=6.001s)
+batch = 24 (Δ=6.348s)
+batch = 32 (Δ=5.536s)
+batch = 40 (Δ=4.932s)
+batch = 48 (Δ=4.954s)
+batch = 56 (Δ=5.047s)
+batch = 64 (Δ=5.049s)
+batch = 72 (Δ=4.860s)
+batch = 80 (Δ=4.907s)
+batch = 88 (Δ=5.112s)
+batch = 96 (Δ=5.014s)
+batch = 104 (Δ=5.048s)
+batch = 112 (Δ=4.640s)
+batch = 120 (Δ=3.126s)
+batch = 122 (Δ=2.241s)
+batch = 124 (Δ=1.792s)
+batch = 126 (Δ=1.591s)
+batch = 128 (Δ=2.720s)
+batch = 130 (Δ=2.978s)
+batch = 132 (Δ=3.307s)
+batch = 134 (Δ=2.660s)
+batch = 136 (Δ=2.304s)
+batch = 138 (Δ=2.476s)
+batch = 140 (Δ=2.341s)
+batch = 142 (Δ=2.235s)
+batch = 144 (Δ=2.309s)
+batch = 146 (Δ=2.297s)
+batch = 148 (Δ=2.004s)
+batch = 150 (Δ=7.155s)
+batch = 158 (Δ=5.768s)
+batch = 166 (Δ=5.530s)
+batch = 174 (Δ=5.806s)
+batch = 182 (Δ=5.590s)
+batch = 190 (Δ=5.970s)
+batch = 198 (Δ=6.376s)
+batch = 206 (Δ=5.947s)
+batch = 214 (Δ=6.003s)
+batch = 222 (Δ=4.931s)
+batch = 230 (Δ=1.494s)
+batch = 232 (Δ=2.368s)
+batch = 234 (Δ=1.451s)
+batch = 236 (Δ=2.411s)
+batch = 238 (Δ=1.959s)
+batch = 240 (Δ=2.287s)
+batch = 242 (Δ=2.138s)
+batch = 244 (Δ=2.406s)
+batch = 246 (Δ=2.192s)
+batch = 248 (Δ=2.093s)
+batch = 250 (Δ=7.191s)
+batch = 258 (Δ=5.444s)
+batch = 266 (Δ=3.202s)
+batch = 270 (Δ=7.515s)
+batch = 278 (Δ=5.909s)
+batch = 286 (Δ=6.133s)
+batch = 294 (Δ=6.156s)
+batch = 302 (Δ=5.740s)
+batch = 310 (Δ=5.955s)
+batch = 318 (Δ=6.048s)
+batch = 326 (Δ=6.037s)
+batch = 334 (Δ=5.251s)
+batch = 342 (Δ=2.746s)
+batch = 345 (Δ=2.685s)
+batch = 348 (Δ=1.975s)
+batch = 351 (Δ=2.015s)
+batch = 354 (Δ=2.771s)
+batch = 357 (Δ=2.636s)
+batch = 360 (Δ=2.778s)
+batch = 363 (Δ=2.789s)
+batch = 366 (Δ=2.293s)
+batch = 369 (Δ=7.192s)
+batch = 377 (Δ=5.726s)
+batch = 385 (Δ=6.122s)
+batch = 393 (Δ=6.317s)
+batch = 401 (Δ=6.433s)
+batch = 409 (Δ=5.841s)
+batch = 417 (Δ=6.009s)
+batch = 425 (Δ=5.982s)
+batch = 433 (Δ=6.152s)
+batch = 441 (Δ=6.073s)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py", line 155, in <module>
+    train(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4], int(sys.argv[5]))
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py", line 116, in train
+    report = present(model, split='train', optimizer=optimizer,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 48, in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13609, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13748, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14130, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8768, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10199, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8453, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8231, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23465, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17214, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21999, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21552, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20727, in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20290, in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 171, in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py", line 399, in write_clause
+    raise OverflowError(f'LTM capacity {self.capacity} exhausted; forgetting is required')
+OverflowError: LTM capacity 1024 exhausted; forgetting is required

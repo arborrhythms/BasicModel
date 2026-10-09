@@ -1,0 +1,18 @@
+D=5 K=3 instances=200 episodes=6000 phi=0.3  (trap instances: 120)
+  root    optimal 0.04  regret 0.079  | on traps: optimal 0.03
+  graded  optimal 0.96  regret 0.000  | on traps: optimal 0.97
+  mixed   optimal 0.32  regret 0.006  | on traps: optimal 0.32
+D=4 K=3 instances=200 episodes=3000 phi=0.3  (trap instances: 123)
+  root    optimal 0.12  regret 0.077  | on traps: optimal 0.11
+  graded  optimal 0.95  regret 0.000  | on traps: optimal 0.97
+  mixed   optimal 0.53  regret 0.006  | on traps: optimal 0.50
+D=5 K=3 instances=200 episodes=6000 phi=0.0  (trap instances: 120)
+  root    optimal 0.07  regret 0.068  | on traps: optimal 0.06
+  graded  optimal 0.95  regret 0.000  | on traps: optimal 0.93
+  mixed   optimal 0.36  regret 0.004  | on traps: optimal 0.37
+D=5 K=3 instances=200 episodes=20000 phi=0.3  (trap instances: 120)
+  root    optimal 0.04  regret 0.079  | on traps: optimal 0.03
+  graded  optimal 0.96  regret 0.000  | on traps: optimal 0.94
+  mixed   optimal 0.43  regret 0.003  | on traps: optimal 0.43
+
+[exited with code 0]

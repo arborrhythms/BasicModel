@@ -1,0 +1,10 @@
+{
+  "frozen_sha256": "7ac86e5f5980db35d9e92b0a4b89c35d60bf951cad14be54900f96d6f10169c7",
+  "current_sha256": "fe851e2f470d81baf9e3d369974b1b7b84ba8f7175d8b472e9ff386f3f9cf550",
+  "functions_byte_identical": {
+    "references": true,
+    "matches": true
+  },
+  "cost_identity_helper_ast_identical": true,
+  "authorization": "thinking spec 14.7.2; cost ignores the pair and other free roles, exact bound identity is zero; gate verifier unchanged."
+}

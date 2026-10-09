@@ -1,0 +1,130 @@
+F.................FF.F..F..............                                  [100%]
+=================================== FAILURES ===================================
+_____ test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes _____
+test/test_arithmetic_isolation.py:133: in test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+    result, _ = model.runBatch(train=True, batchSize=2, split='train',
+bin/Models.py:13619: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13758: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14140: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8777: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10208: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8462: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8240: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23490: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22024: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21577: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20752: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20345: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:139: in close
+    result = model.run_selected_thought(field.query, row=row,
+bin/Models.py:6023: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6394: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6388: in run_context
+    outcome = execute(outcome["meaning"], actions=(action,),
+bin/Models.py:6295: in execute
+    raw = registry.execute(current, context)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:2297: in execute
+    value, scanned = _occurrence_description(preparation_context, reference)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1578: in _occurrence_description
+    resolved = reader(reference, row=context.row,
+bin/Queries.py:1063: in resolve_description
+    raise TypeError('description argument requires an existing occurrence reference')
+E   TypeError: description argument requires an existing occurrence reference
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+test/test_output_path_supervised.py:194: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    assert c.derivation.resolved
+E   AssertionError: assert False
+E    +  where False = AnswerDerivation(answer_symbol=None, grammar_trace=({'operation': 'resolve:mixed', 'relation': 'supervised', 'offset':...n=0, prefix=None, resolved=False, source='mixed', row_sources=('identity', 'thought-concept'), step=(), exact_steps=()).resolved
+E    +    where AnswerDerivation(answer_symbol=None, grammar_trace=({'operation': 'resolve:mixed', 'relation': 'supervised', 'offset':...n=0, prefix=None, resolved=False, source='mixed', row_sources=('identity', 'thought-concept'), step=(), exact_steps=()) = AnswerConstruction(actual=tensor([[[-0.0118],\n         [-0.0088],\n         [-0.0050],\n         [ 0.0299],\n         [ 0...(2, 16, 1)}, {'operation': 'generate:lexical_inverse', 'vocabulary': 'all_owned_word_surfaces'}), texts=('2', '     ')).derivation
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development] _
+test/test_output_path_supervised.py:194: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    assert c.derivation.resolved
+E   AssertionError: assert False
+E    +  where False = AnswerDerivation(answer_symbol=None, grammar_trace=({'operation': 'resolve:mixed', 'relation': 'supervised', 'offset':...n=0, prefix=None, resolved=False, source='mixed', row_sources=('identity', 'thought-subgoal'), step=(), exact_steps=()).resolved
+E    +    where AnswerDerivation(answer_symbol=None, grammar_trace=({'operation': 'resolve:mixed', 'relation': 'supervised', 'offset':...n=0, prefix=None, resolved=False, source='mixed', row_sources=('identity', 'thought-subgoal'), step=(), exact_steps=()) = AnswerConstruction(actual=tensor([[[-0.0501],\n         [-0.0284],\n         [-0.0194],\n         [ 0.0386],\n         [ 0...(2, 16, 1)}, {'operation': 'generate:lexical_inverse', 'vocabulary': 'all_owned_word_surfaces'}), texts=('2', '     ')).derivation
+____ test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present ____
+test/test_output_walk.py:574: in test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present
+    assert not torch.equal(words, expanded.concepts)
+E   AssertionError: assert not True
+E    +  where True = <built-in method equal of type object at 0x10af1d3a0>(tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]), tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]))
+E    +    where <built-in method equal of type object at 0x10af1d3a0> = torch.equal
+E    +    and   tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]) = AnswerConstruction(actual=tensor([[[0.],\n         [0.],\n         [0.],\n         [0.],\n         [0.],\n         [0.],\n  ...vocabulary': 'all_owned_word_surfaces'}), texts=('1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1', '                               ')).concepts
+_________ test_resolved_recall_keeps_its_program_after_memory_advances _________
+test/test_output_walk.py:800: in test_resolved_recall_keeps_its_program_after_memory_advances
+    assert d.row_sources == ("recall", "recall")
+E   AssertionError: assert ('thought-sub...ught-subgoal') == ('recall', 'recall')
+E     
+E     At index 0 diff: 'thought-subgoal' != 'recall'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7065: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3775/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7065: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3775/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7065: RuntimeWarning: lossrev_band_clipped [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3775/test_first_and_later_words_kee0/tiny_chunk_model.xml]: lossRev width clip (rev 5 vs fwd 104) misaligns the trailing where/when band; the clipped event takes what_scale
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]
+FAILED test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present
+FAILED test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances
+5 failed, 34 passed, 5 warnings in 109.90s (0:01:49)

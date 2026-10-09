@@ -1,0 +1,194 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 1,
+    "episodes": 14,
+    "sentences": 36,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "equal": 216,
+    "not": 53,
+    "query": 2,
+    "conclude": 2,
+    "ask": 5
+  },
+  "credit": {
+    "document_end_answer_and_work": 13,
+    "nonzero_graph": 3,
+    "ties": 11,
+    "nonzero_chooser_gradients": 3,
+    "answer_expectation_and_work": 1
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.34
+      ],
+      "graph": true,
+      "surrogate": -4.576449394226074,
+      "raw_chooser_gradient_l2": 18.690544021251096
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.63
+      ],
+      "graph": true,
+      "surrogate": -0.1766088455915451,
+      "raw_chooser_gradient_l2": 0.6782020591944299
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7936540627479554,
+        0.796792426109314
+      ],
+      "graph": true,
+      "surrogate": 0.013770711608231068,
+      "raw_chooser_gradient_l2": 0.008922843261866297
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 19.377668923707393,
+  "raw_chooser_gradient_l2_max": 18.690544021251096
+}

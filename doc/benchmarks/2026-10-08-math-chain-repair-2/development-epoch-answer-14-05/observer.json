@@ -1,0 +1,1225 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 110,
+    "episodes": 273,
+    "sentences": 1449,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "ask": 101,
+    "part": 462,
+    "equal": 510,
+    "query": 145,
+    "conclude": 85
+  },
+  "credit": {
+    "reconstruction_and_answer": 273,
+    "nonzero_graph": 93,
+    "ties": 180,
+    "nonzero_chooser_gradients": 93
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.17
+      ],
+      "graph": true,
+      "surrogate": -1.5341514348983765,
+      "raw_chooser_gradient_l2": 1.8376778130283125
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        1.32,
+        1.19
+      ],
+      "graph": true,
+      "surrogate": -1.2464463710784912,
+      "raw_chooser_gradient_l2": 4.201098968117772
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        1.32,
+        0.8976569843292237
+      ],
+      "graph": true,
+      "surrogate": -4.369647979736328,
+      "raw_chooser_gradient_l2": 8.531856772481353
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        1.32,
+        1.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        1.32,
+        1.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.3
+      ],
+      "graph": true,
+      "surrogate": -0.18667638301849365,
+      "raw_chooser_gradient_l2": 0.5483673540922267
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.13
+      ],
+      "graph": true,
+      "surrogate": -0.2850759029388428,
+      "raw_chooser_gradient_l2": 1.3637056217574348
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.13
+      ],
+      "graph": true,
+      "surrogate": -1.6720167398452759,
+      "raw_chooser_gradient_l2": 6.201657283472799
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 53.08966479792319,
+  "raw_chooser_gradient_l2_max": 8.531856772481353
+}

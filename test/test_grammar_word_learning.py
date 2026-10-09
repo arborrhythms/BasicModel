@@ -202,10 +202,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
                 costs[:, 1] -= .5
             return original(owner, path, costs)
         monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
-        receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
-        monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
-        monkeypatch.syspath_prepend(str(receipt))
-        from round2_score_probe import observe_score_function
+        from compose_score_probe import observe_score_function
         audit = {}
         with observe_score_function(audit), capture_readings(model) as readings:
             result, _ = model.runBatch(

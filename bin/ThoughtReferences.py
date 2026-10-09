@@ -16,42 +16,96 @@ def evidence_pair(meaning):
 
 
 def open_slots(meaning):
-    """Surface mode cannot create or preserve an already filled reference."""
+    """An omitted relational operand is open even without an annotation.
+
+    A fused idea has one role. A relational row has three roles, including
+    the ones still to be filled; its occupancy is part of the contract.
+    Surface mode cannot preserve an already filled reference.
+    """
     result = []
-    pair = evidence_pair(meaning)
     for kind, role in bindings(meaning).get('_open_references', ()):
-        if kind not in ('referent', 'relation', 'evidence'):
-            raise ValueError('unknown open-reference kind')
+        # Old checkpoints may retain the retired evidence annotation. It
+        # denotes ignorance, never a free variable or something bind fills.
         if kind == 'evidence':
-            if pair == (0., 0.):
-                result.append((kind, -1))
-        elif role not in (0, 1, 2):
+            continue
+        if kind not in ('referent', 'relation'):
+            raise ValueError('unknown open-reference kind')
+        if role not in (0, 1, 2):
             raise ValueError('an open role must name a canonical row slot')
         elif meaning.role_refs[role] is None:
             result.append((kind, role))
-    return tuple(result)
+    if (meaning.sentence_kind == 'relation' or
+            (meaning.sentence_kind is None and int(meaning.role_mask.sum()) > 1)):
+        for role in range(3):
+            if (not bool(meaning.role_mask[role]) or
+                    (meaning.role_refs[role] is None and
+                     (meaning.sentence_kind == 'relation' or any(meaning.role_refs)))):
+                result.append(('relation' if role == 1 else 'referent', role))
+    return tuple(dict.fromkeys(result))
+
+
+def needs_episode(meaning):
+    """A region can need evidence without owning an extra operand slot."""
+    return bool(open_slots(meaning)) or (meaning.mode == 'interrogative'
+                                        and evidence_pair(meaning) == (0., 0.))
+
+
+def conclude_exhausted(meaning):
+    """A source-supported forward name becomes a provisional individual.
+
+    This constructs only a trial-local constituent. The kept episode writes
+    that individual through the ordinary LTM writer; a rejected trial has
+    no durable allocation. A region without source evidence remains open.
+    """
+    if tuple(bindings(meaning).get('_source_evidence', evidence_pair(meaning))) == (0., 0.):
+        return question(meaning, open_slots(meaning))
+    from Meaning import ConceptualMeaning
+    refs, children = list(meaning.role_refs), list(meaning.constituents)
+    mask = meaning.role_mask.clone()
+    data = bindings(meaning)
+    records = data.get('_formation_records', ())
+    filled = []
+    for kind, role in open_slots(meaning):
+        if kind != 'referent':
+            continue
+        provenance = tuple(record for record in records if dict(record).get('role') == role)
+        child = with_slots(ConceptualMeaning.from_description(meaning.roles[role]), (),
+                           pair=evidence_pair(meaning))
+        child_data = bindings(child)
+        child_data.update(_producing_operation='mint', _formation_records=provenance,
+                          _formation_reason='search_exhausted')
+        refs[role] = ('constituent', len(children))
+        mask[role] = True
+        children.append(replace(child, bindings=child_data))
+        filled.append((kind, role))
+    if filled:
+        # Trial scoring precedes the kept write. The provisional individual
+        # already fills this variable here, irrespective of its evidence.
+        data['_bound_roles'] = tuple(dict.fromkeys((*data.get('_bound_roles', ()), *filled)))
+    data['_forward_references'] = tuple(item for item in data.get('_forward_references', ())
+                                         if refs[item[0]] is None)
+    return with_slots(replace(meaning, role_refs=tuple(refs), role_mask=mask, bindings=data,
+                             constituents=tuple(children)), open_slots(meaning))
 
 
 def with_slots(meaning, slots, *, pair=None):
     data = bindings(meaning)
-    data['_open_references'] = tuple(dict.fromkeys(slots))
+    data['_open_references'] = tuple(dict.fromkeys(slot for slot in slots if slot[0] != 'evidence'))
     if pair is not None:
         values = tuple(float(x) for x in pair)
         if len(values) != 2 or any(not 0 <= x <= 1 for x in values):
             raise ValueError('thought evidence requires two independent poles in [0,1]')
         data['_evidence_pair'] = values
-    result = replace(meaning, bindings=data)
-    return replace(result, mode='interrogative' if open_slots(result) else 'assertive')
+    return replace(meaning, bindings=data)
 
 
 def question(meaning, slots=None):
-    """An explicit question opens its omitted operands or its unknown evidence."""
+    """An interrogative region has free variables and no source evidence."""
     if slots is None:
-        slots = tuple(('relation' if role == 1 else 'referent', role)
-                      for role in range(3) if not bool(meaning.role_mask[role]))
-        if not slots:
-            slots = (('evidence', -1),)
-    return with_slots(meaning, slots, pair=(0., 0.))
+        slots = open_slots(meaning)
+    data = bindings(meaning)
+    data['_source_evidence'] = (0., 0.)
+    return with_slots(replace(meaning, mode='interrogative', bindings=data), slots, pair=(0., 0.))
 
 
 def validate_local_references(meaning):
@@ -89,7 +143,7 @@ def validate_local_references(meaning):
     visit(meaning)
 
 
-def fill(meaning, result, *, witnesses=(), operation=None):
+def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
     """Bind from a checked result, retaining both poles and its provenance."""
     validate_local_references(meaning)
     evidence = result.evidence if hasattr(result, 'evidence') else result
@@ -124,7 +178,7 @@ def fill(meaning, result, *, witnesses=(), operation=None):
         return reference
 
     for kind, role in open_slots(meaning):
-        if kind == 'evidence':
+        if slots is not None and (kind, role) not in slots:
             continue
         if supplied is not None and supplied.role_refs[role] is not None:
             references[role] = import_reference(supplied.role_refs[role])
@@ -141,12 +195,22 @@ def fill(meaning, result, *, witnesses=(), operation=None):
             references[role] = evidence['reference']
             roles[role], mask[role] = evidence.get('binding_value', evidence.get('value')).to(roles), True
     data = bindings(meaning)
+    filled_roles = tuple((kind, role) for kind, role in open_slots(meaning)
+                         if kind != 'evidence' and references[role] is not None)
+    if filled_roles:
+        data['_bound_roles'] = tuple(dict.fromkeys((*data.get('_bound_roles', ()), *filled_roles)))
+        if '_forward_references' in data:
+            data['_forward_references'] = tuple(item for item in data['_forward_references']
+                                                 if references[item[0]] is None)
     data['_thought_witnesses'] = tuple(dict.fromkeys((*data.get('_thought_witnesses', ()),
                                                    *witnesses)))
     if operation is not None:
         data['_producing_operation'] = operation
     updated = replace(meaning, roles=roles, role_mask=mask,
                       role_refs=tuple(references), constituents=tuple(children), bindings=data)
+    if '_pending' in data:
+        data['_pending'] = bool(open_slots(updated))
+        updated = replace(updated, bindings=data)
     validate_local_references(updated)
     old = evidence_pair(meaning)
     return with_slots(updated, open_slots(meaning),
@@ -160,10 +224,6 @@ def from_closing(meaning, *, evidence=(0., 0.), unresolved=False):
         slots.extend(('relation' if role == 1 else 'referent', role)
                      for role in range(3) if bool(meaning.role_mask[role])
                      and meaning.role_refs[role] is None)
-    well_defined = bool(meaning.roles[meaning.role_mask].norm() > 0)
-    fully_named = all(meaning.role_refs[role] is not None
-                      for role in range(3) if bool(meaning.role_mask[role]))
-    if (well_defined and tuple(evidence) == (0., 0.)
-            and (fully_named or meaning.mode == 'interrogative')):
-        slots.append(('evidence', -1))
-    return with_slots(meaning, slots, pair=evidence)
+    data = bindings(meaning)
+    data['_source_evidence'] = tuple(evidence)
+    return with_slots(replace(meaning, bindings=data), slots, pair=evidence)

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/math_train.py",
+    "train",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/math-trainings/expectation_only-03",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/math-trainings/paired-03",
+    "expectation_only",
+    "3"
+  ],
+  "pid": 54845,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 5305340776,
+  "elapsed_seconds": 619.5842450000346,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/math-trainings/expectation_only-03.log"
+}

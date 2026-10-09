@@ -1,0 +1,1488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!-- Root element -->
+  <xs:element name="model">
+    <xs:complexType>
+      <xs:all>
+        <!-- architecture is optional: a config may omit it and inherit the
+             whole block from the data/model.xml defaults overlay (and
+             minimal fixtures, e.g. grammar-only configs, carry no
+             architecture at all). -->
+        <xs:element name="architecture" type="architectureType" minOccurs="0"/>
+        <xs:element name="mentalModel" type="mentalModelType" minOccurs="0"/>
+        <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
+        <xs:element name="PartSpace" type="partSpaceType" minOccurs="0"/>
+        <xs:element name="ModalSpace" type="modalSpaceType" minOccurs="0"/>
+        <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
+        <xs:element name="WholeSpace" type="wholeSpaceType" minOccurs="0"/>
+        <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
+        <xs:element name="SymbolSpace" type="symbolSpaceType" minOccurs="0"/>
+        <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- TetralemmaPolicy: shared 4-valued (catuskoti) balance policy
+       inherited by ConceptualSpace and WholeSpace unless their
+       <tetralemmaOverride enabled="true"> opts out. -->
+  <xs:complexType name="tetralemmaPolicyType">
+    <xs:all>
+      <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
+      <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
+      <xs:element name="neitherThreshold" type="nonNegativeFloat" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- Per-space override marker. enabled="true" means the space
+       block defines its own <TetralemmaPolicy>; default inherits. -->
+  <xs:complexType name="tetralemmaOverrideType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Architecture (top-level config shared by all model types)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="architectureType">
+    <xs:all>
+      <!-- The retired <modelType> (simple | embedding | passthrough | vq)
+           moved into <data> as <dataType> (embedding | numeric) 2026-06-19:
+           simple+passthrough collapsed to numeric, vq dropped (0 configs). -->
+      <!-- subsymbolicOrder = T = number of per-stage ConceptualSpace
+           instances in self.conceptualSpaces. Stage 10 (doc/plans/
+           2026-05-27-perceptstore-meta-taxonomy-reentrancy.md): each
+           stage owns its own Ramsified sigma_in (incoming fold) and
+           sigma_cs (PARALLEL-mode residual lift). In PARALLEL mode the
+           pipeline walks stages 0..T-1 with each stage's sigma_cs
+           applied to the prior stage's CS output; in SERIAL mode
+           SyntacticLayer.compose dispatch per stage replaces
+           sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
+           currently the per-word loop uses the terminal CS). -->
+      <xs:element name="bindingDepth" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Concept formation at the serial {PS,WS,SS} -> CS boundary.
+           mixing: the historical learned ConceptualCombine matrix, retained
+           as an explicit comparison option. aligned: preserve the location
+           axis and fuse every non-raw subsymbolic fold from BOTH PS and WS,
+           together with the applicable symbolic activation; for
+           subsymbolicOrder=T this is T-1 cumulative folds per perceptual
+           side. PS and WS stay independent native-width peers. Their sparse
+           sigma/codebook reads emit conceptual-width activations before CS;
+           there is no PS->WS edge or CS-owned coordinate lift. -->
+      <xs:element name="conceptBinding" type="conceptBindingEnum" minOccurs="0"/>
+      <!-- Where/when ladder periods are derived from registry/LTM capacity.
+           They are not independent configuration knobs. -->
+      <!-- serial selects the per-word grammatical body. If omitted, code
+           derives it from symbolicOrder > 0 for legacy configs. New configs
+           should set it explicitly. -->
+      <!-- Sampling temperature shared by exploit/explore; zero is argmax.
+           Evaluation is always argmax. Gradient credit is untempered. -->
+      <xs:element name="composeTemperature" minOccurs="0" default="0">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minInclusive value="0"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <!-- Working-memory load prior shared by all binary candidates. -->
+      <xs:element name="reducePressure" minOccurs="0" default="1.0">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minInclusive value="0"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <!-- symbolicOrder is the symbolic iteration budget K of the conceptual
+           wave. We are NOT forcing ramsification: the value is the maximum
+           possible conceptual order, i.e. the order reached if a novel concept
+           were introduced at every iteration. 0 disables the symbolic phase.
+           It no longer serves as the primary mode selector; serial does. If
+           omitted, the default still derives from the configured grammar for
+           legacy configs: 1 when the XML enables a non-substrate rule, else 0. -->
+      <xs:element name="conceptLayers" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the maximum
+           DEPTH of the parse tree the grammatical (serial) reduction may build
+           per sentence. A distinct axis from subsymbolicOrder (refinement
+           passes), symbolicOrder (relational loop budget), and serial
+           (traversal mode). 0 (default) =
+           UNBOUNDED: the reduction runs to its natural single-S fixpoint
+           (byte-identical). A positive value caps the NULL-closing reduce sweep to
+           that many forced fold levels (statically clamped to the buffer
+           capacity minus 1, so the CUDA-graph trip count stays static); the
+           word-count upper bound holds STRUCTURALLY (a reduce micro-step is a
+           no-op once a row's depth reaches 1). Inert in parallel mode:
+           no per-sentence parse tree to bound. -->
+      <xs:element name="syntacticOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- TransformChooser kind. The placement scorer the structured
+           grammar layers use: "anchordot" (default) is the stateless
+           inner-product scorer (no params, state_dict / basin unchanged);
+           "mlp" is the contextual MLPTransformChooser (a learned MLP over
+           slot/pair state, candidate output, tool embedding and position).
+           The MLP OWNS parameters, so selecting it changes the state_dict
+           and starts a fresh basin (a deliberate cutover). -->
+      <xs:element name="transformChooser" type="transformChooserEnum" minOccurs="0"/>
+      <!-- MLP capacity only: hidden=0 derives max(8, grammar feature width).
+           Depth counts hidden Linear/GELU blocks, not recurrent passes.
+           Defaults 0/1 preserve existing parameters and initialization. -->
+      <xs:element name="transformChooserHidden" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="transformChooserDepth" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- MetaSymbol role-participation Category codebook (doc/Language.md
+           "Participation Categories"). When true, a small role-space
+           VectorQuantize starts with one centroid per labelled grammar role
+           (op_I[n] inputs + op_O1 outputs). Unsettled MetaSymbols accumulate
+           bounded temporary role evidence during PERCEPTION; once stable they
+           commit to one category id and discard the pending row. The
+           structured grammar layers use those role vectors for all transform
+           choosers. Unused centroids decay (natural collapse). Default true. -->
+      <xs:element name="categoryCodebook" type="xs:boolean" minOccurs="0"/>
+      <!-- Online category collapse: run participation.learned_collapse over the
+           live grammar at category-codebook enable time, maintaining the
+           smaller mutually-exclusive category set the grammatical operations
+           mandate. Inspection-only for now (rule choice unchanged). Default
+           false. -->
+      <xs:element name="categoryCollapse" type="xs:boolean" minOccurs="0"/>
+      <!-- Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
+           grammar op force-builds the same zero-init eigenmodifier; this knob
+           only affects ordinary LiftLayer instances. When true for plain
+           LiftLayer, an adverb modifies a composed VP as a SPARSE eigenvalue
+           edit of the verb, masked by the VP's own eigen-signature:
+           a2 = atanh(vp) + p_vp (.) delta_adv. Default false leaves plain
+           LiftLayer's sigma fold byte-identical. -->
+      <xs:element name="adverbEigEdit" type="xs:boolean" minOccurs="0"/>
+      <!-- Mereological order-raising (doc/specs/mereological-order-raising.md).
+           When true, perception's autobind hook builds a meronymic lattice over
+           the two towers and raises mereological nodes as attention requires by
+           synthesizing a higher-order PART when many parts collapse onto one
+           whole, relinking it and pruning the moot part-whole edges. The exact
+           sigma/pi derivation path is recorded separately in the always-built
+           ramsification table; its depth is not the mereological rank. Default
+           false: no lattice raising (the provenance table still exists). -->
+      <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Radial STM idea folds (Alec 2026-07-13): the bounded reducer's
+           conjunction/disjunction hosts use radmin/radmax and the radial
+           recommender filters (signed-safe; identical to the lattice pair
+           on non-negative activations). Default FALSE = byte-identical. -->
+      <xs:element name="radialStmReduce" type="xs:boolean" minOccurs="0"/>
+      <!-- Concept index-read (Alec 2026-07-15): the serial per-word idea
+           RESOLVES and lights up the already-known OBJECT concept (formed by
+           the parallel path) — its random signed-hypersphere similarity_codebook
+           row replaces the collapsing computed percept-binding in the idea's
+           content slice. Default FALSE = byte-identical. -->
+      <xs:element name="conceptIndexRead" type="xs:boolean" minOccurs="0"/>
+      <!-- RETIRED (2026-07-02 P3 two-phase forward, decision 10): phase
+           separation makes non-replacement structural; the symbolic
+           phase's outputs feed the SS leg, the head-side losses, and the
+           concept table, never substituting the subsymbolic advance.
+           Parsed only to emit a DeprecationWarning. -->
+      <xs:element name="sparseReplace" type="xs:boolean" minOccurs="0"/>
+      <!-- Passes on which conceptual demand may retarget perception to a
+           region or mereological level: all (default), off, or comma-
+           separated indices in 1..subsymbolicOrder-1. Pass 0 reads the
+           initial field; subsymbolicOrder remains the processing bound. -->
+      <!-- SymbolSpace 3-stream peer bind (2026-06-21, Slice B). When true, the
+           terminal ConceptualCombine is built with n_streams=3 and bind_streams
+           routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
+           false -> the 2-stream (PS, WS) bind -> byte-identical. -->
+      <xs:element name="symbolTower" type="xs:boolean" minOccurs="0"/>
+      <!-- Relevance integration (Architecture sec C, origin x axis): when
+           true the cutover assembles the per-tower salience/novelty +
+           symbolic-history priority and the pyramid's top-K consumes it as
+           a ranking bias. Default false -> byte-identical. -->
+      <xs:element name="relevance" type="xs:boolean" minOccurs="0"/>
+      <!-- Exponential decay of the SEEN priming toward neutral 1.0, applied
+           at each seen-write (sec C simplified law). Default 0.9. -->
+      <xs:element name="primingDecay" type="xs:decimal" minOccurs="0"/>
+      <!-- Energy-dissipating prime diffusion (2026-07-12): the fraction of a
+           connected row's standing energy that moves to its neighbors (per-
+           source normalized over the concept store's |edge| weights) at each
+           prime event; successive primes propagate energy further out.
+           Live by default (0.25); 0 restores pure decay+bump. -->
+      <xs:element name="primingSpread" type="xs:decimal" minOccurs="0"/>
+      <!-- Discover concepts in a row pool by witnessed context and use. -->
+      <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="conceptPoolSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="conceptUseEWMA" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMintThreshold" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptRecycleThreshold" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptPartFloor" type="unitInterval" minOccurs="0"/>
+
+      <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
+           attention"). When true, a learned .where producer runs at each t>0
+           subsymbolic pass and writes _passback_scope_where (the normalized
+           [start, end] reading scope) on the stage-0 WholeSpace for the
+           <mereologyRaise> top-down handoff to consume. The producer scores the
+           staged analysis spans (the word brackets) from a query built off the
+           prior pass's concept + the active STM symbols (a small learned MLP
+           over detached features; the gradient stops at the primed symbols, so
+           the EMA-only VQ codebooks are untouched), under a monotonic/coverage
+           mask + a shift bootstrap (init selects the next span = the for-loop).
+           In text mode (dataType embedding) training, a next-word cross-entropy
+           term trains the producer to land on the next word. Default false: no
+           module allocated, no scope written, no loss (byte-identical). -->
+      <!-- Global attention (doc/specs/reading-attention.md "(B) Global
+           attention"). When true, a free, content/relation-driven attention
+           ranges over a TYPED addressable space - the input window, STM, LTM,
+           and the ConceptualSpace codebook (the meronomy+taxonomy inventory) -
+           emitting a typed .where (which space + the [start,end] bracket) and a
+           soft-read of the addressed content (parked on _global_attention_obs).
+           Unlike reading attention it has no monotonic mask and no next-word
+           target, so it requires a task signal to break symmetry. The gradient stops at the
+           keys (the codebook/LTM rows are EMA/persistent, detached); only the
+           scorer readout trains. Dark by default: no module, the soft-read is
+           parked not fed back, so the forward is byte-identical (the consumer
+           that feeds the read into the task is a later slice). -->
+      <!-- Global-attention CONSUMER (doc/specs/reading-attention.md "(B)").
+           When true, the parked soft-read is fed BACK into the head (the
+           "answer") as a zero-init gated residual, so the answer/output loss
+           trains the retrieval (gradient through the read, the attention
+           distribution, the scorer; the codebook/LTM stores stay detached).
+           This closes global attention's loop: the retrieval-augmented answer
+           mechanism for the question-answering stages. The LTM address space is
+           the parsed TruthSet (ltm_store), so "reading over the TruthSet stored
+           in LTM" is the SPACE_LTM read fed back here. Requires
+           globalAttention. Default false keeps the soft-read parked (B
+           unchanged), byte-identical. -->
+      <!-- answerSynthesis (What spec Steps 3-4, 2026-09-09): construct the
+           answer through resolve -> ConceptualSpace.synthesize ->
+           PerceptualSpace.synthesize -> OutputSpace.from_percepts instead of
+           the direct symbol projection. Default false keeps the established
+           projected head byte-identical. -->
+      <xs:element name="answerSynthesis" type="xs:boolean" minOccurs="0"/>
+      <!-- synthesisBindings: number of perceptual context slots a derivation
+           may NAME as bindings for answer synthesis (spec 5.3). 0 = none. -->
+      <xs:element name="synthesisBindings" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- whatCurriculum (Step 9): none | present | temporal | full; a
+           deterministic fraction (whatCurriculumRatio) of training batches ask
+           past/future (temporal) or inference (full) questions at
+           whatCurriculumDistance. none -> byte-identical. -->
+      <xs:element name="whatCurriculum" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="present"/>
+            <xs:enumeration value="temporal"/>
+            <xs:enumeration value="full"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="whatCurriculumDistance" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="whatCurriculumRatio" type="unitInterval" minOccurs="0"/>
+      <!-- whatThinkingDetach (spec 8.2): the episode credit boundary.
+           slot = detach every interaction value at append (established);
+           episode = values appended inside begin/end_what_episode stay live
+           until the episode ends (after the optimizer step). -->
+      <xs:element name="whatThinkingDetach" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="slot"/>
+            <xs:enumeration value="episode"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- Retained compatibility metadata. think() has one presentation;
+           attentionBudget bounds its grammatical controller. -->
+      <xs:element name="whatThinkingIterations" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Bounded work for one normal selected grammatical-thought episode.
+           Zero permits only the defined cutoff/finish drain. -->
+      <xs:element name="attentionBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
+           do not enable episodes, memory, or policy training. -->
+      <xs:element name="whatThinkingHidden" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="whatThinkingDepth" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- whatThinkingPressure (spec 6.4): closure-pressure schedule,
+           monotone with p(L-1) = 1. -->
+      <xs:element name="whatThinkingPressure" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="linear"/>
+            <xs:enumeration value="quadratic"/>
+            <xs:enumeration value="step"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- Reconstruct from the idea rather than replaying the forward parse.
+           When true, reverse() clears SymbolSpace's current/generate rules and
+           the signal-router's last route, then calls generate on the supplied
+           idea snapshot to infer which reverse operations should run. Default
+           false preserves the ordinary cached-derivation reverse path. -->
+      <xs:element name="reconstructFromIdea" type="xs:boolean" minOccurs="0"/>
+      <!-- Shared normal-controller work allowance for reason_about and
+           answer_query: choices, reads, traversal and all children. Default 1;
+           zero disables these explicit APIs. Natural text must first own a
+           selected completed meaning. -->
+      <xs:element name="reasoningIterations" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Shared work allowance for think_about on the same controller.
+           Absent or zero disables this API. No second kernel result exists. -->
+      <!-- DEPRECATED alias for reasoningIterations (the prior boolean gate).
+           When true it enables reasoning at the shared work allowance (10); prefer
+           <reasoningIterations>. Default false. -->
+      <xs:element name="queryReasoning" type="xs:boolean" minOccurs="0"/>
+      <!-- Serial word-at-a-time object/meta (doc/specs/mereological-order-
+           raising.md "Serial-mode word-at-a-time loop"). When true (serial
+           traversal only), InputSpace owns a fixed-width word loop and hands
+           each complete word's local percept ids/mask/locations to PartSpace.
+           PS performs the M-to-1 synthesis inside that iteration, then one
+           aligned word concept commits to STM. Whole-sentence context re-enters
+           via the §6c prelude's gist/intent. Independent of <mereologyRaise>.
+           Default false keeps the legacy per-slot path. -->
+      <xs:element name="serialObjectMeta" type="xs:boolean" minOccurs="0"/>
+      <!-- Maximum number of surface words traversed by the OUTER serial
+           sentence loop. Independent of PartSpace/WholeSpace field width and
+           ConceptualSpace STM capacity: grammar reductions keep the bounded
+           STM live while this loop may traverse a much longer sentence. -->
+      <xs:element name="serialWordCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Fixed raw radix-residual extent P presented to the compiled word
+           loop. It is an input layout, not PartSpace's live field width. -->
+      <xs:element name="serialResidualPartCapacity"
+                  type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Comma-separated staging capacities for serial traversal. The eager
+           InputSpace stem selects the smallest width that contains the
+           longest sentence in the batch; serialWordCapacity remains the hard
+           maximum. A tensor while-loop configuration may provide only that
+           maximum (for example "256"): runtime execution then stops at the
+           final live column without compiling smaller shapes. -->
+      <xs:element name="serialWordBuckets" type="xs:string" minOccurs="0"/>
+      <!-- Truth / Ideas routing is structural, not flag-gated: accepted
+           relative relations reduce to WS META when both entity operands snap
+           to existing WS codebook rows; otherwise the composed-idea relation is
+           stored explicitly with scalar trust. The <trust> multiplier below
+           applies to incoming assertions/testimony before they enter the
+           TruthSet, LTM, or learned-relation stores. -->
+      <!-- LTM consolidation (doc/specs/mereological-order-raising.md "Truth /
+           Ideas processing", "Two consolidation questions"; Alec 2026-06-18).
+           When true, the discourse LTM (InterSentenceLayer end-state chain) and
+           the RelativeTruthStore are COMBINED into ONE unified TernaryTruthStore
+           tensor (Layers.TernaryTruthStore): rows (NP1, VP, NP2) of FULL idea
+           vectors + a per-row timestamp + a scalar trust, stored UNSCALED. The
+           store is constructed on SymbolicSubSpace (ltm_store), written at the
+           observe site (every end-state appends a row), retired RelativeTruthStore
+           (relative_store is built ONLY when this gate is OFF), persists via
+           submodule registration (rides the state_dict) and survives Reset
+           (it is an attribute, not in self.layers). reason/verify_relation read
+           it on the content-width slice. Augmentable from an XML <truthSet> at
+           load (provision_ltm). Off by default -> the legacy two-store path
+           (byte-identical). This gate governs the storage home; the
+           reduce-or-describe routing itself is structural. -->
+      <xs:element name="ltmConsolidation" type="xs:boolean" minOccurs="0"/>
+      <!-- LTM provisioning (doc/specs/mereological-order-raising.md "Augment the
+           LTM by parsing a TruthSet from XML config"; Alec 2026-06-18). A set of
+           trusted truths appended to the consolidated LTM at model load
+           (provision_ltm), earliest timestamps. Each <truth> carries the text
+           (the 'text' attribute or element content) and a 'trust' value in
+           [-1, 1]. Grammar determines the field's structure; provenance
+           supplies no declared kind. Trust is multiplied by architecture.<trust>. Read only
+           when <ltmConsolidation> is on and an ltm_store exists; otherwise
+           ignored. See <trust> for the runtime (JSON)
+           truth-ingest path; this is the static, config-time provisioning path. -->
+      <xs:element name="truthSet" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="truth" minOccurs="0" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:simpleContent>
+                  <xs:extension base="xs:string">
+                    <xs:attribute name="text" type="xs:string"/>
+                    <xs:attribute name="trust" type="xs:decimal"/>
+                  </xs:extension>
+                </xs:simpleContent>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <!-- Stateless server (mirrors the WikiOracle server.stateless flag;
+           the shipped deployment runs in stateless mode). When true
+           (DEFAULT), each request is self-contained: the runtime request-body
+           TruthSet (store_truths, ORIGIN_USER rows in the consolidated LTM) is
+           NOT durable, so on every state_dict load the LTM is revived WITHOUT
+           the user rows (only the config-provisioned and conversation rows
+           persist) and the TruthLayer view is rematerialized. Set false for a
+           stateful deployment where a saved checkpoint's user rows are the
+           durable state and must survive reload. Read only when
+           <ltmConsolidation> is on. -->
+      <xs:element name="stateless" type="xs:boolean" minOccurs="0"/>
+      <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
+           protocol. In serial mode every sentence opens with an
+           independent PARALLEL prelude of <subsymbolicOrder> pumps
+           (pump zero: EMA on, intent-only commit — the gist primes
+           both towers via §5 set_intent; nothing enters the
+           workspace), then the per-word serial task runs under the
+           §6d serial partition; the gist re-pumps on preemption only.
+           Default false until the author's cutover. -->
+      <xs:element name="sentenceProtocol" type="xs:boolean" minOccurs="0"/>
+      <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
+           per-word router-fire gating for serial mode.
+             per-word  = fire symbolSpace.compose once per word in the
+                         serial per-word loop (intra-predictor routing
+                         context); boundary fire OFF.
+             boundary  = fire only at the sentence boundary
+                         (_chart_compose_at_C / _chart_generate_from_stm);
+                         the inter-sentence predictor's routing snapshot.
+             both      = (DEFAULT) per-word AND boundary both fire.
+             off       = neither fires. -->
+      <xs:element name="routerWireSerial" type="routerWireSerialEnum" minOccurs="0"/>
+      <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
+      <!-- Meronomy mode (MeronomySpec; MeronomyPlan Stage 9 cutover,
+           2026-06-11): "on" binds the meronymic slots (PS.sigma /
+           WS.pi) directly to the membership kernels via the
+           membership-native adapter and
+           enables the interface factoring, the pole-quotient
+           reference-half lookup, and the word/object binding table.
+           Text on|off (default off in code; the cutover sets "on" in
+           model.xml). dMaxStable bounds the complete learned fold's
+           inverse gain (default 4.0). -->
+      <xs:element name="meronomy" minOccurs="0">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="dMaxStable" type="nonNegativeFloat"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
+      <!-- Master switch for symbolic-priming heat (forward working memory);
+           default false = off, zero training-path cost. Plan
+           2026-06-06-symbolic-heat-retrieval. -->
+      <xs:element name="symbolicPriming" type="xs:boolean" minOccurs="0"/>
+      <!-- Retrieval scalar knobs for heat-biased candidate scoring
+           (plan §Configuration, doc/plans/2026-06-06-symbolic-heat-retrieval.md).
+           All optional; defaults preserved in code (off by default when
+           attention=off).  retrievalTopKContent / retrievalTopKHeat: candidate
+           union sizes.  retrievalOuterTopK: active rows for outer-heat builders.
+           retrievalAlpha / retrievalBeta: content-sim / heat-log weights.
+           retrievalGamma / retrievalDelta: first- / second-order carrier weights
+           (zero = off = byte-identical to primer mode).
+           retrievalUseOuterProduct: reserved for future dense-C gating. -->
+      <xs:element name="retrievalTopKContent" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="retrievalTopKHeat" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="retrievalOuterTopK" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="retrievalAlpha" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalBeta" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalGamma" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalDelta" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalUseOuterProduct" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
+      <!-- Trial-split: fraction of training batches run as pure next-idea
+           prediction trials (reconstruction terms zeroed). 0.0 -> off ->
+           byte-identical. -->
+      <xs:element name="predictionTrialRatio" type="unitInterval" minOccurs="0"/>
+      <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="data" type="dataType" minOccurs="0"/>
+      <xs:element name="training" type="trainingType" minOccurs="0"/>
+      <!-- Architecture-level embedding-training override. Models.py reads
+           ``trainEmbeddings`` (and singular ``trainEmbedding``) from the
+           architecture block ahead of ``<training><trainEmbedding>``; the
+           boolean plural form maps true -> BOTH, false -> NONE. -->
+      <xs:element name="trainEmbeddings" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
+      <xs:element name="server" type="serverType" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="monotonic" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="LuminosityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="UniversalityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Quaternary-corner balance knobs (tetralemma / catuskoti): select
+           which corners of {T, F, N, B} are permitted during training. See
+           basicmodel/doc/Philosophy.md for the 4-valued (quaternary)
+           truth semantics.
+             allowExcludedMiddle:  1  = permit NEITHER (default)
+                                  -1  = forbid NEITHER (classical LEM)
+             allowContradiction:   0  = forbid BOTH (default, non-contradiction)
+                                   1  = permit BOTH (paraconsistent / LP)
+       -->
+      <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
+      <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
+      <!-- Shared tetralemma policy block for ConceptualSpace /
+           WholeSpace; per-space override via that section's
+           ``<tetralemmaOverride enabled="true">`` plus its own nested
+           <TetralemmaPolicy>. -->
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="amp" type="ampModeEnum" minOccurs="0"/>
+      <!-- Runtime device default (cpu | gpu | cuda | mps). Env override:
+           BASICMODEL_DEVICE. Gate fixtures pin cpu: MPS kernels are
+           nondeterministic, so a seeded gate only reproduces on CPU. -->
+      <xs:element name="device" type="xs:string" minOccurs="0"/>
+      <!-- L1 penalty on lift / lower gates. 0 disables. -->
+      <xs:element name="gateL1Lambda" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Sparse-MoE load-balance loss weight. Currently inert: the
+           load-balance bookkeeping retired with the chart and this knob
+           has no consumer yet; it stands by for future signal-router
+           rule load-balancing. -->
+      <xs:element name="loadBalanceWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="maxActivePerLayer" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Single continuous truth bar in [0, 1] (read onto ConceptualSpace
+           AND WholeSpace; overridable per-space). 0 = record/accept all
+           truths, 1 = none. Governs BOTH content-aware learned-relation
+           codebook insertion and WholeSpace truth recording (gold +
+           training). Replaces the retired binary accumulateTruth /
+           truthMinMagnitude switches. -->
+      <!-- Model-level trust in incoming assertions/testimony. Effective
+           signed DoT = this multiplier * incoming trust. For persisted STM
+           descriptions, absolute rows store this event trust and relative rows
+           apply it to the relation's collapsed scalar trust. -->
+      <xs:element name="trust" type="unitInterval" minOccurs="0"/>
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="symbolLearning" type="symbolLearningType" minOccurs="0"/>
+      <!-- Per-stage chart re-parse retired 2026-05-12 alongside chart-
+           at-stem.  The chart now fires uniformly at C-tier inside
+           every body stage; the legacy reparse knob is no longer read. -->
+      <!-- Retired compatibility knob. MereologicalTree has been removed;
+           values are accepted but ignored. -->
+      <xs:element name="mereologicalTreeSize" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Optional: dump POS-labelled syntax tree at end of every
+           MentalModel.forward(); see doc/Language.md "POS side-channel". -->
+      <xs:element name="writeSyntax" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="syntaxOutPath" type="xs:string" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MentalModel section — present only for MentalModel configs
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="mentalModelType">
+    <xs:all>
+      <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+      <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Enumerations
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- Data tier (was the architecture-level <modelType>). embedding = the
+       text / language-model path (PartSpace owns the byte/word Embedding
+       lexicon); numeric = the dense-slab path (InputSpace carries a plain
+       Tensor; e.g. MNIST pixels). Lives in <data> as <dataType>. -->
+  <xs:simpleType name="dataTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="embedding"/>
+      <xs:enumeration value="numeric"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ampModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="off"/>
+      <xs:enumeration value="fp16"/>
+      <xs:enumeration value="bf16"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="conceptBindingEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="mixing"/>
+      <xs:enumeration value="aligned"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Task 4 per-word router-fire gating (doc/plans/2026-05-29-stm-
+       serial-parallel-modes.md §4). -->
+  <xs:simpleType name="routerWireSerialEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="per-word"/>
+      <xs:enumeration value="boundary"/>
+      <xs:enumeration value="both"/>
+      <xs:enumeration value="off"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Placement-chooser kind for the structured grammar layers. -->
+  <xs:simpleType name="transformChooserEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="anchordot"/>
+      <xs:enumeration value="mlp"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Tri-state codebook mode. Canonical values: none | quantize |
+       project. Legacy booleans true/false are accepted as deprecated
+       aliases (true -> quantize, false -> none) to match
+       Space.normalize_codebook_mode's backward-compat parsing; prefer the
+       canonical names in new configs. -->
+  <xs:simpleType name="codebookModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="quantize"/>
+      <xs:enumeration value="project"/>
+      <xs:enumeration value="true"/>
+      <xs:enumeration value="false"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="chartCollapseEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="root"/>
+      <xs:enumeration value="broadcast"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Span of the Pi/Sigma operator (replaces the boolean butterfly knob):
+       last = per-slot (last dim only); butterfly = O(N log N) cross-dim
+       cascade; full = dense flattened square matrix (full interconnect, the
+       square invertible bridge). Default last. See doc/specs/2026-06-05-
+       dimensional-governance.md. -->
+  <xs:simpleType name="sigmaPiEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="last"/>
+      <xs:enumeration value="butterfly"/>
+      <xs:enumeration value="full"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ``reconstructEnum`` / the ``<reconstruct>`` element were RETIRED
+       (A1, 2026-06-09). The ConceptualCombine now UNCONDITIONALLY integrates
+       all three streams (PS + SS + CS); the former ``perfect`` skip-combine
+       mode is gone, so reconstruction is unconditionally from concepts. -->
+
+  <!-- Per-space symbolic-RETRIEVAL mode (doc/plans/2026-06-06-symbolic-
+       heat-retrieval.md, Handoff addendum). This is NOT transformer/QKV
+       self-attention: the attention element selects how the reverse path
+       biases codebook-row retrieval (content proximity + taxonomy heat).
+         off          : no heat-biased retrieval; current reverse behavior
+                        (DEFAULT; configs with no attention resolve here).
+         primer       : row heat only (Taxonomy._priming / priming_mask).
+         second-order : dense feature-space carrier C = A_S^T diag(r_S) A_S.
+         low-rank     : active factors U = diag(sqrt(r_S)) A_S; Cq = U^T(Uq)
+                        without materializing C.
+       The legacy boolean hasAttention (which formerly requested a QKV
+       AttentionLayer in PartSpace/ConceptualSpace) is DEPRECATED and
+       inert; it is kept only as a backward-compat alias (data/model.xml still
+       sets it). New configs should use the attention element instead. The
+       mode is stored on the owning space and consumed by the reverse-
+       retrieval path (later tasks); off preserves current behavior. -->
+  <xs:simpleType name="attentionModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="off"/>
+      <xs:enumeration value="primer"/>
+      <xs:enumeration value="second-order"/>
+      <xs:enumeration value="low-rank"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Stage 3 cleanup (2026-05-27): parserBackendEnum and
+       routerKindEnum retired alongside the chart. The signal router
+       (LanguageLayer) is the canonical parser. -->
+
+  <!-- ``<symbolLearning enabled="true"/>``: the code reads the ``enabled``
+       attribute (architecture.symbolLearning.enabled). A nested
+       ``<enabled>`` child is also accepted for back-compat. -->
+  <xs:complexType name="symbolLearningType">
+    <xs:all>
+      <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+    <xs:attribute name="enabled" type="xs:boolean" use="optional"/>
+  </xs:complexType>
+
+  <xs:simpleType name="trainEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NONE"/>
+      <xs:enumeration value="CBOW"/>
+      <xs:enumeration value="SBOW"/>
+      <xs:enumeration value="BACKPROP"/>
+      <xs:enumeration value="BOTH"/>
+      <xs:enumeration value="JOINT"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="datasetEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="xor"/>
+      <xs:enumeration value="phrases"/>
+      <xs:enumeration value="grammar"/>
+      <xs:enumeration value="substitution"/>
+      <xs:enumeration value="queries"/>
+      <xs:enumeration value="sequences"/>
+      <xs:enumeration value="mnist"/>
+      <xs:enumeration value="tomatoes"/>
+      <xs:enumeration value="text"/>
+      <xs:enumeration value="inline"/>
+      <!-- exact dependency-arithmetic / linear-constraint problems
+           (bin/exact.py MathProblemGenerator; mathematical thinking spec 4). -->
+      <xs:enumeration value="math"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="lexerEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="word"/>
+      <xs:enumeration value="sentence"/>
+      <xs:enumeration value="byte"/>
+      <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
+           meronymic analyzer (chunking="analyse") owns all tokenization. -->
+      <xs:enumeration value="raw"/>
+      <!-- ``meronomy`` (doc/Mereology.md#mereological-algorithm): the canonical analyzer;
+           meet-from-top (all-1), the 1-x mirror of the meronomy synthesizer,
+           cutting a whole into subordinate parts by boundary properties
+           (first approximation: OR(space, punct) word split). -->
+      <xs:enumeration value="meronomy"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unitInterval">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0.0"/>
+      <xs:maxInclusive value="1.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="nonNegativeFloat">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="positiveFloat">
+    <xs:restriction base="xs:float">
+      <xs:minExclusive value="0.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Data section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="dataType">
+    <!-- xs:choice allows multiple <input>/<output> elements (inline data mode) -->
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <!-- embedding (text/LM, the default for language configs) | numeric
+           (dense slab, e.g. MNIST). Was the architecture-level <modelType>. -->
+      <xs:element name="dataType" type="dataTypeEnum"/>
+      <xs:element name="conceptLessons" type="xs:string"/>
+      <xs:element name="dataset" type="datasetEnum"/>
+      <xs:element name="numShards" type="xs:positiveInteger"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger"/>
+      <!-- Whole-sentence admission ceiling. Records above the limit are
+           excluded intact; they are never truncated into partial examples. -->
+      <xs:element name="maxSentenceWords" type="xs:positiveInteger"/>
+      <xs:element name="shardDir" type="xs:string"/>
+      <xs:element name="grammarLessons" type="xs:string"/>
+      <!-- Stable name of the corpus/book/conversation whole that scopes
+           objective Teacher addresses. This is not written into the model's
+           subjective .where/.when event bands. -->
+      <xs:element name="contextWhole" type="xs:string"/>
+      <xs:element name="minFrequency" type="nonNegativeFloat"/>
+      <xs:element name="classificationMin" type="xs:string"/>
+      <xs:element name="classificationMax" type="xs:string"/>
+      <!-- <dataset>math</dataset> generator parameters (mathematical
+           thinking spec 4): integer range R (answers are one-hot over
+           [0, R) so OutputSpace.nOutput must equal it), the trained
+           depth list, the held-out test depth list, the maximum number of
+           distractor premises, the stage (1 = dependency chains, 2 =
+           simultaneous linear constraints), the generator seed, and the
+           number of generated problems. -->
+      <xs:element name="mathRange" type="xs:positiveInteger"/>
+      <xs:element name="mathDepths" type="xs:string"/>
+      <xs:element name="mathTestDepths" type="xs:string"/>
+      <xs:element name="mathDistractors" type="xs:nonNegativeInteger"/>
+      <xs:element name="mathStage" type="xs:nonNegativeInteger"/>
+      <!-- stage 0 operators: comma list of add / sub / mul (default add), or
+           succ: the successor "n plus one", every fact trained (Alec 2026-09-09:
+           addition is iterated succession). -->
+      <xs:element name="mathOperators" type="xs:string"/>
+      <xs:element name="mathSeed" type="xs:nonNegativeInteger"/>
+      <xs:element name="mathProblems" type="xs:positiveInteger"/>
+      <xs:element name="input">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="use" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="output">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="use" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Training section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="trainingType">
+    <xs:all>
+      <xs:element name="numTrials" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="numEpochs" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- RNG seed for the whole run (torch/python/numpy). Pins
+           construction-time init and data order so single CLI runs are
+           reproducible; the XOR_exact gates rely on this. Env override:
+           BASIC_SEED. -->
+      <xs:element name="seed" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Pack consecutive complete sentences independently within each
+           contiguous batch row up to serialWordCapacity. The compiled brick
+           owns row-local soft sentence boundaries; no sentence is clipped. -->
+      <xs:element name="packSentences" type="xs:boolean" minOccurs="0"/>
+      <!-- DataLoader prefetch workers. 0 means synchronous in-process
+           batch assembly. -->
+      <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="learningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Independent priority of normalized reconstruction terms;
+           it does not subtract from the answer's priority. -->
+      <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+      <!-- Every N batches, log weighted reconstruction/output/expectation
+           norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
+      <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Centralize complete-present-input reconstruction, clean targets,
+           objective corpus addresses, and loss reporting in Teacher. The
+           objective address is separate supervision/conditioning metadata;
+           Teacher never overwrites subjective .where/.when. -->
+      <xs:element name="teacherReconstruction" type="xs:boolean" minOccurs="0"/>
+      <!-- When true, serial reconstruction trains an idea-only reverse
+           construction student from stopgrad(S), with ReconstructionStack's
+           rule/arity/leaves as detached targets. This removes the long
+           reverse-through-forward recurrent gradient. -->
+      <xs:element name="reconstructInLoop" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="reconstructionPlacement" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="graph"/>
+            <xs:enumeration value="compiled"/>
+            <xs:enumeration value="eager"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- Bound candidates per side of a lossy reconstruction search.
+           Independent of word and STM capacity; pair work is at most K*K. -->
+      <xs:element name="reconstructionBasisLimit" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="outputInLoop" type="xs:boolean" minOccurs="0"/>
+      <!-- Weight of sampled output-action credit from supplied supervised
+           answer error. Input compose choices are not answer supervision;
+           unavailable targets and zero weight give no policy update. -->
+      <xs:element name="outputPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="grammarLessonWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Per-band comparison weights for event losses. These are distinct
+           from the reconstruction objective's overall priority. -->
+      <xs:element name="whatScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Retired separate soft bridge policy. Zero remains loadable for
+           old configurations; nonzero values are rejected by model setup. -->
+      <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Retired separate next-idea blend. Zero remains loadable for old
+           configurations; nonzero values are rejected by model setup. -->
+      <xs:element name="predictNextLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Historical zero-valued policy metadata. Thought credit now uses
+           the shared grammar chooser and compose's paired cost rule. -->
+      <xs:element name="thinkingLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whatThinkingPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Method-1 -> Method-2 leaf distillation weight (doc/plans/
+           2026-07-14-signed-space-snap-design.md, step 3): trains the
+           LeafDecoderHead to regenerate the EXACT per-word leaves (the
+           Method-1 teacher slab) from the collapsed sentence root, so the
+           root stays SEPARABLE per sentence (the measured attractor
+           collapse). 0.0 = off (byte-identical; the head is not built). -->
+      <xs:element name="leafDistillWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
+      <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
+      <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Weight of the conceptual-similarity SBOW loss (the rotation SBOW that
+           situates ConceptualSpace.similarity_codebook, which is always built).
+           Default 0.0 = the SBOW does not fire and the forward is byte-identical;
+           > 0 trains the codebook in the parallel (symbolicOrder=0) forward. -->
+      <xs:element name="conceptualSimilarityScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Context-owned update law for the aligned serial concept dictionary.
+           Positive values convert its construction Parameter into a persistent
+           non-grad buffer, remove it from all optimizer/RowLocalAdam groups,
+           and rotate the initially unit-norm atoms once per completed
+           sentence. Mutually exclusive with conceptualSimilarityScale. -->
+      <xs:element name="conceptualContextLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Number of deterministic detached negative prototype rows used by
+           the contextual rotation reducer. Default 4 when omitted. -->
+      <xs:element name="conceptualContextNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="conceptualContextSituationWeight" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptualContextSituationAnchors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="conceptualContextExpectationWeight" type="unitInterval" minOccurs="0"/>
+      <!-- <definitionSparsityScale> (snap contract sec 5, 2026-07-06): lambda
+           for the rank-ordered soft-L0 that keeps concept definitions compact
+           (shrinks the surplus concept->symbol in-edges past definitionFreeSize).
+           Default 0.0 = no penalty, byte-identical. -->
+      <xs:element name="definitionSparsityScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
+      <!-- Automatic sentence expectation; ARMA remains separately weighted.
+           sentenceExpectation replaces the retired sentencePrediction name. -->
+      <xs:element name="byteExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="byteExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="byteExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="byteExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="wordExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="wordExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="wordExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="wordExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="rowExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="rowExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="rowExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="rowExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="independenceWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="independencePriorScale" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="independenceMintThreshold" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="sentenceExpectationScope" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="structured"/>
+            <xs:enumeration value="root"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="sentenceExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="expectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="expectationPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="expectationQueryBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- In-STM autoregressive prediction (IntraSentenceLayer). Loss
+           weight on the per-word L_intra = MSE(predicted idea, observed
+           idea), added to the IR-loss path. The PI-then-Sigma predictor
+           is owned by ConceptualSpace. -->
+      <xs:element name="intraLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Inter-sentence end-state prediction. Structured scope scores
+           distinct occupied NP1/VP/NP2 vectors plus presence logits;
+           root scope retains the historical single-vector MSE baseline.
+           This scales the mean over eligible observed sentences. -->
+      <xs:element name="sentenceExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- InfoNCE next-idea contrastive term: weight + softmax temperature.
+           Reuses the InterSentenceLayer end-state chain (positive next root
+           ranked above the chain's past roots). 0.0 weight -> MSE-only
+           (byte-identical). -->
+      <xs:element name="sentenceExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="interContrastiveTemp" type="positiveFloat" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Server section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="serverType">
+    <xs:all>
+      <xs:element name="host" type="xs:string" minOccurs="0"/>
+      <xs:element name="port" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="timeout" type="xs:positiveInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Space types
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <xs:complexType name="inputSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+      <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
+           the <lexer> element moved to WholeSpace - lexing is analytic
+           cutting, owned by the analysis side. An InputSpace-side <lexer>
+           now fails schema validation AND the runtime reader. -->
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="partSpaceType">
+    <xs:all>
+      <xs:element name="identityByParts" type="xs:boolean" minOccurs="0"/>
+      <!-- Identity's sparse form is D pair coordinates plus L length bits.
+           Text model construction resolves the native form/event width from
+           these values; numeric models retain their configured dimensions. -->
+      <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="identityLengthDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="identityBindingDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Native part-event width (compact percept WHAT plus the canonical
+           band). In aligned serialObjectMeta it may be narrower than CS, but
+           its sparse sigma/codebook activation reads the conceptual-width
+           code before CS; CS does not project these coordinates. -->
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Logical ceiling for boundary-safe radix percept growth.  When
+           omitted it resolves to nVectors (fixed physical capacity). -->
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
+           default off. Supersedes <hasAttention>. See attentionModeEnum
+           and doc/plans/2026-06-06-symbolic-heat-retrieval.md. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+           optional butterfly cascade on PartSpace.pi for
+           cross-element FFT-style mixing over the flattened [B, N*D]
+           view. When ``butterfly=true`` the PiLayer is built with the
+           cascade enabled. The cascade length N is AUTO-COMPUTED from
+           the space shape (nInput * nInputDim) and internally padded to
+           the next power of two; there is no explicit length knob (the
+           former ``<butterflyN>`` element was retired 2026-06-05; the
+           cascade derives N from the shape). Default off; configs that
+           don't opt in see the legacy PiLayer construction unchanged. -->
+      <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
+           -> last). New configs should use architecture-level <sigmaPi> instead. -->
+      <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
+      <!-- PartSpace is subsymbolic: its <codebook> element was retired
+           (2026-06-09, asymmetric-VQ plan §7 task 7). PS behaviour is fixed
+           to "none" (continuous .event passthrough; percept prototypes live
+           on the .what Embedding). Only WholeSpace carries a <codebook>. -->
+      <!-- Concept-dictionary VQ / growing-capacity knobs. Logical prefix
+           activation belongs only to ConceptualSpace; WholeSpace properties
+           use an independent inventory and growth lifecycle. -->
+      <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- wordLearning (formerly chunkingFrequency): controls active
+           lexicon growth. 0 = frozen codebook (training-time default);
+           >=1 = on first sight of a new word, insert it into the
+           lexicon and tag it as a part of the "words" symbol on the
+           meronomy. Only embed.py sets >0 at lexicon-build time. -->
+      <xs:element name="wordLearning" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Phase 4 of the analysis/synthesis dual-input plan (rev.
+           2026-06-09): the perceptual front-end knob is SYNTHESIS,
+           the bottom-up union of atoms into chunks/surface forms. It
+           was named ``<chunking>``; the legacy spelling is REJECTED
+           LOUDLY by the PartSpace reader (no silent aliasing).
+           ``analyse`` is accepted here only until Phase 4b moves the
+           meronymic analyzer to WholeSpace <analysis>. -->
+      <xs:element name="synthesis" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="meronomy"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- Stage 7: radix-mode promotion knobs. ``chunkPromotionThreshold``
+           is the byte-fallback hit count at which an unknown chunk
+           gets promoted into the trie + codebook (default 4).
+           ``chunkPromotionMinLength`` is the minimum chunk length
+           (in bytes) below which promotion never fires (default 2).
+           Both are ignored when chunking != "radix". -->
+      <xs:element name="chunkPromotionThreshold"
+                  type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="chunkPromotionMinLength"
+                  type="xs:positiveInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="modalSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode; default off. See attentionModeEnum. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+      <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="wherePassThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="whenPassThrough" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="conceptualSpaceType">
+    <xs:all>
+      <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="symbolCentroid" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="membershipPriming" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
+           0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
+      <xs:element name="conceptReadoutL1" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Category utility / chunk admission (doc/plans/2026-09-10-meronomy-
+           fold-ladder.md, contracts 4 and 7): Laplace smoothing of the
+           utility counts, the minimum evidence before a concept's utility is
+           trusted, and the recurrence count before a candidate is admitted. -->
+      <xs:element name="utilitySmoothing" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="utilityMinCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="admissionCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="utilityPriorRate" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Identity radius for admission; defaults to sqrt(WholeSpace.lbgThreshold). -->
+      <xs:element name="admissionRadius" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Concept event width. In aligned serialObjectMeta, nInputDim must
+           already equal this width: PS/WS/SS sparse sigma/codebook activation
+           owns any dimension increase before the value reaches CS. -->
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode; default off. Supersedes <hasAttention>.
+           See attentionModeEnum. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Optional butterfly cascade on the ConceptualSpace sigma fold
+           (cross-element mixing; the cascade length is auto-computed from
+           the space shape; see partSpaceType/butterfly). -->
+      <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
+           -> last). New configs should use architecture-level <sigmaPi> instead. -->
+      <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+      <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
+           wholeSpaceType; see comments there). -->
+      <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Initially selectable prefix of the physically preallocated
+           nVectors inventory. Runtime growth activates more prefix rows in
+           place, preserving Parameter and optimizer identity. VQ computation
+           specializes once at each newly activated prefix width. -->
+      <xs:element name="activeVectors" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+      <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
+           concept definition may use for free (genus + differentia = 2);
+           the rank-ordered L0 penalty shrinks only the surplus past this.
+           Pairs with stmCapacity (the hard ceiling). Default 2. -->
+      <xs:element name="definitionFreeSize" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- perWordStemSerial: when true, the per-word stem uses a
+           causal cursor loop (option (a) from the K-microbatch
+           design discussion) instead of the parallel-over-AR-windows
+           default.  Serial path: B-sized STM accumulates one new
+           word per step; after the K-loop the snapshots are staged
+           as [B*K, K, D_c] for the body's chart-at-C parallelism.
+           Work drops from O(B*K*N) to O(B*K) in the stem.  Inductor
+           unrolls the loop when K is shape-bucketed (BPE power-of-
+           two quantisation). -->
+      <xs:element name="perWordStemSerial" type="xs:boolean" minOccurs="0"/>
+      <!-- Per-space override of architecture.attentionPromotion. -->
+      <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="conceptPoolSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="conceptUseEWMA" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMintThreshold" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptRecycleThreshold" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptPartFloor" type="unitInterval" minOccurs="0"/>
+
+      <!-- META taxonomy seed/advisory text. The runtime parent/child and
+           part-property -> concept maps are ConceptualSpace structure and
+           serialize through its structural checkpoint sidecar. WholeSpace is
+           upstream and contains property vectors only. -->
+      <xs:element name="taxonomy" type="xs:string" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="wholeSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Native whole/property event width. Canonical aligned models keep it
+           equal to PartSpace's native event width. A conceptual-width
+           nInputDim is the recurrent input interface; it does not make WS a
+           downstream PS stage and does not change WS's native output width. -->
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <!-- Initial WholeSpace property-vector inventory. It is independent of
+           ConceptualSpace.nVectors and downstream symbol-reference capacity.
+           Canonical text models may begin with a small ASCII property basis;
+           future dynamic properties can grow it only at an explicit ownership
+           reset boundary. -->
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- <initScale> (2026-07-06 fidelity leg, doc/plans/2026-07-06-concepts-
+           formalization-and-snap-contract-*.md): per-row seed magnitude for
+           this space's property codebook and freshly discovered properties.
+           Small values (~0.02) keep the
+           sigma/pi folds in their linear regime (tanh saturation grows with
+           fold depth x row scale). Omitted / 0 = current behavior (unit /
+           [-1,1] hypercube prefill), byte-identical. Direction-preserving: a
+           uniform per-row scale leaves dot-product argmax selection
+           unchanged. -->
+      <xs:element name="initScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
+           WholeSpace owns the top-down ANALYSIS knobs.
+           <lexer> (moved here from InputSpace): the intake granularity
+           InputSpace executes - lexing is analytic cutting.
+           <analysis>: the division strategy over the unity view.
+             byte    = uniform contiguous regions (default; the stage-0
+                       region-mean pooling).
+             word    = whitespace-cut parts; per-part coarse means.
+             analyse = the meronymic analyzer front end (space-lexer cut
+                       today; the bottom-up merge integration follows with
+                       the deeper SS analyzer work, Phases 5-6). -->
+      <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+      <!-- <analyzer> REPLACES <lexer> (doc/Mereology.md#mereological-algorithm): tokenization is
+           analytic cutting, owned by the analysis side (the meet-from-top
+           mereological analyzer). <lexer> is the deprecated spelling; the
+           config reader accepts both, preferring <analyzer>. -->
+      <xs:element name="analyzer" type="lexerEnum" minOccurs="0"/>
+      <!-- Task 5 (C-13, asymmetric-vq sec.6): the post-sentence semantic
+           arrangement weight over SS heat (pode attraction + antipode
+           repulsion on the activated codebook rows). Default 0 = OFF:
+           the mechanism is validated under D (corpus, serial path). -->
+      <xs:element name="semanticArrangement" type="nonNegativeFloat"
+                  minOccurs="0"/>
+      <xs:element name="analysis" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="meronomy"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <!-- T3 (doc/plans/2026-07-10-wholes-are-types-segmentation.md):
+           within-whole division of unattested type-runs into attested
+           concepts. A type-run whole whose surface is NOT itself an attested
+           percept divides by greedy longest-match tiling into attested
+           standalone concepts (complete tilings only; an attested whole
+           always stays ONE concept). "Attested" = a multi-byte percept-store
+           entry (promotion = standalone recurrence), or a single byte that
+           has occurred as its own type-run; spell_out's seeded byte
+           percepts alone do not attest. Default TRUE (live wiring); explicit
+           false keeps the undivided span (the pre-T3 unattested fallback). -->
+      <xs:element name="divideWithinWhole" type="xs:boolean" minOccurs="0"/>
+      <!-- Every DIGIT byte is a whole by itself at the analysis cut, so a
+           numeral word divides into its digits (each with its own .where).
+           Default false (byte-identical). Alec 2026-09-10: the digit whole. -->
+      <xs:element name="digitWholes" type="xs:boolean" minOccurs="0"/>
+      <!-- Initialisation of the learned boundary predicates (fold-ladder
+           plan, contract 3): canonical (the four classes as priors) or none
+           (no boundary type; the cold-start test). -->
+      <xs:element name="boundaryLearningRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="boundaryDensityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="boundaryUpdateEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="boundaryTypeWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Present whitespace runs as units whose grammatical operation is
+           the null operation (fold-ladder plan, contract 3), instead of
+           discarding them as a boundary-only class. Default false. -->
+      <xs:element name="whitespaceUnits" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="boundaryTypes" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="canonical"/>
+            <xs:enumeration value="none"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
+           default off. WholeSpace has no hasAttention legacy alias:
+           it never constructed a QKV AttentionLayer. See attentionModeEnum
+           and doc/plans/2026-06-06-symbolic-heat-retrieval.md. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Optional butterfly cascade on the WholeSpace sigma operator
+           (cross-slot mixing, needed for tasks like XOR that combine
+           positions; the cascade length is auto-computed from the space
+           shape; see partSpaceType/butterfly). -->
+      <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
+           -> last). New configs should use architecture-level <sigmaPi> instead. -->
+      <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+      <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- VQ-VAE EMA decay (``VectorQuantize.decay``).  Higher = slower
+           adaptation, more stable assignment across time; lower =
+           faster drift but less stable.  Default 0.9 (see
+           doc/Spaces.md §"Codebook drift sync"). -->
+      <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
+      <!-- Dead-code retire: when a slot's EMA ``cluster_size`` falls
+           below ``codebookEmaDeadThreshold``, replace it with a fresh
+           sample from the current input batch.  Off by default
+           because reseeding can blow up the effective number of
+           distinct codes on non-stationary data; enable for
+           growing-codebook semantics where novel inputs should evict
+           rarely-used slots. -->
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Novelty insertion threshold for ε-growing codebook semantics.
+           When > 0, ``VectorQuantize.grow_on_novelty`` inserts an input
+           vector into an empty slot whenever its min-distance to the
+           live codebook exceeds this value.  0 disables (use
+           dead-code retire above, or fixed-size codebook). -->
+      <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="decorrelationWeight" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="impenetrableAntisymmetry" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableTransitivity" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableOverlap" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableVariance" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="outputSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- lrScale: multiplier on the base learning rate for the OutputSpace
+           (readout) parameters only; they go in their own Adam group at
+           lr*lrScale. Default 1.0 (single group, byte-identical). >1 lets the
+           ill-conditioned, co-adapting regression readout track the upstream
+           features faster so it converges to a crisp solution within the
+           epoch budget. -->
+      <xs:element name="lrScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="conceptIds" type="xs:string" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SymbolSpace section — unified container for grammar infrastructure
+       (SyntacticLayers, TruthLayer) and the per-batch inter-sentence
+       ARMA(p, q) predictor (InterSentenceLayer). Sentence-level AR
+       lives here, not in the within-sentence body — the body is now
+       a pure IR (masked-LM) forward.
+
+       InterSentenceLayer shape knobs live in this section
+       (armaP / armaQ / armaHiddenDim); the loss weight lives under
+       <architecture><training> as <armaScale>.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="symbolSpaceType">
+    <xs:all>
+      <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- InterSentenceLayer ARMA(p, q) shape knobs. p = AR lag count
+           (number of previous sentence reps); q = MA lag count
+           (number of previous prediction errors); armaHiddenDim is
+           the MLP predictor's hidden layer width.  Defaults: p=5,
+           q=2, hiddenDim=2*sentence_dim (computed at construction
+           time when omitted). -->
+      <xs:element name="armaP" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="armaQ" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="armaHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Long-term-memory (LTM) chain capacity: the InterSentenceLayer
+           bounds its per-row chain of STM end-states (the AR sequence
+           used for inter-sentence prediction) at this many entries.
+           Separate from <truthMaxEntries> (TruthLayer's SS-codebook
+           capacity). Default 1024. -->
+      <xs:element name="ltmCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Stage 3 cleanup (2026-05-27): parserBackend, routerKind,
+           chartTau, chartTopK, chartNoiseEps retired alongside
+           the chart. The signal router (LanguageLayer) is the
+           canonical parser. The retired elements raise loud
+           ValueError at config load time; see
+           Language._assert_retired_chart_knobs_absent. -->
+      <!-- Soft-superposition output collapse mode; preserved for the
+           signal router's root-state writeback contract. -->
+      <xs:element name="chartCollapse" type="chartCollapseEnum" minOccurs="0"/>
+      <!-- Per-word stem is the only path. Each word does an individual
+           P->C->S->C round trip in the stem, ideas accumulate on
+           ConceptualSpace.stm, and the chart fires at C over STM in the
+           body. ``perWordStem`` knob removed 2026-05-12; legacy chart-
+           at-stem launch retired in the same pass. -->
+      <!-- Number of P->C iterations per word in the per-word stem path. -->
+      <xs:element name="iterationsPerWord" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Downward generation: when true, MentalModel.forward() emits a
+           codebook head via SymbolSpace.reconstruct() and stashes it on
+           self._predicted_head for downstream (e.g. loss) consumption. -->
+      <xs:element name="downwardGeneration" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="language" type="languageType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="embeddingsType">
+    <xs:all>
+      <xs:element name="numShards" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="vectorSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="trainingEpochs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="minCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="artifactPath" type="xs:string" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Language section (inside <SymbolSpace>)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <!-- ``start`` may repeat: multiple ``<start>`` tags define accepted
+       unreduced forms / start patterns (see test_grammar_start_rule), so
+       this uses xs:sequence (start* then grammar? then interpretation?)
+       rather than xs:all (which caps each child at one). -->
+  <xs:complexType name="languageType">
+    <xs:sequence>
+      <xs:element name="start" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+      <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="grammarType" mixed="true">
+    <!-- Grammar XML is intentionally open: configs may carry inline
+         tier tags (<P>, <C>, <S>) and structured sections such as
+         <compose>/<generate>, OR a bare text filename reference
+         (``<grammar>complete.grammar</grammar>``) that
+         ``SymbolicSubSpace.load_from_grammar_file`` resolves under
+         ``data/``. ``mixed="true"`` admits both forms. Language.py
+         owns rule parsing. -->
+    <xs:sequence>
+      <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="grammarSectionType">
+    <xs:sequence>
+      <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

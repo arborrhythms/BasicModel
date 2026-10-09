@@ -1,0 +1,105 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+    "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles"
+  ],
+  "completed": [
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+    "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021733297035098076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015214580344036222,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001388750970363617,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011202499736100435,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011087500024586916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009746333002112806,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.22999745910055935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015765000134706497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 19.035206457949243,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=1.257s)\r\nbatch = 2 (\u0394=1.566s)\r\nbatch = 3 (\u0394=1.344s)\r\nbatch = 4 (\u0394=1.133s)\r\nbatch = 5 (\u0394=1.171s)\r\nbatch = 6 (\u0394=1.184s)\r\nbatch = 7 (\u0394=3.697s)\r\nbatch = 8 (\u0394=1.527s)\r\nbatch = 9 (\u0394=1.485s)\r\nbatch = 10 (\u0394=1.296s)\r\nbatch = 11 (\u0394=1.347s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

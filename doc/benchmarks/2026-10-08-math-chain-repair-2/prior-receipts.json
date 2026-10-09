@@ -1,0 +1,14 @@
+[
+  {
+    "path": "doc/benchmarks/2026-10-07-math-chain",
+    "files": 2393,
+    "manifest_sha256": "639316f1245e48f81381314c081fea7570713ef07c068a3c7eb5b5d6368780cf",
+    "mismatches": []
+  },
+  {
+    "path": "doc/benchmarks/2026-10-08-math-chain-repair",
+    "files": 1967,
+    "manifest_sha256": "b5ef8580dcc80f3856ef74854d6b808791ddd3e73241893cc8574d5ba565dc9c",
+    "mismatches": []
+  }
+]

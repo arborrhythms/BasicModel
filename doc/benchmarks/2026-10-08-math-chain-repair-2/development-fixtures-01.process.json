@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operators_round2c.py",
+    "test/test_operators_final_b.py"
+  ],
+  "pid": 68341,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 938428072,
+  "elapsed_seconds": 9.833162249997258,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-fixtures-01.log"
+}

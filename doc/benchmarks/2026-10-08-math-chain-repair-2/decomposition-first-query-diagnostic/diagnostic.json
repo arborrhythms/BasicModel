@@ -1,0 +1,284 @@
+{
+  "forced": true,
+  "passing_certificate": false,
+  "source_learner_unchanged": true,
+  "episodes": [
+    {
+      "row": 0,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -1559228764191093711
+        ]
+      ],
+      "after": [
+        [
+          "ltm",
+          "address-v1",
+          -1559228764191093711
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -1559228764191093711
+        ]
+      ],
+      "before_open": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "after_open": [],
+      "bound_roles": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "answers": {
+        "x": false,
+        "y": true,
+        "three": false,
+        "four": false
+      },
+      "operations": [
+        "query",
+        "conclude"
+      ],
+      "kinds": [
+        "begin",
+        "thought",
+        "thought",
+        "finish"
+      ],
+      "query_results": [
+        {
+          "request": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -7825336735022034057
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1559228764191093711
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7153345903847168443
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "request": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -7825336735022034057
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1559228764191093711
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7153345903847168443
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": 1,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3321233772524009716
+        ]
+      ],
+      "after": [
+        [
+          "ltm",
+          "address-v1",
+          3321233772524009716
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3321233772524009716
+        ]
+      ],
+      "before_open": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "after_open": [],
+      "bound_roles": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "answers": {
+        "x": false,
+        "y": true,
+        "three": false,
+        "four": false
+      },
+      "operations": [
+        "query",
+        "conclude"
+      ],
+      "kinds": [
+        "begin",
+        "thought",
+        "thought",
+        "finish"
+      ],
+      "query_results": [
+        {
+          "request": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -2530786060124289378
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3321233772524009716
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  8518347859875645269
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "request": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -2530786060124289378
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3321233772524009716
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  8518347859875645269
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "forcing": "Grammar choices and query operand/operation preference only; live masked alternatives and keep costs."
+}

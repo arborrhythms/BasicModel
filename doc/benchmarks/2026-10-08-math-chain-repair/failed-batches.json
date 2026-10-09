@@ -1,0 +1,1584 @@
+{
+  "method": "Read saved first presentation; apply the unchanged document_batches function after the successful-sentence count in observer.json. No model is run. These are the next scheduled batches, not a claim identifying which row caused the error.",
+  "attempts_covered": 30,
+  "runs": [
+    {
+      "name": "answer_and_expectation-01",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 86,
+      "next_batch": [
+        {
+          "source_index": 7,
+          "document": "train:pair:2:8",
+          "sentence": 0,
+          "text": "u is one."
+        },
+        {
+          "source_index": 40,
+          "document": "train:pair:0:8",
+          "sentence": 0,
+          "text": "x is zero."
+        },
+        {
+          "source_index": 161,
+          "document": "train:pair:1:8",
+          "sentence": 0,
+          "text": "v is fifteen."
+        },
+        {
+          "source_index": 405,
+          "document": "train:pair:3:8",
+          "sentence": 0,
+          "text": "y is x plus eight."
+        },
+        {
+          "source_index": 652,
+          "document": "train:pair:9:8",
+          "sentence": 0,
+          "text": "v is two."
+        },
+        {
+          "source_index": 708,
+          "document": "train:pair:10:8",
+          "sentence": 0,
+          "text": "x is ten."
+        },
+        {
+          "source_index": 733,
+          "document": "train:pair:5:8",
+          "sentence": 0,
+          "text": "v is nineteen."
+        },
+        {
+          "source_index": 794,
+          "document": "train:pair:8:8",
+          "sentence": 0,
+          "text": "v is eleven."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-02",
+      "error": "ValueError('a sentence end state occupies one or three slots')",
+      "completed_sentences": 52,
+      "next_batch": [
+        {
+          "source_index": 5,
+          "document": "train:pair:9:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 115,
+          "document": "train:pair:1:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 134,
+          "document": "train:pair:7:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 308,
+          "document": "train:pair:2:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 376,
+          "document": "train:pair:6:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 384,
+          "document": "train:pair:8:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 413,
+          "document": "train:pair:5:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 521,
+          "document": "train:pair:10:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-03",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 16,
+      "next_batch": [
+        {
+          "source_index": 1268,
+          "document": "count:3:copula",
+          "sentence": 0,
+          "text": "three plus one is four."
+        },
+        {
+          "source_index": 1375,
+          "document": "count:19:copula",
+          "sentence": 0,
+          "text": "nineteen plus one is twenty."
+        },
+        {
+          "source_index": 1437,
+          "document": "count:13:copula",
+          "sentence": 0,
+          "text": "thirteen plus one is fourteen."
+        },
+        {
+          "source_index": 1438,
+          "document": "count:0:copula",
+          "sentence": 0,
+          "text": "zero plus one is one."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-04",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 140,
+      "next_batch": [
+        {
+          "source_index": 15,
+          "document": "train:pair:10:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 207,
+          "document": "train:pair:6:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 241,
+          "document": "train:pair:2:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 384,
+          "document": "train:pair:5:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 749,
+          "document": "train:pair:9:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 815,
+          "document": "train:pair:3:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 965,
+          "document": "train:pair:1:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        },
+        {
+          "source_index": 1001,
+          "document": "train:pair:8:1",
+          "sentence": 5,
+          "text": "one is zero plus one."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-05",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 16,
+      "next_batch": [
+        {
+          "source_index": 1213,
+          "document": "count:4:copula",
+          "sentence": 0,
+          "text": "four plus one is five."
+        },
+        {
+          "source_index": 1253,
+          "document": "count:12:copula",
+          "sentence": 0,
+          "text": "twelve plus one is thirteen."
+        },
+        {
+          "source_index": 1288,
+          "document": "count:15:copula",
+          "sentence": 0,
+          "text": "fifteen plus one is sixteen."
+        },
+        {
+          "source_index": 1352,
+          "document": "count:13:copula",
+          "sentence": 0,
+          "text": "thirteen plus one is fourteen."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-06",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 16,
+      "next_batch": [
+        {
+          "source_index": 2,
+          "document": "train:pair:1:7",
+          "sentence": 2,
+          "text": "v is twelve."
+        },
+        {
+          "source_index": 83,
+          "document": "train:pair:10:7",
+          "sentence": 2,
+          "text": "v is four."
+        },
+        {
+          "source_index": 446,
+          "document": "train:pair:8:7",
+          "sentence": 2,
+          "text": "v is two."
+        },
+        {
+          "source_index": 558,
+          "document": "train:pair:9:7",
+          "sentence": 2,
+          "text": "x is nine."
+        },
+        {
+          "source_index": 615,
+          "document": "train:pair:0:7",
+          "sentence": 2,
+          "text": "x is zero."
+        },
+        {
+          "source_index": 670,
+          "document": "train:pair:6:7",
+          "sentence": 2,
+          "text": "v is one."
+        },
+        {
+          "source_index": 1033,
+          "document": "train:pair:7:7",
+          "sentence": 2,
+          "text": "x is seven."
+        },
+        {
+          "source_index": 1047,
+          "document": "train:pair:4:7",
+          "sentence": 2,
+          "text": "y is x plus seven."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-07",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 16,
+      "next_batch": [
+        {
+          "source_index": 2,
+          "document": "train:pair:1:7",
+          "sentence": 2,
+          "text": "v is one."
+        },
+        {
+          "source_index": 99,
+          "document": "train:pair:4:7",
+          "sentence": 2,
+          "text": "u is two."
+        },
+        {
+          "source_index": 334,
+          "document": "train:pair:5:7",
+          "sentence": 2,
+          "text": "u is eighteen."
+        },
+        {
+          "source_index": 423,
+          "document": "train:pair:3:7",
+          "sentence": 2,
+          "text": "v is eleven."
+        },
+        {
+          "source_index": 464,
+          "document": "train:pair:0:7",
+          "sentence": 2,
+          "text": "v is nineteen."
+        },
+        {
+          "source_index": 639,
+          "document": "train:pair:10:7",
+          "sentence": 2,
+          "text": "u is seven."
+        },
+        {
+          "source_index": 684,
+          "document": "train:pair:9:7",
+          "sentence": 2,
+          "text": "x is nine."
+        },
+        {
+          "source_index": 735,
+          "document": "train:pair:6:7",
+          "sentence": 2,
+          "text": "y is x plus seven."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-08",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 162,
+      "next_batch": [
+        {
+          "source_index": 15,
+          "document": "train:pair:6:2",
+          "sentence": 1,
+          "text": "u is four."
+        },
+        {
+          "source_index": 24,
+          "document": "train:pair:1:2",
+          "sentence": 1,
+          "text": "x is one."
+        },
+        {
+          "source_index": 114,
+          "document": "train:pair:5:2",
+          "sentence": 1,
+          "text": "u is two."
+        },
+        {
+          "source_index": 537,
+          "document": "train:pair:4:2",
+          "sentence": 1,
+          "text": "x is four."
+        },
+        {
+          "source_index": 676,
+          "document": "train:pair:0:2",
+          "sentence": 1,
+          "text": "y is x plus two."
+        },
+        {
+          "source_index": 787,
+          "document": "train:pair:2:2",
+          "sentence": 1,
+          "text": "y is x plus two."
+        },
+        {
+          "source_index": 830,
+          "document": "train:pair:7:2",
+          "sentence": 1,
+          "text": "x is seven."
+        },
+        {
+          "source_index": 960,
+          "document": "train:pair:8:2",
+          "sentence": 1,
+          "text": "x is eight."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-09",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 36,
+      "next_batch": [
+        {
+          "source_index": 3,
+          "document": "train:pair:5:1",
+          "sentence": 2,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 73,
+          "document": "train:pair:9:1",
+          "sentence": 2,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 96,
+          "document": "train:pair:7:1",
+          "sentence": 2,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 255,
+          "document": "train:pair:8:1",
+          "sentence": 2,
+          "text": "v is five."
+        },
+        {
+          "source_index": 428,
+          "document": "train:pair:10:1",
+          "sentence": 2,
+          "text": "u is nineteen."
+        },
+        {
+          "source_index": 621,
+          "document": "train:pair:4:1",
+          "sentence": 2,
+          "text": "u is eighteen."
+        },
+        {
+          "source_index": 650,
+          "document": "train:pair:1:1",
+          "sentence": 2,
+          "text": "x is one."
+        },
+        {
+          "source_index": 727,
+          "document": "train:pair:2:1",
+          "sentence": 2,
+          "text": "v is eight."
+        }
+      ]
+    },
+    {
+      "name": "answer_and_expectation-10",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 64,
+      "next_batch": [
+        {
+          "source_index": 8,
+          "document": "train:pair:1:3",
+          "sentence": 8,
+          "text": "three plus one is four."
+        },
+        {
+          "source_index": 177,
+          "document": "train:pair:10:3",
+          "sentence": 8,
+          "text": "twelve plus one is thirteen."
+        },
+        {
+          "source_index": 394,
+          "document": "train:pair:2:3",
+          "sentence": 8,
+          "text": "four plus one is five."
+        },
+        {
+          "source_index": 706,
+          "document": "train:pair:0:3",
+          "sentence": 8,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 728,
+          "document": "train:pair:4:3",
+          "sentence": 8,
+          "text": "six plus one is seven."
+        },
+        {
+          "source_index": 895,
+          "document": "train:pair:5:3",
+          "sentence": 8,
+          "text": "seven plus one is eight."
+        },
+        {
+          "source_index": 1005,
+          "document": "train:pair:9:3",
+          "sentence": 8,
+          "text": "eleven plus one is twelve."
+        },
+        {
+          "source_index": 1273,
+          "document": "train:pair:6:3",
+          "sentence": 8,
+          "text": "eight plus one is nine."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-01",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 75,
+      "next_batch": [
+        {
+          "source_index": 6,
+          "document": "train:pair:2:8",
+          "sentence": 0,
+          "text": "u is one."
+        },
+        {
+          "source_index": 37,
+          "document": "train:pair:0:8",
+          "sentence": 0,
+          "text": "x is zero."
+        },
+        {
+          "source_index": 147,
+          "document": "train:pair:1:8",
+          "sentence": 0,
+          "text": "v is fifteen."
+        },
+        {
+          "source_index": 370,
+          "document": "train:pair:3:8",
+          "sentence": 0,
+          "text": "y is x plus eight."
+        },
+        {
+          "source_index": 598,
+          "document": "train:pair:9:8",
+          "sentence": 0,
+          "text": "v is two."
+        },
+        {
+          "source_index": 650,
+          "document": "train:pair:10:8",
+          "sentence": 0,
+          "text": "x is ten."
+        },
+        {
+          "source_index": 673,
+          "document": "train:pair:5:8",
+          "sentence": 0,
+          "text": "v is nineteen."
+        },
+        {
+          "source_index": 729,
+          "document": "train:pair:8:8",
+          "sentence": 0,
+          "text": "v is eleven."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-02",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 68,
+      "next_batch": [
+        {
+          "source_index": 7,
+          "document": "train:pair:9:1",
+          "sentence": 6,
+          "text": "nine plus one is ten."
+        },
+        {
+          "source_index": 109,
+          "document": "train:pair:1:1",
+          "sentence": 6,
+          "text": "one plus one is two."
+        },
+        {
+          "source_index": 126,
+          "document": "train:pair:7:1",
+          "sentence": 6,
+          "text": "seven plus one is eight."
+        },
+        {
+          "source_index": 287,
+          "document": "train:pair:2:1",
+          "sentence": 6,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 350,
+          "document": "train:pair:6:1",
+          "sentence": 6,
+          "text": "six plus one is seven."
+        },
+        {
+          "source_index": 357,
+          "document": "train:pair:8:1",
+          "sentence": 6,
+          "text": "eight plus one is nine."
+        },
+        {
+          "source_index": 383,
+          "document": "train:pair:5:1",
+          "sentence": 6,
+          "text": "five plus one is six."
+        },
+        {
+          "source_index": 482,
+          "document": "train:pair:10:1",
+          "sentence": 6,
+          "text": "ten plus one is eleven."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-03",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 84,
+      "next_batch": [
+        {
+          "source_index": 9,
+          "document": "train:pair:9:8",
+          "sentence": 8,
+          "text": "eleven plus one is twelve."
+        },
+        {
+          "source_index": 298,
+          "document": "train:pair:6:8",
+          "sentence": 8,
+          "text": "eight plus one is nine."
+        },
+        {
+          "source_index": 397,
+          "document": "train:pair:10:8",
+          "sentence": 8,
+          "text": "twelve plus one is thirteen."
+        },
+        {
+          "source_index": 455,
+          "document": "train:pair:3:8",
+          "sentence": 8,
+          "text": "five plus one is six."
+        },
+        {
+          "source_index": 600,
+          "document": "train:pair:8:8",
+          "sentence": 8,
+          "text": "ten plus one is eleven."
+        },
+        {
+          "source_index": 714,
+          "document": "train:pair:0:8",
+          "sentence": 8,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 831,
+          "document": "train:pair:5:8",
+          "sentence": 8,
+          "text": "seven plus one is eight."
+        },
+        {
+          "source_index": 882,
+          "document": "train:pair:7:8",
+          "sentence": 8,
+          "text": "nine plus one is ten."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-04",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 138,
+      "next_batch": [
+        {
+          "source_index": 15,
+          "document": "train:pair:10:1",
+          "sentence": 6,
+          "text": "ten plus one is eleven."
+        },
+        {
+          "source_index": 193,
+          "document": "train:pair:6:1",
+          "sentence": 6,
+          "text": "six plus one is seven."
+        },
+        {
+          "source_index": 223,
+          "document": "train:pair:2:1",
+          "sentence": 6,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 355,
+          "document": "train:pair:5:1",
+          "sentence": 6,
+          "text": "five plus one is six."
+        },
+        {
+          "source_index": 690,
+          "document": "train:pair:9:1",
+          "sentence": 6,
+          "text": "nine plus one is ten."
+        },
+        {
+          "source_index": 751,
+          "document": "train:pair:3:1",
+          "sentence": 6,
+          "text": "three plus one is four."
+        },
+        {
+          "source_index": 889,
+          "document": "train:pair:1:1",
+          "sentence": 6,
+          "text": "one plus one is two."
+        },
+        {
+          "source_index": 922,
+          "document": "train:pair:8:1",
+          "sentence": 6,
+          "text": "eight plus one is nine."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-05",
+      "error": "RuntimeError('index 54 is out of bounds for dimension 1 with size 47')",
+      "completed_sentences": 76,
+      "next_batch": [
+        {
+          "source_index": 8,
+          "document": "train:pair:7:5",
+          "sentence": 7,
+          "text": "eight plus one is nine."
+        },
+        {
+          "source_index": 33,
+          "document": "train:pair:2:5",
+          "sentence": 7,
+          "text": "three plus one is four."
+        },
+        {
+          "source_index": 72,
+          "document": "train:pair:5:5",
+          "sentence": 7,
+          "text": "six plus one is seven."
+        },
+        {
+          "source_index": 437,
+          "document": "train:pair:1:5",
+          "sentence": 7,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 484,
+          "document": "train:pair:8:5",
+          "sentence": 7,
+          "text": "nine plus one is ten."
+        },
+        {
+          "source_index": 521,
+          "document": "train:pair:6:5",
+          "sentence": 7,
+          "text": "seven plus one is eight."
+        },
+        {
+          "source_index": 871,
+          "document": "train:pair:4:5",
+          "sentence": 7,
+          "text": "five plus one is six."
+        },
+        {
+          "source_index": 916,
+          "document": "train:pair:10:5",
+          "sentence": 7,
+          "text": "eleven plus one is twelve."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-06",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 24,
+      "next_batch": [
+        {
+          "source_index": 3,
+          "document": "train:pair:1:7",
+          "sentence": 3,
+          "text": "u is fourteen."
+        },
+        {
+          "source_index": 78,
+          "document": "train:pair:10:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 409,
+          "document": "train:pair:8:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 513,
+          "document": "train:pair:9:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 565,
+          "document": "train:pair:0:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 615,
+          "document": "train:pair:6:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 951,
+          "document": "train:pair:7:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 964,
+          "document": "train:pair:4:7",
+          "sentence": 3,
+          "text": "u is zero."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-07",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 24,
+      "next_batch": [
+        {
+          "source_index": 3,
+          "document": "train:pair:1:7",
+          "sentence": 3,
+          "text": "x is one."
+        },
+        {
+          "source_index": 92,
+          "document": "train:pair:4:7",
+          "sentence": 3,
+          "text": "v is eight."
+        },
+        {
+          "source_index": 307,
+          "document": "train:pair:5:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 391,
+          "document": "train:pair:3:7",
+          "sentence": 3,
+          "text": "u is zero."
+        },
+        {
+          "source_index": 428,
+          "document": "train:pair:0:7",
+          "sentence": 3,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 590,
+          "document": "train:pair:10:7",
+          "sentence": 3,
+          "text": "x is ten."
+        },
+        {
+          "source_index": 631,
+          "document": "train:pair:9:7",
+          "sentence": 3,
+          "text": "v is nineteen."
+        },
+        {
+          "source_index": 678,
+          "document": "train:pair:6:7",
+          "sentence": 3,
+          "text": "v is two."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-08",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 32,
+      "next_batch": [
+        {
+          "source_index": 4,
+          "document": "train:pair:3:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 32,
+          "document": "train:pair:2:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 114,
+          "document": "train:pair:9:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 420,
+          "document": "train:pair:1:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 450,
+          "document": "train:pair:6:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 459,
+          "document": "train:pair:5:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 580,
+          "document": "train:pair:0:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        },
+        {
+          "source_index": 752,
+          "document": "train:pair:7:1",
+          "sentence": 4,
+          "text": "what is y ?"
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-09",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 36,
+      "next_batch": [
+        {
+          "source_index": 3,
+          "document": "train:pair:5:1",
+          "sentence": 2,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 67,
+          "document": "train:pair:9:1",
+          "sentence": 2,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 88,
+          "document": "train:pair:7:1",
+          "sentence": 2,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 234,
+          "document": "train:pair:8:1",
+          "sentence": 2,
+          "text": "v is five."
+        },
+        {
+          "source_index": 393,
+          "document": "train:pair:10:1",
+          "sentence": 2,
+          "text": "u is nineteen."
+        },
+        {
+          "source_index": 571,
+          "document": "train:pair:4:1",
+          "sentence": 2,
+          "text": "u is eighteen."
+        },
+        {
+          "source_index": 597,
+          "document": "train:pair:1:1",
+          "sentence": 2,
+          "text": "x is one."
+        },
+        {
+          "source_index": 668,
+          "document": "train:pair:2:1",
+          "sentence": 2,
+          "text": "v is eight."
+        }
+      ]
+    },
+    {
+      "name": "expectation_only-10",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 40,
+      "next_batch": [
+        {
+          "source_index": 5,
+          "document": "train:pair:1:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 160,
+          "document": "train:pair:10:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 360,
+          "document": "train:pair:2:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 645,
+          "document": "train:pair:0:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 665,
+          "document": "train:pair:4:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 818,
+          "document": "train:pair:5:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 919,
+          "document": "train:pair:9:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        },
+        {
+          "source_index": 1167,
+          "document": "train:pair:6:3",
+          "sentence": 5,
+          "text": "three is two plus one."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-01",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 16,
+      "next_batch": [
+        {
+          "source_index": 2,
+          "document": "train:pair:1:0",
+          "sentence": 2,
+          "text": "u is two."
+        },
+        {
+          "source_index": 97,
+          "document": "train:pair:5:0",
+          "sentence": 2,
+          "text": "y is x plus zero."
+        },
+        {
+          "source_index": 133,
+          "document": "train:pair:4:0",
+          "sentence": 2,
+          "text": "v is ten."
+        },
+        {
+          "source_index": 271,
+          "document": "train:pair:7:0",
+          "sentence": 2,
+          "text": "x is seven."
+        },
+        {
+          "source_index": 422,
+          "document": "train:pair:8:0",
+          "sentence": 2,
+          "text": "x is eight."
+        },
+        {
+          "source_index": 470,
+          "document": "train:pair:0:0",
+          "sentence": 2,
+          "text": "y is x plus zero."
+        },
+        {
+          "source_index": 575,
+          "document": "train:pair:6:0",
+          "sentence": 2,
+          "text": "u is fifteen."
+        },
+        {
+          "source_index": 616,
+          "document": "train:pair:9:0",
+          "sentence": 2,
+          "text": "u is fourteen."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-02",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 0,
+      "next_batch": [
+        {
+          "source_index": 0,
+          "document": "count:0:copula",
+          "sentence": 0,
+          "text": "zero plus one is one."
+        },
+        {
+          "source_index": 11,
+          "document": "count:11:copula",
+          "sentence": 0,
+          "text": "eleven plus one is twelve."
+        },
+        {
+          "source_index": 12,
+          "document": "count:8:copula",
+          "sentence": 0,
+          "text": "eight plus one is nine."
+        },
+        {
+          "source_index": 48,
+          "document": "count:4:copula",
+          "sentence": 0,
+          "text": "four plus one is five."
+        },
+        {
+          "source_index": 129,
+          "document": "count:14:copula",
+          "sentence": 0,
+          "text": "fourteen plus one is fifteen."
+        },
+        {
+          "source_index": 197,
+          "document": "count:16:copula",
+          "sentence": 0,
+          "text": "sixteen plus one is seventeen."
+        },
+        {
+          "source_index": 213,
+          "document": "count:17:copula",
+          "sentence": 0,
+          "text": "seventeen plus one is eighteen."
+        },
+        {
+          "source_index": 241,
+          "document": "count:10:copula",
+          "sentence": 0,
+          "text": "ten plus one is eleven."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-03",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 0,
+      "next_batch": [
+        {
+          "source_index": 0,
+          "document": "count:8:copula",
+          "sentence": 0,
+          "text": "eight plus one is nine."
+        },
+        {
+          "source_index": 157,
+          "document": "count:16:copula",
+          "sentence": 0,
+          "text": "sixteen plus one is seventeen."
+        },
+        {
+          "source_index": 214,
+          "document": "count:4:copula",
+          "sentence": 0,
+          "text": "four plus one is five."
+        },
+        {
+          "source_index": 402,
+          "document": "count:9:copula",
+          "sentence": 0,
+          "text": "nine plus one is ten."
+        },
+        {
+          "source_index": 419,
+          "document": "count:2:copula",
+          "sentence": 0,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 420,
+          "document": "count:17:copula",
+          "sentence": 0,
+          "text": "seventeen plus one is eighteen."
+        },
+        {
+          "source_index": 464,
+          "document": "count:15:copula",
+          "sentence": 0,
+          "text": "fifteen plus one is sixteen."
+        },
+        {
+          "source_index": 473,
+          "document": "count:5:copula",
+          "sentence": 0,
+          "text": "five plus one is six."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-04",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 0,
+      "next_batch": [
+        {
+          "source_index": 0,
+          "document": "train:pair:8:3",
+          "sentence": 0,
+          "text": "v is seventeen."
+        },
+        {
+          "source_index": 315,
+          "document": "train:pair:1:3",
+          "sentence": 0,
+          "text": "u is thirteen."
+        },
+        {
+          "source_index": 444,
+          "document": "train:pair:10:3",
+          "sentence": 0,
+          "text": "v is two."
+        },
+        {
+          "source_index": 575,
+          "document": "train:pair:0:3",
+          "sentence": 0,
+          "text": "x is zero."
+        },
+        {
+          "source_index": 683,
+          "document": "train:pair:4:3",
+          "sentence": 0,
+          "text": "v is seventeen."
+        },
+        {
+          "source_index": 938,
+          "document": "train:pair:5:3",
+          "sentence": 0,
+          "text": "u is seven."
+        },
+        {
+          "source_index": 1021,
+          "document": "train:pair:3:3",
+          "sentence": 0,
+          "text": "u is zero."
+        },
+        {
+          "source_index": 1031,
+          "document": "train:pair:9:3",
+          "sentence": 0,
+          "text": "y is x plus three."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-05",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 16,
+      "next_batch": [
+        {
+          "source_index": 1213,
+          "document": "count:4:copula",
+          "sentence": 0,
+          "text": "four plus one is five."
+        },
+        {
+          "source_index": 1253,
+          "document": "count:12:copula",
+          "sentence": 0,
+          "text": "twelve plus one is thirteen."
+        },
+        {
+          "source_index": 1288,
+          "document": "count:15:copula",
+          "sentence": 0,
+          "text": "fifteen plus one is sixteen."
+        },
+        {
+          "source_index": 1352,
+          "document": "count:13:copula",
+          "sentence": 0,
+          "text": "thirteen plus one is fourteen."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-06",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 8,
+      "next_batch": [
+        {
+          "source_index": 1,
+          "document": "train:pair:1:7",
+          "sentence": 1,
+          "text": "x is one."
+        },
+        {
+          "source_index": 82,
+          "document": "train:pair:10:7",
+          "sentence": 1,
+          "text": "u is seventeen."
+        },
+        {
+          "source_index": 445,
+          "document": "train:pair:8:7",
+          "sentence": 1,
+          "text": "u is zero."
+        },
+        {
+          "source_index": 557,
+          "document": "train:pair:9:7",
+          "sentence": 1,
+          "text": "v is eight."
+        },
+        {
+          "source_index": 614,
+          "document": "train:pair:0:7",
+          "sentence": 1,
+          "text": "u is six."
+        },
+        {
+          "source_index": 669,
+          "document": "train:pair:6:7",
+          "sentence": 1,
+          "text": "x is six."
+        },
+        {
+          "source_index": 1032,
+          "document": "train:pair:7:7",
+          "sentence": 1,
+          "text": "v is nine."
+        },
+        {
+          "source_index": 1046,
+          "document": "train:pair:4:7",
+          "sentence": 1,
+          "text": "v is twenty."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-07",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 8,
+      "next_batch": [
+        {
+          "source_index": 1,
+          "document": "train:pair:1:7",
+          "sentence": 1,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 98,
+          "document": "train:pair:4:7",
+          "sentence": 1,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 333,
+          "document": "train:pair:5:7",
+          "sentence": 1,
+          "text": "v is sixteen."
+        },
+        {
+          "source_index": 422,
+          "document": "train:pair:3:7",
+          "sentence": 1,
+          "text": "x is three."
+        },
+        {
+          "source_index": 463,
+          "document": "train:pair:0:7",
+          "sentence": 1,
+          "text": "u is twelve."
+        },
+        {
+          "source_index": 638,
+          "document": "train:pair:10:7",
+          "sentence": 1,
+          "text": "y is x plus seven."
+        },
+        {
+          "source_index": 683,
+          "document": "train:pair:9:7",
+          "sentence": 1,
+          "text": "u is three."
+        },
+        {
+          "source_index": 734,
+          "document": "train:pair:6:7",
+          "sentence": 1,
+          "text": "x is six."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-08",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 0,
+      "next_batch": [
+        {
+          "source_index": 0,
+          "document": "train:pair:3:1",
+          "sentence": 0,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 32,
+          "document": "train:pair:2:1",
+          "sentence": 0,
+          "text": "y is x plus one."
+        },
+        {
+          "source_index": 122,
+          "document": "train:pair:9:1",
+          "sentence": 0,
+          "text": "x is nine."
+        },
+        {
+          "source_index": 451,
+          "document": "train:pair:1:1",
+          "sentence": 0,
+          "text": "x is one."
+        },
+        {
+          "source_index": 484,
+          "document": "train:pair:6:1",
+          "sentence": 0,
+          "text": "u is twenty."
+        },
+        {
+          "source_index": 494,
+          "document": "train:pair:5:1",
+          "sentence": 0,
+          "text": "u is sixteen."
+        },
+        {
+          "source_index": 627,
+          "document": "train:pair:0:1",
+          "sentence": 0,
+          "text": "u is two."
+        },
+        {
+          "source_index": 814,
+          "document": "train:pair:7:1",
+          "sentence": 0,
+          "text": "u is fourteen."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-09",
+      "error": "RuntimeError('index 36 is out of bounds for dimension 1 with size 35')",
+      "completed_sentences": 0,
+      "next_batch": [
+        {
+          "source_index": 0,
+          "document": "count:18:copula",
+          "sentence": 0,
+          "text": "eighteen plus one is nineteen."
+        },
+        {
+          "source_index": 38,
+          "document": "count:9:copula",
+          "sentence": 0,
+          "text": "nine plus one is ten."
+        },
+        {
+          "source_index": 160,
+          "document": "count:17:copula",
+          "sentence": 0,
+          "text": "seventeen plus one is eighteen."
+        },
+        {
+          "source_index": 206,
+          "document": "count:2:copula",
+          "sentence": 0,
+          "text": "two plus one is three."
+        },
+        {
+          "source_index": 250,
+          "document": "count:5:copula",
+          "sentence": 0,
+          "text": "five plus one is six."
+        },
+        {
+          "source_index": 377,
+          "document": "count:8:copula",
+          "sentence": 0,
+          "text": "eight plus one is nine."
+        },
+        {
+          "source_index": 394,
+          "document": "count:4:copula",
+          "sentence": 0,
+          "text": "four plus one is five."
+        },
+        {
+          "source_index": 487,
+          "document": "count:13:copula",
+          "sentence": 0,
+          "text": "thirteen plus one is fourteen."
+        }
+      ]
+    },
+    {
+      "name": "zero_attention_budget-10",
+      "error": "RuntimeError('compose has no legal alternative at the selected exploration round')",
+      "completed_sentences": 8,
+      "next_batch": [
+        {
+          "source_index": 1,
+          "document": "train:pair:1:3",
+          "sentence": 1,
+          "text": "x is one."
+        },
+        {
+          "source_index": 170,
+          "document": "train:pair:10:3",
+          "sentence": 1,
+          "text": "v is one."
+        },
+        {
+          "source_index": 387,
+          "document": "train:pair:2:3",
+          "sentence": 1,
+          "text": "y is x plus three."
+        },
+        {
+          "source_index": 699,
+          "document": "train:pair:0:3",
+          "sentence": 1,
+          "text": "x is zero."
+        },
+        {
+          "source_index": 721,
+          "document": "train:pair:4:3",
+          "sentence": 1,
+          "text": "y is x plus three."
+        },
+        {
+          "source_index": 888,
+          "document": "train:pair:5:3",
+          "sentence": 1,
+          "text": "y is x plus three."
+        },
+        {
+          "source_index": 998,
+          "document": "train:pair:9:3",
+          "sentence": 1,
+          "text": "x is nine."
+        },
+        {
+          "source_index": 1266,
+          "document": "train:pair:6:3",
+          "sentence": 1,
+          "text": "y is x plus three."
+        }
+      ]
+    }
+  ]
+}

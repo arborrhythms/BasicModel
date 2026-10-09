@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_math_chain_repair2.py",
+    "-q"
+  ],
+  "pid": 69843,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2200504864,
+  "elapsed_seconds": 12.162115541985258,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/ordinary-footprint-02.log"
+}

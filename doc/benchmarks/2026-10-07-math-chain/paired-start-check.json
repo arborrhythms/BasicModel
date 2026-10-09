@@ -1,0 +1,52 @@
+[
+  {
+    "run": 1,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "f76e535a1f9537ed7d1d73e55c2f9f517c191d731d1c4aa5c6ad2fda9f12d3ca"
+  },
+  {
+    "run": 2,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "a68abd839bfa4ac4a5b0821ac10967ffcc4e21cc06541e67de19ef3190d2ddca"
+  },
+  {
+    "run": 3,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "9048a72c8f8c55bb67e3ad3d8be40aa3e91fb517dd117d88a9b03371ca050b79"
+  },
+  {
+    "run": 4,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "03c7ea4e8d5319719245e665d57066e6794cf48e08b22b67326d9dd7a38b74b0"
+  },
+  {
+    "run": 5,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "720c3659bc220bb1958791f10b137a699cb83ed61f7b37d593a3eb856b63af2e"
+  },
+  {
+    "run": 6,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "6f67829518adbc7bb8d51a76ed37b9300f68e7c3ab5da9bf85163a2ad9a09090"
+  },
+  {
+    "run": 7,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "e33bcd05a8999ba83708b4cbb54c5c40389aaea0568e2e033f1df32ab8ada0b7"
+  },
+  {
+    "run": 8,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "651d782daed5ef249a21b220ad47641cb72345f7850139b638099d24a0acc812"
+  },
+  {
+    "run": 9,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "867ae12f310c45f56ec983ce06cf0d6377d3440ed39c4f98f32bb76776731c66"
+  },
+  {
+    "run": 10,
+    "initial_chooser_parameters_match_across_conditions": true,
+    "saved_entropy_sha256": "be2580b15f9c6ae50f88cc18fcde138bda31b33548311ba8038824d44a2c899c"
+  }
+]

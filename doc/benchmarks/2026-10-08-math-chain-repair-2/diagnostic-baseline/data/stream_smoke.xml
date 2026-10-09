@@ -1,0 +1,65 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- Streaming-path micro smoke: 200 docs, 1 epoch, batchSize=4.
+       Exercises SentenceStreamDataset + _runEpoch_streaming end-to-end
+       without the cost of a full BasicModel training run. -->
+  <architecture>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptLayers>1</conceptLayers>
+    <weightsPath>stream_smoke.ckpt</weightsPath>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <maxDocs>200</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>4</batchSize>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>BACKPROP</trainEmbedding>
+      <autoload>false</autoload>
+      <sentenceExpectation>true</sentenceExpectation>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <codebook>quantize</codebook>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>256</nVectors>
+    <invertible>true</invertible>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>104</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+</model>

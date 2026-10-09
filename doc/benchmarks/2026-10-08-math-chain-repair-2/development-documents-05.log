@@ -1,0 +1,64 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"text": "y is x plus zero.", "source": 0, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 2045737969768970811, "query": null}
+{"text": "v is eight.", "source": 6, "episode": true, "spent": 7, "slots": [["relation", 1]], "refs": [null, null, null], "forward": [], "row_id": -5808139429958203758, "query": [["relation", 1]]}
+{"text": "u is twenty.", "source": 12, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 4550836303648572779, "query": null}
+{"text": "y is x plus zero.", "source": 18, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 5102329375989564987, "query": null}
+{"text": "x is four.", "source": 24, "episode": true, "spent": 32, "slots": [], "refs": [["ltm", "address-v1", 1542182458933338844], ["sym", 3448196359107856985], ["sym", 24]], "forward": null, "row_id": -8748900127925979092, "query": [["referent", 0], ["referent", 2]]}
+{"text": "y is x plus zero.", "source": 30, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 6621498163632193731, "query": null}
+{"text": "v is three.", "source": 36, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -1795707269103792231, "query": null}
+{"text": "x is seven.", "source": 42, "episode": true, "spent": 32, "slots": [], "refs": [["ltm", "address-v1", -3757569401713143158], ["sym", 3448196359107856985], ["sym", 24]], "forward": null, "row_id": 2141982620746399321, "query": [["referent", 0], ["referent", 2]]}
+batch_seconds_total 6.568374125054106 store 35
+batch = 8 (Δ=7.592s)
+{"text": "u is six.", "source": 1, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": 4122467850074949681, "query": null}
+{"text": "u is nineteen.", "source": 7, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -7198764196243483420, "query": null}
+{"text": "v is four.", "source": 13, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -6728654461682284473, "query": null}
+{"text": "v is nineteen.", "source": 19, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": -4825835066719594537, "query": null}
+{"text": "u is twelve.", "source": 25, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 5932467801354001714, "query": null}
+{"text": "x is five.", "source": 31, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": 2700485937798250507, "query": null}
+{"text": "x is six.", "source": 37, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": -8346264741067318814, "query": null}
+{"text": "y is x plus zero.", "source": 43, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 6907801655941928977, "query": null}
+batch_seconds_total 14.159043666091748 store 73
+batch = 16 (Δ=11.641s)
+{"text": "v is nine.", "source": 2, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": 7724180695985137108, "query": null}
+{"text": "x is one.", "source": 8, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -2809531311447470758, "query": null}
+{"text": "x is two.", "source": 14, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 5918372803707605822, "query": null}
+{"text": "u is nine.", "source": 20, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": 3487619599318538959, "query": null}
+{"text": "v is twenty.", "source": 26, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -3625232099613673183, "query": null}
+{"text": "v is twelve.", "source": 32, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": 2063642817788613616, "query": null}
+{"text": "y is x plus zero.", "source": 38, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -7239105374258611690, "query": null}
+{"text": "v is four.", "source": 44, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": -1526259275467281030, "query": null}
+batch_seconds_total 25.800143458065577 store 107
+batch = 24 (Δ=12.404s)
+{"text": "x is zero.", "source": 3, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -2524793888217878000, "query": null}
+{"text": "y is x plus zero.", "source": 9, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 6439181521600318692, "query": null}
+{"text": "y is x plus zero.", "source": 15, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 3860937104168679423, "query": null}
+{"text": "x is three.", "source": 21, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": -3226755332928366329, "query": null}
+{"text": "y is x plus zero.", "source": 27, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 7667345861940900926, "query": null}
+{"text": "u is eight.", "source": 33, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": -2498224497531368958, "query": null}
+{"text": "u is nineteen.", "source": 39, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": -4177642614639174118, "query": null}
+{"text": "u is four.", "source": 45, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -5880428742306379649, "query": null}
+batch_seconds_total 38.20466808299534 store 135
+batch = 32 (Δ=9.761s)
+{"text": "what is y ?", "source": 4, "episode": true, "spent": 7, "slots": [["relation", 1]], "refs": [null, null, null], "forward": [], "row_id": -3361225854471890140, "query": [["relation", 1]]}
+{"text": "what is y ?", "source": 10, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -8698598611340880667, "query": null}
+{"text": "what is y ?", "source": 16, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 8330327393133791832, "query": null}
+{"text": "what is y ?", "source": 22, "episode": true, "spent": 32, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 8415066331618115606, "query": [["referent", 0], ["referent", 2]]}
+{"text": "what is y ?", "source": 28, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -5631043048677082304, "query": null}
+{"text": "what is y ?", "source": 34, "episode": true, "spent": 7, "slots": [["relation", 1]], "refs": [null, null, null], "forward": [], "row_id": -5151002071740443206, "query": [["relation", 1]]}
+{"text": "what is y ?", "source": 40, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -2220745481492655638, "query": null}
+{"text": "what is y ?", "source": 46, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -5442153654030021729, "query": null}
+batch_seconds_total 48.05267137510236 store 165
+batch = 40 (Δ=7.969s)
+{"text": "the answer is zero.", "source": 5, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 8676615696859506628, "query": null}
+{"text": "the answer is one.", "source": 11, "episode": true, "spent": 18, "slots": [], "refs": [["constituent", 0], null, null], "forward": [[0, 16]], "row_id": 1928027912354676128, "query": null}
+{"text": "the answer is two.", "source": 17, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -864646780519031690, "query": null}
+{"text": "the answer is three.", "source": 23, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -8601108959777595824, "query": null}
+{"text": "the answer is four.", "source": 29, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -2369066189046087777, "query": null}
+{"text": "the answer is five.", "source": 35, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -2647631944128377757, "query": null}
+{"text": "the answer is six.", "source": 41, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -6756444984040173019, "query": null}
+{"text": "the answer is seven.", "source": 47, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -2758626350996235273, "query": null}
+batch_seconds_total 55.93427100009285 store 195
+{'sentences': 48, 'batches': 6}

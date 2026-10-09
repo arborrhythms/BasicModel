@@ -161,17 +161,20 @@ reference operand; recovery declines until that owner exists.
 
 ## Phase, work, and lifecycle
 
-A closing opens an episode exactly when a reference is open: a referent,
-a relation, or the unknown evidence pair of a defined row. Surface mode,
-question marks and wh-words are evidence, not the definition. A fully bound
-row opens no episode. At the committed host boundary, completed rows alone
+A closing opens an episode for an open referent or relation, or for an
+interrogative region without evidence. `(0,0)` is ignorance, never an extra
+operand slot. Question marks and wh-words are evidence for the chooser.
+A fully bound declarative opens no episode. At the committed host boundary, completed rows alone
 receive permission; compose, reconstruction and generate cannot call readers.
 
 One `attentionBudget` pays for selection, preparation, reads, operations and
 nested questions. `selectedThoughtBudget` and `thinkingBudget` fail at load.
-`conclude` is unavailable while a reference remains open and work remains.
-Exhaustion preserves the open references in a question row. Later matching
-text can bind them within the same document.
+`conclude` is unavailable while a variable or the region's evidence is missing
+and work remains, unless `thoughtSearchExhaustion` complete queries have found
+no candidate. Search exhaustion provisionally mints source-supported forward
+referents; questions remain open. Their row-and-role column addresses are
+ordinary bind candidates, and a later copula can fill the addressed variable.
+The evidence pair never gates the answer cost of a filled referent.
 
 Only the kept walk publishes conclusions: occurrence-addressed LTM rows of
 kind `inference`, with both poles and provenance references. The document and
@@ -181,9 +184,12 @@ append capability. `descend` and `return` remain chronological trace records,
 not a separate planner stack.
 
 The existing grammar scorer makes every thought choice. Greedy and one
-uniform departure are completed before comparison. Credit is compose's
-`K · R · p(a_dep) · ΔC`, with supplied-answer cost, the next sentence's
-expectation error and work. Exact ties contribute no policy term. The
+uniform departure are completed before comparison; exploration forks the
+detached greedy state at its sampled departure. Credit is compose's
+`K · R · p(a_dep) · ΔC`, with reconstruction and supplied-answer cost.
+The thought walk also pays its own work; the sentence comparison does not.
+Expectation trains only its predictors through their owner-step registry.
+Exact ties contribute no policy term. The
 comparison reader supplies the answer comparison; the presented answer is
 the binding. There is no REINFORCE/EMA controller or
 `selectedThoughtPolicyWeight`; the old setting is rejected.

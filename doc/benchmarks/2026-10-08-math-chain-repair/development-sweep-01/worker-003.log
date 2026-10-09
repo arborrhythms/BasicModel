@@ -1,0 +1,65 @@
+sss..........................................FF.FF...................... [ 61%]
+.............................................                            [100%]
+=================================== FAILURES ===================================
+____ test_default_grammar_head_preserves_legacy_weights_rng_and_outputs[4] _____
+test/test_chooser_architecture.py:63: in test_default_grammar_head_preserves_legacy_weights_rng_and_outputs
+    _assert_same_state(chooser, legacy)
+test/test_chooser_architecture.py:42: in _assert_same_state
+    assert list(actual) == list(expected)
+E   AssertionError: assert ['tool_embedd....weight', ...] == ['tool_embedd...ction.weight']
+E     
+E     At index 5 diff: 'reference_choice.weight' != 'what_projection.weight'
+E     Left contains one more item: 'what_projection.weight'
+E     Use -v to get more diff
+____ test_default_grammar_head_preserves_legacy_weights_rng_and_outputs[12] ____
+test/test_chooser_architecture.py:63: in test_default_grammar_head_preserves_legacy_weights_rng_and_outputs
+    _assert_same_state(chooser, legacy)
+test/test_chooser_architecture.py:42: in _assert_same_state
+    assert list(actual) == list(expected)
+E   AssertionError: assert ['tool_embedd....weight', ...] == ['tool_embedd...ction.weight']
+E     
+E     At index 5 diff: 'reference_choice.weight' != 'what_projection.weight'
+E     Left contains one more item: 'what_projection.weight'
+E     Use -v to get more diff
+_______ test_custom_grammar_capacity_shapes_and_all_hidden_gradients[1] ________
+test/test_chooser_architecture.py:117: in test_custom_grammar_capacity_shapes_and_all_hidden_gradients
+    assert parameter.grad is not None, name
+E   AssertionError: reference_choice.weight
+E   assert None is not None
+E    +  where None = Parameter containing:\ntensor([[ 1.7770e-03, -7.9006e-04, -2.2908e-04,  7.7650e-04,  1.0359e-03,\n          1.1733e-03, ....3487e-04, -1.1855e-03, -5.9265e-04,  5.5981e-05,\n         -1.6033e-03, -1.1079e-03, -9.5056e-04]], requires_grad=True).grad
+_______ test_custom_grammar_capacity_shapes_and_all_hidden_gradients[3] ________
+test/test_chooser_architecture.py:117: in test_custom_grammar_capacity_shapes_and_all_hidden_gradients
+    assert parameter.grad is not None, name
+E   AssertionError: reference_choice.weight
+E   assert None is not None
+E    +  where None = Parameter containing:\ntensor([[ 1.7770e-03, -7.9006e-04, -2.2908e-04,  7.7650e-04,  1.0359e-03,\n          1.1733e-03, ....3487e-04, -1.1855e-03, -5.9265e-04,  5.5981e-05,\n         -1.6033e-03, -1.1079e-03, -9.5056e-04]], requires_grad=True).grad
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_chooser_architecture.py::test_default_grammar_head_preserves_legacy_weights_rng_and_outputs[4]
+FAILED test/test_chooser_architecture.py::test_default_grammar_head_preserves_legacy_weights_rng_and_outputs[12]
+FAILED test/test_chooser_architecture.py::test_custom_grammar_capacity_shapes_and_all_hidden_gradients[1]
+FAILED test/test_chooser_architecture.py::test_custom_grammar_capacity_shapes_and_all_hidden_gradients[3]
+4 failed, 110 passed, 3 skipped, 13 warnings in 28.09s

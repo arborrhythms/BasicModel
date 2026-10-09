@@ -1,0 +1,914 @@
+{
+  "status": "stopped_for_Claude_review",
+  "learning_claim": false,
+  "committed": false,
+  "generated_utc": "2026-10-09T05:57:33.051876+00:00",
+  "source": {
+    "retained_files": 59,
+    "retained_unchanged": true,
+    "frozen_contracts_unchanged": true,
+    "source_files": 744,
+    "changed": [
+      "bin/ClauseJournal.py",
+      "bin/Models.py",
+      "bin/Queries.py",
+      "bin/ThoughtBinding.py",
+      "bin/ThoughtFaces.py",
+      "bin/ThoughtStream.py",
+      "bin/WalkTrials.py",
+      "test/test_accessible_mind.py",
+      "test/test_math_chain_decomposition.py",
+      "test/test_thought_binding.py"
+    ],
+    "seed": null,
+    "retries": 0,
+    "source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+    "authority": "User authorized minimal general binding/return repair; \u00a714.11 forced demonstration only.",
+    "learning_claim": false,
+    "standing_thirty": "Retained as already measured, not rerun."
+  },
+  "integrity": {
+    "closing_helpers": {
+      "files": 8,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/closing-source-4/helpers.json"
+    },
+    "stopped_files": {
+      "files": 59,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/retained-files-sha256.json"
+    },
+    "stop_receipt": {
+      "files": 9,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/receipt-sha256.json"
+    },
+    "campaign_helpers": {
+      "files": 222,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/measured-source/measurement-helpers.json"
+    },
+    "prior_receipts": [
+      {
+        "files": 2393,
+        "unchanged": true,
+        "manifest": "doc/benchmarks/2026-10-07-math-chain/receipt-sha256.json"
+      },
+      {
+        "files": 1967,
+        "unchanged": true,
+        "manifest": "doc/benchmarks/2026-10-08-math-chain-repair/receipt-sha256.json"
+      }
+    ],
+    "frozen_contracts_unchanged": true,
+    "binding_matches_unchanged": true
+  },
+  "campaign": {
+    "started": 2,
+    "declared": 30,
+    "completed_trainings": 0,
+    "completed_epochs": {
+      "answer_and_expectation-01": 8,
+      "expectation_only-01": 9
+    },
+    "retries": 0,
+    "replacements": 0,
+    "held_out_evaluation": null,
+    "partials": "stopped-by-decision/summary.json"
+  },
+  "unforced": [
+    {
+      "condition": "answer_and_expectation",
+      "completed_epochs": 8,
+      "first_epoch": {
+        "questions_observed": 117,
+        "questions_left_open_at_closing": 104,
+        "references_left_open_at_closing": 112,
+        "episodes_opened": 104,
+        "bindings_correct": 0,
+        "frozen_observer_questions": 117,
+        "definition": "Recovered from completed batch records and frozen observer after a missing final summary; original partial files retained."
+      },
+      "greedy_what": {
+        "definition": "Existing greedy compose closing, before the keep decision is committed; free referent attributed to the lexical what by the native forward identity. No extra forward pass.",
+        "first_question": {
+          "epoch": 1,
+          "phase": "train",
+          "split": "train",
+          "document": "train:pair:7:0",
+          "completed_batch": true,
+          "what_identified": true,
+          "what_open": false,
+          "what_open_roles": [],
+          "open_references": [
+            [
+              "referent",
+              0
+            ],
+            [
+              "relation",
+              1
+            ],
+            [
+              "referent",
+              2
+            ]
+          ],
+          "kept_trial": "greedy"
+        },
+        "first_epoch_questions_observed": 117,
+        "first_epoch_what_opens": 0,
+        "first_epoch_what_identified": 117,
+        "detail_file": "episode-batches.jsonl"
+      }
+    },
+    {
+      "condition": "expectation_only",
+      "completed_epochs": 9,
+      "first_epoch": {
+        "questions_observed": 117,
+        "questions_left_open_at_closing": 108,
+        "references_left_open_at_closing": 108,
+        "episodes_opened": 108,
+        "bindings_correct": 0,
+        "frozen_observer_questions": 117,
+        "definition": "Recovered from completed batch records and frozen observer after a missing final summary; original partial files retained."
+      },
+      "greedy_what": {
+        "definition": "Existing greedy compose closing, before the keep decision is committed; free referent attributed to the lexical what by the native forward identity. No extra forward pass.",
+        "first_question": {
+          "epoch": 1,
+          "phase": "train",
+          "split": "train",
+          "document": "train:pair:7:0",
+          "completed_batch": true,
+          "what_identified": true,
+          "what_open": false,
+          "what_open_roles": [],
+          "open_references": [
+            [
+              "referent",
+              0
+            ],
+            [
+              "relation",
+              1
+            ],
+            [
+              "referent",
+              2
+            ]
+          ],
+          "kept_trial": "greedy"
+        },
+        "first_epoch_questions_observed": 117,
+        "first_epoch_what_opens": 0,
+        "first_epoch_what_identified": 117,
+        "detail_file": "episode-batches.jsonl"
+      }
+    }
+  ],
+  "forced_certificates": [
+    {
+      "successors": 1,
+      "forced": true,
+      "attention_budget": 512,
+      "premise_budget": 0,
+      "questions": [
+        {
+          "epoch": 1,
+          "phase": "ordinary_certificate",
+          "split": "train",
+          "document": "0",
+          "pair": [
+            3,
+            1
+          ],
+          "question_source": 3,
+          "episode": true,
+          "work": 208,
+          "answer": "four",
+          "bound_correct": true,
+          "committed_binding": [
+            "ltm",
+            "address-v1",
+            4217868467669104377
+          ],
+          "open": [],
+          "expected_chain_length": 1,
+          "inference_count": 1,
+          "chain_correct": true,
+          "inferences": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                4217868467669104377
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  5212556576153828149
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3869694884838190518
+                ]
+              ],
+              "open": [],
+              "operation": "query",
+              "witnesses": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -903169375019784711
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2346431244747748085
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5722377852110492150
+                ]
+              ],
+              "known_witnesses": true,
+              "witness_texts": [
+                "y is x plus one.",
+                "x is three.",
+                "three plus one is four."
+              ],
+              "bound_words": [
+                "four"
+              ]
+            }
+          ],
+          "operations": [
+            "query",
+            "ask",
+            "query",
+            "conclude",
+            "query",
+            "conclude"
+          ]
+        },
+        {
+          "epoch": 1,
+          "phase": "ordinary_certificate",
+          "split": "train",
+          "document": "1",
+          "pair": [
+            3,
+            1
+          ],
+          "question_source": 7,
+          "episode": true,
+          "work": 211,
+          "answer": "four",
+          "bound_correct": true,
+          "committed_binding": [
+            "ltm",
+            "address-v1",
+            5384838440402255718
+          ],
+          "open": [],
+          "expected_chain_length": 1,
+          "inference_count": 1,
+          "chain_correct": true,
+          "inferences": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                5384838440402255718
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1379386337192123226
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5650702813455559256
+                ]
+              ],
+              "open": [],
+              "operation": "query",
+              "witnesses": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -2667911458732272595
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -653534901132829833
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4135863979099757956
+                ]
+              ],
+              "known_witnesses": true,
+              "witness_texts": [
+                "y is x plus one.",
+                "x is three.",
+                "three plus one is four."
+              ],
+              "bound_words": [
+                "four"
+              ]
+            }
+          ],
+          "operations": [
+            "query",
+            "ask",
+            "query",
+            "conclude",
+            "query",
+            "conclude"
+          ]
+        }
+      ],
+      "episodes": [
+        {
+          "row": 0,
+          "work": 208,
+          "state_diff": {
+            "changed": [
+              "._last_thought_comparison",
+              "._last_thought_score_function",
+              "._thought_ordinals",
+              "._walk_audit",
+              "._walk_observations",
+              "._walk_previous",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+              "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._texts",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.timestamp",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+              "what_memory._address_sources",
+              "what_memory._episode_live",
+              "what_memory._thought_next_id",
+              "what_memory._what_slots"
+            ],
+            "unexpected": [],
+            "changed_old_rows": [
+              52
+            ],
+            "source_row": 52,
+            "added_row_kinds": [
+              "inference"
+            ]
+          },
+          "operations": [
+            "",
+            "query",
+            "ask",
+            "descend",
+            "query",
+            "conclude",
+            "return",
+            "query",
+            "conclude",
+            "finish"
+          ]
+        },
+        {
+          "row": 1,
+          "work": 211,
+          "state_diff": {
+            "changed": [
+              "._last_thought_comparison",
+              "._last_thought_score_function",
+              "._thought_ordinals",
+              "._walk_audit",
+              "._walk_observations",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+              "symbolSpace.subspace.layers.2._ltm_store._native_reference_token",
+              "symbolSpace.subspace.layers.2._ltm_store._native_row_index",
+              "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._texts",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.timestamp",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+              "what_memory._address_sources",
+              "what_memory._episode_live",
+              "what_memory._thought_next_id",
+              "what_memory._what_slots"
+            ],
+            "unexpected": [],
+            "changed_old_rows": [
+              55
+            ],
+            "source_row": 55,
+            "added_row_kinds": [
+              "inference"
+            ]
+          },
+          "operations": [
+            "",
+            "query",
+            "ask",
+            "descend",
+            "query",
+            "conclude",
+            "return",
+            "query",
+            "conclude",
+            "finish"
+          ]
+        }
+      ],
+      "compose_departures": [
+        7,
+        12,
+        28,
+        19,
+        14,
+        3,
+        -1,
+        20
+      ],
+      "source": "closing-certificates-4/test_forced_native_decompositi0/decomposition-1/certificate.json"
+    },
+    {
+      "successors": 2,
+      "forced": true,
+      "attention_budget": 768,
+      "premise_budget": 0,
+      "questions": [
+        {
+          "epoch": 1,
+          "phase": "ordinary_certificate",
+          "split": "train",
+          "document": "0",
+          "pair": [
+            3,
+            2
+          ],
+          "question_source": 5,
+          "episode": true,
+          "work": 531,
+          "answer": "five",
+          "bound_correct": false,
+          "committed_binding": [
+            "ltm",
+            "address-v1",
+            -3569600704976361559
+          ],
+          "open": [],
+          "expected_chain_length": 2,
+          "inference_count": 1,
+          "chain_correct": false,
+          "inferences": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -3569600704976361559
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -2570378421104050846
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5634128819601099072
+                ]
+              ],
+              "open": [],
+              "operation": "query",
+              "witnesses": [
+                [
+                  "ltm",
+                  "address-v1",
+                  4630911873646595826
+                ]
+              ],
+              "known_witnesses": true,
+              "witness_texts": [
+                "y is z plus one."
+              ],
+              "bound_words": []
+            }
+          ],
+          "operations": [
+            "query",
+            "ask",
+            "query",
+            "ask",
+            "query",
+            "conclude",
+            "query",
+            "conclude",
+            "query",
+            "conclude"
+          ]
+        },
+        {
+          "epoch": 1,
+          "phase": "ordinary_certificate",
+          "split": "train",
+          "document": "1",
+          "pair": [
+            3,
+            2
+          ],
+          "question_source": 11,
+          "episode": true,
+          "work": 525,
+          "answer": "five",
+          "bound_correct": true,
+          "committed_binding": [
+            "ltm",
+            "address-v1",
+            3462481624961580108
+          ],
+          "open": [],
+          "expected_chain_length": 2,
+          "inference_count": 2,
+          "chain_correct": true,
+          "inferences": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                9136184218222577565
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  8772058737701984120
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6459736942040081991
+                ]
+              ],
+              "open": [],
+              "operation": "query",
+              "witnesses": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -625075850480824127
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7931305147140726910
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2402903818246739079
+                ]
+              ],
+              "known_witnesses": true,
+              "witness_texts": [
+                "z is x plus one.",
+                "x is three.",
+                "three plus one is four."
+              ],
+              "bound_words": [
+                "four"
+              ]
+            },
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                3462481624961580108
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -2594979505103391465
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2890755707477994617
+                ]
+              ],
+              "open": [],
+              "operation": "query",
+              "witnesses": [
+                [
+                  "ltm",
+                  "address-v1",
+                  8497966208612461102
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  9136184218222577565
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -8311680099138561775
+                ]
+              ],
+              "known_witnesses": true,
+              "witness_texts": [
+                "y is z plus one.",
+                null,
+                "four plus one is five."
+              ],
+              "bound_words": [
+                "five"
+              ]
+            }
+          ],
+          "operations": [
+            "query",
+            "ask",
+            "query",
+            "ask",
+            "query",
+            "conclude",
+            "query",
+            "conclude",
+            "query",
+            "conclude"
+          ]
+        }
+      ],
+      "episodes": [
+        {
+          "row": 0,
+          "work": 531,
+          "state_diff": {
+            "changed": [
+              "._last_thought_comparison",
+              "._last_thought_score_function",
+              "._thought_ordinals",
+              "._walk_audit",
+              "._walk_observations",
+              "._walk_previous",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+              "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._texts",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.timestamp",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+              "what_memory._address_sources",
+              "what_memory._episode_live",
+              "what_memory._thought_next_id",
+              "what_memory._what_slots"
+            ],
+            "unexpected": [],
+            "changed_old_rows": [
+              86
+            ],
+            "source_row": 86,
+            "added_row_kinds": [
+              "inference"
+            ]
+          },
+          "operations": [
+            "",
+            "query",
+            "ask",
+            "descend",
+            "query",
+            "ask",
+            "descend",
+            "query",
+            "conclude",
+            "return",
+            "query",
+            "conclude",
+            "return",
+            "query",
+            "conclude",
+            "finish"
+          ]
+        },
+        {
+          "row": 1,
+          "work": 525,
+          "state_diff": {
+            "changed": [
+              "._last_thought_comparison",
+              "._last_thought_score_function",
+              "._thought_ordinals",
+              "._walk_audit",
+              "._walk_observations",
+              "._walk_previous",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+              "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+              "symbolSpace.subspace.layers.2._ltm_store._native_reference_token",
+              "symbolSpace.subspace.layers.2._ltm_store._native_row_index",
+              "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+              "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+              "symbolSpace.subspace.layers.2._ltm_store._texts",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.timestamp",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+              "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+              "what_memory._address_sources",
+              "what_memory._episode_live",
+              "what_memory._thought_next_id",
+              "what_memory._what_slots"
+            ],
+            "unexpected": [],
+            "changed_old_rows": [
+              89
+            ],
+            "source_row": 89,
+            "added_row_kinds": [
+              "inference",
+              "inference"
+            ]
+          },
+          "operations": [
+            "",
+            "query",
+            "ask",
+            "descend",
+            "query",
+            "ask",
+            "descend",
+            "query",
+            "conclude",
+            "return",
+            "query",
+            "conclude",
+            "return",
+            "query",
+            "conclude",
+            "finish"
+          ]
+        }
+      ],
+      "compose_departures": [
+        3,
+        15,
+        15,
+        9,
+        24,
+        15,
+        6,
+        19,
+        28,
+        14,
+        -1,
+        -1
+      ],
+      "source": "closing-certificates-4/test_forced_native_decompositi1/decomposition-2/certificate.json"
+    }
+  ],
+  "sweep": {
+    "selected": 5646,
+    "completed": 5646,
+    "outcomes": {
+      "passed": 5359,
+      "skipped": 286,
+      "xpassed": 1
+    },
+    "seconds": 639.9761618749471,
+    "peak_aggregate_memory_bytes": 5257828448,
+    "result": "closing-sweep-3/result.json"
+  },
+  "thinking": {
+    "selected": 57,
+    "completed": 57,
+    "outcomes": {
+      "passed": 57
+    },
+    "seconds": 27.67891908402089,
+    "peak_aggregate_memory_bytes": 2326612800,
+    "result": "closing-thinking-4/result.json"
+  },
+  "standing_thirty": {
+    "reused": true,
+    "rerun": false,
+    "report": "standing-thirty-verification.json",
+    "mm_bisection": "mm-bisection/result.json"
+  },
+  "limitations": [
+    "Forced mechanism demonstration; no learned policy or accuracy claim.",
+    "Two successors use explicit nested premises, not learned plus-two recursion.",
+    "Question fixture work budgets 512/768; campaign budget 32 was not changed.",
+    "Every companion-row outcome is included; compose alternatives can change a premise."
+  ]
+}

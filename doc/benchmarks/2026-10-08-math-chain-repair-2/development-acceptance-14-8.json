@@ -1,0 +1,92 @@
+{
+  "spec": "doc/specs/2026-10-07-thinking.md \u00a714.8",
+  "accepted_by": "Claude; explicitly authorized by Alec in the user instruction",
+  "criterion": "work_per_declarative_episode_falls",
+  "passed": true,
+  "original_result_unchanged": true,
+  "original_result": "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-14-05/result.json",
+  "result_sha256": "89ecf4a8e417407901517ff9edbd8df279ef162d8577437901d1fc446c4ad336",
+  "batches_sha256": "07a5795a6ebd9539163607e7b983703d6f48915c7e0d92fd5cd57e87d0b776c7",
+  "half_basis": "First 724 and last 725 sentences of the epoch, as the \u00a714.8 review; work is averaged over declarative episodes within each half.",
+  "halves": [
+    {
+      "all_sentences": 724,
+      "declaratives": 586,
+      "episodes": 114,
+      "work": 3458,
+      "mean_work_per_episode": 30.333333333333332,
+      "share": 0.1945392491467577
+    },
+    {
+      "all_sentences": 725,
+      "declaratives": 629,
+      "episodes": 121,
+      "work": 2292,
+      "mean_work_per_episode": 18.94214876033058,
+      "share": 0.19236883942766295
+    }
+  ],
+  "original_share_report": [
+    {
+      "sentences": 607,
+      "episodes": 116,
+      "share": 0.19110378912685339
+    },
+    {
+      "sentences": 608,
+      "episodes": 119,
+      "share": 0.19572368421052633
+    }
+  ],
+  "share_gated": false,
+  "question_cost_pairs": 4,
+  "question_cost_nonties": 2,
+  "question_answer_nonties": 1,
+  "chooser_movement": {
+    "stop_anchor": 0.0,
+    "reduce_anchor": 0.0,
+    "apply_anchor": 0.0,
+    "bracket_anchor": 0.0,
+    "space_prior": 3.437162998665144e-09,
+    "ops.8.gl._sigma.layer.raw_L": 0.0,
+    "ops.8.gl._sigma.layer.d": 0.0,
+    "ops.8.gl._sigma.layer.raw_U": 0.0,
+    "ops.8.gl._sigma.layer.biasWeight": 0.0,
+    "ops.8.gl._lex_gate.weight": 0.0,
+    "ops.8.gl._lex_gate.bias": 0.0,
+    "ops.9.gl._verb_shift": 0.0,
+    "ops.9.gl._sigma.layer.raw_L": 0.0,
+    "ops.9.gl._sigma.layer.d": 0.0,
+    "ops.9.gl._sigma.layer.raw_U": 0.0,
+    "ops.9.gl._sigma.layer.biasWeight": 0.0,
+    "ops.9.gl._lex_gate.weight": 0.0,
+    "ops.9.gl._lex_gate.bias": 0.0,
+    "ops.9.gl._verb_spec.weight": 0.0,
+    "ops.9.gl._verb_spec.bias": 0.0,
+    "ops.11.gl._adv_shift": 0.0,
+    "ops.11.gl._sigma.layer.raw_L": 0.0,
+    "ops.11.gl._sigma.layer.d": 0.0,
+    "ops.11.gl._sigma.layer.raw_U": 0.0,
+    "ops.11.gl._sigma.layer.biasWeight": 0.0,
+    "ops.11.gl._lex_gate.weight": 0.0,
+    "ops.11.gl._lex_gate.bias": 0.0,
+    "ops.11.gl._adv_edit.weight": 0.0,
+    "ops.11.gl._adv_edit.bias": 0.0,
+    "ops.17.gl.marker_map.weight": 0.0,
+    "ops.17.gl.marker_map.bias": 0.0,
+    "ops.17.gl.marker_prior.0.weight": 0.0,
+    "ops.17.gl.marker_prior.0.bias": 0.0,
+    "ops.17.gl.marker_prior.2.weight": 0.0,
+    "ops.17.gl.marker_prior.2.bias": 0.0,
+    "chooser.tool_embedding": 0.0017587094334885478,
+    "chooser.mlp.0.weight": 0.1374930441379547,
+    "chooser.mlp.0.bias": 0.006105768494307995,
+    "chooser.mlp.2.weight": 0.07126575708389282,
+    "chooser.mlp.2.bias": 0.0,
+    "chooser.reference_choice.weight": 0.0059161013923585415,
+    "chooser.operand_order.weight": 0.0022724750451743603,
+    "chooser.copy_order.weight": 0.0004109870351385325,
+    "chooser.what_projection.weight": 0.11306393146514893
+  },
+  "learning_claim": "Development certificate only, not a learned-chain result."
+}

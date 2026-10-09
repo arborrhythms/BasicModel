@@ -1,0 +1,12 @@
+{
+  "source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+  "source_files": 744,
+  "sweep": true,
+  "thinking": 57,
+  "stopped_files_unchanged": 59,
+  "authority": "Alec; thinking section 14.13; conditional commit/push and parent bump",
+  "seed": null,
+  "retries": 0,
+  "replacements": 0,
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1"
+}

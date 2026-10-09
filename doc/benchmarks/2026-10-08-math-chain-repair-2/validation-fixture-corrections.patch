@@ -1,0 +1,60 @@
+--- a/test/test_arithmetic_isolation.py
++++ b/test/test_arithmetic_isolation.py
+@@ -30,7 +30,7 @@
+     model, registry, _, part, whole = _catalog_world()
+     question = registry.form('isPart', part, whole, bindings={'x': part})
+     renamed = replace(question, role_refs=(('sym', 901), ('sym', 337), ('sym', 29)),
+-                      bindings={'x': ('sym', 901)})
++                      bindings={**dict(question.bindings), 'x': ('sym', 901)})
+     _poison_oracles(monkeypatch)
+     feature = lambda q: model._selected_thought_context(q, level=0, pressure=0)
+     torch.testing.assert_close(feature(question), feature(renamed), rtol=0, atol=0)
+--- a/test/test_existence_metadata.py
++++ b/test/test_existence_metadata.py
+@@ -33,7 +33,10 @@
+     commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
+     assert int(store.rel_type[0]) == (store.REL_NONE if depth == 1 else store.REL_PARTOF)
+     torch.testing.assert_close(store.meaning_of(0).roles[store.role_mask[0]], clause.slots)
+-    assert store.row(0).get("kind") == ("question" if depth == 3 else "observation")
++    # All references are bound; (0, 0) is ignorance, not a free variable.
++    assert store.row(0).get("kind") == "observation"
++    from ThoughtReferences import open_slots
++    assert not open_slots(store.meaning_of(0))
+     result = _evaluate(store, store.meaning_of(0))
+     assert result["posture"] == UNKNOWN
+     assert result["support_true"] == result["support_false"] == 0
+--- a/test/test_grammatical_query_vps.py
++++ b/test/test_grammatical_query_vps.py
+@@ -100,7 +100,8 @@
+     cs, registry, a, b, _ = _world()
+     store = TernaryTruthStore(8)
+     description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
+-                                   scope={'place': 'workshop'})
++                                   scope={'place': 'workshop'},
++                                   role_refs=registry.form('isPart', a, b).role_refs)
+     store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
+     index = store.append_meaning(description, trust=0.75)
+     context = _context(cs, store=store)
+--- a/test/test_selected_nested_meaning.py
++++ b/test/test_selected_nested_meaning.py
+@@ -51,14 +51,17 @@
+ def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+     _cs, registry, language, entry, leaves = _nested(monkeypatch)
+     store = _write_selected_observation(language, registry, entry, path)
+-    assert len(store) == 4
+-    assert all(store.row(i)['kind']=='question' for i in (1,2,3))
++    # Bound child and parent carry ignorance without creating question rows.
++    assert len(store) == 2
++    from ThoughtReferences import open_slots
++    assert all(not open_slots(store.meaning_of(i)) for i in range(len(store)))
++    assert all(store.row(i)['evidence'] == (0., 0.) for i in range(len(store)))
+     child, parent = store.row(0), store.row(1)
+     assert parent["meaning"].role_refs[2] == child["occurrence"]
+     assert child["kind"] == "unverified" and child["trust"] == 0
+     torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
+     assert not child["meaning"].roles.requires_grad
+-    assert parent["kind"] == "question"
++    assert parent["kind"] == "observation"
+ 
+ 
+ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):

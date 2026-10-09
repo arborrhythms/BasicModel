@@ -1,0 +1,119 @@
+{
+  "kind": "development profile",
+  "context": {
+    "seconds": 0.9543267079861835,
+    "occupancy": 55,
+    "capacity": 32768,
+    "references_open": 1,
+    "work": 32,
+    "source_evidence": [
+      1.0,
+      1.0
+    ],
+    "mode": "assertive",
+    "operations": [
+      "ask",
+      "ask",
+      "ask"
+    ],
+    "query_results": [],
+    "thought_steps": 3,
+    "trial_costs": [
+      0.32,
+      0.32
+    ],
+    "trial_answer_costs": [
+      0.0,
+      0.0
+    ],
+    "trial_work_costs": [
+      0.32,
+      0.32
+    ],
+    "exhausted_closing": null
+  },
+  "functions": [
+    {
+      "file": "MemoryIndex.py",
+      "line": 53,
+      "operation": "_meaning_leaf_terms",
+      "calls": 7,
+      "self_seconds": 1.2250000000000001e-05,
+      "cumulative_seconds": 0.856670625,
+      "seconds_per_call": 0.12238151785714287
+    },
+    {
+      "file": "MereologicalCodes.py",
+      "line": 208,
+      "operation": "derive",
+      "calls": 91,
+      "self_seconds": 0.034523498,
+      "cumulative_seconds": 0.8261765000000001,
+      "seconds_per_call": 0.009078862637362638
+    },
+    {
+      "file": "ThoughtStream.py",
+      "line": 248,
+      "operation": "commit",
+      "calls": 1,
+      "self_seconds": 2.8165000000000002e-05,
+      "cumulative_seconds": 0.500289,
+      "seconds_per_call": 0.500289
+    },
+    {
+      "file": "Queries.py",
+      "line": 2288,
+      "operation": "execute",
+      "calls": 6,
+      "self_seconds": 8.945800000000001e-05,
+      "cumulative_seconds": 0.36822945900000004,
+      "seconds_per_call": 0.061371576500000004
+    },
+    {
+      "file": "Queries.py",
+      "line": 907,
+      "operation": "best_match",
+      "calls": 3,
+      "self_seconds": 2.5126000000000003e-05,
+      "cumulative_seconds": 0.36302437600000004,
+      "seconds_per_call": 0.12100812533333334
+    },
+    {
+      "file": "MemoryIndex.py",
+      "line": 287,
+      "operation": "cued_rows",
+      "calls": 3,
+      "self_seconds": 0.000110779,
+      "cumulative_seconds": 0.362703125,
+      "seconds_per_call": 0.12090104166666667
+    },
+    {
+      "file": "Models.py",
+      "line": 5978,
+      "operation": "_choose_selected_thought_action",
+      "calls": 6,
+      "self_seconds": 0.00015025500000000002,
+      "cumulative_seconds": 0.030640042000000003,
+      "seconds_per_call": 0.005106673666666667
+    },
+    {
+      "file": "Language.py",
+      "line": 7354,
+      "operation": "thought_logits",
+      "calls": 6,
+      "self_seconds": 0.000144683,
+      "cumulative_seconds": 0.023183792,
+      "seconds_per_call": 0.0038639653333333336
+    },
+    {
+      "file": "Models.py",
+      "line": 6212,
+      "operation": "candidates",
+      "calls": 6,
+      "self_seconds": 2.3339e-05,
+      "cumulative_seconds": 0.016173375,
+      "seconds_per_call": 0.0026955625
+    }
+  ],
+  "note": "Cumulative costs overlap along call stacks and must not be summed. The profiled episode includes both trials and the kept write. Concept-code reconstruction dominates this sample; this is not a reserve-capacity scaling experiment."
+}

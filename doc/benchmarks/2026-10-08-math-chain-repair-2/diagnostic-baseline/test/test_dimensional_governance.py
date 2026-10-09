@@ -1,0 +1,290 @@
+"""Dimensional-governance gates (doc/specs/2026-06-05-dimensional-governance.md)."""
+
+import pytest
+import os, sys, tempfile, warnings
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+os.environ.setdefault("MODEL_COMPILE", "eager")
+_BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
+if _BIN not in sys.path:
+    sys.path.insert(0, _BIN)
+import Spaces
+
+import torch
+
+def test_sigma_pi_mode_resolves_and_aliases_butterfly():
+    f = Spaces.Space.sigma_pi_mode  # staticmethod (raw value, str|bool) -> mode
+    assert f("last") == "last"
+    assert f("butterfly") == "butterfly"
+    assert f("full") == "full"
+    assert f(True) == "butterfly"      # legacy <butterfly>true</butterfly>
+    assert f(False) == "last"          # legacy <butterfly>false</butterfly>
+    assert f(None) == "last"           # absent
+
+
+def test_full_sigma_pi_is_invertible_over_flat_slab():
+    from Layers import SigmaLayer
+    B, N, D = 2, 8, 6
+    op = SigmaLayer(N * D, N * D, invertible=True, nonlinear=True,
+                    stable=True)  # full: dense square over the flattened slab
+    x = torch.randn(B, N, D).clamp(-0.5, 0.5)
+    flat = x.reshape(B, N * D)
+    y = op.forward(flat)
+    x_rec = op.reverse(y).reshape(B, N, D)
+    assert (x - x_rec).abs().max().item() < 1e-3
+
+
+def _build(cfg_name):
+    import Models, Language
+    from util import init_config
+    p = os.path.join(os.path.dirname(_BIN), "data", cfg_name)
+    init_config(path=p, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
+    Language.TheGrammar._configured = False
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        m, _ = Models.BasicModel.from_config(p)
+    return m
+
+
+@pytest.mark.slow
+def test_mm_5m_builds_and_forwards():
+    import torch, Models
+    m = _build("MM_20M_xor.xml"); Models.TheData.load("xor")
+    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+    inp_items, _ = next(iter(loader))
+    x = m.inputSpace.prepInput(inp_items)
+    out = m.forward(x)[2]
+    assert torch.isfinite(out).all()
+
+
+
+
+@pytest.mark.slow
+def test_serial_relaxes_symbol_dim_passthrough():
+    # Phase-3 relax (pulled forward, doc/specs/2026-06-05 sec.4/sec.6): in
+    # SERIAL mode the bounded-STM grammar fold bridges CS<->SS, so SS content
+    # may differ from CS content (the small symbol code). validate_config
+    # must NOT impose symbol_dim == concept_dim for a serial config.
+    # The fixture (the pre-Task-6 MM_20M_grammar shape, see _DEEP_CS_SERIAL_XML
+    # below) has SS content 8 != CS content 1024, so from_config must not
+    # raise the symbol_dim==concept pass-through ValueError. (MM_20M_grammar
+    # itself moved to equal widths with the 2026-07-04 meronomy switch.)
+    try:
+        _build_from_text(_DEEP_CS_SERIAL_XML, "serial_relax")
+    except ValueError as e:
+        assert "symbol_dim" not in str(e), str(e)
+
+
+def test_converted_grammars_load_role_collapsed():
+    from Language import Grammar
+    for g in ("xor.grammar", "default.grammar", "shamatha.grammar"):
+        gr = Grammar()
+        gr.load_from_grammar_file(g)
+        assert len(gr.rules) > 0, g
+        assert gr.ps_start_symbol == "U", (g, gr.ps_start_symbol)
+        assert any("_O1" in (r.lhs or "") for r in gr.rules), g  # role form
+
+
+# ---------------------------------------------------------------------------
+# Task C1: recurrent WS input and direct CS->OS geometry fail loud.
+# (doc/specs/2026-06-05-dimensional-governance.md sec.4/sec.6;
+#  doc/plans/2026-06-06-dimensional-governance-completion.md)
+#
+# validate_config (bin/Models.py) pins the two interfaces around the peer loop:
+#   CS->WS : WS's recurrent input accepts a conceptual-width event; WS's
+#            native output remains an independent perceptual peer.
+#   CS->OS : the output head consumes terminal CS directly, with exact event
+#            count and width. WholeSpace is not an intermediate producer.
+# An inconsistent interface must RAISE at BasicModel.from_config, not be
+# silently absorbed by a reshape/pad.
+# ---------------------------------------------------------------------------
+import re
+
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
+
+def _build_from_text(xml_text, stem):
+    """Build a scratch config outside the validated source tree.
+
+    Schema lookup falls back to the canonical data/model.xsd; defaults use
+    its absolute sibling path. Cleanup follows both successful and failed builds.
+    """
+    import Models, Language
+    from util import init_config
+    data_dir = os.path.join(os.path.dirname(_BIN), "data")
+    with tempfile.NamedTemporaryFile(mode="w", prefix=f"{stem}-", suffix=".xml",
+                                     delete=False) as fh:
+        fh.write(xml_text)
+        p = fh.name
+    try:
+        init_config(path=p, defaults_path=os.path.join(data_dir, "model.xml"))
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m, _ = Models.BasicModel.from_config(p)
+        return m
+    finally:
+        if os.path.exists(p):
+            os.remove(p)
+
+
+def _ref_text(cfg_name):
+    with open(os.path.join(os.path.dirname(_BIN), "data", cfg_name)) as fh:
+        return fh.read()
+
+
+def test_temporary_config_preserves_validated_source(monkeypatch):
+    from pathlib import Path
+    import Models, util
+    from bounded_tests import source_snapshot
+
+    root = Path(_BIN).parent
+    before = source_snapshot(root)
+    seen = []
+
+    def build(path):
+        seen.append(Path(path))
+        assert seen[-1].is_file()
+        assert source_snapshot(root) == before
+        return object(), None
+
+    monkeypatch.setattr(util, 'init_config', lambda **kwargs: None)
+    monkeypatch.setattr(Models.BasicModel, 'from_config', staticmethod(build))
+    _build_from_text('<model/>', 'source_integrity')
+    assert len(seen) == 1 and not seen[0].exists()
+
+
+def test_cs_ws_recurrent_input_mismatch_raises():
+    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=104 and
+    # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
+    # native peer output alone.
+    src = _ref_text("MM_20M_xor.xml")
+    broken = src.replace(
+        "<nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n"
+        "    <nDim>1024</nDim>\n    <nOutput>8</nOutput>",
+        "<nInputDim>999</nInputDim>\n    <nVectors>65536</nVectors>\n"
+        "    <nDim>1024</nDim>\n    <nOutput>8</nOutput>")
+    assert broken != src, "fixture edit did not apply (SS block changed?)"
+    with pytest.raises(ValueError) as ei:
+        _build_from_text(broken, "cs_ws_mismatch")
+    msg = str(ei.value)
+    assert "CS->WS recurrent input" in msg, msg
+    assert "999" in msg and "104" in msg, msg
+
+
+def test_cs_os_direct_handoff_mismatch_raises():
+    # Break the direct terminal CS->OS interface. MM_20M emits CS [8,1024]
+    # and OS consumes [8,1024]. Force OS.nInput=7; exact event geometry, not a
+    # coincidentally equal flattened product, is the contract.
+    src = _ref_text("MM_20M_xor.xml")
+    broken = src.replace("<OutputSpace>\n    <nInput>8</nInput>",
+                         "<OutputSpace>\n    <nInput>7</nInput>")
+    assert broken != src, "fixture edit did not apply (OutputSpace block?)"
+    with pytest.raises(ValueError) as ei:
+        _build_from_text(broken, "ws_os_mismatch")
+    msg = str(ei.value)
+    assert "CS->OS handoff" in msg, msg
+    assert "8x104" in msg and "7x104" in msg, msg
+
+
+@pytest.mark.slow
+def test_reference_configs_still_build_no_false_positive():
+    # The recurrent WS input and direct CS->OS checks must not reject either
+    # reference config. MM_20M carries a deep conceptual event; XOR_exact is
+    # the equal-width case.
+    for cfg in ("MM_20M_xor.xml", "XOR_exact.xml"):
+        m = _build(cfg)
+        assert m is not None, cfg
+
+
+# ---------------------------------------------------------------------------
+# Task: the reconstruction REVERSE must round-trip a DEEP-CS config.
+# (doc/specs/2026-06-05-dimensional-governance.md sec.2/sec.5)
+#
+# The fixture is a SERIAL deep-CS shape: PartSpace event width = 12
+# (content 8 + band 4), ConceptualSpace event width = 1028 (content 1024 +
+# band 4). The FORWARD PS->CS handoff is the wide->deep flat-slab reshape
+# (ConceptualSpace.forward: content [B,1024,8] -> [B,8,1024], band re-padded;
+# the constant content slab nOutput*content = 8192 is preserved). The
+# RECONSTRUCTION REVERSE (``reverse``) seeds the
+# terminal deep CS and walks PS.reverse; today the PS reverseBegin fell to a
+# naive ``reshape(-1, PS_width=12)`` which is invalid for a CS-width tensor
+# (1028 % 12 != 0) and raised. The fix is the INVERSE wide<->deep slab-reshape
+# (the exact mirror of ConceptualSpace.forward) inside Space.reverseBegin, a
+# NO-OP for equal-width configs (CS width == PS width).
+#
+# Authored to FAIL before the inverse regroup (the crash) and PASS after.
+# Untrained model -> structural assertion only (completes, finite, recovered
+# width is the PS/IS width 12, NOT the CS width 1028); no reconstruction VALUE
+# accuracy is asserted.
+#
+# Fixture note (Task 6, plan 2026-07-03-reconstruction-fidelity-execution.md):
+# this shape WAS data/MM_ladder.xml verbatim until the 2026-07-04
+# meronomy/meronomy switch moved that config to equal PS/CS widths (the
+# regroup no-op case). The deep-CS premise lives on here as the test's own
+# inline fixture (the pre-switch grammar space blocks, byte analysis).
+# ---------------------------------------------------------------------------
+_DEEP_CS_SERIAL_XML = """<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <architecture>
+    <conceptLayers>2</conceptLayers>
+    <bindingDepth>3</bindingDepth>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+  <InputSpace>
+    <nInput>1024</nInput>
+    <nDim>12</nDim>
+    <nVectors>256</nVectors>
+    <nOutput>1024</nOutput>
+  </InputSpace>
+  <PartSpace>
+    <nInput>1024</nInput>
+    <nVectors>8</nVectors>
+    <nDim>12</nDim>
+    <nOutput>1024</nOutput>
+    <invertible>true</invertible>
+  </PartSpace>
+  <ConceptualSpace>
+    <nInput>1024</nInput>
+    <nOutput>8</nOutput>
+    <nDim>1028</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+    <stmCapacity>8</stmCapacity>
+  </ConceptualSpace>
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <butterfly>false</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>1028</nInputDim>
+    <nDim>8</nDim>
+    <nOutputDim>8</nOutputDim>
+    <nVectors>1000</nVectors>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+  </WholeSpace>
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>
+"""

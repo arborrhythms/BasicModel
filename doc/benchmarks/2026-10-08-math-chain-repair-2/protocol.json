@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-08",
+  "item": "MM_math_chain repair pass 2, thinking \u00a714.8",
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "parent_bump": "1970001e6ad61f720784fc6192dfd453276a164a",
+  "spec_sha256": "984963e41edf13197231de851070a28c754ddc146254db8fcc7edce336bf5407",
+  "seed": null,
+  "retries": 0,
+  "conditions": [
+    "answer_and_expectation",
+    "expectation_only",
+    "zero_attention_budget"
+  ],
+  "runs_per_condition": 10,
+  "held_out_pairs": [
+    [
+      2,
+      7
+    ],
+    [
+      4,
+      8
+    ],
+    [
+      7,
+      3
+    ],
+    [
+      9,
+      6
+    ]
+  ],
+  "beyond_range_pairs": [
+    [
+      11,
+      2
+    ],
+    [
+      12,
+      3
+    ],
+    [
+      2,
+      11
+    ],
+    [
+      3,
+      12
+    ]
+  ],
+  "training_addends": [
+    0,
+    10
+  ],
+  "numeral_vocabulary": [
+    0,
+    20
+  ],
+  "epochs": 17,
+  "epoch_basis": "17 = floor(28,800 / 1,618.2190406250302), declared in thinking \u00a714.8; same epoch count in all three conditions.",
+  "attention_budget": 32,
+  "conditions_share_corpus": true,
+  "per_presentation_premises_shuffled": true,
+  "answer_success_bar": "At least 9 of 10 trainings bind all four held-out rows correctly.",
+  "chain_bar": "Every question opens an episode; successor chain length equals the second addend; one inference row per step with correct provenance.",
+  "expectation_only_bar": "Report how many of the ten form the chain without the answer line or answer loss.",
+  "zero_budget_bar": "Report held-out binding accuracy of ten trainings with attentionBudget zero.",
+  "measurement": "After development certificates, freeze source and helpers; one complete green sweep, thinking 57/57, unchanged standing thirty, and all thirty math trainings exactly once. Preserve every outcome. No selection of seeds or retries.",
+  "runtime": "Ordinary source-text sentence driver and shared chooser. Arithmetic, worked-step generation and expected answers are data/verifier only; no definition rows, plus executor, numeric numeral encoding or mathRange-sized answer head.",
+  "publication": "Stop for Claude review before any learning-step commit.",
+  "initialization": "Ten fresh entropy-initialized states, each replayed across the three conditions; no chosen seed or outcome-dependent redraw.",
+  "paired_presentations": "Each run owns seventeen fresh presentations, graded by successor-chain length; counting facts first, premise-only questions before one successor, then two, and so on. Original within-document premise shuffling is retained. The same presentations serve all three conditions, with only answer lines and labels removed for expectation-only.",
+  "resource_limits": {
+    "math_workers": 2,
+    "memory_gib_per_math_worker": 8,
+    "math_worker_timeout_seconds": 86400,
+    "epoch_budget_basis_seconds": 28800,
+    "timeout_basis": "Live \u00a714.8: 24-hour wall timeout covers two concurrent workers; the 17-epoch declaration comes from an eight-hour per-training development-time budget."
+  },
+  "verifier": "Strict bound lexical identity; a chain requires one committed inference per successor, the licensing counting fact and its premise/prior-inference dependency. Surface answers and raw operation counts do not satisfy the gate.",
+  "development_failures_retained": true,
+  "zero_budget_semantics": "Ordinary word/VP composition remains active; bracket narrowing and thought work receive zero allowance. Model loading and a real optimizer pass certify this control.",
+  "scoring": "Only the binding read back from the committed LTM row is scored. Ephemeral conclusions, surface strings and nearest-numeral guesses do not count.",
+  "declared_utc": "2026-10-08T21:09:47.670854+00:00",
+  "ltm_capacity": 131072,
+  "presentation_order": "graded_by_chain_length",
+  "presentation_comparison": null,
+  "development_certificate_folder": "development-epoch-answer-14-05",
+  "development_acceptance": "development-acceptance-14-8.json",
+  "sentence_departure_judgement": "R + A; expectation trains predictors through the existing owner-step registry and does not enter this comparison.",
+  "keep_rule": "reconstruction",
+  "local_thought_work": "Existing metered thought-walk cost, as \u00a714.3; no work term added to the sentence judgement.",
+  "dry_run": {
+    "folder": "development-epoch-answer-14-05",
+    "unforced": true,
+    "epochs": 1,
+    "attention_budget": 32,
+    "ltm_capacity": 32768,
+    "sentences": 1449,
+    "epoch_seconds": 1618.2190406250302,
+    "seconds_by_kind": {
+      "plain": 1368.4727480337024,
+      "question_with_episode": 7.581293500086758,
+      "question_without_episode": 112.04041166667591,
+      "answer_line": 127.60362912807614
+    },
+    "seconds_per_sentence_by_kind": {
+      "plain": 1.1263150189577797,
+      "question_with_episode": 1.8953233750216896,
+      "question_without_episode": 0.9915080678466894,
+      "answer_line": 1.0906293087869756
+    },
+    "occupancy": 4510,
+    "declarative_work_halves": [
+      {
+        "all_sentences": 724,
+        "declaratives": 586,
+        "episodes": 114,
+        "work": 3458,
+        "mean_work_per_episode": 30.333333333333332,
+        "share": 0.1945392491467577
+      },
+      {
+        "all_sentences": 725,
+        "declaratives": 629,
+        "episodes": 121,
+        "work": 2292,
+        "mean_work_per_episode": 18.94214876033058,
+        "share": 0.19236883942766295
+      }
+    ],
+    "declarative_share_report": [
+      {
+        "sentences": 607,
+        "episodes": 116,
+        "share": 0.19110378912685339
+      },
+      {
+        "sentences": 608,
+        "episodes": 119,
+        "share": 0.19572368421052633
+      }
+    ],
+    "profile": "development-epoch-answer-14-05/profile-summary.json"
+  },
+  "reporting": {
+    "greedy_what": "Per start, first and all first-epoch greedy question closings, read before commit from the already executed greedy trial. No probe changes the policy.",
+    "episodes": "Per epoch and sentence kind: counts, episode share, total and mean kept-episode work. Partial failed batches retained separately.",
+    "binding_verifier": "binding-answers-frozen.diff and binding-answers-verifier.json: references() and matches() byte-identical to the original frozen source. Only loss-side cost changes authorized by \u00a714.7.2.",
+    "heldout": "Only completed seventeen-epoch trainings are evaluated and reported. All attempt outcomes are retained."
+  }
+}

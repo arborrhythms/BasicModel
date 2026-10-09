@@ -1,0 +1,11 @@
+{
+  "README.md": "d1224fbec6f5a5aa43f0d60a3bb1bedf03f8791ac5ee0ecb1984b7d46409ca63",
+  "decision.json": "dea85f50d6f9ec23c179d0456f616c5ad2b66b3cddd183e4932688a1a6eb57eb",
+  "episodes-by-start-epoch-kind.json": "65dbeed4330238d4c3c3adef6d4dab02f2bba092115acf1ada3fc5d9389f105e",
+  "integrity-and-existing-gates.json": "ee26b357d326afa4f2f85e245dcfb8a59559d5f3917054f37d93d7a833db8600",
+  "previous-receipt-text/README.md": "1ec72a3c8605d9ea7c8d68c2ebf3eaaa2356f1b277a05a64ba840d819798dfee",
+  "previous-receipt-text/measurement-status.json": "b52ab59255fc333370c4a64f66f0288d2b82e4a7017736c320c3e5048030c93a",
+  "previous-receipt-text/running-campaign.json": "06452bb056ca2eb132259a689ebab4588335e6f39ad6065e8f089a60a7712429",
+  "retained-files-sha256.json": "52e3118d7a69cea210300fb944a1d1a0efeec0c507dddc2624add488a154cd66",
+  "summary.json": "58f812db0382d2b6f18af8e1c44266a5d79b703032c7c146bda984f67938cd8c"
+}

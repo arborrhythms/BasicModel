@@ -1,0 +1,26 @@
+..................ss..ss.ss............................................. [ 56%]
+................................X.......................                 [100%]
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16057: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16057: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_sparse_layer.py::test_spmm_kernel_parity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:51.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+121 passed, 6 skipped, 1 xpassed, 5 warnings in 6.09s

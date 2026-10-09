@@ -85,7 +85,7 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
                              m.conceptualSpace.stm._buffer.detach().clone(),
                              float(total.detach())))
             if alternative:
-                constraints.append((m._compose_prefix_slots.detach().clone(),
+                constraints.append((m._compose_fork.taken.clone(),
                                     m._compose_forced_slots.detach().clone()))
         return backward(total, *args, **kwargs)
     monkeypatch.setattr(m, '_backward_training_loss', capture)
@@ -117,13 +117,13 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
         assert changed_compose[~narrowing].all()
         a,b=audit['narrowing_actions']
         assert (a[narrowing]!=b[narrowing]).any(-1).all()
-        prefix, forced = constraints[0]
+        taken, forced = constraints[0]
         assert torch.equal(forced.any(-1),~narrowing)
-        assert torch.equal(observed[0][1][prefix], observed[1][1][prefix])
+        assert taken[~narrowing].all()
         assert (observed[0][1][forced] != observed[1][1][forced]).all()
         assert m._exploration_trial is False
         assert not hasattr(m, '_compose_state_snapshot')
-        assert m._compose_exploit_actions is None
+        assert m._compose_fork is None
     finally:
         m.End()
         m.symbolSpace.soft_reset()

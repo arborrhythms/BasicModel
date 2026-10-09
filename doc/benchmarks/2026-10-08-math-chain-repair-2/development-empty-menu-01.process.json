@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open"
+  ],
+  "pid": 75822,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 508511648,
+  "elapsed_seconds": 4.6308187920367345,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-empty-menu-01.log"
+}

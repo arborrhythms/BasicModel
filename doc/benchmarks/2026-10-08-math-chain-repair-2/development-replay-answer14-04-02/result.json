@@ -1,0 +1,16 @@
+{
+  "kind": "development",
+  "condition": "answer_and_expectation",
+  "seed": null,
+  "attention_budget": 32,
+  "ltm_capacity": 32768,
+  "completed_epochs": 0,
+  "status": "failed",
+  "error": "TypeError(\"<lambda>() got an unexpected keyword argument 'answer_line'\")",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development_epoch.py\", line 91, in main\n    model = build_model(config)\n            ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain.py\", line 102, in build_model\n    TheData.load('math_chain')\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 794, in load\n    self.loadMathChain(dat or {})\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1391, in loadMathChain\n    self.refresh_math_chain(answer_line=True)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1401, in refresh_math_chain\n    presentations = self.math_chain_corpus.presentation(answer_line=answer_line)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: <lambda>() got an unexpected keyword argument 'answer_line'\n",
+  "total_seconds": 0.012619707966223359,
+  "counts": {},
+  "timing_seconds": {},
+  "seconds_per_sentence": {},
+  "source_unchanged": true
+}

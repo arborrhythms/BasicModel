@@ -1,0 +1,50 @@
+F..........................................                              [100%]
+=================================== FAILURES ===================================
+_____ test_transparent_operation_preserves_a_vp_with_a_relational_operand ______
+
+    def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
+        """The failed development verb/tense suffix retains three native roles."""
+        from dataclasses import replace
+        from types import SimpleNamespace
+        import weakref
+        from ClauseJournal import finish_clause
+        from ClauseRow import predicate_identity
+        from test_clause_storage import clause_store, part_clause
+        from test_sentence_references import language_and_program
+        store, _ = clause_store()
+        prior = store.write_clause(part_clause())
+        identity = int(store.row_ids[prior])
+        language, entry = language_and_program()
+        language._compose_binary_rules = (SimpleNamespace(method_name='verb',
+            clause_form='VP', head_role=1, predicate_identity='verb'),)
+        language._compose_unary_rules = (SimpleNamespace(method_name='tense',
+            scope_transparent=True, head_role=0),)
+        point, other = entry.leaves
+        # The numerical journal says the verb's right operand is the earlier
+        # relation. Its head's point-valued identity survives the unary suffix.
+        entry = replace(entry, reference_ids=torch.tensor([1, identity]), word_ids=torch.tensor([1,3]),
+            actions=torch.tensor([[0,-1,0], [0,-1,1], [1,0,-1], [2,0,-1]]),
+            operation_refs=torch.tensor([[-1,-1],[-1,-1],[1,identity],[1,-1]]),
+            operation_relations=torch.tensor([[False,False],[False,False],
+                                               [False,True],[True,False]]),
+            operation_values=torch.stack((torch.zeros(3,4),torch.zeros(3,4),
+                torch.stack((point,other,point+other)),
+                torch.stack((point+other,point*0,point+other)))),
+            end_state=torch.stack((point+other,point*0,point*0)))
+        registry = SimpleNamespace(space=SimpleNamespace(_clause_store_ref=weakref.ref(store)))
+        field = finish_clause(language, entry, registry=registry)
+        assert field.relation == 'operator' and field.point is None
+        assert field.slots.shape[0] == 3
+>       assert field.refs[0] == 1 and field.refs[2] == ('clause',0)
+E       AssertionError: assert (1 == 1 and -3396958634754465183 == ('clause', 0))
+
+test/test_live_references.py:38: AssertionError
+=============================== warnings summary ===============================
+test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand
+1 failed, 42 passed, 1 warning in 4.69s

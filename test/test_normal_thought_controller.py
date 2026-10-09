@@ -286,10 +286,10 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     assert len(selected) == 1
     row, result = selected[0]
     assert row == 0
-    from ThoughtReferences import open_slots
+    from ThoughtReferences import needs_episode, open_slots
     operations = [r.operation for r in result.records if r.kind == 'thought']
     assert operations[0] == 'part'
-    if open_slots(result.meaning):
+    if needs_episode(result.meaning):
         assert result.work.remaining == 0 and 'conclude' not in operations
     else:
         assert operations[-1] == 'conclude'
@@ -497,7 +497,7 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
     derivation = model.resolveAnswer(
         Understanding(sentence_states=(__import__("Understanding").SentenceEndState(
             ConceptualMeaning.from_description(_leaves[0]),
-            query=registry.form("equal", _leaves[0], _leaves[0])),)), WhatQuestion.present(0))
+            query=registry.form("equal", _part, _part)),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
     torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
@@ -628,7 +628,7 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
     derivation = model.resolveAnswer(
         Understanding(sentence_states=(__import__("Understanding").SentenceEndState(
             ConceptualMeaning.from_description(_leaves[0]),
-            query=registry.form("equal", _leaves[0], _leaves[0])),)), WhatQuestion.present(0))
+            query=registry.form("equal", _part, _part)),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
     assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"

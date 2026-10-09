@@ -1,0 +1,2162 @@
+{
+  "forced": true,
+  "reverse": false,
+  "resolved": [
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -4191640702090580585
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          8399123792478378858
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        6270288901810095578
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          8470550594512274251
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -7851603299011888011
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          8225199114031382898
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -3296478153189139319
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -7148145306505680713
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -9133315220674085340
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          2621302472122779542
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        7859571106594454866
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5209915908127195373
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -1203414686428731297
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -2431033793338897912
+        ]
+      ]
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        7422560041866890985
+      ],
+      "open": [],
+      "refs": [
+        [
+          "ltm",
+          "address-v1",
+          -2149897151002164411
+        ],
+        [
+          "sym",
+          20
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -2518293674002972478
+        ]
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": -4636924190174205399,
+      "address": [
+        "ltm",
+        "address-v1",
+        -4636924190174205399
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 48,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 2,
+      "row_id": 1521328566918252193,
+      "address": [
+        "ltm",
+        "address-v1",
+        1521328566918252193
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 48,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 4,
+      "row_id": -1265605995086290863,
+      "address": [
+        "ltm",
+        "address-v1",
+        -1265605995086290863
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": -1,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 6,
+      "row_id": -9031899055622466281,
+      "address": [
+        "ltm",
+        "address-v1",
+        -9031899055622466281
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": -1,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 8,
+      "row_id": 7993247035670799083,
+      "address": [
+        "ltm",
+        "address-v1",
+        7993247035670799083
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": -1,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 10,
+      "row_id": 4755221611824725987,
+      "address": [
+        "ltm",
+        "address-v1",
+        4755221611824725987
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 48,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 12,
+      "row_id": 4969563052718455422,
+      "address": [
+        "ltm",
+        "address-v1",
+        4969563052718455422
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": -1,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 14,
+      "row_id": -4601221475786742136,
+      "address": [
+        "ltm",
+        "address-v1",
+        -4601221475786742136
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 48,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    },
+    {
+      "epoch": 1,
+      "source": 1,
+      "row_id": -8000037683328527930,
+      "address": [
+        "ltm",
+        "address-v1",
+        -8000037683328527930
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 16,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 3,
+      "row_id": 5079462517990769670,
+      "address": [
+        "ltm",
+        "address-v1",
+        5079462517990769670
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": -1,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 5,
+      "row_id": 2175603618464375522,
+      "address": [
+        "ltm",
+        "address-v1",
+        2175603618464375522
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": -1,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 7,
+      "row_id": -2651815266657148608,
+      "address": [
+        "ltm",
+        "address-v1",
+        -2651815266657148608
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 12,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 9,
+      "row_id": 3711139095536881623,
+      "address": [
+        "ltm",
+        "address-v1",
+        3711139095536881623
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": -1,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 11,
+      "row_id": -6489507865316972691,
+      "address": [
+        "ltm",
+        "address-v1",
+        -6489507865316972691
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": -1,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 13,
+      "row_id": 8178649010635156544,
+      "address": [
+        "ltm",
+        "address-v1",
+        8178649010635156544
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 17,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 15,
+      "row_id": 5712495477034920031,
+      "address": [
+        "ltm",
+        "address-v1",
+        5712495477034920031
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": -1,
+      "query_open": []
+    }
+  ],
+  "choices": [
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 0,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": "equal",
+      "action": 1063,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": "surface",
+      "action": 1187,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "equal",
+      "action": 1063,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 5,
+      "operation": "equal",
+      "action": 1046,
+      "forced_departure": true
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": "equal",
+      "action": 1061,
+      "forced_departure": false
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 2,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 3,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 4,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 5,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 6,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    },
+    {
+      "row": 7,
+      "word": 5,
+      "operation": null,
+      "action": 1200,
+      "forced_departure": false
+    }
+  ]
+}

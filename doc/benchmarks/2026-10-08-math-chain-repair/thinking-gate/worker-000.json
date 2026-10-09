@@ -1,0 +1,604 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+    "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+    "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+    "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+    "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+    "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+    "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+    "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+  ],
+  "completed": [
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+    "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+    "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+    "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+    "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+    "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+    "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+    "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+  ],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.839554790989496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9053969159722328,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.637s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.201s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.186s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23387295799329877,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.154s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.37491541588678956,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003125790972262621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2973369170213118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3715622080489993,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.152s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n{'present_word': 'hello', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n{'present_word': 'loving', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n{'present_word': 'there', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n{'present_word': 'world', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014283403288573027,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.24087354203220457,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.9541336249094456,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08879212499596179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5945346669759601,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.165s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.172s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.169s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.170s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.171s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5707907909527421,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.163s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2363190419273451,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.156s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2361555420793593,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.153s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07870262500364333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0273689579917118,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.154s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.164s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.160s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.156s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042554200626909733,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.3852597080403939,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.987s; word units 100.0% of 30 words (letters-only 100.0% of 30).\r\n"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 12.512642292072996,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.024427499971352518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007718041073530912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010501540964469314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.057064041029661894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023166707251220942,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007887042011134326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015369169414043427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01813800004310906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008593708043918014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.022385207936167717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007257084012962878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02522229205351323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02835200005210936,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009041790966875851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00985249993391335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009734957944601774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010186083032749593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00950883305631578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006943417014554143,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01945804199203849,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.023528958903625607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013590625021606684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030978750437498093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011890409514307976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008550707949325442,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017509999452158809,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027866660384461284,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005665000062435865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001208874979056418,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004290409851819277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042937498074024916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003972909180447459,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038174993824213743,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004431670531630516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038708304055035114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006281250389292836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007637499365955591,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

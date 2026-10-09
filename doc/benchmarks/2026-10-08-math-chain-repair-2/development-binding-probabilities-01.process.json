@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development_binding_probabilities.py"
+  ],
+  "pid": 78287,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1912949064,
+  "elapsed_seconds": 9.850851416937076,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-binding-probabilities-01.log"
+}

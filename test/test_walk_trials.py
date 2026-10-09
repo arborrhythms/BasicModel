@@ -50,7 +50,7 @@ def test_thought_pair_keeps_one_episode_and_costs_before_policy_backward():
     def score(result):
         assert all(p.grad is None for p in model.parameters())
         calls.append(tuple(record.operation for record in result.records))
-        return torch.tensor(float(len(calls)==1)*10.)
+        return dict(reconstruction=torch.tensor(float(len(calls)==1)*10.), answer=0.)
     with model._query_boundary_scope((0,)):
         result=model.run_selected_thought(question,work_budget=16,score=score)
     assert len(calls)==2
@@ -72,14 +72,71 @@ def test_thought_pair_tie_keeps_greedy_state_and_shared_meter():
     meter=QueryWorkBudget(20)
     meter.require('bracket',4)
     def score(result):
-        # Cancel the work term to test an exact tie in the owner's return.
-        return torch.tensor(1.-model.WHAT_STEP_COST*result.work.spent,dtype=torch.float64)
+        return torch.tensor(1.,dtype=torch.float64)
     with model._query_boundary_scope((0,)):
         result=model.run_selected_thought(registry.form('part',part,whole),work=meter,score=score)
     assert not model._last_thought_comparison['explore_kept']
     assert result.work is meter
     assert meter.spent==4+memory.thought_state().work_spent
     assert meter.counts['bracket']==4
+
+
+def test_thought_explore_starts_at_detached_departure_without_reopening_episode(monkeypatch):
+    from unittest.mock import patch
+    import WalkTrials
+    from test_normal_thought_controller import _catalog_world
+    model, registry, memory, part, whole = _catalog_world()
+    model.train()
+    choose = model._choose_selected_thought_action
+    capture = WalkTrials.capture_thought_fork
+    begin = memory.begin_thought_episode
+    run = model._run_selected_thought_once
+    choices, starts, forks = [], [], []
+
+    def observed_choice(*args, **kwargs):
+        walk = model._thought_walk
+        step = len(walk['actions'])
+        value = choose(*args, **kwargs)
+        choices.append((bool(walk.get('collect_fork')), step,
+                        walk['choices'][-1]['probability'].requires_grad))
+        return value
+
+    def second_departure(model, trace, meter, **continuation):
+        # Fix the reservoir outcome for this unit certificate, without
+        # replaying or replacing any grammar execution.
+        number = sum(trace['eligible'])
+        with patch.object(torch, 'rand', lambda *a, **k: torch.tensor(0. if number <= 2 else 1.)):
+            capture(model, trace, meter, **continuation)
+
+    def observed_begin(*args, **kwargs):
+        starts.append(True)
+        return begin(*args, **kwargs)
+
+    def observed_run(*args, **kwargs):
+        fork = kwargs.get('fork')
+        if fork is not None:
+            forks.append(fork)
+            current, outcome, _parents = fork['continuation']
+            assert not current.roles.requires_grad
+            if outcome is not None:
+                assert not outcome['meaning'].roles.requires_grad
+        return run(*args, **kwargs)
+
+    monkeypatch.setattr(model, '_choose_selected_thought_action', observed_choice)
+    monkeypatch.setattr(WalkTrials, 'capture_thought_fork', second_departure)
+    monkeypatch.setattr(memory, 'begin_thought_episode', observed_begin)
+    monkeypatch.setattr(model, '_run_selected_thought_once', observed_run)
+    with model._query_boundary_scope((0,)):
+        model.run_selected_thought(registry.form('isPart', part, whole),
+                                   work_budget=16, score=lambda result: 0.)
+    audit = model._last_thought_comparison
+    assert len(starts) == len(forks) == 1
+    assert audit['departure'] == 1
+    assert [step for greedy, step, _ in choices if greedy] == [0, 1]
+    assert [step for greedy, step, _ in choices if not greedy][0] == 1
+    assert [(greedy, step) for greedy, step, grad in choices if grad] == [(False, 1)]
+    assert audit['explore'][:1] == audit['greedy'][:1]
+    assert audit['explore'][1] != audit['greedy'][1]
 
 
 def test_walk_audit_records_strict_wins_and_sentence_stability():

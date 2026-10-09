@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/resume_standing.py",
+    "sum",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/measurements/sum-04"
+  ],
+  "pid": 27711,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 389940352,
+  "elapsed_seconds": 5.318988584098406,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/measurements/sum-04/run.log"
+}

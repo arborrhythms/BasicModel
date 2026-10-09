@@ -1,0 +1,454 @@
+diff --git a/bin/ModelAttention.py b/bin/ModelAttention.py
+index eb5edd462..72aaa6586 100644
+--- a/bin/ModelAttention.py
++++ b/bin/ModelAttention.py
+@@ -135,6 +135,8 @@ def stage_input(model):
+     model._attention_poles=None
+     model._attention_grammar_mask=None
+     model._attention_read=None
++    model._attention_greedy=None
++    model._attention_pole_representation=False
+     model._word_expectation=None
+     model._word_expectation_input=None
+     from QueryWork import QueryWorkBudget
+@@ -147,6 +149,9 @@ def stage_input(model):
+     B,W,D=slab.shape
+     if len(model._attention_meters) != B:
+         model._attention_meters=tuple(QueryWorkBudget(model.attention_budget) for _ in range(B))
++    # Zero is the ordinary-composition control: no bracket walk or thought
++    # read is performed. The stem still supplies every word to the VP path.
++    if model.attention_budget == 0:return
+     if W == 0:return
+     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
+     texts=fi.get('word_texts') or ()
+diff --git a/bin/Models.py b/bin/Models.py
+index ffab62279..ae3eec7df 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -9729,6 +9729,9 @@ class BasicModel(BaseModel):
+                  self.__dict__.get("_ws_universe"))
+         try:
+             with self._synthesis_guard():
++                # A target's local stem shape cannot resize or clear the
++                # live source streams (attention, thought and discourse).
++                object.__setattr__(self.inputSpace, '_model_symbolSpace', None)
+                 for space in (getattr(self, "inputSpace", None),
+                               getattr(self, "perceptualSpace", None),
+                               getattr(self, "conceptualSpace", None),
+@@ -9736,7 +9739,7 @@ class BasicModel(BaseModel):
+                     if space is not None:
+                         object.__setattr__(space, "_online_learning_frozen", True)
+                 prepared = self.inputSpace.prepInput(list(texts))
+-                in_sub = self._lex_embed_stem(prepared)
++                in_sub = self._lex_embed_stem(prepared, target_only=True)
+                 event = (in_sub.materialize()
+                          if hasattr(in_sub, "materialize") else in_sub)
+                 if not torch.is_tensor(event):
+@@ -13007,7 +13010,7 @@ class BasicModel(BaseModel):
+                 ws._predicate_masks()     # prime the host masks (main thread)
+         isp._unit_span_fn = fn
+ 
+-    def _lex_embed_stem(self, x):
++    def _lex_embed_stem(self, x, *, target_only=False):
+         """Eager stem: lex (InputSpace) -> embed (PartSpace) -> finalize
+         bookkeeping (InputSpace), model-orchestrated (2026-06-07).
+ 
+@@ -13027,7 +13030,9 @@ class BasicModel(BaseModel):
+         ``_staged_concepts_in`` for the symbolic branch (Phase 1: staged,
+         UNUSED; Phase 2 consumes it at WS stage 0). This unpack is the
+         orchestration-side shim the plan allows -- downstream contracts are
+-        unchanged.
++        unchanged. ``target_only`` stops after percept embedding: a loss-side
++        text target must not open attention, stage expectations or bind the
++        teacher's live source addresses.
+         """
+         # Keep the gated word-major radix mode in sync with the model flag on
+         # every forward.  Tests/ablations may toggle ``serialObjectMeta`` on a
+@@ -13137,15 +13142,20 @@ class BasicModel(BaseModel):
+                 _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
+                               for row in _spans_full.detach().to("cpu")]
+             object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
+-            self._observe_word_units(concepts_in, _unit_rows)
++            if not target_only:
++                self._observe_word_units(concepts_in, _unit_rows)
+             try:
+                 self.perceptualSpace.embed_stem(in_sub)
+             finally:
+                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
+             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
++            if target_only:
++                return in_sub
+             self._record_unit_pulls(_ws_list[0] if _ws_list else None)
+             self._pad_staged_unit_maps(_ws_list[0] if _ws_list else None)
+             self._ensure_pid_byte_table()
++        if target_only:
++            return in_sub
+         self._ensure_chunk_machinery()
+         # Resolve sparse concept identities only after the word-major PS stem
+         # has exposed its exact residual parts and WS has staged the matching
+@@ -15882,7 +15892,7 @@ class BasicModel(BaseModel):
+ 
+         self.bindingDepth = bindingDepth
+         self.attention_budget = int(TheXMLConfig.get('architecture.attentionBudget',default=32))
+-        if self.attention_budget < 1:raise ValueError('attentionBudget must be positive')
++        if self.attention_budget < 0:raise ValueError('attentionBudget must be nonnegative')
+         self.concept_order_limit = max(0,int(TheXMLConfig.get('architecture.conceptLayers',default=2))-1)
+ 
+         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
+@@ -15933,6 +15943,7 @@ class BasicModel(BaseModel):
+         self.allow_contradiction = int(
+             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
+         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
++        self.equality_loss_weight = float(TheXMLConfig.training("equalityLossWeight", default=0.0) or 0.0)
+         if float(TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0):
+             raise ValueError("answerLossWeight is retired; use the paired grammar cost")
+         if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
+@@ -19901,6 +19912,13 @@ class BasicModel(BaseModel):
+                               torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
+         observation = self._sentence_observation(state, sid, active)
+         observation['record'] = record
++        if getattr(self, 'equality_loss_weight', 0.) > 0:
++            from EqualityLearning import cost as equality_cost
++            equal_cost, equal_counts = equality_cost(self.languageSpace,
++                observation['entries'], active, root)
++            self._last_equality_learning = dict(cost=equal_cost.detach(), counts=equal_counts)
++            errors.add('expectation.equal', equal_cost, weight=self.equality_loss_weight,
++                       category='expectation')
+         observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
+             if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
+         observation['walk_loss'] = (self._decomposition_walk_teacher_loss(observation, record)
+@@ -20386,7 +20404,10 @@ class BasicModel(BaseModel):
+         from ReferenceContext import ReferenceBank
+         disc = getattr(self.symbolSpace, 'expectation', None)
+         B, D = active.shape[0], like.shape[-1]
+-        C = max(1, int(getattr(disc, '_inter_chain_window', 1)))
++        window = max(1, int(getattr(disc, '_inter_chain_window', 1)))
++        # A sentence occurrence is a referent in its own right. Keep the
++        # bounded situation's rows beside its identified noun columns.
++        C = 2 * window
+         ids = torch.full((B, C), -1, device=like.device, dtype=torch.long)
+         values = like.new_zeros(B, C, D)
+         valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
+@@ -20406,13 +20427,24 @@ class BasicModel(BaseModel):
+                     estimates, _, _ = disc._inter_predictor(*disc._prediction_inputs(inputs, replay=True))
+                     query = estimates[0, 0].detach().to(like)
+                 predicted[b] = True
+-            if components is not None and disc is not None and bool(active[b]):
+-                for i, (identity, frame) in enumerate(components.candidate_frames(disc.situation_references(b))[-C:]):
++            frames = (() if disc is None or not bool(active[b]) else
++                      tuple(disc.situation_references(b))[-window:])
++            if components is not None and frames:
++                for i, (identity, frame) in enumerate(components.candidate_frames(frames)[-window:]):
+                     point = components.situated_point(identity, frame)
+                     if point is not None:
+                         ids[b, i] = identity
+                         valid[b, i] = True
+                         values[b, i] = point.detach().to(like)
++            for i, frame in enumerate(frames, start=window):
++                # This bank supplies numerical NP operands. A relational
++                # row has no fusible point; its typed description remains
++                # available to the boundary query/ask capabilities.
++                if frame.row_id in (-1, 0) or frame.point is None:
++                    continue
++                ids[b, i] = frame.row_id
++                valid[b, i] = True
++                values[b, i] = frame.point.detach().to(like)
+             queries.append(query)
+         types = self._sentence_reference_types(like)
+         cases = None
+@@ -20424,6 +20456,7 @@ class BasicModel(BaseModel):
+             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
+         inventory = torch.tensor(() if components is None else components.nouns.ids,
+                                  dtype=torch.long, device=like.device)
++        inventory = torch.unique(torch.cat((inventory, ids[valid])))
+         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases, inventory)
+ 
+     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
+diff --git a/bin/Queries.py b/bin/Queries.py
+index 80c43d61c..519dc8bed 100644
+--- a/bin/Queries.py
++++ b/bin/Queries.py
+@@ -2197,7 +2197,17 @@ class GrammaticalThoughtRegistry:
+                     {operation.operand_roles[0]: (value, reference)}, source=source)
+                 requests.append(ThoughtOperationCandidate(operation, request, ()))
+                 break
+-        return tuple(requests)
++        legal = []
++        for request in requests:
++            try:
++                self.signature_for(request.request, verify_reference=False)
++            except ValueError:
++                # A closed LTM reference is not a native taxonomy endpoint
++                # for an open traversal. Preserve the executor's type and
++                # polarity contract before the request enters the softmax.
++                continue
++            legal.append(request)
++        return tuple(legal)
+ 
+     def signature_for(self, meaning, *, work=None, verify_reference=True):
+         """Recover one checked operation from a canonical VP and role mask."""
+diff --git a/bin/ThoughtAnswer.py b/bin/ThoughtAnswer.py
+index 0ce79940c..bd7ff71fe 100644
+--- a/bin/ThoughtAnswer.py
++++ b/bin/ThoughtAnswer.py
+@@ -53,6 +53,13 @@ def scorer(model, state, observation, sentence):
+             if reader is not None and value is not None:
+                 value = reader(model,bound,sentence,active,view,registry=comparison)
+         trials.append((presented,comparison,getattr(model,'_thought_walk',None)))
++        data = model.inputSpace.data
++        if getattr(data, 'answer_mode', None) == 'binding':
++            questions = model._sentence_answer_questions
++            answer = data.what(questions[row]) if row < len(questions) else None
++            if answer is not None and answer.available:
++                from BindingAnswers import cost
++                return cost(model, result.meaning, answer.what)
+         return 0. if value is None else value[row] if value.ndim else value
+     return score,trials
+ 
+diff --git a/bin/ThoughtReferences.py b/bin/ThoughtReferences.py
+index ac7132a6a..e6d916132 100644
+--- a/bin/ThoughtReferences.py
++++ b/bin/ThoughtReferences.py
+@@ -141,6 +141,10 @@ def fill(meaning, result, *, witnesses=(), operation=None):
+             references[role] = evidence['reference']
+             roles[role], mask[role] = evidence.get('binding_value', evidence.get('value')).to(roles), True
+     data = bindings(meaning)
++    filled_roles = tuple((kind, role) for kind, role in open_slots(meaning)
++                         if kind != 'evidence' and references[role] is not None)
++    if filled_roles:
++        data['_bound_roles'] = tuple(dict.fromkeys((*data.get('_bound_roles', ()), *filled_roles)))
+     data['_thought_witnesses'] = tuple(dict.fromkeys((*data.get('_thought_witnesses', ()),
+                                                    *witnesses)))
+     if operation is not None:
+diff --git a/bin/data.py b/bin/data.py
+index 6a318a9bc..d2bdcd3d1 100644
+--- a/bin/data.py
++++ b/bin/data.py
+@@ -676,6 +676,10 @@ class Data():
+         # Self-supervised corpora still carry placeholder OutputSpace tensors
+         # for batching, but those placeholders are not supervised targets.
+         self.has_supervised_outputs = False
++        # Optional text answers remain loss-side labels; the loader tensors
++        # are only batching sentinels, never a numeric answer vocabulary.
++        self.text_answers = None
++        self.answer_mode = None
+         self.grammar_lessons = {"train": [], "validation": [], "test": []}
+         self.source_manifest = None
+         # Parallel objective addresses for the Teacher's direct
+@@ -753,6 +757,8 @@ class Data():
+         values; finally moves tensors to ``TheDevice``.
+         """
+         self.has_supervised_outputs = False
++        self.text_answers = None
++        self.answer_mode = None
+         self.source_manifest = {"dataset": str(dataset)}
+         self.grammar_lessons = {"train": [], "validation": [], "test": []}
+         self.source_addresses = {
+@@ -784,6 +790,8 @@ class Data():
+             self.loadInline(dat or {})
+         if dataset == "math":
+             self.loadMath(dat or {})
++        if dataset == "math_chain":
++            self.loadMathChain(dat or {})
+         if dataset == "mnist":
+             self.has_supervised_outputs = True
+         self._compute_ranges()
+@@ -985,9 +993,13 @@ class Data():
+                 if not bool(self.has_supervised_outputs):
+                     return WhatAnswer.unavailable(
+                         question, "the split has no supplied supervised output")
+-                values = self._what_split_values(question.split, "output")
++                values = (self.text_answers.get(question.split, ())
++                          if self.text_answers is not None else
++                          self._what_split_values(question.split, "output"))
+                 value = self._what_value_at(
+                     values, question.where, split=question.split, role="output")
++                if value is None:
++                    return WhatAnswer.unavailable(question, "this sentence has no supplied answer")
+                 return WhatAnswer(
+                     question=question, what=value, provenance="data",
+                     source_where=question.where)
+@@ -1369,6 +1381,39 @@ class Data():
+         self.test_output       = data["test"]["label"]
+         self.processLM(data)
+ 
++    def loadMathChain(self, dat=None):
++        """Opaque-word worked corpus; labels are text, never numeral vectors."""
++        self.answer_mode = 'binding'
++        self.__dict__.pop('math_range', None)
++        self.__dict__.pop('math_problems', None)
++        from math_chain_corpus import MathChainCorpus
++        self.math_chain_corpus = MathChainCorpus()
++        self.refresh_math_chain(answer_line=True)
++
++    def refresh_math_chain(self, *, answer_line=True):
++        """Fresh source presentations, with premises shuffled each epoch.
++
++        Exact records stay on this data/evaluation owner. Only the ordinary
++        sentence strings, document addresses and separately held labels reach
++        the learner. Validation/test sources stop at the question.
++        """
++        from math_chain_corpus import flatten
++        presentations = self.math_chain_corpus.presentation(answer_line=answer_line)
++        flat = {name: flatten(documents, supplied=answer_line and name == 'train')
++                for name, documents in presentations.items()}
++        self.source_manifest = dict(dataset='math_chain')
++        self.processLM({name: dict(text=flat[name][0], label=[])
++                        for name in ('train', 'validation', 'test')})
++        self.text_answers = {name: values[1] for name, values in flat.items()}
++        self.has_supervised_outputs = any(value is not None
++                                          for value in self.text_answers['train'])
++        self.math_chain_documents = presentations
++        for name, (texts, _targets, addresses) in flat.items():
++            self.source_addresses[name] = [dict(address, split=name) for address in addresses]
++            if name == 'beyond':
++                self.beyond_input = texts
++                self.beyond_output = [torch.zeros(1) for _ in texts]
++
+     def loadMath(self, dat=None):
+         """Exact dependency-arithmetic / linear-constraint problems
+         (doc/specs/2026-09-09-mathematical-thinking.md section 4).
+diff --git a/bin/exact.py b/bin/exact.py
+index e5f4bbae6..964e50ad5 100644
+--- a/bin/exact.py
++++ b/bin/exact.py
+@@ -491,11 +491,11 @@ class MathProblemGenerator:
+     shuffled; distractors are consistent equations over off-chain variables.
+     """
+ 
+-    def __init__(self, seed: int = 0, range: int = 64,
++    def __init__(self, seed: Optional[int] = 0, range: int = 64,
+                  depths: Sequence[int] = (1, 2, 3),
+                  distractors: Sequence[int] = (0, 1, 2), stage: int = 1,
+                  operators: Sequence[str] = ("add",)):
+-        self.rng = random.Random(int(seed))
++        self.rng = random.Random(None if seed is None else int(seed))
+         self.range = int(range)
+         self.depths = tuple(int(d) for d in depths)
+         self.distractors = tuple(int(d) for d in distractors)
+diff --git a/data/model.xsd b/data/model.xsd
+index a82b5414b..da75ed068 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -709,6 +709,7 @@
+       <!-- exact dependency-arithmetic / linear-constraint problems
+            (bin/exact.py MathProblemGenerator; mathematical thinking spec 4). -->
+       <xs:enumeration value="math"/>
++      <xs:enumeration value="math_chain"/>
+     </xs:restriction>
+   </xs:simpleType>
+ 
+@@ -873,6 +874,7 @@
+       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
+       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
++      <xs:element name="equalityLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+       <!-- Retired separate soft bridge policy. Zero remains loadable for
+            old configurations; nonzero values are rejected by model setup. -->
+       <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+diff --git a/doc/Params.md b/doc/Params.md
+index 32018b928..dc84e2193 100644
+--- a/doc/Params.md
++++ b/doc/Params.md
+@@ -60,7 +60,7 @@ sub-elements `<training>` and `<data>` (see below).
+ | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
+ | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
+ | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
+-| `attentionBudget` | positive int | `32` | One allowance for input bracket operations, symbol recall and thought attention. Grammatical word composition does not spend it. Also sizes the padded bracket table. |
++| `attentionBudget` | nonnegative int | `32` | One allowance for input bracket operations, symbol recall and thought attention. Grammatical word composition does not spend it. A positive value also sizes the padded bracket table; zero disables the walk and thought work while retaining ordinary word composition for the VP-only control. |
+ | `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. |
+ | `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. |
+ | Removed attention controls | — | rejected | `subsymbolicOrder`, `symbolicOrder`, `subsymbolicLoop`, `serial`, `modeSchedule`, `readingAttention`, `globalAttention` and `globalAttentionConsume` are rejected by schema and runtime validation. |
+diff --git a/test/test_expectation_defaults.py b/test/test_expectation_defaults.py
+index 42b843c96..dcfdec49b 100644
+--- a/test/test_expectation_defaults.py
++++ b/test/test_expectation_defaults.py
+@@ -146,10 +146,14 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
+     from test_meronomy_ladder import _build_ladder_variant
+     monkeypatch.setenv("MODEL_COMPILE", "none")
+     estimates = []
++    # Pair the counterfactuals at one unseeded initialization. The shared
++    # construction helper no longer installs a fixed learner seed.
++    initial_rng = torch.get_rng_state()
+     for index, rows in enumerate((
+         [["1 plus 2", "3 plus 4"], ["5 plus 6"]],
+         [["1 plus 2", "7 plus 8"], ["9 plus 0"]],
+     )):
++        torch.set_rng_state(initial_rng)
+         model = _build_ladder_variant(tmp_path, f"isolated_expectation_{index}", [
+             ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+             ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+diff --git a/test/test_output_path_supervised.py b/test/test_output_path_supervised.py
+index c84c57fb7..1ba0f5a3d 100644
+--- a/test/test_output_path_supervised.py
++++ b/test/test_output_path_supervised.py
+@@ -466,7 +466,9 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
+     m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+     m.eval()
+     m.what_thinking_iterations = 2
+-    memory = WhatInteractionMemory(batch=2, capacity=8)
++    # This fixture replaces the normal memory; preserve enough history for
++    # any legal unseeded episode and its nested-context drain records.
++    memory = WhatInteractionMemory(batch=2, capacity=2 * m.attention_budget + 4)
+     object.__setattr__(m.symbolSpace, "what_memory", memory)
+     questions = (What.supervised(0), What.supervised(1))
+     try:
+@@ -477,6 +479,9 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
+             module["value"].weight.fill_(0.003)
+             module["out"].weight.copy_(torch.eye(concept_width) * 0.1)
+             response = torch.linspace(0.1, 0.3, 104)
++            # Inject a legacy context through its own API; an unseeded
++            # reading may have produced ordinary thought records beforehand.
++            memory.reset()
+             for b in range(2):
+                 memory.append_what_slot(LTMSlot(input=torch.zeros(104), output=response), b=b)
+             deltas = torch.stack([m._attend_ltm(base[b, 0], [response]) for b in range(2)])
+@@ -499,6 +504,7 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
+             torch.testing.assert_close(query[0, 0], expected)
+             # Later state changes cannot revise the resolved thinking result.
+             _capture_program_probe(m, ["5 plus 6", "7 plus 8"])
++            memory.reset()
+             memory.append_what_slot(LTMSlot(input=torch.ones(104),
+                                            output=torch.full((104,), 8.0)), b=0)
+             again = m._materialize_answer_idea(u, d, questions)[0]
+diff --git a/test/test_output_walk.py b/test/test_output_walk.py
+index d08a07e15..6ab30188e 100644
+--- a/test/test_output_walk.py
++++ b/test/test_output_walk.py
+@@ -742,6 +742,8 @@ def test_held_answer_idea_ignores_later_staging_and_memory_context():
+             d = m._resolve_answer(u, questions)
+             before = m._materialize_answer_idea(u, d, questions)[0].clone()
+             _capture_program_probe(m, ["8 plus 2", "5 plus 9"])
++            # Legacy parity injection cannot share ordinary thought history.
++            memory.reset()
+             for b in range(2):
+                 memory.append_what_slot(LTMSlot(input=torch.full((D,), 7.0),
+                                                output=torch.full((D,), -3.0)), b=b)
+diff --git a/test/test_unified_thought_controller.py b/test/test_unified_thought_controller.py
+index c06184a68..7cd18b3d1 100644
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -141,6 +141,10 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
+     from test_output_walk import _model, _capture_program_probe
+     from What import What
+     import ThoughtCredit
++    import ThoughtClosing
++    # The explicit questions below own this fixture. A random surface
++    # reading must not introduce a third, unrelated controller episode.
++    monkeypatch.setattr(ThoughtClosing, 'closing_question', lambda *_args: None)
+     model = _model()
+     model._tensor_peer_while_eager = True
+     model._chart_compose_per_word = lambda: None
+diff --git a/todo.md b/todo.md
+index 3ba383b95..6b0afb568 100644
+--- a/todo.md
++++ b/todo.md
+@@ -17,7 +17,7 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
+ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
+ lines below keep the numbers their items had when they landed.
+ 
+-**Current:** **6.2, thinking with query/ask and the operator renames**, is an uncommitted candidate after the [repair pass](doc/benchmarks/2026-10-07-item6-2-repair/README.md), awaiting Claude's review under [Claude's specification](doc/specs/2026-10-07-thinking.md). Measurements and the review handoff belong to its [receipt](doc/benchmarks/2026-10-07-item6-2/README.md); stop for Claude's review before a commit. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7. Its learning gates remain pending the million-sentence checkpoint and are not claimed.
++**Current:** **6.2's mechanism is accepted and landed** at `e43638a`; the parent bump is `1970001`. The next step is [MM_math_chain](doc/benchmarks/2026-10-07-math-chain/README.md), under [thinking spec §10–§11](doc/specs/2026-10-07-thinking.md). Its source and measurement are in progress; stop for Claude's review before any learning-step commit. The [repair receipt](doc/benchmarks/2026-10-07-item6-2-repair/README.md) establishes configured-run completion, not learned chaining. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7. Its learning gates remain pending the million-sentence checkpoint and are not claimed.
+ 
+ **Current sequence (6.5 mechanism accepted on October 7; no conference freeze):**
+ query and ask → 6.2 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.

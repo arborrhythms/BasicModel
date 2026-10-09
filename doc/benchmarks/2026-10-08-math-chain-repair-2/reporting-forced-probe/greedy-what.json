@@ -1,0 +1,34 @@
+{
+  "definition": "Existing greedy compose closing, before the keep decision is committed; free referent attributed to the lexical what by the native forward identity. No extra forward pass.",
+  "first_question": {
+    "epoch": 1,
+    "phase": "train",
+    "split": "train",
+    "document": "reporter-0",
+    "completed_batch": true,
+    "what_identified": true,
+    "what_open": true,
+    "what_open_roles": [
+      0
+    ],
+    "open_references": [
+      [
+        "referent",
+        0
+      ],
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ],
+    "kept_trial": "greedy"
+  },
+  "first_epoch_questions_observed": 2,
+  "first_epoch_what_opens": 2,
+  "first_epoch_what_identified": 2,
+  "detail_file": "episode-batches.jsonl"
+}

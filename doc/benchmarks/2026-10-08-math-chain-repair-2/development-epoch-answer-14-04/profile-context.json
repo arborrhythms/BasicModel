@@ -1,0 +1,32 @@
+{
+  "seconds": 0.9434904999798164,
+  "occupancy": 55,
+  "capacity": 32768,
+  "references_open": 1,
+  "work": 32,
+  "source_evidence": [
+    1.0,
+    1.0
+  ],
+  "mode": "assertive",
+  "operations": [
+    "ask",
+    "ask",
+    "ask"
+  ],
+  "query_results": [],
+  "thought_steps": 3,
+  "trial_costs": [
+    0.32,
+    0.32
+  ],
+  "trial_answer_costs": [
+    0.0,
+    0.0
+  ],
+  "trial_work_costs": [
+    0.32,
+    0.32
+  ],
+  "exhausted_closing": null
+}

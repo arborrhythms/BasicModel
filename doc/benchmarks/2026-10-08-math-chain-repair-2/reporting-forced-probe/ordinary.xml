@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- Opaque number words and ordinary sentence/answer learning. Arithmetic
+       is confined to math_chain_corpus and evaluation. No numeral code,
+       numeric answer vocabulary, plus executor or definition curriculum. -->
+  <architecture>
+    <bindingDepth>3</bindingDepth>
+    <conceptBinding>aligned</conceptBinding>
+    <conceptLayers>1</conceptLayers>
+    <syntacticOrder>0</syntacticOrder>
+    <mereologyRaise>true</mereologyRaise>
+    <serialObjectMeta>true</serialObjectMeta>
+    <sentenceProtocol>false</sentenceProtocol>
+    <serialWordCapacity>16</serialWordCapacity>
+    <serialWordBuckets>16</serialWordBuckets>
+    <serialResidualPartCapacity>64</serialResidualPartCapacity>
+    <sigmaPi>butterfly</sigmaPi>
+    <transformChooser>mlp</transformChooser>
+    <answerSynthesis>true</answerSynthesis>
+    <categoryCodebook>true</categoryCodebook>
+    <ltmConsolidation>true</ltmConsolidation>
+    <attentionBudget>32</attentionBudget>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>math_chain</dataset>
+    </data>
+    <training>
+      <numEpochs>17</numEpochs>
+      <batchSize>8</batchSize>
+      <packSentences>false</packSentences>
+      <outputInLoop>true</outputInLoop>
+      <numWorkers>0</numWorkers>
+      <learningRate>0.001</learningRate>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <reconstructionScale>0.1</reconstructionScale>
+      <equalityLossWeight>1</equalityLossWeight>
+      <sentenceExpectation>true</sentenceExpectation>
+      <sentenceExpectationScope>structured</sentenceExpectationScope>
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <sentenceExpectationArmaScale>0</sentenceExpectationArmaScale>
+      <sentenceExpectationContrastiveWeight>0</sentenceExpectationContrastiveWeight>
+      <intraLossWeight>0.1</intraLossWeight>
+    </training>
+  </architecture>
+  <InputSpace><nOutput>128</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>
+  <PartSpace>
+    <nInput>128</nInput><nInputDim>104</nInputDim>
+    <nVectors>4096</nVectors><nDim>104</nDim>
+    <nOutput>8</nOutput><nOutputDim>104</nOutputDim>
+    <synthesis>meronomy</synthesis><invertible>true</invertible>
+  </PartSpace>
+  <ConceptualSpace>
+    <nInput>8</nInput><nInputDim>104</nInputDim>
+    <nVectors>4096</nVectors><stmCapacity>8</stmCapacity>
+    <nDim>104</nDim><nOutput>8</nOutput><nOutputDim>104</nOutputDim>
+    <meaningWidth>32</meaningWidth><invertible>true</invertible>
+  </ConceptualSpace>
+  <WholeSpace>
+    <digitWholes>false</digitWholes><whitespaceUnits>true</whitespaceUnits>
+    <analysis>meronomy</analysis><butterfly>true</butterfly>
+    <nInput>8</nInput><nInputDim>104</nInputDim><nVectors>4096</nVectors>
+    <nDim>104</nDim><nOutput>8</nOutput><nOutputDim>104</nOutputDim>
+    <invertible>true</invertible>
+  </WholeSpace>
+  <!-- Text answers use the ordinary binding and reverse surface reader.
+       This one-slot structural adapter is independent of the numeral range. -->
+  <OutputSpace>
+    <nInput>8</nInput><nInputDim>104</nInputDim><nVectors>1</nVectors>
+    <nDim>1</nDim><nOutput>1</nOutput><nOutputDim>1</nOutputDim>
+  </OutputSpace>
+  <SymbolSpace>
+    <truthMaxEntries>65536</truthMaxEntries>
+    <!-- Section 14.8 declaration: 17 graded presentations, 4,510 observed
+         rows in the development epoch (76,670 at a linear projection),
+         with reserve for later growth and evaluation. This is measured
+         provisioning, not a worst-case bound; a full store still raises.
+         ltmCapacity is authoritative over inherited truthMaxEntries. -->
+    <ltmCapacity>8192</ltmCapacity>
+    <language><grammar>complete.grammar</grammar></language>
+  </SymbolSpace>
+</model>

@@ -1,0 +1,48 @@
+................F....................................................... [ 56%]
+...F.F.......s..........................................                 [100%]
+=================================== FAILURES ===================================
+____ test_residual_credit_replays_current_chooser_and_has_its_own_baseline _____
+test/test_negative_expectation.py:157: in test_residual_credit_replays_current_chooser_and_has_its_own_baseline
+    from test_item6_2_thinking import test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
+E   ImportError: cannot import name 'test_expectation_credit_moves_shared_chooser_toward_the_completed_chain' from 'test_item6_2_thinking' (/Users/arogers/github/WikiOracle/basicmodel/test/test_item6_2_thinking.py)
+____ test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed ____
+test/test_normal_thought_controller.py:503: in test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 24 / 24 (100.0%)
+E   Greatest absolute difference: 0.6235688924789429 at index (1, 5) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (0, 0) (up to 1.3e-06 allowed)
+_______ test_normal_boundary_realizes_the_controller_selected_operation ________
+test/test_normal_thought_controller.py:628: in test_normal_boundary_realizes_the_controller_selected_operation
+    derivation = model.resolveAnswer(
+bin/Models.py:8613: in resolveAnswer
+    return self._resolve_answer(understanding, questions, **({} if score is None else {'score':score}))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8708: in _resolve_answer
+    selected_thoughts = self._run_selected_sentence_thoughts(
+bin/Models.py:6464: in _run_selected_sentence_thoughts
+    results.append((row, self.run_selected_thought(question, row=row,
+bin/Models.py:6034: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6418: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6396: in run_context
+    raise ValueError('cannot conclude with open references and work remaining')
+E   ValueError: cannot conclude with open references and work remaining
+=============================== warnings summary ===============================
+test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_position_is_independent_of_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7089: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3892/test_input_event_position_is_i0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_residual_credit_replays_current_chooser_and_has_its_own_baseline
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation
+3 failed, 124 passed, 1 skipped, 2 warnings in 38.31s

@@ -1,0 +1,30 @@
+{
+  "phase": "complete failed validation retained; four fixtures corrected; focused 9/9 passed",
+  "findings": [
+    {
+      "nodes": 1,
+      "file": "test/test_arithmetic_isolation.py",
+      "cause": "Renaming replaced the complete bindings dictionary and erased _source_evidence; preserve metadata while renaming the symbol. Isolated context comparison is bit-identical with that correction."
+    },
+    {
+      "nodes": 2,
+      "file": "test/test_existence_metadata.py",
+      "cause": "Complete relation expected to be a question merely because evidence is (0,0); \u00a714.7.2 removes evidence pseudo-slots. Preserve UNKNOWN posture assertions; assert no free variables."
+    },
+    {
+      "nodes": 1,
+      "file": "test/test_grammatical_query_vps.py",
+      "cause": "Fixture called its row complete but gave it three unbound references. Supply the native relation references; the complete existing-occurrence, inline, and bound-constituent retrieval assertions then pass unchanged in isolated diagnosis."
+    },
+    {
+      "nodes": 3,
+      "file": "test/test_selected_nested_meaning.py",
+      "cause": "Bound nested child and parent have no free variables and (0,0) evidence. Under \u00a714 they retain the two native rows (unverified child, observation parent), without the two former evidence-question rows. Diagnostic confirms detached contents, native parent-to-child reference, no free slots, and zero evidence."
+    }
+  ],
+  "learner_changes": false,
+  "math_attempts_started": 0,
+  "failed_validation": "validation-sweep-01",
+  "archived_source": "validation-source-01",
+  "focused_check": "validation-fixtures-focused.log"
+}

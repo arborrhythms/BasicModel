@@ -129,12 +129,14 @@ def test_budget_exhaustion_reports_overlarge_derivation():
     assert result['traces'][0]['kind'].tolist() == [1]
 
 
-def test_forced_round_is_uniform_over_exploit_used_rounds(monkeypatch):
+def test_reservoir_keeps_each_eligible_round_with_probability_one_over_k(monkeypatch):
     step = layer()
     x = torch.tensor([[[1.], [2.], [3.]]]).expand(6, -1, -1)
+    draws = iter(([0.] * 6, [.5, .99, .0, .49, .8, .8],
+                  [.34, .99, .34, .99, .0, .32]))
+    monkeypatch.setattr(torch, 'rand_like', lambda like, **kw:
+                        torch.tensor(next(draws), device=like.device))
     exploit = step.derive(x, slots=1, rounds=6, greedy=True)
-    monkeypatch.setattr(torch, 'rand', lambda *a, **kw:
-                        torch.tensor([.0, .32, .34, .66, .67, .99], device=kw.get('device')))
     explore = step.derive(x, slots=1, rounds=6, exploit=exploit)
     assert explore['forced_round'].tolist() == [0, 0, 1, 1, 2, 2]
     assert (explore['actions'] != exploit['actions']).any(-1).all()

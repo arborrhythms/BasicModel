@@ -1,0 +1,31 @@
+.........................F................                               [100%]
+=================================== FAILURES ===================================
+____________ test_negative_image_concludes_absence_with_confidence _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1461edee0>
+
+    def test_negative_image_concludes_absence_with_confidence(monkeypatch):
+        from ThoughtClosing import absence
+        from Layers import MeaningExpectation
+        model,registry,store,(a,b,c)=world()
+        predicted=registry.form('part',a,b,mode='assertive')
+        roles=torch.ones_like(predicted.roles)
+        prior=MeaningExpectation(roles, torch.zeros(3))
+        observed=replace(predicted,roles=torch.zeros_like(roles))
+        model.expectation_gain=.6
+        image=ClosingImage.form(observed.roles,roles,
+            torch.full((3,),.5),gain=.6,form_width=0)
+        source=store.append_meaning(predicted,kind='observation',evidence=(1.,0.))
+        witness=store.occurrence_of(source)
+        model.symbolSpace.expectation=SimpleNamespace(last_expectation_comparison=lambda row:SimpleNamespace(estimate=prior,source_occurrences=(witness,)))
+        index=absence(model,0,observed,image)
+>       assert index==1 and store.row(index)['kind']=='inference'
+E       AssertionError: assert (1 == 1 and 'question' == 'inference'
+E         
+E         - inference
+E         + question)
+
+test/test_item6_2_thinking.py:192: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence
+1 failed, 41 passed, 1 warning in 14.37s

@@ -1,0 +1,1480 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming",
+    "test/test_free_reconstruction.py::test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+    "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost",
+    "test/test_frozen_concepts.py::test_frozen_no_forming",
+    "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+    "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+    "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+    "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+    "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+    "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+    "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only",
+    "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]",
+    "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]",
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]",
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]",
+    "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy",
+    "test/test_generation_catalog.py::test_default_catalog_does_not_borrow_a_natural_fold_from_another_space",
+    "test/test_generation_catalog.py::test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_global_attention.py::test_ranges_over_all_addressable_spaces",
+    "test/test_global_attention.py::test_typed_where_and_soft_read_shapes",
+    "test/test_global_attention.py::test_large_shared_codebook_is_memory_safe",
+    "test/test_global_attention.py::test_gradient_stops_at_keys",
+    "test/test_global_attention.py::test_temperature_flattens_peaked_distribution",
+    "test/test_global_attention.py::test_temperature_zero_is_sharpest",
+    "test/test_global_attention.py::test_empty_spaces_returns_none",
+    "test/test_global_attention.py::test_global_on_builds_module",
+    "test/test_global_attention.py::test_reading_config_shares_the_answer_reader",
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+    "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+    "test/test_global_attention.py::test_global_params_reach_optimizer",
+    "test/test_global_consume.py::test_consume_zero_init_is_noop",
+    "test/test_global_consume.py::test_consume_gate_injects_on_leading_width",
+    "test/test_global_consume.py::test_consume_handles_2d_and_3d_symbols",
+    "test/test_global_consume.py::test_consume_none_content_is_noop",
+    "test/test_global_consume.py::test_consume_width_mismatch_slices_to_common",
+    "test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config",
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+    "test/test_global_consume.py::test_zero_gate_matches_consume_off",
+    "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+    "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+    "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other0-1.0]",
+    "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other1--1.0]",
+    "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other2-0.0]",
+    "test/test_gradient_factorization.py::test_sparse_operator_cosine_uses_touched_rows",
+    "test/test_gradient_factorization.py::test_missing_or_zero_gradients_are_not_reported_as_agreement",
+    "test/test_gradient_factorization.py::test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned",
+    "test/test_gradient_factorization.py::test_persistent_opposition_is_named_without_changing_training",
+    "test/test_gradient_factorization.py::test_large_finite_gradients_and_mixed_sparse_dense_cosine",
+    "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionPriority-true]",
+    "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[outputGradientRatio-0.5]",
+    "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionLossTolerance-1e-8]",
+    "test/test_gradient_factorization.py::test_policy_observation_and_checked_truth_effect_are_detached",
+    "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_excludes_the_expressed_pole_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestArityContract::test_arity_two_default_raises",
+    "test/test_grammar_binary_ops.py::TestArityContract::test_unary_accepts_one_operand",
+    "test/test_grammar_fixtures.py::test_fixture_1_that_alice_left",
+    "test/test_grammar_fixtures.py::test_fixture_2_alice_wants_to_run",
+    "test/test_grammar_fixtures.py::test_fixture_3_the_tired_alice_wants_to_sleep",
+    "test/test_grammar_fixtures.py::test_fixture_4_alice_persuaded_bob_to_run",
+    "test/test_grammar_fixtures.py::test_fixture_5_alice_ran",
+    "test/test_grammar_fixtures.py::test_fixture_6_alice_is_running",
+    "test/test_grammar_fixtures.py::test_fixture_7_alice_has_run",
+    "test/test_grammar_fixtures.py::test_fixture_8_alice_had_been_running",
+    "test/test_grammar_identity_rule.py::test_id_SS_resolves_to_identity_rule",
+    "test/test_grammar_identity_rule.py::test_syntactic_layer_execute_short_circuits_identity",
+    "test/test_grammar_identity_rule.py::test_reverse_rule_derived_for_identity",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_packed_parameter_shape",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_perms_buffer_shape",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_requires_power_of_two",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_grammar_layer_butterfly_true_n8",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_grammar_layer_constructs_with_butterfly_flag",
+    "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_forward_n4",
+    "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_forward_n8",
+    "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_reverse_n4",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n16",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n2",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n4",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n8",
+    "test/test_grammar_layer_butterfly.py::TestButterflyParameterCount::test_param_count_formula",
+    "test/test_grammar_layer_butterfly.py::TestButterflyParameterCount::test_param_count_n8",
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_constructs",
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_forward_reverse_roundtrip",
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_constructs",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init",
+    "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+    "test/test_grammar_order_typing.py::test_bare_category_is_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_one",
+    "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
+    "test/test_grammar_order_typing.py::test_whitespace_tolerant",
+    "test/test_grammar_order_typing.py::test_kleene_variable_zero_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_negative_offset",
+    "test/test_grammar_order_typing.py::test_invalid_raises",
+    "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
+    "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+    "test/test_grammar_order_typing.py::test_lift_preserves_subject_order",
+    "test/test_grammar_order_typing.py::test_lower_rule_has_order_delta_minus_one",
+    "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
+    "test/test_grammar_order_typing.py::test_unary_rule_order_signature",
+    "test/test_grammar_order_typing.py::test_lhs_order_captured",
+    "test/test_grammar_order_typing.py::test_modal_sentence_lift",
+    "test/test_grammar_order_typing.py::test_complete_grammar_relation_ops_registered_and_mirrored",
+    "test/test_grammar_order_typing.py::test_signatures_capture_explicit_orders_for_runtime_use",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_class_contract",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_compose_matches_forward",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_forward_is_content_transparent",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_parameter_free_construction",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_permissive_arguments",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_reverse_structural_split",
+    "test/test_grammar_preposition.py::TestPrepositionRegistration::test_in_grammar_layer_classes",
+    "test/test_grammar_preposition.py::TestPrepositionRegistration::test_surface_schema_assigned"
+  ],
+  "completed": [
+    "test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming",
+    "test/test_free_reconstruction.py::test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+    "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost",
+    "test/test_frozen_concepts.py::test_frozen_no_forming",
+    "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+    "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+    "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+    "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+    "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+    "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+    "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only",
+    "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]",
+    "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]",
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]",
+    "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]",
+    "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy",
+    "test/test_generation_catalog.py::test_default_catalog_does_not_borrow_a_natural_fold_from_another_space",
+    "test/test_generation_catalog.py::test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_global_attention.py::test_ranges_over_all_addressable_spaces",
+    "test/test_global_attention.py::test_typed_where_and_soft_read_shapes",
+    "test/test_global_attention.py::test_large_shared_codebook_is_memory_safe",
+    "test/test_global_attention.py::test_gradient_stops_at_keys",
+    "test/test_global_attention.py::test_temperature_flattens_peaked_distribution",
+    "test/test_global_attention.py::test_temperature_zero_is_sharpest",
+    "test/test_global_attention.py::test_empty_spaces_returns_none",
+    "test/test_global_attention.py::test_global_on_builds_module",
+    "test/test_global_attention.py::test_reading_config_shares_the_answer_reader",
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+    "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+    "test/test_global_attention.py::test_global_params_reach_optimizer",
+    "test/test_global_consume.py::test_consume_zero_init_is_noop",
+    "test/test_global_consume.py::test_consume_gate_injects_on_leading_width",
+    "test/test_global_consume.py::test_consume_handles_2d_and_3d_symbols",
+    "test/test_global_consume.py::test_consume_none_content_is_noop",
+    "test/test_global_consume.py::test_consume_width_mismatch_slices_to_common",
+    "test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config",
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+    "test/test_global_consume.py::test_zero_gate_matches_consume_off",
+    "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+    "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+    "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other0-1.0]",
+    "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other1--1.0]",
+    "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other2-0.0]",
+    "test/test_gradient_factorization.py::test_sparse_operator_cosine_uses_touched_rows",
+    "test/test_gradient_factorization.py::test_missing_or_zero_gradients_are_not_reported_as_agreement",
+    "test/test_gradient_factorization.py::test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned",
+    "test/test_gradient_factorization.py::test_persistent_opposition_is_named_without_changing_training",
+    "test/test_gradient_factorization.py::test_large_finite_gradients_and_mixed_sparse_dense_cosine",
+    "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionPriority-true]",
+    "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[outputGradientRatio-0.5]",
+    "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionLossTolerance-1e-8]",
+    "test/test_gradient_factorization.py::test_policy_observation_and_checked_truth_effect_are_detached",
+    "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_excludes_the_expressed_pole_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestArityContract::test_arity_two_default_raises",
+    "test/test_grammar_binary_ops.py::TestArityContract::test_unary_accepts_one_operand",
+    "test/test_grammar_fixtures.py::test_fixture_1_that_alice_left",
+    "test/test_grammar_fixtures.py::test_fixture_2_alice_wants_to_run",
+    "test/test_grammar_fixtures.py::test_fixture_3_the_tired_alice_wants_to_sleep",
+    "test/test_grammar_fixtures.py::test_fixture_4_alice_persuaded_bob_to_run",
+    "test/test_grammar_fixtures.py::test_fixture_5_alice_ran",
+    "test/test_grammar_fixtures.py::test_fixture_6_alice_is_running",
+    "test/test_grammar_fixtures.py::test_fixture_7_alice_has_run",
+    "test/test_grammar_fixtures.py::test_fixture_8_alice_had_been_running",
+    "test/test_grammar_identity_rule.py::test_id_SS_resolves_to_identity_rule",
+    "test/test_grammar_identity_rule.py::test_syntactic_layer_execute_short_circuits_identity",
+    "test/test_grammar_identity_rule.py::test_reverse_rule_derived_for_identity",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_packed_parameter_shape",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_perms_buffer_shape",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_requires_power_of_two",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_grammar_layer_butterfly_true_n8",
+    "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_grammar_layer_constructs_with_butterfly_flag",
+    "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_forward_n4",
+    "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_forward_n8",
+    "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_reverse_n4",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n16",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n2",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n4",
+    "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n8",
+    "test/test_grammar_layer_butterfly.py::TestButterflyParameterCount::test_param_count_formula",
+    "test/test_grammar_layer_butterfly.py::TestButterflyParameterCount::test_param_count_n8",
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_constructs",
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_forward_reverse_roundtrip",
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_constructs",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init",
+    "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+    "test/test_grammar_order_typing.py::test_bare_category_is_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_one",
+    "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
+    "test/test_grammar_order_typing.py::test_whitespace_tolerant",
+    "test/test_grammar_order_typing.py::test_kleene_variable_zero_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_negative_offset",
+    "test/test_grammar_order_typing.py::test_invalid_raises",
+    "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
+    "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+    "test/test_grammar_order_typing.py::test_lift_preserves_subject_order",
+    "test/test_grammar_order_typing.py::test_lower_rule_has_order_delta_minus_one",
+    "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
+    "test/test_grammar_order_typing.py::test_unary_rule_order_signature",
+    "test/test_grammar_order_typing.py::test_lhs_order_captured",
+    "test/test_grammar_order_typing.py::test_modal_sentence_lift",
+    "test/test_grammar_order_typing.py::test_complete_grammar_relation_ops_registered_and_mirrored",
+    "test/test_grammar_order_typing.py::test_signatures_capture_explicit_orders_for_runtime_use",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_class_contract",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_compose_matches_forward",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_forward_is_content_transparent",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_parameter_free_construction",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_permissive_arguments",
+    "test/test_grammar_preposition.py::TestPrepositionLayer::test_reverse_structural_split",
+    "test/test_grammar_preposition.py::TestPrepositionRegistration::test_in_grammar_layer_classes",
+    "test/test_grammar_preposition.py::TestPrepositionRegistration::test_surface_schema_assigned"
+  ],
+  "slow_selected": [
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_global_attention.py::test_global_on_builds_module",
+    "test/test_global_attention.py::test_reading_config_shares_the_answer_reader",
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+    "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+    "test/test_global_attention.py::test_global_params_reach_optimizer",
+    "test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config",
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+    "test/test_global_consume.py::test_zero_gate_matches_consume_off",
+    "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+    "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+    "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019135000184178352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_free_reconstruction.py::test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01249300001654774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9171046250266954,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_no_forming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030688339611515403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002615833072923124,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003459000028669834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003142707981169224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002451958949677646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014220899902284145,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_frozen_concepts.py', 100, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005644999910145998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04661700001452118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007092918967828155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018133409321308136,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.30015404196456075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29971195792313665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9031889580655843,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights0/shared_catalog.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights0/shared_catalog.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 6 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights0/shared_catalog.ckpt\n  Keys in model but missing from file: 1 (initialized fresh)\r\n[BasicModel] Warning: cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights0/shared_catalog.ckpt: Error(s) in loading state_dict for BasicModel:\n\tMissing key(s) in state_dict: \"conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L\". \r\n"
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0169106669491157,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights1/shared_catalog.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights1/shared_catalog.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 6 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights1/shared_catalog.ckpt\n  Keys in model but missing from file: 1 (initialized fresh)\r\n[BasicModel] Warning: cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3700/test_shared_generation_weights1/shared_catalog.ckpt: Error(s) in loading state_dict for BasicModel:\n\tMissing key(s) in state_dict: \"conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L\". \r\n"
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005945420125499368,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_default_catalog_does_not_borrow_a_natural_fold_from_another_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003238749923184514,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3013850830029696,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.8034402909688652,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": false, \"initialization\": \"ambient RNG\", \"output_loss\": 1.4807275533676147, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+    },
+    {
+      "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.8679458330152556,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": true, \"initialization\": \"ambient RNG\", \"output_loss\": 1.4415183067321777, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+    },
+    {
+      "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011205830378457904,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_ranges_over_all_addressable_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010621249675750732,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_typed_where_and_soft_read_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008180419681593776,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_large_shared_codebook_is_memory_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01336704206187278,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_gradient_stops_at_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000878875027410686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_temperature_flattens_peaked_distribution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013069999404251575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_temperature_zero_is_sharpest",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012325840070843697,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_empty_spaces_returns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022316700778901577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_global_on_builds_module",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001304158940911293,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_attention.py', 165, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_reading_config_shares_the_answer_reader",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00016449997201561928,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_attention.py', 173, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010754202958196402,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_attention.py', 181, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011154194362461567,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_attention.py', 205, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011108396574854851,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_attention.py', 224, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_global_params_reach_optimizer",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011395802721381187,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_attention.py', 253, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_consume_zero_init_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003197500482201576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_consume_gate_injects_on_leading_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000305499997921288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_consume_handles_2d_and_3d_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028924993239343166,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_consume_none_content_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021541700698435307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_consume_width_mismatch_slices_to_common",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033825007267296314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012112502008676529,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 109, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011358398478478193,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 117, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_zero_gate_matches_consume_off",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011783302761614323,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 132, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011187500786036253,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 151, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001152500044554472,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 166, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011058291420340538,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 187, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.81249613687396e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_global_consume.py', 204, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other0-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008460419485345483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other1--1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005565420724451542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other2-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005507919704541564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_sparse_operator_cosine_uses_touched_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014523625024594367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_missing_or_zero_gradients_are_not_reported_as_agreement",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002258330350741744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025579193606972694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_persistent_opposition_is_named_without_changing_training",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005677080480381846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_large_finite_gradients_and_mixed_sparse_dense_cosine",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004805419594049454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionPriority-true]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027510959072969854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[outputGradientRatio-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02191520808264613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionLossTolerance-1e-8]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.021658833953551948,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_policy_observation_and_checked_truth_effect_are_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010735500021837652,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.3562185829505324,
+      "message": "",
+      "stdout": "\"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.raw_U\", \"writers\": []}, {\"elements\": 104, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.biasWeight\", \"writers\": []}, {\"elements\": 6032, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.routing_proj.weight\", \"writers\": []}, {\"elements\": 104, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.routing_proj.bias\", \"writers\": []}, {\"elements\": 151424, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.0.weight\", \"writers\": []}, {\"elements\": 208, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.0.bias\", \"writers\": []}, {\"elements\": 21632, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.2.weight\", \"writers\": []}, {\"elements\": 104, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.2.bias\", \"writers\": []}, {\"elements\": 630, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.kind_weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.kind_bias\", \"writers\": []}, {\"elements\": 1587600, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.0.weight\", \"writers\": []}, {\"elements\": 630, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.0.bias\", \"writers\": []}, {\"elements\": 198450, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.2.weight\", \"writers\": []}, {\"elements\": 315, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.2.bias\", \"writers\": []}, {\"elements\": 151424, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.0.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 208, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.0.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 21632, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.2.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 104, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.2.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace._readout_bias\", \"writers\": []}, {\"elements\": 832, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.W\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.biasWeight\", \"writers\": []}, {\"elements\": 832, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.W\", \"writers\": []}, {\"elements\": 832, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.biasWeight\", \"writers\": []}, {\"elements\": 6, \"owner\": \"output\", \"parameter\": \"answer_attention.space_bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.consume_gate\", \"writers\": []}, {\"elements\": 64, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.bias\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.bias\", \"writers\": []}, {\"elements\": 3016, \"owner\": \"output\", \"parameter\": \"question_conditioners.104.weight\", \"writers\": []}, {\"elements\": 1664, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_L\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.d\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_U\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.biasWeight\", \"writers\": []}]}\n"
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_excludes_the_expressed_pole_without_an_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002744999947026372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025283300783485174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000682624988257885,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029674998950213194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000394832924939692,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004157089861109853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002446250291541219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002864999696612358,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021516706328839064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015645904932171106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001354580745100975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031970907002687454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014599994756281376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012824998702853918,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000270291930064559,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028437504079192877,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestArityContract::test_arity_two_default_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001659579575061798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestArityContract::test_unary_accepts_one_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014762510545551777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_1_that_alice_left",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021116703283041716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_2_alice_wants_to_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022741593420505524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_3_the_tired_alice_wants_to_sleep",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025233393535017967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_4_alice_persuaded_bob_to_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002239999594166875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_5_alice_ran",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023274996783584356,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_6_alice_is_running",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042583304457366467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_7_alice_has_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030700000934302807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_8_alice_had_been_running",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003815829986706376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_identity_rule.py::test_id_SS_resolves_to_identity_rule",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03309404198080301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_identity_rule.py::test_syntactic_layer_execute_short_circuits_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030215419828891754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_identity_rule.py::test_reverse_rule_derived_for_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002643416984938085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_packed_parameter_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000319291022606194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_perms_buffer_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020087510347366333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_requires_power_of_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018133397679775953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_grammar_layer_butterfly_true_n8",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001776249846443534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_grammar_layer_constructs_with_butterfly_flag",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001302079763263464,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_forward_n4",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013652920024469495,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_forward_n8",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010455410229042172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_reverse_n4",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008093749638646841,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n16",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001592540997080505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n2",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010795840062201023,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n4",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001176666934043169,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n8",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011117499088868499,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyParameterCount::test_param_count_formula",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018779095262289047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestButterflyParameterCount::test_param_count_n8",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018229091074317694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020687503274530172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_forward_reverse_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014274590648710728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008868749719113111,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002081659622490406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001330208033323288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008645000634714961,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006011249497532845,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011158339912071824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014650006778538227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005123749142512679,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030609999084845185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2585136250127107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2970271250233054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3505696658976376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_bare_category_is_constant_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013579102233052254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_explicit_constant_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001231249189004302,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_explicit_constant_order_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011812499724328518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011312495917081833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_whitespace_tolerant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011224998161196709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_kleene_variable_zero_offset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011091702617704868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001106249401345849,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_kleene_variable_negative_offset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001076660118997097,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_invalid_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001455419696867466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012870796490460634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012083305045962334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_lift_preserves_subject_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017500005196779966,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_lower_rule_has_order_delta_minus_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015454099047929049,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001521669328212738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_unary_rule_order_signature",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014533300418406725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_lhs_order_captured",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013929198030382395,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_modal_sentence_lift",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013229204341769218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_complete_grammar_relation_ops_registered_and_mirrored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004798834095709026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_signatures_capture_explicit_orders_for_runtime_use",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015616603195667267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionLayer::test_class_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013925007078796625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionLayer::test_compose_matches_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020879204384982586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionLayer::test_forward_is_content_transparent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016662490088492632,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionLayer::test_parameter_free_construction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012883299496024847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionLayer::test_permissive_arguments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015654193703085184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionLayer::test_reverse_structural_split",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016866601072251797,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionRegistration::test_in_grammar_layer_classes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012212491128593683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_preposition.py::TestPrepositionRegistration::test_surface_schema_assigned",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012333306949585676,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

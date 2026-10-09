@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_math_chain.py",
+    "test/test_independent_components.py",
+    "test/test_item6_2_thinking.py",
+    "test/test_item6_2_repair.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

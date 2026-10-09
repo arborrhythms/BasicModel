@@ -1,0 +1,15 @@
+{
+  "phase": "declared math campaign",
+  "protocol": "protocol.json",
+  "source": "measured-source/source.json",
+  "source_digest": "4d9ee05ea8558fc99507bc8ebb1e2fa7aebffd722d579c9ff5f4083d0ab617ea",
+  "failed_validation_retained": "validation-sweep-01",
+  "final_sweep": "passed: 5636/5636 completed; 5351 passed, 284 skipped, 1 xpassed",
+  "thinking_gate": "passed 57/57",
+  "standing_thirty": "sum 10/10, XOR class/reconstruction 10/10; raw MM 8/10, both misses bit-identical on landing for all 200 steps; verified under \u00a720 with original misses retained",
+  "declared_math_attempts": 0,
+  "retries": 0,
+  "committed": false,
+  "updated_utc": "2026-10-08T22:06:31.845757+00:00",
+  "math_campaign": "running"
+}

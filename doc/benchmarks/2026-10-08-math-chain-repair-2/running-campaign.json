@@ -1,0 +1,21 @@
+{
+  "recorded_utc": "2026-10-08T22:19:26.357088+00:00",
+  "campaign_pid": 4026,
+  "campaign_tool_session": 43143,
+  "receipt_finisher_pid": 6399,
+  "receipt_finisher_tool_session": 85645,
+  "idle_sleep_inhibitor_pid": 6414,
+  "idle_sleep_inhibitor_scope": "Only while campaign PID 4026 exists; display may sleep.",
+  "status": "running",
+  "pending": 28,
+  "active": [
+    "answer_and_expectation-01",
+    "expectation_only-01"
+  ],
+  "live_progress": "math-trainings/progress.json",
+  "campaign_log": "math-campaign.log",
+  "receipt_on_completion": "MEASUREMENT.md",
+  "receipt_finisher_log": "receipt-finisher.log",
+  "protocol": "17 epochs, 10 paired starts in each of 3 conditions, 2 workers, no retries or replacements",
+  "stops_before_commit": true
+}

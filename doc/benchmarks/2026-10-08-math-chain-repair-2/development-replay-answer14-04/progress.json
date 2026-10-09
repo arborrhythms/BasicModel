@@ -1,0 +1,24 @@
+{
+  "kind": "development",
+  "condition": "answer_and_expectation",
+  "seed": null,
+  "attention_budget": 32,
+  "ltm_capacity": 32768,
+  "completed_epochs": 0,
+  "status": "started",
+  "elapsed_seconds": 72.2473614589544,
+  "counts": {
+    "plain": 68,
+    "declaratives_observed": 68,
+    "declaratives_open": 44,
+    "declaratives_references_open": 50,
+    "declaratives_episodes": 44,
+    "batches": 10,
+    "exhausted_declarative_observed": 5,
+    "exhausted_declarative_correct": 5
+  },
+  "timing_seconds": {
+    "plain": 71.62143779406324
+  },
+  "occupancy": 339
+}

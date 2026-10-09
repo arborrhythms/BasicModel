@@ -1,0 +1,33 @@
+................................F....                                    [100%]
+=================================== FAILURES ===================================
+______ test_event_implication_reads_endpoint_when_order[positions1-False] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14863bc20>
+positions = (2, 1), known = False
+
+    @pytest.mark.parametrize('positions,known', [((1,2),True),((2,1),False)])
+    def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known):
+        model,registry,store,(a,b,c)=world()
+        events=[]
+        for ref,position in zip((a,b),positions):
+            value=replace(ConceptualMeaning.from_description(registry._payload(ref)),role_refs=(ref,None,None))
+            index=store.append_meaning(value,kind='fact',evidence=(.8,.1),document_key='events',sentence_index=position)
+            events.append(store.occurrence_of(index))
+        rule=registry.form('implies',a,b,mode='assertive')
+        rule=replace(rule,role_refs=(events[0],rule.role_refs[1],events[1]))
+        store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
+        goal=registry.form('isImplied',a,b)
+        goal=replace(goal,role_refs=(events[0],goal.role_refs[1],events[1]))
+        def choose(root,active,actions,**kwargs):
+            return None if None in actions else next(action for action in actions if action.semantic_id=='isImplied')
+        monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
+        result=run(model,goal,work_budget=24)
+>       assert (not open_slots(result.meaning)) is known
+E       AssertionError: assert not () is False
+E        +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -1818431383717536428), ('sym',...e', (0.0, 0.0)), ('_thought_witnesses', (('ltm', 'address-v1', -1818431383717536428),))), scope=(), sentence_kind=None))
+E        +    where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -1818431383717536428), ('sym',...e', (0.0, 0.0)), ('_thought_witnesses', (('ltm', 'address-v1', -1818431383717536428),))), scope=(), sentence_kind=None) = SelectedThoughtResult(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', ...ration', 'isImplied'), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', ())), scope=(), sentence_kind=None)}))).meaning
+
+test/test_item6_2_thinking.py:393: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]
+1 failed, 36 passed, 1 warning in 9.89s

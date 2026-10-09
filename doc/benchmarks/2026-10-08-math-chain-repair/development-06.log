@@ -1,0 +1,54 @@
+F....                                                                    [100%]
+=================================== FAILURES ===================================
+____ test_driver_batch_groups_resize_priming_before_reads_without_broadcast ____
+
+    def test_driver_batch_groups_resize_priming_before_reads_without_broadcast():
+        from MathChainTraining import document_batches
+        from math_chain_corpus import MathChainCorpus, flatten
+        from test_priming_energy import _chain_cs
+        cs, _, _ = _chain_cs()
+        _, _, addresses = flatten(MathChainCorpus().presentation()['train'], supplied=False)
+        sizes = [len(rows) for rows, end in document_batches(addresses, 8) if end]
+        assert {2, 3, 8}.issubset(sizes)
+        # A provisioning write must not leak row zero into the first batch.
+        cs.prime_seen(torch.tensor([[3]]))
+        previous = 1
+        for batch in sizes:
+            weights = cs.priming_weights(batch=batch)
+            assert weights.shape == (batch, cs._priming_dim())
+            if batch != previous:
+                assert torch.equal(weights, torch.ones_like(weights))
+            cs.prime_seen(torch.arange(batch)[:, None] + 20)
+            weights = cs.priming_weights(batch=batch)
+            for row in range(batch):
+>               assert weights[row, row + 20] > 1
+                       ^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain_repair.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x110516300>
+func = <slot wrapper '__getitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],
+        [1., 1., 1., 1., 1., 1., 1., 1., 1...., 1., 1., 1., 1., 1., 1., 1., 1.],
+        [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]), (0, 20))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: index 20 is out of bounds for dimension 1 with size 16
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+=============================== warnings summary ===============================
+test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast
+1 failed, 4 passed, 1 warning in 2.03s

@@ -3,78 +3,71 @@ from dataclasses import replace
 import torch
 
 from Meaning import ConceptualMeaning
-from ThoughtReferences import bindings, evidence_pair, fill, from_closing, open_slots, question, with_slots
+from ThoughtReferences import bindings, evidence_pair, fill, from_closing, needs_episode, open_slots, question, with_slots
 
 
-def closing_question(meaning, clause, parsed=None, program=None):
+def closing_question(meaning, clause, parsed=None, program=None, *, store=None, written_rows=None):
     """Preserve a binder's nulls, including a lexical idea with no referent.
 
     Numerical ideas are already their own conceptual contents. Surface mode
     is evidence only: a known pair and all bound roles close even a wh-row.
     """
+    # The numerical journal has not installed its canonical role references.
+    # Its selected native/child refs, rather than those temporary nulls,
+    # determine whether the operation actually left an operand unfilled.
+    index = None if written_rows is None else written_rows.get(id(clause))
+    committed = None if store is None or index is None else store.meaning_of(index)
+    named = committed if committed is not None else replace(clause.meaning, role_refs=tuple(
+        ('selected', ref.identity if hasattr(ref, 'identity') else ref)
+        if bool(clause.meaning.role_mask[role]) and ref not in (-1, 0) else None
+        for role, ref in enumerate(clause.refs)))
+    clause_open = open_slots(named)
+    if not clause_open:
+        # A headed outer phrase does not close a reference left in one of
+        # its completed constituents. Ask on that existing inner row.
+        for child in clause.children:
+            nested = closing_question(child.meaning, child, store=store, written_rows=written_rows)
+            if nested is not None:
+                return nested
     source = parsed if parsed is not None else meaning
-    if (parsed is not None and torch.equal(parsed.roles, meaning.roles)
+    if committed is not None:
+        source = committed
+    if (committed is None and parsed is not None and torch.equal(parsed.roles, meaning.roles)
             and torch.equal(parsed.role_mask, meaning.role_mask)):
         source = replace(source, role_refs=meaning.role_refs, constituents=meaning.constituents)
     surface_open = source.mode == 'interrogative'
-    slots = list(dict.fromkeys((*open_slots(source), *open_slots(clause.meaning))))
+    slots = list(dict.fromkeys((*open_slots(source), *clause_open)))
+    if clause_open:
+        refs = list(source.role_refs)
+        for kind, role in clause_open:
+            if kind != 'evidence':
+                refs[role] = None
+        data = bindings(source)
+        data['_forward_references'] = bindings(clause.meaning).get('_forward_references', ())
+        source = replace(source, role_refs=tuple(refs), bindings=data)
     forms = () if program is None else (program.lexical_forms or ())
     lexical = any(isinstance(word, (str, bytes)) and word for word in forms)
-    if lexical and clause.relation is None and clause.refs[0] in (-1, 0):
+    if lexical and committed is None and clause.relation is None and clause.refs[0] in (-1, 0):
         source = replace(source, role_refs=(None, *source.role_refs[1:]))
         slots.append(('referent', 0))
-    source = with_slots(source, slots, pair=clause.evidence)
-    if surface_open and tuple(clause.evidence) == (0., 0.):
-        source = question(source, slots or (('evidence', -1),))
-    result = from_closing(source, evidence=clause.evidence)
-    if (parsed is not None and open_slots(parsed) == (('evidence', -1),)
-            and evidence_pair(parsed) == (0., 0.) and tuple(clause.evidence) == (0., 0.)):
-        result = question(result, (('evidence', -1),))
-    return result if open_slots(result) else None
+    pair = evidence_pair(committed) if committed is not None else clause.evidence
+    source = with_slots(source, slots, pair=pair)
+    if surface_open and tuple(pair) == (0., 0.):
+        source = question(source, slots)
+    result = from_closing(source, evidence=pair)
+    if committed is not None:
+        data = bindings(result)
+        data['_query_occurrence'] = store.occurrence_of(index)
+        data['_source_evidence'] = tuple(clause.evidence)
+        result = replace(result, bindings=data)
+    return result if needs_episode(result) else None
 
 
-def _later_binding(model, fields, *, sentence, ready):
-    """Later matching content can fill a held reference within its document."""
-    from Occurrence import source_at
-    from ThoughtStream import write
-    pending = model.__dict__.setdefault('_open_thought_rows', {})
-    for row in ready:
-        field = fields[row]
-        document = source_at(model, row, sentence)[0]
-        remaining = []
-        for owner_document, source, occurrence in pending.pop(row, ()):
-            if owner_document != document:
-                continue  # its durable question is already stored
-            if field.query is not None:
-                remaining.append((owner_document, source, occurrence))
-                continue
-            # Only the new occurrence is offered, by code identity; there is
-            # no scan or re-execution of a thought episode on later text.
-            roles = [role for kind, role in open_slots(source) if kind != 'evidence']
-            compared = roles or [role for role in range(3) if bool(source.role_mask[role])]
-            exact = all(torch.allclose(source.roles[role], field.meaning.roles[role]) for role in compared)
-            if not exact or field.row_id in (-1, 0) or tuple(field.evidence) == (0., 0.):
-                remaining.append((owner_document, source, occurrence))
-                continue
-            store = model.symbolSpace.ltm_store
-            witness = store.occurrence_of(store.index_of_row(field.row_id))
-            refs = list(field.meaning.role_refs)
-            for role in roles:
-                refs[role] = refs[role] or witness
-            supplied = replace(field.meaning, role_refs=tuple(refs))
-            resolved = fill(source, dict(meaning=supplied, support_true=field.evidence[0],
-                support_false=field.evidence[1]), witnesses=(occurrence, witness), operation='bind')
-            write(model, resolved, row=row)
-        if remaining:
-            pending[row] = remaining
-
-
-def absence(model, row, observed):
+def absence(model, row, observed, image=None):
     """Cancel the expected direction against observation before negating it."""
     from ThoughtFaces import negate
     from ThoughtStream import write
     disc = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
-    image = getattr(model, '_closing_images', {}).get(row)
     if disc is None or image is None or not image.concept_width:
         return None
     comparison = disc.last_expectation_comparison(row)
@@ -103,26 +96,32 @@ def absence(model, row, observed):
     return write(model, value, row=row)
 
 
-def close(model, fields, *, sentence, ready, score=None):
+def close(model, fields, *, sentence, ready, score=None, images=None):
     """Exactly one root episode per open closing, then the presented binding."""
-    from ThoughtCredit import observe
-    observe(model, [None if field is None else field.meaning for field in fields], sentence=sentence)
-    _later_binding(model, fields, sentence=sentence, ready=ready)
     results = []
     for row in ready:
         field = fields[row]
         if field.query is None:
-            absence(model, row, field.meaning)
+            absence(model, row, field.meaning, None if images is None else images.get(row))
             continue
-        result = model.run_selected_thought(field.query, row=row,
-            work_budget=getattr(model, 'attention_budget', 32),
-            score=None if score is None else lambda result,row=row:score(row,result))
+        previous = getattr(model, '_thought_image', None)
+        model._thought_image = None if images is None else images.get(row)
+        try:
+            result = model.run_selected_thought(field.query, row=row,
+                work_budget=getattr(model, 'attention_budget', 32),
+                score=None if score is None else lambda result,row=row:score(row,result))
+        finally:
+            if previous is None:
+                del model._thought_image
+            else:
+                model._thought_image = previous
         results.append((row, result))
+        fields[row] = replace(field, thought_completed=True)
         if not open_slots(result.meaning):
             # The answer is the binding; retain the original source field's
             # address separately from the newly concluded inference.
             if int(result.meaning.role_mask.sum()) in (1, 3):
-                fields[row] = replace(field, meaning=result.meaning, query=None,
+                fields[row] = replace(fields[row], meaning=result.meaning, query=None,
                                       evidence=evidence_pair(result.meaning))
         model._end_finished_selected_thought_episodes()
     model._sentence_fields[sentence] = tuple(fields)

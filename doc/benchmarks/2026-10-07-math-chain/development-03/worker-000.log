@@ -1,0 +1,18 @@
+......F                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations _
+test/test_math_chain.py:112: in test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+    assert model.inputSpace.data.text_answers is not None
+E   assert None is not None
+E    +  where None = <data.Data object at 0x121a2e480>.text_answers
+E    +    where <data.Data object at 0x121a2e480> = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n).data
+E    +      where InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).inputSpace
+=============================== warnings summary ===============================
+test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+1 failed, 6 passed, 1 warning in 2.33s

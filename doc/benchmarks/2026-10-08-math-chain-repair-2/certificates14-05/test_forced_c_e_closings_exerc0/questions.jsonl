@@ -1,0 +1,1 @@
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "question", "pair": null, "question_source": 1, "episode": true, "work": 9, "answer": null, "bound_correct": false, "committed_binding": null, "open": [["referent", 0]], "expected_chain_length": 0, "inference_count": 0, "chain_correct": false, "inferences": [], "operations": ["query", "conclude"]}

@@ -1,0 +1,6537 @@
+[
+  {
+    "sources": [
+      0,
+      4
+    ],
+    "source_indices": [
+      7,
+      11
+    ],
+    "words": {
+      "x": [
+        -7470117183136087333,
+        -5645781614842051753,
+        11,
+        12
+      ],
+      "y": [],
+      "three": [
+        -8466428286992094187,
+        17,
+        18,
+        9070673241472088326
+      ],
+      "one": [],
+      "four": []
+    },
+    "rows": [
+      {
+        "index": 0,
+        "kind": "unverified",
+        "row_id": -145073769805028415,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -145073769805028415
+        ],
+        "refs": [
+          [
+            "sym",
+            11
+          ],
+          null,
+          [
+            "sym",
+            12
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 1,
+        "kind": "unverified",
+        "row_id": 1508091408264503157,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1508091408264503157
+        ],
+        "refs": [
+          [
+            "sym",
+            13
+          ],
+          null,
+          [
+            "sym",
+            14
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 2,
+        "kind": "unverified",
+        "row_id": -7120703270368664105,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7120703270368664105
+        ],
+        "refs": [
+          [
+            "sym",
+            15
+          ],
+          null,
+          [
+            "sym",
+            16
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 3,
+        "kind": "unverified",
+        "row_id": -2325487778204405334,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2325487778204405334
+        ],
+        "refs": [
+          [
+            "sym",
+            17
+          ],
+          null,
+          [
+            "sym",
+            18
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 4,
+        "kind": "unverified",
+        "row_id": 8825311014081452501,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          8825311014081452501
+        ],
+        "refs": [
+          [
+            "sym",
+            19
+          ],
+          null,
+          [
+            "sym",
+            20
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 5,
+        "kind": "unverified",
+        "row_id": -5645781614842051753,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5645781614842051753
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 6,
+        "kind": "unverified",
+        "row_id": -8466428286992094187,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -8466428286992094187
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 7,
+        "kind": "observation",
+        "row_id": -5546487497478545994,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5546487497478545994
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 8,
+        "kind": "observation",
+        "row_id": -5051471411542499562,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5051471411542499562
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 9,
+        "kind": "unverified",
+        "row_id": -7470117183136087333,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7470117183136087333
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 10,
+        "kind": "unverified",
+        "row_id": 9070673241472088326,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          9070673241472088326
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 11,
+        "kind": "observation",
+        "row_id": -2921647109164382845,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2921647109164382845
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 12,
+        "kind": "observation",
+        "row_id": -2105434233942183387,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2105434233942183387
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "sources": [
+      1,
+      5
+    ],
+    "source_indices": [
+      18,
+      21
+    ],
+    "words": {
+      "x": [
+        -7470117183136087333,
+        -5645781614842051753,
+        11,
+        12
+      ],
+      "y": [],
+      "three": [
+        -8466428286992094187,
+        -4314769371633200588,
+        17,
+        18,
+        3616668074353004377,
+        9070673241472088326
+      ],
+      "one": [
+        23,
+        24
+      ],
+      "four": [
+        25,
+        26
+      ]
+    },
+    "rows": [
+      {
+        "index": 0,
+        "kind": "unverified",
+        "row_id": -145073769805028415,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -145073769805028415
+        ],
+        "refs": [
+          [
+            "sym",
+            11
+          ],
+          null,
+          [
+            "sym",
+            12
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 1,
+        "kind": "unverified",
+        "row_id": 1508091408264503157,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1508091408264503157
+        ],
+        "refs": [
+          [
+            "sym",
+            13
+          ],
+          null,
+          [
+            "sym",
+            14
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 2,
+        "kind": "unverified",
+        "row_id": -7120703270368664105,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7120703270368664105
+        ],
+        "refs": [
+          [
+            "sym",
+            15
+          ],
+          null,
+          [
+            "sym",
+            16
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 3,
+        "kind": "unverified",
+        "row_id": -2325487778204405334,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2325487778204405334
+        ],
+        "refs": [
+          [
+            "sym",
+            17
+          ],
+          null,
+          [
+            "sym",
+            18
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 4,
+        "kind": "unverified",
+        "row_id": 8825311014081452501,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          8825311014081452501
+        ],
+        "refs": [
+          [
+            "sym",
+            19
+          ],
+          null,
+          [
+            "sym",
+            20
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 5,
+        "kind": "unverified",
+        "row_id": -5645781614842051753,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5645781614842051753
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 6,
+        "kind": "unverified",
+        "row_id": -8466428286992094187,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -8466428286992094187
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 7,
+        "kind": "observation",
+        "row_id": -5546487497478545994,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5546487497478545994
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 8,
+        "kind": "observation",
+        "row_id": -5051471411542499562,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5051471411542499562
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 9,
+        "kind": "unverified",
+        "row_id": -7470117183136087333,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7470117183136087333
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 10,
+        "kind": "unverified",
+        "row_id": 9070673241472088326,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          9070673241472088326
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 11,
+        "kind": "observation",
+        "row_id": -2921647109164382845,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2921647109164382845
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 12,
+        "kind": "observation",
+        "row_id": -2105434233942183387,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2105434233942183387
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 13,
+        "kind": "unverified",
+        "row_id": -5871379996073967824,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5871379996073967824
+        ],
+        "refs": [
+          [
+            "sym",
+            21
+          ],
+          null,
+          [
+            "sym",
+            22
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 14,
+        "kind": "unverified",
+        "row_id": -3237501727024390920,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -3237501727024390920
+        ],
+        "refs": [
+          [
+            "sym",
+            23
+          ],
+          null,
+          [
+            "sym",
+            24
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 15,
+        "kind": "unverified",
+        "row_id": 4978781898711364627,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          4978781898711364627
+        ],
+        "refs": [
+          [
+            "sym",
+            25
+          ],
+          null,
+          [
+            "sym",
+            26
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 16,
+        "kind": "unverified",
+        "row_id": 5810328872754493822,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          5810328872754493822
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 17,
+        "kind": "estimate",
+        "row_id": 623154688368754408,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          623154688368754408
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 18,
+        "kind": "observation",
+        "row_id": -4314769371633200588,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -4314769371633200588
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.008911495096981525
+              ],
+              [
+                "reference",
+                -8466428286992094187
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 19,
+        "kind": "unverified",
+        "row_id": 2756583226911543903,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          2756583226911543903
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 20,
+        "kind": "estimate",
+        "row_id": -1221042433962875278,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1221042433962875278
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 21,
+        "kind": "observation",
+        "row_id": 3616668074353004377,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          3616668074353004377
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.00891150813549757
+              ],
+              [
+                "reference",
+                9070673241472088326
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "sources": [
+      2,
+      6
+    ],
+    "source_indices": [
+      27,
+      33
+    ],
+    "words": {
+      "x": [
+        -7470117183136087333,
+        -5645781614842051753,
+        -853783994501538327,
+        11,
+        12,
+        7213149484615829177
+      ],
+      "y": [
+        -6778693268921351850,
+        -6500719378353882942,
+        27,
+        28
+      ],
+      "three": [
+        -8466428286992094187,
+        -4314769371633200588,
+        17,
+        18,
+        3616668074353004377,
+        9070673241472088326
+      ],
+      "one": [
+        23,
+        24
+      ],
+      "four": [
+        25,
+        26
+      ]
+    },
+    "rows": [
+      {
+        "index": 0,
+        "kind": "unverified",
+        "row_id": -145073769805028415,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -145073769805028415
+        ],
+        "refs": [
+          [
+            "sym",
+            11
+          ],
+          null,
+          [
+            "sym",
+            12
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 1,
+        "kind": "unverified",
+        "row_id": 1508091408264503157,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1508091408264503157
+        ],
+        "refs": [
+          [
+            "sym",
+            13
+          ],
+          null,
+          [
+            "sym",
+            14
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 2,
+        "kind": "unverified",
+        "row_id": -7120703270368664105,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7120703270368664105
+        ],
+        "refs": [
+          [
+            "sym",
+            15
+          ],
+          null,
+          [
+            "sym",
+            16
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 3,
+        "kind": "unverified",
+        "row_id": -2325487778204405334,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2325487778204405334
+        ],
+        "refs": [
+          [
+            "sym",
+            17
+          ],
+          null,
+          [
+            "sym",
+            18
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 4,
+        "kind": "unverified",
+        "row_id": 8825311014081452501,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          8825311014081452501
+        ],
+        "refs": [
+          [
+            "sym",
+            19
+          ],
+          null,
+          [
+            "sym",
+            20
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 5,
+        "kind": "unverified",
+        "row_id": -5645781614842051753,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5645781614842051753
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 6,
+        "kind": "unverified",
+        "row_id": -8466428286992094187,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -8466428286992094187
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 7,
+        "kind": "observation",
+        "row_id": -5546487497478545994,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5546487497478545994
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 8,
+        "kind": "observation",
+        "row_id": -5051471411542499562,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5051471411542499562
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 9,
+        "kind": "unverified",
+        "row_id": -7470117183136087333,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7470117183136087333
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 10,
+        "kind": "unverified",
+        "row_id": 9070673241472088326,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          9070673241472088326
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 11,
+        "kind": "observation",
+        "row_id": -2921647109164382845,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2921647109164382845
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 12,
+        "kind": "observation",
+        "row_id": -2105434233942183387,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2105434233942183387
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 13,
+        "kind": "unverified",
+        "row_id": -5871379996073967824,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5871379996073967824
+        ],
+        "refs": [
+          [
+            "sym",
+            21
+          ],
+          null,
+          [
+            "sym",
+            22
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 14,
+        "kind": "unverified",
+        "row_id": -3237501727024390920,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -3237501727024390920
+        ],
+        "refs": [
+          [
+            "sym",
+            23
+          ],
+          null,
+          [
+            "sym",
+            24
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 15,
+        "kind": "unverified",
+        "row_id": 4978781898711364627,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          4978781898711364627
+        ],
+        "refs": [
+          [
+            "sym",
+            25
+          ],
+          null,
+          [
+            "sym",
+            26
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 16,
+        "kind": "unverified",
+        "row_id": 5810328872754493822,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          5810328872754493822
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 17,
+        "kind": "estimate",
+        "row_id": 623154688368754408,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          623154688368754408
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 18,
+        "kind": "observation",
+        "row_id": -4314769371633200588,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -4314769371633200588
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.008911495096981525
+              ],
+              [
+                "reference",
+                -8466428286992094187
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 19,
+        "kind": "unverified",
+        "row_id": 2756583226911543903,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          2756583226911543903
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 20,
+        "kind": "estimate",
+        "row_id": -1221042433962875278,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1221042433962875278
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 21,
+        "kind": "observation",
+        "row_id": 3616668074353004377,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          3616668074353004377
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.00891150813549757
+              ],
+              [
+                "reference",
+                9070673241472088326
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 22,
+        "kind": "unverified",
+        "row_id": -6353406268105201593,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -6353406268105201593
+        ],
+        "refs": [
+          [
+            "sym",
+            27
+          ],
+          null,
+          [
+            "sym",
+            28
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 23,
+        "kind": "unverified",
+        "row_id": -6500719378353882942,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -6500719378353882942
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 24,
+        "kind": "unverified",
+        "row_id": 1756590355593809782,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1756590355593809782
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823238916695118
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 25,
+        "kind": "unverified",
+        "row_id": 7213149484615829177,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          7213149484615829177
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0067674545571208
+              ],
+              [
+                "reference",
+                -5645781614842051753
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823238916695118
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 26,
+        "kind": "estimate",
+        "row_id": -2273575528251453029,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2273575528251453029
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.008911495096981525
+              ],
+              [
+                "reference",
+                -8466428286992094187
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 27,
+        "kind": "observation",
+        "row_id": -7559165613414693793,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7559165613414693793
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -6500719378353882942
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            7213149484615829177
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 28,
+        "kind": "observation",
+        "row_id": -735586890294829588,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -735586890294829588
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            7213149484615829177
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6500719378353882942
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 29,
+        "kind": "unverified",
+        "row_id": -6778693268921351850,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -6778693268921351850
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 30,
+        "kind": "unverified",
+        "row_id": 983515462617048884,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          983515462617048884
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823176983743906
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 31,
+        "kind": "unverified",
+        "row_id": -853783994501538327,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -853783994501538327
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0067674545571208
+              ],
+              [
+                "reference",
+                -7470117183136087333
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823176983743906
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 32,
+        "kind": "estimate",
+        "row_id": 2565741953035539872,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          2565741953035539872
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.00891150813549757
+              ],
+              [
+                "reference",
+                9070673241472088326
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 33,
+        "kind": "observation",
+        "row_id": -4503190352284204471,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -4503190352284204471
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -6778693268921351850
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -853783994501538327
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 34,
+        "kind": "observation",
+        "row_id": 6345357354189606718,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          6345357354189606718
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -853783994501538327
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6778693268921351850
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "sources": [
+      3,
+      7
+    ],
+    "source_indices": [
+      38,
+      41
+    ],
+    "words": {
+      "x": [
+        -7470117183136087333,
+        -5645781614842051753,
+        -853783994501538327,
+        11,
+        12,
+        7213149484615829177
+      ],
+      "y": [
+        -6778693268921351850,
+        -6500719378353882942,
+        27,
+        28
+      ],
+      "three": [
+        -8466428286992094187,
+        -4314769371633200588,
+        17,
+        18,
+        3616668074353004377,
+        9070673241472088326
+      ],
+      "one": [
+        23,
+        24
+      ],
+      "four": [
+        25,
+        26
+      ]
+    },
+    "rows": [
+      {
+        "index": 0,
+        "kind": "unverified",
+        "row_id": -145073769805028415,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -145073769805028415
+        ],
+        "refs": [
+          [
+            "sym",
+            11
+          ],
+          null,
+          [
+            "sym",
+            12
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 1,
+        "kind": "unverified",
+        "row_id": 1508091408264503157,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1508091408264503157
+        ],
+        "refs": [
+          [
+            "sym",
+            13
+          ],
+          null,
+          [
+            "sym",
+            14
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 2,
+        "kind": "unverified",
+        "row_id": -7120703270368664105,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7120703270368664105
+        ],
+        "refs": [
+          [
+            "sym",
+            15
+          ],
+          null,
+          [
+            "sym",
+            16
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 3,
+        "kind": "unverified",
+        "row_id": -2325487778204405334,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2325487778204405334
+        ],
+        "refs": [
+          [
+            "sym",
+            17
+          ],
+          null,
+          [
+            "sym",
+            18
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 4,
+        "kind": "unverified",
+        "row_id": 8825311014081452501,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          8825311014081452501
+        ],
+        "refs": [
+          [
+            "sym",
+            19
+          ],
+          null,
+          [
+            "sym",
+            20
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 5,
+        "kind": "unverified",
+        "row_id": -5645781614842051753,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5645781614842051753
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 6,
+        "kind": "unverified",
+        "row_id": -8466428286992094187,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -8466428286992094187
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 7,
+        "kind": "observation",
+        "row_id": -5546487497478545994,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5546487497478545994
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 8,
+        "kind": "observation",
+        "row_id": -5051471411542499562,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5051471411542499562
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -8466428286992094187
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -5645781614842051753
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 9,
+        "kind": "unverified",
+        "row_id": -7470117183136087333,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7470117183136087333
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 10,
+        "kind": "unverified",
+        "row_id": 9070673241472088326,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          9070673241472088326
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.9851362705230713,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.9851362705230713,
+          0.0
+        ]
+      },
+      {
+        "index": 11,
+        "kind": "observation",
+        "row_id": -2921647109164382845,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2921647109164382845
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 12,
+        "kind": "observation",
+        "row_id": -2105434233942183387,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2105434233942183387
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            9070673241472088326
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -7470117183136087333
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 13,
+        "kind": "unverified",
+        "row_id": -5871379996073967824,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5871379996073967824
+        ],
+        "refs": [
+          [
+            "sym",
+            21
+          ],
+          null,
+          [
+            "sym",
+            22
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 14,
+        "kind": "unverified",
+        "row_id": -3237501727024390920,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -3237501727024390920
+        ],
+        "refs": [
+          [
+            "sym",
+            23
+          ],
+          null,
+          [
+            "sym",
+            24
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 15,
+        "kind": "unverified",
+        "row_id": 4978781898711364627,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          4978781898711364627
+        ],
+        "refs": [
+          [
+            "sym",
+            25
+          ],
+          null,
+          [
+            "sym",
+            26
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 16,
+        "kind": "unverified",
+        "row_id": 5810328872754493822,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          5810328872754493822
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 17,
+        "kind": "estimate",
+        "row_id": 623154688368754408,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          623154688368754408
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 18,
+        "kind": "observation",
+        "row_id": -4314769371633200588,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -4314769371633200588
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.008911495096981525
+              ],
+              [
+                "reference",
+                -8466428286992094187
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 19,
+        "kind": "unverified",
+        "row_id": 2756583226911543903,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          2756583226911543903
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 20,
+        "kind": "estimate",
+        "row_id": -1221042433962875278,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1221042433962875278
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02631894126534462
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 21,
+        "kind": "observation",
+        "row_id": 3616668074353004377,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          3616668074353004377
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.00891150813549757
+              ],
+              [
+                "reference",
+                9070673241472088326
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 22,
+        "kind": "unverified",
+        "row_id": -6353406268105201593,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -6353406268105201593
+        ],
+        "refs": [
+          [
+            "sym",
+            27
+          ],
+          null,
+          [
+            "sym",
+            28
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 23,
+        "kind": "unverified",
+        "row_id": -6500719378353882942,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -6500719378353882942
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 24,
+        "kind": "unverified",
+        "row_id": 1756590355593809782,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1756590355593809782
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823238916695118
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 25,
+        "kind": "unverified",
+        "row_id": 7213149484615829177,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          7213149484615829177
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0067674545571208
+              ],
+              [
+                "reference",
+                -5645781614842051753
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823238916695118
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 26,
+        "kind": "estimate",
+        "row_id": -2273575528251453029,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2273575528251453029
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.008911495096981525
+              ],
+              [
+                "reference",
+                -8466428286992094187
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823852986097336
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 27,
+        "kind": "observation",
+        "row_id": -7559165613414693793,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -7559165613414693793
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -6500719378353882942
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            7213149484615829177
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 28,
+        "kind": "observation",
+        "row_id": -735586890294829588,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -735586890294829588
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            7213149484615829177
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6500719378353882942
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 29,
+        "kind": "unverified",
+        "row_id": -6778693268921351850,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -6778693268921351850
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 30,
+        "kind": "unverified",
+        "row_id": 983515462617048884,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          983515462617048884
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823176983743906
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.32151275873184204,
+          0.0
+        ]
+      },
+      {
+        "index": 31,
+        "kind": "unverified",
+        "row_id": -853783994501538327,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -853783994501538327
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          false,
+          false
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0067674545571208
+              ],
+              [
+                "reference",
+                -7470117183136087333
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.006823176983743906
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 32,
+        "kind": "estimate",
+        "row_id": 2565741953035539872,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          2565741953035539872
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_evidence_pair": [
+            0.32151275873184204,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.00891150813549757
+              ],
+              [
+                "reference",
+                9070673241472088326
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.008823297917842865
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 33,
+        "kind": "observation",
+        "row_id": -4503190352284204471,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -4503190352284204471
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -6778693268921351850
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -853783994501538327
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 34,
+        "kind": "observation",
+        "row_id": 6345357354189606718,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          6345357354189606718
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -853783994501538327
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6778693268921351850
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.2734536826610565,
+          0.0
+        ]
+      },
+      {
+        "index": 35,
+        "kind": "unverified",
+        "row_id": -1268177012214581417,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1268177012214581417
+        ],
+        "refs": [
+          [
+            "sym",
+            29
+          ],
+          null,
+          [
+            "sym",
+            30
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 36,
+        "kind": "unverified",
+        "row_id": -2286624513781540121,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -2286624513781540121
+        ],
+        "refs": [
+          [
+            "sym",
+            31
+          ],
+          null,
+          [
+            "sym",
+            32
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {},
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 37,
+        "kind": "estimate",
+        "row_id": -4166300377752583263,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -4166300377752583263
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02217782288789749
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 38,
+        "kind": "question",
+        "row_id": -5025323941232206108,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -5025323941232206108
+        ],
+        "refs": [
+          null,
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6500719378353882942
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "open"
+              ],
+              [
+                "probability",
+                0.0034900479950010777
+              ],
+              [
+                "reference",
+                0
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0034900479950010777
+              ],
+              [
+                "reference",
+                -6500719378353882942
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_forward_references": [
+            [
+              0,
+              30
+            ]
+          ],
+          "_open_references": [
+            [
+              "referent",
+              0
+            ]
+          ],
+          "_pending": true,
+          "_thought_witnesses": []
+        },
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 39,
+        "kind": "question",
+        "row_id": -1735901597872613274,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1735901597872613274
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -6500719378353882942
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "open"
+              ],
+              [
+                "probability",
+                0.0034900479950010777
+              ],
+              [
+                "reference",
+                0
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0034900479950010777
+              ],
+              [
+                "reference",
+                -6500719378353882942
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_forward_references": [
+            [
+              2,
+              30
+            ]
+          ],
+          "_open_references": [
+            [
+              "referent",
+              2
+            ]
+          ],
+          "_pending": true
+        },
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 40,
+        "kind": "estimate",
+        "row_id": -1779225438290796579,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1779225438290796579
+        ],
+        "refs": [
+          null,
+          null,
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.2734536826610565,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "mint"
+              ],
+              [
+                "probability",
+                0.02218038961291313
+              ],
+              [
+                "reference",
+                -1
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_open_references": []
+        },
+        "pair": [
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "index": 41,
+        "kind": "question",
+        "row_id": -3151693522753521121,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -3151693522753521121
+        ],
+        "refs": [
+          null,
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6778693268921351850
+          ]
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "open"
+              ],
+              [
+                "probability",
+                0.0034900314640253782
+              ],
+              [
+                "reference",
+                0
+              ],
+              [
+                "role",
+                0
+              ]
+            ],
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0034900314640253782
+              ],
+              [
+                "reference",
+                -6778693268921351850
+              ],
+              [
+                "role",
+                2
+              ]
+            ]
+          ],
+          "_forward_references": [
+            [
+              0,
+              30
+            ]
+          ],
+          "_open_references": [
+            [
+              "referent",
+              0
+            ]
+          ],
+          "_pending": true,
+          "_thought_witnesses": []
+        },
+        "pair": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 42,
+        "kind": "question",
+        "row_id": -1801315985630125649,
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          -1801315985630125649
+        ],
+        "refs": [
+          [
+            "ltm",
+            "address-v1",
+            -6778693268921351850
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          null
+        ],
+        "role_mask": [
+          true,
+          true,
+          true
+        ],
+        "bindings": {
+          "_equality": true,
+          "_evidence_pair": [
+            0.0,
+            0.0
+          ],
+          "_formation_records": [
+            [
+              [
+                "choice",
+                "open"
+              ],
+              [
+                "probability",
+                0.0034900314640253782
+              ],
+              [
+                "reference",
+                0
+              ],
+              [
+                "role",
+                2
+              ]
+            ],
+            [
+              [
+                "choice",
+                "bind"
+              ],
+              [
+                "probability",
+                0.0034900314640253782
+              ],
+              [
+                "reference",
+                -6778693268921351850
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ],
+          "_forward_references": [
+            [
+              2,
+              30
+            ]
+          ],
+          "_open_references": [
+            [
+              "referent",
+              2
+            ]
+          ],
+          "_pending": true
+        },
+        "pair": [
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  }
+]

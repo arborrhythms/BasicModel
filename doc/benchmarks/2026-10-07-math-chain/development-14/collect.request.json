@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+    "test/test_one_attention.py",
+    "test/test_word_grain_attention.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

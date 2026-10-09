@@ -1,0 +1,38 @@
+{
+  "status": "Stopped for Claude review; learning gate not met",
+  "mechanism_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "parent_bump": "1970001e6ad61f720784fc6192dfd453276a164a",
+  "origin_main_matches": true,
+  "learning_step_committed": false,
+  "index_empty": true,
+  "tracked_whitespace_check": "passed",
+  "final_document_checks": {
+    "tests": 335,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "source": {
+    "source_files": 732,
+    "source_matches": true,
+    "original_helpers_match": true,
+    "supplemental_helpers_match": true,
+    "protected_gate_files_unchanged": {
+      "test/test_explicit_dimensions.py": true,
+      "test/test_mm_xor.py": true,
+      "data/XOR_grammar.xml": true,
+      "data/MM_xor.xml": true
+    },
+    "original_receipts_unchanged": true,
+    "live_spec_sha256": "e378624c27cd1208e2df68f0b549204a6765d6e763cb8890dac921958452d508"
+  },
+  "math_attempts": 30,
+  "math_completed_trainings": 0,
+  "math_training_retries": 0,
+  "standing_trainings": 30,
+  "standing_training_retries": 0,
+  "standing_startup_import_failures": "Two launchers retained; neither trained a model; original ten entropy states restored and verified.",
+  "source_sha256": "cc0444cc4d920904c9b3454b4c235e332352f12aacd71d405e7ae029634245e3",
+  "learning_claim": false,
+  "learning_gates_6_5": "Pending the million-sentence checkpoint; not claimed"
+}

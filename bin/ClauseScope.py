@@ -10,7 +10,7 @@ class ClauseScope(nn.Module):
     relative clause in this derivation's journal; the winning closing resolves
     it to a shared row. Absolute clauses retain their numerical point.
     """
-    RELATIVE, GENERIC, SENTENCE, PREDICATE, LOCAL = 1, 2, 4, 8, 16
+    RELATIVE, GENERIC, SENTENCE, PREDICATE, LOCAL, DETERMINED = 1, 2, 4, 8, 16, 32
 
     def __init__(self, binary, unary):
         super().__init__()
@@ -33,6 +33,12 @@ class ClauseScope(nn.Module):
         self.register_buffer('unary', table(unary), persistent=False)
         self.register_buffer('binary_same_reference', torch.tensor(
             [getattr(rule, 'same_reference_idempotent', False) for rule in binary]
+            or [False]), persistent=False)
+        self.register_buffer('binary_determined', torch.tensor(
+            [getattr(rule, 'determiner_mode', None) in ('mint', 'bind') for rule in binary]
+            or [False]), persistent=False)
+        self.register_buffer('unary_determined', torch.tensor(
+            [getattr(rule, 'determiner_mode', None) in ('mint', 'bind') for rule in unary]
             or [False]), persistent=False)
 
     @staticmethod
@@ -129,6 +135,11 @@ class ClauseScope(nn.Module):
         local = torch.where(retained, previous_flags.bitwise_and(self.LOCAL) != 0,
                             sentence & relative)
         flags = flags | torch.where(local, self.LOCAL, 0)
+        determined = torch.where(binary,
+            self.binary_determined.to(state.device)[choice.local_op.clamp(0, self.binary_determined.numel()-1)],
+            self.unary_determined.to(state.device)[choice.local_op.clamp(0, self.unary_determined.numel()-1)])
+        determined |= retained & (previous_flags.bitwise_and(self.DETERMINED) != 0)
+        flags |= torch.where(determined, self.DETERMINED, 0)
         parent = torch.stack((flags, reference), -1)
         same_reference = (binary & self.binary_same_reference.to(state.device)[
             choice.local_op.clamp(0, self.binary_same_reference.shape[0]-1)]

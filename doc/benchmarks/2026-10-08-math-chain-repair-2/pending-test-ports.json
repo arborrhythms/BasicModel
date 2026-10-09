@@ -1,0 +1,5 @@
+{
+  "test/test_negative_expectation.py": "Port the delegated expectation-credit test to predictor-only credit (R + A governs departure).",
+  "test/test_normal_thought_controller.py": "The two completed-equality fixtures use anonymous tensor operands with null reference IDs. Port these bound-result fixtures to their existing native _part references; do not weaken open_slots for null relational references.",
+  "test/test_grammar_word_learning.py": "Its October-6 observer names actions using one column per operation. Use the current observer that understands reference variants, preserving the old receipt unchanged."
+}

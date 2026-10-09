@@ -1,0 +1,70 @@
+{
+  "kind": "FORCED recorder validation only; not a training measurement",
+  "passed": true,
+  "greedy": {
+    "definition": "Existing greedy compose closing, before the keep decision is committed; free referent attributed to the lexical what by the native forward identity. No extra forward pass.",
+    "first_question": {
+      "epoch": 1,
+      "phase": "train",
+      "split": "train",
+      "document": "reporter-0",
+      "completed_batch": true,
+      "what_identified": true,
+      "what_open": true,
+      "what_open_roles": [
+        0
+      ],
+      "open_references": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "kept_trial": "greedy"
+    },
+    "first_epoch_questions_observed": 2,
+    "first_epoch_what_opens": 2,
+    "first_epoch_what_identified": 2,
+    "detail_file": "episode-batches.jsonl"
+  },
+  "stats": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "split": "train",
+      "kind": "answer_line",
+      "sentences": 2,
+      "episodes": 0,
+      "work": 0,
+      "references_left_open": 0,
+      "sentences_left_open": 0,
+      "seconds": 1.8339730410370976,
+      "mean_work_per_episode": null,
+      "episode_share": 0.0,
+      "seconds_per_sentence": 0.9169865205185488
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "split": "train",
+      "kind": "question",
+      "sentences": 2,
+      "episodes": 2,
+      "work": 64,
+      "references_left_open": 2,
+      "sentences_left_open": 2,
+      "seconds": 3.086414707941003,
+      "mean_work_per_episode": 32.0,
+      "episode_share": 1.0,
+      "seconds_per_sentence": 1.5432073539705016
+    }
+  ]
+}

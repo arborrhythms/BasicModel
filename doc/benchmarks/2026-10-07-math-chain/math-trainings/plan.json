@@ -1,0 +1,163 @@
+{
+  "jobs": [
+    {
+      "run": 1,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-01"
+    },
+    {
+      "run": 1,
+      "condition": "expectation_only",
+      "name": "expectation_only-01"
+    },
+    {
+      "run": 1,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-01"
+    },
+    {
+      "run": 2,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-02"
+    },
+    {
+      "run": 2,
+      "condition": "expectation_only",
+      "name": "expectation_only-02"
+    },
+    {
+      "run": 2,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-02"
+    },
+    {
+      "run": 3,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-03"
+    },
+    {
+      "run": 3,
+      "condition": "expectation_only",
+      "name": "expectation_only-03"
+    },
+    {
+      "run": 3,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-03"
+    },
+    {
+      "run": 4,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-04"
+    },
+    {
+      "run": 4,
+      "condition": "expectation_only",
+      "name": "expectation_only-04"
+    },
+    {
+      "run": 4,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-04"
+    },
+    {
+      "run": 5,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-05"
+    },
+    {
+      "run": 5,
+      "condition": "expectation_only",
+      "name": "expectation_only-05"
+    },
+    {
+      "run": 5,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-05"
+    },
+    {
+      "run": 6,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-06"
+    },
+    {
+      "run": 6,
+      "condition": "expectation_only",
+      "name": "expectation_only-06"
+    },
+    {
+      "run": 6,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-06"
+    },
+    {
+      "run": 7,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-07"
+    },
+    {
+      "run": 7,
+      "condition": "expectation_only",
+      "name": "expectation_only-07"
+    },
+    {
+      "run": 7,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-07"
+    },
+    {
+      "run": 8,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-08"
+    },
+    {
+      "run": 8,
+      "condition": "expectation_only",
+      "name": "expectation_only-08"
+    },
+    {
+      "run": 8,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-08"
+    },
+    {
+      "run": 9,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-09"
+    },
+    {
+      "run": 9,
+      "condition": "expectation_only",
+      "name": "expectation_only-09"
+    },
+    {
+      "run": 9,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-09"
+    },
+    {
+      "run": 10,
+      "condition": "answer_and_expectation",
+      "name": "answer_and_expectation-10"
+    },
+    {
+      "run": 10,
+      "condition": "expectation_only",
+      "name": "expectation_only-10"
+    },
+    {
+      "run": 10,
+      "condition": "zero_attention_budget",
+      "name": "zero_attention_budget-10"
+    }
+  ],
+  "seed": null,
+  "retries": 0,
+  "initialization": "One fresh entropy state per run, replayed across its three conditions.",
+  "corpus": "Identical shuffled presentations across conditions; expectation-only removes answer lines and labels.",
+  "epochs": 50,
+  "workers": 2,
+  "worker_memory_bytes": 8589934592,
+  "worker_timeout": 86400,
+  "completed_run_required": true
+}

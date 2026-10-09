@@ -1,0 +1,9 @@
+{
+  "reason": "Restore missing standing audit dependency; no model or epoch ran in the failed starts; reuse their exact saved RNG states.",
+  "original_freeze_unchanged": true,
+  "source_unchanged": true,
+  "files": {
+    "round2_score_probe.py": "4cddb781779b45e93aa36870760607ebfb45b178cd261b2689a34c9fd7a3a547",
+    "resume_standing.py": "a941dbf50384f4578e88a79bfa196a2ab60e54d48c64b3f94e6c6804fc08cb98"
+  }
+}

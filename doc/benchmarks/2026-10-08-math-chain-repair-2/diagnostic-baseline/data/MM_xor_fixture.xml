@@ -1,0 +1,97 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_xor_fixture: dedicated test fixture for the META taxonomy /
+       SymbolizeLayer / RadixLayer regression suite. Decoupled from
+       MM_xor.xml so that runtime experiments on MM_xor (e.g. toggling
+       SS <codebook>quantize</codebook> -> <codebook>none</codebook>)
+       don't break the tests, which inherently require:
+         - <synthesis>meronomy</synthesis> so PerceptStore is constructed.
+         - <codebook>quantize</codebook> on WholeSpace so
+           ``WholeSpace.subspace.what`` is a Codebook and
+           ``insert_symbol`` can allocate rows.
+       Used by test/test_two_codebook_meta_taxonomy.py,
+       test/test_symbolize_layer.py, test/test_autobind_from_cs.py,
+       test/test_radix_layer_reverse.py. Do not consume this from
+       production code. -->
+  <architecture>
+    <bindingDepth>3</bindingDepth>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <conceptLayers>1</conceptLayers>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <!-- radix chunking consumes pre-lexed word tokens; pin word so it does
+         not inherit the raw default (which targets analyse). -->
+    <nVectors>8</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8</nInput>
+    <nVectors>256</nVectors>
+    <!-- The fixture begins tiny but several tests intentionally learn more
+         than eight distinct byte/chunk percepts. -->
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <butterfly>false</butterfly>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>word</lexer>
+    <nInput>8</nInput>
+    <!-- Rows 0..7 are reserved; learned wholes and META nodes require
+         additional fixed capacity without replacing the live codebook. -->
+    <nVectors>64</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>
+      <compose>
+        <rule operands="field">F = divide.forward(F)</rule>
+        <rule operands="field">F = descend.forward(F)</rule>
+        <rule operands="field">F = gloss.forward(F)</rule>
+        <rule operands="field">F = and.forward(F)</rule>
+        <rule operands="field">F = or.forward(F)</rule>
+        <rule>S = not(S)</rule>
+        <rule>S = intersection(S, S)</rule>
+        <rule>S = union(S, S)</rule>
+      </compose>
+    </grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

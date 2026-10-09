@@ -1,0 +1,95 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"text": "v is fourteen.", "source": 0, "episode": true, "spent": 32, "slots": [["relation", 1], ["referent", 2]], "refs": [null, null, null], "forward": [], "row_id": 4595408206063254258, "query": [["relation", 1], ["referent", 2]]}
+{"text": "x is one.", "source": 6, "episode": true, "spent": 32, "slots": [["relation", 1], ["referent", 2]], "refs": [null, null, null], "forward": [], "row_id": -3759709709642169944, "query": [["relation", 1], ["referent", 2]]}
+{"text": "x is two.", "source": 12, "episode": true, "spent": 32, "slots": [["relation", 1], ["referent", 2], ["evidence", -1]], "refs": [null, null, null], "forward": [], "row_id": 5015501411466080383, "query": [["relation", 1], ["referent", 2], ["evidence", -1]]}
+{"text": "v is nine.", "source": 18, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 2522108957464881112, "query": null}
+{"text": "u is twenty.", "source": 24, "episode": true, "spent": 32, "slots": [["relation", 1], ["referent", 2]], "refs": [null, null, null], "forward": [], "row_id": 8080192662708003188, "query": [["relation", 1], ["referent", 2]]}
+{"text": "y is x plus zero.", "source": 30, "episode": true, "spent": 32, "slots": [["referent", 0]], "refs": [null, null, null], "forward": [[0, 20]], "row_id": -4988437674243963483, "query": [["referent", 0]]}
+{"text": "y is x plus zero.", "source": 36, "episode": true, "spent": 32, "slots": [["referent", 0]], "refs": [null, null, null], "forward": [[0, 20]], "row_id": 8081013999966102660, "query": [["referent", 0]]}
+{"text": "y is x plus zero.", "source": 42, "episode": true, "spent": 32, "slots": [["referent", 0]], "refs": [null, null, null], "forward": [[0, 20]], "row_id": -1241961858620536750, "query": [["referent", 0]]}
+batch_seconds_total 23.758565084077418 store 32
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development_documents.py", line 49, in <module>
+    print(present(model,split='train',optimizer=model.getOptimizer(lr=.001),after_batch=after),flush=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 48, in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13632, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13769, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14151, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8793, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10224, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8478, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8256, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23484, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17235, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22018, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21571, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20727, in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20319, in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtClosing.py", line 96, in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/math_observer.py", line 64, in observed
+    value = run(model, meaning, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6026, in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/WalkTrials.py", line 234, in thought_pair
+    explore, second, other_state = run(other, fork['work'], fork=fork)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/WalkTrials.py", line 204, in run
+    result = model._run_selected_thought_once(meaning, row=row, work_budget=work_budget,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6410, in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6406, in run_context
+    outcome = return_child(parents.pop(), outcome)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6333, in return_child
+    sources=refs(current, reference(parent['descent']),
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6086, in reference
+    return memory.thought_reference(record, b=row)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Thoughts.py", line 388, in thought_reference
+    raise ValueError(
+ValueError: thought reference requires an occurrence owned by this row

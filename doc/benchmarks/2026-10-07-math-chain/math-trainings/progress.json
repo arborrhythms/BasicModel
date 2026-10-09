@@ -1,0 +1,667 @@
+{
+  "done": [
+    {
+      "name": "expectation_only-01",
+      "condition": "expectation_only",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-01",
+          "expectation_only",
+          "1"
+        ],
+        "pid": 27006,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 4054044560,
+        "elapsed_seconds": 62.45418762497138,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-01.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-01",
+      "condition": "answer_and_expectation",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-01",
+          "answer_and_expectation",
+          "1"
+        ],
+        "pid": 27005,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3421556120,
+        "elapsed_seconds": 65.66922787495423,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-01.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-01",
+      "condition": "zero_attention_budget",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-01",
+          "zero_attention_budget",
+          "1"
+        ],
+        "pid": 27262,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2168375912,
+        "elapsed_seconds": 89.64849258295726,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-01.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-02",
+      "condition": "answer_and_expectation",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-02",
+          "answer_and_expectation",
+          "2"
+        ],
+        "pid": 27274,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3646557832,
+        "elapsed_seconds": 118.13584974990226,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-02.log"
+      }
+    },
+    {
+      "name": "expectation_only-02",
+      "condition": "expectation_only",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-02",
+          "expectation_only",
+          "2"
+        ],
+        "pid": 27585,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 4240281680,
+        "elapsed_seconds": 115.0195332079893,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-02.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-03",
+      "condition": "answer_and_expectation",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-03",
+          "answer_and_expectation",
+          "3"
+        ],
+        "pid": 28054,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3529838144,
+        "elapsed_seconds": 135.6453486670507,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-03.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-02",
+      "condition": "zero_attention_budget",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-02",
+          "zero_attention_budget",
+          "2"
+        ],
+        "pid": 27712,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2229029504,
+        "elapsed_seconds": 243.06824108306319,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-02.log"
+      }
+    },
+    {
+      "name": "expectation_only-03",
+      "condition": "expectation_only",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-03",
+          "expectation_only",
+          "3"
+        ],
+        "pid": 28525,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3692777168,
+        "elapsed_seconds": 130.53206633392256,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-03.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-04",
+      "condition": "answer_and_expectation",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-04",
+          "answer_and_expectation",
+          "4"
+        ],
+        "pid": 28950,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3625635464,
+        "elapsed_seconds": 96.10945187497418,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-04.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-03",
+      "condition": "zero_attention_budget",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-03",
+          "zero_attention_budget",
+          "3"
+        ],
+        "pid": 28613,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2021935792,
+        "elapsed_seconds": 276.4456610409543,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-03.log"
+      }
+    },
+    {
+      "name": "expectation_only-04",
+      "condition": "expectation_only",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-04",
+          "expectation_only",
+          "4"
+        ],
+        "pid": 29244,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3614936664,
+        "elapsed_seconds": 89.2394952919567,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-04.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-05",
+      "condition": "answer_and_expectation",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-05",
+          "answer_and_expectation",
+          "5"
+        ],
+        "pid": 29619,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3627339400,
+        "elapsed_seconds": 99.51195204199757,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-05.log"
+      }
+    },
+    {
+      "name": "expectation_only-05",
+      "condition": "expectation_only",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-05",
+          "expectation_only",
+          "5"
+        ],
+        "pid": 29951,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3567095408,
+        "elapsed_seconds": 101.67613658402115,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-05.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-04",
+      "condition": "zero_attention_budget",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-04",
+          "zero_attention_budget",
+          "4"
+        ],
+        "pid": 29494,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2087979600,
+        "elapsed_seconds": 359.8425809170585,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-04.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-05",
+      "condition": "zero_attention_budget",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-05",
+          "zero_attention_budget",
+          "5"
+        ],
+        "pid": 30334,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2004290176,
+        "elapsed_seconds": 161.39167349995114,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-05.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-06",
+      "condition": "answer_and_expectation",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-06",
+          "answer_and_expectation",
+          "6"
+        ],
+        "pid": 30797,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3449392512,
+        "elapsed_seconds": 38.8888131249696,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-06.log"
+      }
+    },
+    {
+      "name": "expectation_only-06",
+      "condition": "expectation_only",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-06",
+          "expectation_only",
+          "6"
+        ],
+        "pid": 30851,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3388837272,
+        "elapsed_seconds": 32.813727916101925,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-06.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-07",
+      "condition": "answer_and_expectation",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-07",
+          "answer_and_expectation",
+          "7"
+        ],
+        "pid": 30970,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3656929000,
+        "elapsed_seconds": 102.23573866696097,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-07.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-06",
+      "condition": "zero_attention_budget",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-06",
+          "zero_attention_budget",
+          "6"
+        ],
+        "pid": 30934,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2038614632,
+        "elapsed_seconds": 127.33580004097894,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-06.log"
+      }
+    },
+    {
+      "name": "expectation_only-07",
+      "condition": "expectation_only",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-07",
+          "expectation_only",
+          "7"
+        ],
+        "pid": 31281,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3691024128,
+        "elapsed_seconds": 107.09051083296072,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-07.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-08",
+      "condition": "answer_and_expectation",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-08",
+          "answer_and_expectation",
+          "8"
+        ],
+        "pid": 31632,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3692302008,
+        "elapsed_seconds": 85.23411091708113,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-08.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-07",
+      "condition": "zero_attention_budget",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-07",
+          "zero_attention_budget",
+          "7"
+        ],
+        "pid": 31320,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2034207456,
+        "elapsed_seconds": 202.78459949989337,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-07.log"
+      }
+    },
+    {
+      "name": "expectation_only-08",
+      "condition": "expectation_only",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-08",
+          "expectation_only",
+          "8"
+        ],
+        "pid": 31896,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3625291496,
+        "elapsed_seconds": 80.1405127090402,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-08.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-09",
+      "condition": "answer_and_expectation",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+          "answer_and_expectation",
+          "9"
+        ],
+        "pid": 32154,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2999503992,
+        "elapsed_seconds": 34.555781874922104,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-09.log"
+      }
+    },
+    {
+      "name": "expectation_only-09",
+      "condition": "expectation_only",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+          "expectation_only",
+          "9"
+        ],
+        "pid": 32260,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3000667256,
+        "elapsed_seconds": 34.00441504199989,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-09.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-09",
+      "condition": "zero_attention_budget",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+          "zero_attention_budget",
+          "9"
+        ],
+        "pid": 32370,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2213595608,
+        "elapsed_seconds": 184.87331687496044,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-09.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-08",
+      "condition": "zero_attention_budget",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-08",
+          "zero_attention_budget",
+          "8"
+        ],
+        "pid": 31969,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2112358992,
+        "elapsed_seconds": 335.2261876249686,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-08.log"
+      }
+    },
+    {
+      "name": "answer_and_expectation-10",
+      "condition": "answer_and_expectation",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-10",
+          "answer_and_expectation",
+          "10"
+        ],
+        "pid": 32954,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3456175584,
+        "elapsed_seconds": 52.61426370800473,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-10.log"
+      }
+    },
+    {
+      "name": "expectation_only-10",
+      "condition": "expectation_only",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-10",
+          "expectation_only",
+          "10"
+        ],
+        "pid": 33041,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3422604768,
+        "elapsed_seconds": 45.99330970807932,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-10.log"
+      }
+    },
+    {
+      "name": "zero_attention_budget-10",
+      "condition": "zero_attention_budget",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+          "train",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-10",
+          "zero_attention_budget",
+          "10"
+        ],
+        "pid": 33124,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2087521064,
+        "elapsed_seconds": 77.65214329201262,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-10.log"
+      }
+    }
+  ],
+  "pending": 0,
+  "active": [],
+  "seconds": 1872.4909317919519
+}

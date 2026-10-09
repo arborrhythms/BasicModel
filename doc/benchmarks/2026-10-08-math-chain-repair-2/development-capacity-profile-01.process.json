@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/capacity_profile.py"
+  ],
+  "pid": 77094,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 856557032,
+  "elapsed_seconds": 4.388069750042632,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-capacity-profile-01.log"
+}

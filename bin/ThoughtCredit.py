@@ -1,5 +1,4 @@
 """Owner-step cost credit for the grammar's one-departure thought walk."""
-from dataclasses import dataclass
 import torch
 
 
@@ -49,60 +48,15 @@ def forecast(model, meaning, row):
     return MeaningExpectation(values[0], presence[0], kind_logit=kind[0]).detached()
 
 
-@dataclass
-class PendingCredit:
-    trace: dict
-    other: dict
-    departure: int
-    costs: tuple
-    forecasts: tuple
-    document: object
-    gains: tuple = (1., 1.)
-
-
-def complete(model, greedy, explore, trace, other, departure, costs, row, *, forecasts=None, gains=(1.,1.)):
-    from Occurrence import source_at
-    if forecasts is None:
-        forecasts = (forecast(model, greedy.meaning, row), forecast(model, explore.meaning, row))
-    if all(value is not None for value in forecasts):
-        document = source_at(model, row, int(getattr(model, '_open_sentence_slot', 0) or 0))[0]
-        pending = model.__dict__.setdefault('_pending_thought_credit', {})
-        pending[row] = PendingCredit(trace, other, departure, tuple(costs), forecasts, document, gains)
-    else:
-        register(model, surrogate(trace, other, departure, costs), costs=costs,
-                 source='answer_and_work')
+def complete(model, greedy, explore, trace, other, departure, costs, row, **_unused):
+    """Credit the episode now; prediction stays on its own owner registry."""
+    register(model, surrogate(trace, other, departure, costs), costs=costs,
+             source='reconstruction_and_answer')
 
 
 def observe(model, meanings, *, sentence):
-    """Only the loss side sees the next sentence; no query or choice is rerun."""
-    from Layers import Error
-    from Occurrence import source_at
-    from SentenceCredit import expectation_terms
-    pending = model.__dict__.get('_pending_thought_credit', {})
-    for row, meaning in enumerate(meanings):
-        if meaning is None or row not in pending:
-            continue
-        held = pending.pop(row)
-        if source_at(model, row, sentence)[0] != held.document:
-            # No cross-document target. Preserve the available answer/work credit.
-            costs = held.costs
-        else:
-            costs = []
-            for prior, cost, gain in zip(held.forecasts, held.costs, held.gains):
-                errors = Error()
-                expectation_terms(errors, prior.roles, prior.presence_logits,
-                    prior.kind_logit, meaning.roles, meaning.role_mask, meaning.sentence_kind,
-                    row=None, gain=gain)
-                costs.append(cost + float(errors.total().detach()) * getattr(model, 'inter_loss_weight', 1.))
-        register(model, surrogate(held.trace, held.other, held.departure, costs),
-                 costs=costs, source='answer_expectation_and_work')
+    """No deferred policy comparison: ordinary observation trains prediction."""
 
 
 def finish_documents(model, rows):
-    """A final question still receives its available answer and work credit."""
-    pending = model.__dict__.get('_pending_thought_credit', {})
-    for row in rows:
-        held = pending.pop(row, None)
-        if held is not None:
-            register(model, surrogate(held.trace, held.other, held.departure, held.costs),
-                     costs=held.costs, source='document_end_answer_and_work')
+    """Credit is complete at the closing, including the last document row."""

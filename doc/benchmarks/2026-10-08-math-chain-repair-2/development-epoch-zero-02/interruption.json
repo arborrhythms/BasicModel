@@ -1,0 +1,42 @@
+{
+  "kind": "development",
+  "pid": 71962,
+  "reason": "Development worker outlived its guard (PPID 1) and its declared two-hour timeout. Stopped at 261+ retained batches; not a completed epoch and not a declared measurement attempt.",
+  "time": 1791480909.750866,
+  "progress": {
+    "kind": "development",
+    "condition": "zero_attention_budget",
+    "seed": null,
+    "attention_budget": 0,
+    "ltm_capacity": 32768,
+    "completed_epochs": 0,
+    "status": "started",
+    "elapsed_seconds": 8724.256701417034,
+    "counts": {
+      "plain": 1191,
+      "declaratives_observed": 1191,
+      "declaratives_open": 991,
+      "declaratives_references_open": 1830,
+      "declaratives_episodes": 991,
+      "batches": 262,
+      "question_without_episode": 13,
+      "questions_observed": 117,
+      "questions_open": 104,
+      "questions_references_open": 208,
+      "questions_episodes": 104,
+      "answer_line": 114,
+      "answer_lines_observed": 114,
+      "answer_lines_open": 104,
+      "answer_lines_references_open": 177,
+      "answer_lines_episodes": 104,
+      "question_with_episode": 104
+    },
+    "timing_seconds": {
+      "plain": 7460.369648795343,
+      "question_without_episode": 18.92973547964357,
+      "answer_line": 695.9284702910809,
+      "question_with_episode": 545.7806574794231
+    },
+    "occupancy": 11959
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "questions_observed": 2,
+  "questions_left_open_at_closing": 2,
+  "references_left_open_at_closing": 4,
+  "episodes_opened": 2,
+  "bindings_correct": 0,
+  "frozen_observer_questions": 2,
+  "definition": "Completed batches only; openings before the episode; correctness from the unchanged frozen observer on committed rows. Partial failed batch observations are retained in episode-batches.jsonl."
+}

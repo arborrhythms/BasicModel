@@ -1,0 +1,21 @@
+{
+  "seconds": 0.31766591710038483,
+  "occupancy": 31,
+  "capacity": 32768,
+  "references_open": 1,
+  "work": 32,
+  "thought_steps": 11,
+  "trial_costs": [
+    0.32,
+    0.3
+  ],
+  "trial_answer_costs": [
+    0.0,
+    0.0
+  ],
+  "trial_work_costs": [
+    0.32,
+    0.3
+  ],
+  "exhausted_closing": null
+}

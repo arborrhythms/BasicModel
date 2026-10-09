@@ -1,0 +1,41 @@
+{
+  "counts": {
+    "selected_equal_acts": 2,
+    "sentences": 51,
+    "episodes": 3
+  },
+  "operations": {
+    "not": 28,
+    "query": 2,
+    "conclude": 2
+  },
+  "credit": {
+    "answer_expectation_and_work": 2,
+    "nonzero_graph": 2,
+    "ties": 0
+  },
+  "credit_sample": [
+    {
+      "epoch": 0,
+      "phase": "construction-smoke",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7871478462219239,
+        0.39659342765808103
+      ],
+      "graph": true,
+      "surrogate": -7.322493076324463
+    },
+    {
+      "epoch": 0,
+      "phase": "construction-smoke",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.24622717618942264,
+        0.2762271761894226
+      ],
+      "graph": true,
+      "surrogate": 0.054862845689058304
+    }
+  ]
+}

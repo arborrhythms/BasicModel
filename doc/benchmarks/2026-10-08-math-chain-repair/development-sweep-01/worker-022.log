@@ -1,0 +1,93 @@
+...............F........................................................ [ 56%]
+..........s.............................................                 [100%]
+=================================== FAILURES ===================================
+_____________ test_native_unlabelled_batch_trains_the_same_chooser _____________
+test/test_negative_expectation.py:200: in test_native_unlabelled_batch_trains_the_same_chooser
+    result, _ = model.runBatch(train=True, batchNum=step, batchSize=1,
+bin/Models.py:13619: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13758: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14140: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8777: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10208: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8462: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8240: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23490: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22024: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21577: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20677: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20607: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19923: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19744: in _sentence_observation
+    self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
+                        ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:241: in _boundary_registry
+    configure_model_index(owner, getattr(getattr(owner, "symbolSpace", None), "ltm_store", None))
+bin/MemoryIndex.py:492: in configure_model_index
+    store.reindex_meanings()
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:244: in reindex_meanings
+    terms, complete = (((), (), ()), (False, False, False)) if meaning is None else self._meaning_leaf_terms(meaning, order=int(self.order[row]))
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:89: in _meaning_leaf_terms
+    return visit(meaning, order)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:77: in visit
+    recovered = self._index_unfold(value.roles[role].detach(), allowance,
+bin/MemoryIndex.py:473: in unfold
+    result = unfold_idea(language, _basis(space), value, limit, work=work,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:373: in unfold_idea
+    raise ValueError('unfold priming differs from its vocabulary')
+E   ValueError: unfold priming differs from its vocabulary
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_position_is_independent_of_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7065: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3751/test_input_event_position_is_i0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser
+1 failed, 126 passed, 1 skipped, 2 warnings in 34.18s

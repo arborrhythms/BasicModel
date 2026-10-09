@@ -62,6 +62,8 @@ class AnswerProgram:
     operation_values: Any = None
     operation_refs: Any = None
     operation_relations: Any = None
+    binding_choices: bool = False
+    operation_probabilities: Any = None
     leaf_orders: Any = None
     leaf_evidence: Any = None
     @property
@@ -69,7 +71,7 @@ class AnswerProgram:
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
         return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
-                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "leaf_orders", "leaf_evidence")
+                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -110,6 +112,11 @@ class AnswerProgram:
         if self.operation_refs is not None and (self.operation_refs.shape != (self.actions.shape[0], 2)
                 or self.operation_refs.dtype != torch.long):
             raise ValueError('operation references must hold two operand addresses per action')
+        if self.operation_probabilities is not None and (
+                self.operation_probabilities.shape != (self.actions.shape[0],)
+                or not bool(torch.isfinite(self.operation_probabilities).all())
+                or bool(((self.operation_probabilities < 0) | (self.operation_probabilities > 1)).any())):
+            raise ValueError('formation probabilities must align to the selected actions')
         if self.operation_relations is not None and (self.operation_relations.shape != (self.actions.shape[0],2)
                 or self.operation_relations.dtype != torch.bool):
             raise ValueError('operation reference kinds must align to operand addresses')
@@ -147,6 +154,7 @@ class AnswerProgram:
                          getattr(self, name).detach().to("cpu"))
                   for name in self._tensor_fields}
         values["lexical_forms"] = self.lexical_forms
+        values['binding_choices'] = self.binding_choices
         return type(self)(**values)
 
 
@@ -189,6 +197,7 @@ class SentenceEndState:
     order: int = 0
     evidence: tuple = (0., 0.)
     trust: float = 0.
+    thought_completed: bool = False
 
     def __post_init__(self):
         from Meaning import ConceptualMeaning
@@ -205,9 +214,10 @@ class SentenceEndState:
             raise ValueError('a sentence end state occupies one or three slots')
         if len(self.refs) != 3 or any(type(ref) is not int or ref == 0 for ref in self.refs):
             raise ValueError('completed references must be native addresses or -1')
+        from ThoughtReferences import needs_episode
         if self.query is not None and (not isinstance(self.query, ConceptualMeaning)
-                                      or self.query.mode != 'interrogative'):
-            raise ValueError('a completed question must be an interrogative meaning')
+                                      or not needs_episode(self.query)):
+            raise ValueError('a completed question requires a free variable or an unsupported region')
         object.__setattr__(self, 'meaning', replace(self.meaning))
         if self.query is not None:
             object.__setattr__(self, 'query', replace(self.query))
@@ -226,7 +236,8 @@ class SentenceEndState:
         return type(self)(self.meaning.detached(), self.refs, self.row_id,
             None if self.where is None else self.where.detach(),
             None if self.when is None else self.when.detach(),
-            None if self.query is None else self.query.detached(), self.order, self.evidence, self.trust)
+            None if self.query is None else self.query.detached(), self.order, self.evidence, self.trust,
+            self.thought_completed)
 
 
 @dataclass(frozen=True)

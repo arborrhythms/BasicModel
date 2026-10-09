@@ -204,8 +204,47 @@ class ClauseRows:
     def index_of_row(self, reference):
         return self._native_reference_indexes()[0].get(int(reference))
 
+    def _index_slot_metadata(self, address):
+        from Occurrence import slot_key
+        data = dict(self._semantic_rows.get(address, {}).get('bindings', ()))
+        for kind, role in (*data.get('_open_references', ()), *data.get('_bound_roles', ())):
+            if kind != 'referent':
+                continue
+            identity = slot_key(address, role)
+            previous = self._slot_index.get(identity)
+            if previous is not None and previous != (address, role):
+                raise RuntimeError('64-bit slot collision; refusing to merge different slots')
+            self._slot_index[identity] = address, role
+
+    def slot_of_reference(self, reference):
+        """Derived shared posting: source address and role remain authoritative."""
+        if self.__dict__.get('_slot_index_source') is not self._semantic_rows:
+            self._slot_index_source, self._slot_index = self._semantic_rows, {}
+            for address in self._semantic_rows:
+                self._index_slot_metadata(address)
+        value = self._slot_index.get(int(reference))
+        if value is None:
+            return None
+        address, role = value
+        row = self._index_occurrences.get(address)
+        if row is None:
+            return None
+        if self.index_of_row(reference) is not None:
+            raise RuntimeError('slot address collides with an occurrence')
+        return row, role
+
+    def semantic_reference(self, reference):
+        slot = self.slot_of_reference(reference)
+        if slot is not None:
+            return ('slot', self.occurrence_of(slot[0]), slot[1])
+        row = self.index_of_row(reference)
+        return self.occurrence_of(row) if row is not None else ('sym', reference)
+
     def point_of_row(self, reference):
         """Read a concept/idea point; a relation explicitly has no point."""
+        slot = self.slot_of_reference(reference)
+        if slot is not None:
+            return self.slots[slot]
         index = self.index_of_row(reference)
         if index is not None:
             return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
@@ -228,7 +267,7 @@ class ClauseRows:
     @torch.no_grad()
     def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
                     evidence=None, text=None, expectation=None, document_key=None,
-                    sentence_index=0, content_key=None):
+                    sentence_index=0, content_key=None, written_rows=None):
         """Write embedded S rows first, without granting them assertion authority.
 
         The caller supplies provenance. Clause operators supply only structure
@@ -241,7 +280,8 @@ class ClauseRows:
             with self.at_address(document_key, sentence_index,
                                  content_key or native_content_key(clause.meaning)):
                 return self.write_clause(clause, trust=trust, origin=origin, stream=stream,
-                    kind=kind, evidence=evidence, text=text, expectation=expectation)
+                    kind=kind, evidence=evidence, text=text, expectation=expectation,
+                    written_rows=written_rows)
         assertion = self.__dict__.get('_clause_assertion')
         if assertion is not None:
             if clause.meaning.mode == 'interrogative':
@@ -329,12 +369,10 @@ class ClauseRows:
                              else self.point_of_row(ref))
                     if relation is None and point is None:
                         raise ValueError('a clause over a relation cannot fuse')
-                elif relation is not None:
-                    raise ValueError('a relation requires three resolved row references')
             if relation == 'implies':
                 for slot in (0, 2):
                     ref = value.refs[slot]
-                    if not isinstance(ref, tuple) and self.index_of_row(ref) is None:
+                    if ref not in (-1, 0) and not isinstance(ref, tuple) and self.index_of_row(ref) is None:
                         raise ValueError('implication operands must be truth rows')
             def reserve(addresses):
                 nonlocal required
@@ -346,7 +384,8 @@ class ClauseRows:
                     return value.refs[0]
                 if value.eternal and value.refs[0] in eternal_ids:
                     return value.refs[0]
-                if context is None and relation is not None and key in keys:
+                if (context is None and relation is not None and key in keys
+                        and all(ref not in (-1, 0) for ref in addresses)):
                     return keys[key]
                 required += 1
                 result = value.refs[0] if value.eternal else -required - 1
@@ -418,10 +457,9 @@ class ClauseRows:
                     self.point_of_row(ref) is None for ref in references if ref not in (-1, 0)):
                 raise ValueError('a clause over a relation cannot fuse')
             if relation in ('part', 'implies', 'operator'):
-                if references[0] in (-1, 0) or references[2] in (-1, 0):
-                    raise ValueError('a relation requires two resolved row operands')
                 if relation == 'implies' and any(
-                        self.index_of_row(ref) is None for ref in (references[0], references[2])):
+                        ref not in (-1, 0) and self.index_of_row(ref) is None
+                        for ref in (references[0], references[2])):
                     raise ValueError('implication operands must be truth rows')
             degree = max(-1., min(1., float(trust))) if asserted and trust is not None else 0.
             positive, negative = map(float, value.evidence if evidence is None or not asserted else evidence)
@@ -457,12 +495,10 @@ class ClauseRows:
                              & (self.refs[:len(self)] == self.refs.new_tensor(refs)).all(-1))
                     # The VP address is canonical; its learned vector is not a key.
                     found = match.nonzero().flatten()
-                    if context is None and found.numel():
+                    if context is None and found.numel() and all(ref not in (-1, 0) for ref in refs):
                         return update(int(found[0]))
                 role_refs = (None, None, None) if relation is None else tuple(
-                    self.occurrence_of(self.index_of_row(ref))
-                    if ref not in (-1, 0) and self.index_of_row(ref) is not None else
-                    ('sym', ref) if ref not in (-1, 0) else None for ref in refs)
+                    self.semantic_reference(ref) if ref not in (-1, 0) else None for ref in refs)
                 stored = ConceptualMeaning(stored.roles, stored.role_mask,
                     mode=value.meaning.mode, polarity=True, role_refs=role_refs)
                 _, _, address_kwargs = source(value)
@@ -485,17 +521,32 @@ class ClauseRows:
                 # An idea's operand references are only the two cached
                 # addresses in refs. They never supply hidden factored roles.
                 role_refs = (None, None, None) if relation is None else tuple(
-                    self.occurrence_of(self.index_of_row(ref))
-                    if ref not in (-1, 0) and self.index_of_row(ref) is not None else
-                    ('sym', ref) if ref not in (-1, 0) else None for ref in refs)
+                    self.semantic_reference(ref) if ref not in (-1, 0) else None
+                    for ref in refs)
                 canonical = ConceptualMeaning(stored.roles, stored.role_mask,
                     **dict(stored.metadata(), role_refs=role_refs,
                            bindings=value.meaning.bindings, scope=value.meaning.scope))
+                from ThoughtReferences import bindings, open_slots, with_slots
+                # The journal carries pre-admission references. Test the
+                # installed native references when classifying pending roles.
+                opened = [(kind, role) for kind, role in
+                    bindings(value.meaning).get('_open_references', ())
+                    if kind != 'evidence' and role_refs[role] is None
+                    and bool(canonical.role_mask[role])]
+                if relation is not None:
+                    opened.extend(('relation' if i == 1 else 'referent', i)
+                                  for i, ref in enumerate(refs) if ref in (-1, 0))
+                canonical = with_slots(canonical, opened, pair=(positive, negative))
+                if opened or '_pending' in bindings(canonical):
+                    data = bindings(canonical)
+                    data['_pending'] = bool(open_slots(canonical))
+                    canonical = replace(canonical, bindings=data)
                 self._semantic_rows[int(self.address_keys[row])] = {
                     key: canonical.metadata()[key] for key in ('role_refs', 'bindings', 'scope')}
+                self._update_forward_index(int(self.address_keys[row]))
                 self.metadata_required[row] = True
                 self._update_semantic_fingerprint(row)
-                if relation == 'part':
+                if relation == 'part' and not opened:
                     update = getattr(self, '_index_part_row', None)
                     if update is not None:
                         update(refs[0], refs[2], int(self.row_ids[row]))
@@ -508,11 +559,185 @@ class ClauseRows:
             return row
 
         result = write(clause, asserted=True)
+        # The two equality directions supply the same ordinary substitution.
+        # Its operands and source references, never source words, determine
+        # which pending name is filled by the newly arrived occurrence.
+        from ThoughtReferences import bindings
+        for value_id, row in tuple(rows.items()):
+            meaning = self.meaning_of(row)
+            data = bindings(meaning)
+            # An interrogative equality asks for evidence; its own syntax
+            # supplies none and cannot substitute its object for its free
+            # subject. Only an evidenced equality may fill another row.
+            if not data.get('_equality') or (float(self.c_plus[row]) == 0.
+                                             and float(self.c_minus[row]) == 0.):
+                continue
+            left, right = int(self.refs[row, 0]), int(self.refs[row, 2])
+            point = None if right in (-1, 0) else self.point_of_row(right)
+            if point is None:
+                continue
+            # A copula co-referring with an open stored column fills exactly
+            # that column, rather than opening a second name for the answer.
+            slot = self.slot_of_reference(left)
+            if slot is not None:
+                self.fill_slot(slot[0], slot[1], right, point)
+            aliases = {identity for role, identity in data.get('_forward_references', ()) if role == 0}
+            if left not in (-1, 0):
+                aliases.add(left)
+                # Equality with a compound refers to that compound. Its
+                # internal variables are not aliases of the whole: y =
+                # (x plus two) cannot bind x to y through the converse.
+                if index_plan is not None:
+                    for identities in index_plan.alloc.word_forms.values():
+                        if left in identities:
+                            aliases.update(identities)
+            self.fill_forward_references(aliases, right, point)
         if estimate_index >= 0:
             self.link_estimate_observation(estimate_index, result)
         if assertion is not None and result >= 0:
             assertion['rows'].append(result)
+        if written_rows is not None:
+            written_rows.update(rows if index_plan is None else
+                {source: rows[id(value)] for source, value in index_plan._prepared.items()
+                 if id(value) in rows})
         return result
+
+    def _update_forward_index(self, address):
+        """Maintain the shared, derived posting list for unresolved identities."""
+        if self.__dict__.get('_slot_index_source') is self._semantic_rows:
+            self._index_slot_metadata(address)
+        if self.__dict__.get('_forward_index_source') is not self._semantic_rows:
+            return  # A restored/replaced store is rebuilt on its next lookup.
+        postings = self._forward_postings
+        by_address = self._forward_by_address
+        for identity in by_address.pop(address, ()):
+            postings[identity].discard(address)
+            if not postings[identity]:
+                del postings[identity]
+        metadata = self._semantic_rows.get(address, {})
+        identities = {identity for _, identity in
+                      dict(metadata.get('bindings', ())).get('_forward_references', ())}
+        if identities:
+            by_address[address] = identities
+            for identity in identities:
+                postings.setdefault(identity, set()).add(address)
+
+    def _forward_addresses(self, identities):
+        if self.__dict__.get('_forward_index_source') is not self._semantic_rows:
+            self._forward_index_source = self._semantic_rows
+            self._forward_postings, self._forward_by_address = {}, {}
+            for address in self._semantic_rows:
+                self._update_forward_index(address)
+        return set().union(*(self._forward_postings.get(identity, ()) for identity in identities))
+
+    def fill_forward_references(self, identities, reference, point):
+        """Fill pending slots by identity at their original occurrence address.
+
+        This is a derived index of the shared truth rows, not stream state.
+        A supplied occurrence never matches a forward name by code similarity.
+        """
+        from ThoughtReferences import bindings, open_slots, fill, evidence_pair
+        identities = set(identities)
+        if not identities:
+            return ()
+        completed = []
+        for address in sorted(self._forward_addresses(identities)):
+            metadata = self._semantic_rows[address]
+            data = dict(metadata.get('bindings', ()))
+            forwards = data.get('_forward_references', ())
+            selected = [(role, identity) for role, identity in forwards if identity in identities]
+            if not selected:
+                continue
+            row = self.index_of_row(address)
+            if row is None or int(self.row_ids[row]) == reference:
+                continue
+            meaning = self.meaning_of(row)
+            native = self.index_of_row(reference)
+            witness = self.occurrence_of(native) if native is not None else ('sym', reference)
+            evidence_row = row if native is None else native
+            resolved = meaning
+            for role, _ in selected:
+                resolved = fill(resolved, dict(reference=witness, value=point,
+                    support_true=float(self.c_plus[evidence_row]),
+                    support_false=float(self.c_minus[evidence_row])),
+                    slots=(('referent', role),), witnesses=(witness,), operation='bind')
+            data = bindings(resolved)
+            data['_forward_references'] = tuple(pair for pair in forwards if pair not in selected)
+            data['_pending'] = bool(open_slots(resolved))
+            resolved = replace(resolved, bindings=data)
+            # append_meaning's address upsert preserves document, position and
+            # occurrence identity; no inferred truth or new address is minted.
+            old_refs = self.refs[row].clone()
+            previous_context = self.__dict__.get('_write_address')
+            object.__setattr__(self, '_write_address', (
+                bytes(self.document_keys[row].tolist()), int(self.sentence_index[row]),
+                self.content_key(row), float(self.timestamp[row])))
+            try:
+                self.append_meaning(resolved, kind=self.KINDS[int(self.record_kind[row])],
+                    rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),
+                    evidence=evidence_pair(resolved),
+                    order=int(self.order[row]), address=int(self.address_keys[row]))
+            finally:
+                object.__setattr__(self, '_write_address', previous_context)
+            for role, _ in selected:
+                old_refs[role] = reference
+            self.refs[row].copy_(old_refs)
+            self._update_semantic_fingerprint(row)
+            completed.append(row)
+        return tuple(completed)
+
+    def fill_slot(self, row, role, reference, point):
+        """Fill the addressed variable in place; preserve its occurrence."""
+        from ThoughtReferences import bindings, evidence_pair, fill, open_slots
+        meaning = self.meaning_of(row)
+        if ('referent', role) not in open_slots(meaning):
+            return False
+        witness = self.semantic_reference(reference)
+        target = self.index_of_row(reference)
+        pair = (float(self.c_plus[target]), float(self.c_minus[target])) if target is not None else (0., 0.)
+        resolved = fill(meaning, dict(reference=witness, value=point,
+            support_true=pair[0], support_false=pair[1]), slots=(('referent', role),),
+            witnesses=(witness,), operation='equal')
+        data = bindings(resolved)
+        data['_forward_references'] = tuple(item for item in data.get('_forward_references', ())
+                                             if item[0] != role)
+        data['_pending'] = bool(open_slots(resolved))
+        self.upsert_resolved(row, replace(resolved, bindings=data))
+        self.refs[row, role] = reference
+        return True
+
+    def upsert_resolved(self, row, meaning):
+        """An address upsert changes content, never source or occurrence identity."""
+        from ThoughtReferences import evidence_pair
+        refs, row_id = self.refs[row].clone(), int(self.row_ids[row])
+        if int(self.rel_type[row]) != self.REL_NONE:
+            for role, reference in enumerate(meaning.role_refs):
+                if reference is None:
+                    refs[role] = -1
+                elif reference[0] == 'sym':
+                    refs[role] = reference[1]
+                elif reference[0] == 'ltm':
+                    target = self._index_occurrences.get(reference)
+                    if target is None:
+                        raise ValueError('filled occurrence is unavailable')
+                    refs[role] = self.row_ids[target]
+                elif reference[0] == 'slot':
+                    from Occurrence import slot_key
+                    refs[role] = slot_key(reference[1][-1], reference[2])
+        previous = self.__dict__.get('_write_address')
+        object.__setattr__(self, '_write_address', (
+            bytes(self.document_keys[row].tolist()), int(self.sentence_index[row]),
+            self.content_key(row), float(self.timestamp[row])))
+        try:
+            self.append_meaning(meaning, kind=self.KINDS[int(self.record_kind[row])],
+                rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),
+                evidence=evidence_pair(meaning), order=int(self.order[row]),
+                address=int(self.address_keys[row]))
+        finally:
+            object.__setattr__(self, '_write_address', previous)
+        self.refs[row].copy_(refs)
+        self.row_ids[row] = row_id
+        self._update_semantic_fingerprint(row)
 
     def relation_operands(self, idx):
         """Resolve a relation's shared addresses without inventing fused points."""

@@ -106,6 +106,38 @@ class ReferenceBank(NamedTuple):
     types: object = None
     cases: object = None
     column_ids: object = None
+    interpreter: object = None
+    associations: object = None
+
+    def detached(self):
+        """Freeze the rebuilt situation at a compose fork, retaining its API."""
+        def freeze(value):
+            if torch.is_tensor(value):
+                return value.detach().clone()
+            if isinstance(value, tuple) and hasattr(value, '_fields'):
+                return type(value)(*(freeze(item) for item in value))
+            if isinstance(value, tuple):
+                return tuple(freeze(item) for item in value)
+            # The interpreter is an operation owner, not a captured value.
+            return value
+        return freeze(self)
+
+
+def binding_spec(rule, role, *, implicit=False):
+    """The grammatical operand's reference contract, independent of its word."""
+    order = dict(getattr(rule, 'reference_orders', ())).get(role)
+    mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
+    determiner = getattr(rule, 'determiner_mode', None)
+    if determiner is not None and role == 'I' + str(rule.head_role):
+        order, mode = 1, determiner
+    if implicit and order is None:
+        clause = getattr(rule, 'clause_form', None)
+        relation = getattr(rule, 'relation_kind', None)
+        if ((clause == 'S' and role == 'I1') or
+                (clause == 'VP' and role == 'I2') or
+                (relation in ('part', 'whole', 'equal') and role in ('I1', 'I2'))):
+            order = 1
+    return order, mode
 
 
 def resolve_order(value, identity, order, types):
@@ -208,24 +240,20 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
     No local score, argmax, allocation or dictionary choice occurs here.
     """
     B, N, D = window.shape
+    interpreter = getattr(bank, 'interpreter', None)
 
     def propose(value, ids, scope, pos, rule, role, valid):
-        order = dict(getattr(rule, 'reference_orders', ())).get(role)
-        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
-        determiner = getattr(rule, 'determiner_mode', None)
-        if determiner is not None and role == 'I' + str(rule.head_role):
-            mode = determiner
-            if mode == 'kind':
-                return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
-            order = 1
-        if mode == 'mint':
+        order, mode = binding_spec(rule, role, implicit=interpreter is not None)
+        if mode == 'kind':
+            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+        if mode == 'mint' and interpreter is None:
             return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid))]
         if order is not None and order != 1:
             value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
         if order != 1:
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         inventory = getattr(bank, 'column_ids', None)
-        if inventory is not None and inventory.numel() == 0:
+        if interpreter is None and inventory is not None and inventory.numel() == 0:
             # A binder with no referent leaves an open slot. The sentence
             # can still close; its closing will ask on this same reference.
             return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)]
@@ -267,6 +295,13 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         candidate_values = candidate_values.gather(-2, retained[..., None].expand(B, P, count, D))
         candidate_relations = candidate_relations.gather(-1, retained)
         available = available.gather(-1, retained)
+        if interpreter is not None:
+            # Retain by each row's recency before interpret enumerates its
+            # fixed masked variants. Another row cannot alter this layout.
+            return interpreter(value, binding=dict(identity=ids, scope=scope,
+                candidate_ids=candidate_ids, candidate_values=candidate_values,
+                candidate_relations=candidate_relations, available=available,
+                associations=bank.associations, mode=mode, active=valid))
         options = [(candidate_values[:, :, c], candidate_ids[:, :, c],
                     candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
         if mode not in ('pronoun', 'bind'):
@@ -277,18 +312,17 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         return options
 
     def choice_tag(refs, rule, role):
-        order = dict(getattr(rule, 'reference_orders', ())).get(role)
-        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
-        determiner = getattr(rule, 'determiner_mode', None)
-        if determiner is not None and role == 'I' + str(rule.head_role):
-            order, mode = 1, determiner
+        order, mode = binding_spec(rule, role, implicit=interpreter is not None)
         if order != 1 or mode == 'kind':
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
         return torch.where(refs == -1, -2, refs)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
-    bchoices, uchoices = [], []
+    bchoices, uchoices, bfound, ufound = [], [], [], []
+
+    def found(option):
+        return option[4] if len(option) > 4 else torch.zeros_like(option[3])
     case_bank = getattr(bank, 'cases', None)
     case_count = 1 if case_bank is None else len(case_bank.ids)
     for operation, rule in enumerate(rules):
@@ -304,6 +338,7 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
                 brefs.append(torch.stack((left[1], right[1]), -1))
                 bchoices.append(torch.stack((choice_tag(left[1], rule, 'I1'),
                                              choice_tag(right[1], rule, 'I2')), -1))
+                bfound.append(torch.stack((found(left), found(right)), -1))
                 brels.append(torch.stack((left[2], right[2]), -1))
                 valid = left[3] & right[3]
                 weights = window.new_zeros(B, N-1, case_count, 2)
@@ -327,14 +362,17 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
             urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
             uchoices.append(torch.stack((choice_tag(operand[1], rule, 'I1'),
                                          torch.full_like(operand[1], -1)), -1))
+            ufound.append(torch.stack((found(operand), torch.zeros_like(operand[3])), -1))
             urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))
             uvalid.append(operand[3])
 
     def stack(items, width, tail=(), *, dtype=None):
         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
     return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
+                binding_choices=interpreter is not None,
                 case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
                 binary_choices=stack(bchoices, N-1, (2,), dtype=torch.long), unary_choices=stack(uchoices, N, (2,), dtype=torch.long),
+                binary_found=stack(bfound, N-1, (2,), dtype=torch.bool), unary_found=stack(ufound, N, (2,), dtype=torch.bool),
                 binary_relations=stack(brels, N-1, (2,), dtype=torch.bool), unary_relations=stack(urels, N, (2,), dtype=torch.bool),
                 binary_valid=stack(bvalid, N-1, dtype=torch.bool), unary_valid=stack(uvalid, N, dtype=torch.bool))

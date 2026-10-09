@@ -1,0 +1,77 @@
+[
+  {
+    "epoch": 1,
+    "source": 0,
+    "row_id": -7026759665649287922,
+    "address": [
+      "ltm",
+      "address-v1",
+      -7026759665649287922
+    ],
+    "open": [
+      [
+        "relation",
+        1
+      ]
+    ],
+    "forward": [],
+    "episode": true,
+    "departure": 20,
+    "query_open": [
+      [
+        "relation",
+        1
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 2,
+    "row_id": -7498310568440417832,
+    "address": [
+      "ltm",
+      "address-v1",
+      -7498310568440417832
+    ],
+    "open": [],
+    "forward": [],
+    "episode": true,
+    "departure": 19,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 1,
+    "row_id": 867899226606298273,
+    "address": [
+      "ltm",
+      "address-v1",
+      867899226606298273
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 6,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 3,
+    "row_id": -9182470031048221658,
+    "address": [
+      "ltm",
+      "address-v1",
+      -9182470031048221658
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 12,
+    "query_open": []
+  }
+]

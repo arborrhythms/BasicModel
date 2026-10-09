@@ -1,0 +1,12 @@
+[
+  {
+    "receipt": "2026-10-07-math-chain",
+    "files": 2393,
+    "mismatches": []
+  },
+  {
+    "receipt": "2026-10-08-math-chain-repair",
+    "files": 1967,
+    "mismatches": []
+  }
+]

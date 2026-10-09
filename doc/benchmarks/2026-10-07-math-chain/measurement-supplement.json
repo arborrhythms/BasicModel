@@ -1,0 +1,10 @@
+{
+  "reason": "Restore both missing standing audit imports; neither launcher constructed a model or ran an epoch; reuse the original saved RNG states.",
+  "original_freeze_unchanged": true,
+  "source_unchanged": true,
+  "files": {
+    "round2_score_probe.py": "4cddb781779b45e93aa36870760607ebfb45b178cd261b2689a34c9fd7a3a547",
+    "handoff_probe.py": "ad33e6e6fdbfaf6a415748c199095e79980ebf0a70da55ef6e02585850418607",
+    "resume_standing.py": "a941dbf50384f4578e88a79bfa196a2ab60e54d48c64b3f94e6c6804fc08cb98"
+  }
+}

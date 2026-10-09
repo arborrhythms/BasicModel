@@ -1,0 +1,116 @@
+.....................................FF................................. [ 56%]
+........................................................                 [100%]
+=================================== FAILURES ===================================
+_______ test_normal_text_reconstruction_updates_the_grammar_chooser[tie] _______
+test/test_grammar_word_learning.py:211: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    result, _ = model.runBatch(
+bin/Models.py:13640: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13777: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14159: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8801: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10232: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8486: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8264: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23525: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17243: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22059: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21612: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20662: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:160: in sentence_pair
+    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20656: in train_trial
+    self._sentence_train_step(loss)
+doc/benchmarks/2026-10-06-operators-round2/round2_score_probe.py:172: in stepped
+    record.update(walk=entry['walk'], action=action, action_name=names[action], sampling_scale=scale,
+                                                                 ^^^^^^^^^^^^^
+E   IndexError: list index out of range
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+____ test_normal_text_reconstruction_updates_the_grammar_chooser[distinct] _____
+test/test_grammar_word_learning.py:211: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    result, _ = model.runBatch(
+bin/Models.py:13640: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13777: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14159: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8801: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10232: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8486: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8264: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23525: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17243: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22059: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21612: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20662: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:160: in sentence_pair
+    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20656: in train_trial
+    self._sentence_train_step(loss)
+doc/benchmarks/2026-10-06-operators-round2/round2_score_probe.py:172: in stepped
+    record.update(walk=entry['walk'], action=action, action_name=names[action], sampling_scale=scale,
+                                                                 ^^^^^^^^^^^^^
+E   IndexError: list index out of range
+=============================== warnings summary ===============================
+test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]
+2 failed, 126 passed, 2 warnings in 56.38s

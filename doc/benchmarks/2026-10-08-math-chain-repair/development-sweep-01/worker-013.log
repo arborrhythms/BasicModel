@@ -1,0 +1,174 @@
+........ssssss.....sssssss............F................................. [ 56%]
+.......................F................................                 [100%]
+=================================== FAILURES ===================================
+_______________ test_normal_batch_logs_owned_optimizer_gradients _______________
+test/test_gradient_factorization.py:137: in test_normal_batch_logs_owned_optimizer_gradients
+    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+bin/Models.py:13619: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13758: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14140: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8777: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10208: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8462: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8240: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23490: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22024: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21577: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20752: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20300: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:171: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:518: in write_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:408: in write
+    children = tuple(write(child) for child in value.children)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:408: in <genexpr>
+    children = tuple(write(child) for child in value.children)
+                     ^^^^^^^^^^^^
+bin/ClauseRow.py:408: in write
+    children = tuple(write(child) for child in value.children)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:408: in <genexpr>
+    children = tuple(write(child) for child in value.children)
+                     ^^^^^^^^^^^^
+bin/ClauseRow.py:408: in write
+    children = tuple(write(child) for child in value.children)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:408: in <genexpr>
+    children = tuple(write(child) for child in value.children)
+                     ^^^^^^^^^^^^
+bin/ClauseRow.py:512: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:467: in append
+    row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9444: in append_meaning
+    terms, complete = self._meaning_leaf_terms(meaning, order=order, stream=None if stream < 0 else stream)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:89: in _meaning_leaf_terms
+    return visit(meaning, order)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:77: in visit
+    recovered = self._index_unfold(value.roles[role].detach(), allowance,
+bin/MemoryIndex.py:473: in unfold
+    result = unfold_idea(language, _basis(space), value, limit, work=work,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:373: in unfold_idea
+    raise ValueError('unfold priming differs from its vocabulary')
+E   ValueError: unfold priming differs from its vocabulary
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_______ test_grammar_resolves_each_word_to_its_full_object_code[aligned] _______
+test/test_grammar_object_leaves.py:42: in test_grammar_resolves_each_word_to_its_full_object_code
+    model(inputs)
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8240: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23490: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22024: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21577: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20752: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20300: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:171: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:518: in write_clause
+    result = write(clause, asserted=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:512: in write
+    row = append(references)
+          ^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:467: in append
+    row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9444: in append_meaning
+    terms, complete = self._meaning_leaf_terms(meaning, order=order, stream=None if stream < 0 else stream)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:89: in _meaning_leaf_terms
+    return visit(meaning, order)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:77: in visit
+    recovered = self._index_unfold(value.roles[role].detach(), allowance,
+bin/MemoryIndex.py:473: in unfold
+    result = unfold_idea(language, _basis(space), value, limit, work=work,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:373: in unfold_idea
+    raise ValueError('unfold priming differs from its vocabulary')
+E   ValueError: unfold priming differs from its vocabulary
+=============================== warnings summary ===============================
+test/test_global_consume.py::test_consume_width_mismatch_slices_to_common
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_gradient_factorization.py::test_policy_observation_and_checked_truth_effect_are_detached
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]
+2 failed, 113 passed, 13 skipped, 2 warnings in 8.87s

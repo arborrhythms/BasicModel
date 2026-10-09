@@ -1,0 +1,1441 @@
+{
+  "forced": true,
+  "rows": [
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -7262624398327321305
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        5872734435660212621
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        6334784721959287508
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -8913219548049602928
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -541372856211572855
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        2892982261156153618
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        7969385620122632884
+      ],
+      "open": [],
+      "correct": true
+    },
+    {
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -2033525965090463527
+      ],
+      "open": [],
+      "correct": true
+    }
+  ],
+  "departures": [
+    19,
+    12,
+    -1,
+    -1,
+    18,
+    -1,
+    6,
+    6,
+    12,
+    22,
+    -1,
+    23,
+    18,
+    -1,
+    23,
+    12
+  ],
+  "choices": [
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 4,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 6,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 4,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 6,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 6,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "verb",
+      "action": 35
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "equal",
+      "action": 23
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "surface",
+      "action": 51
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "equal",
+      "action": 24
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "equal",
+      "action": 23
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "equal",
+      "action": 23
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "equal",
+      "action": 21
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": "ask",
+      "action": 55
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": null,
+      "action": 64
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 3,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 3,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 3,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 3,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 3,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 6,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 3,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 6,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 3,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 6,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 3,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 0,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": "definite",
+      "action": 1147
+    },
+    {
+      "row": 2,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 2,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 4,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 7,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 6,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": "verb",
+      "action": 1123
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": "equal",
+      "action": 1082
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": "surface",
+      "action": 1187
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": "equal",
+      "action": 1082
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 2,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 3,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 4,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 5,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 7,
+      "operation": "equal",
+      "action": 1080
+    },
+    {
+      "row": 7,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    },
+    {
+      "row": 6,
+      "word": 7,
+      "operation": null,
+      "action": 1200
+    }
+  ]
+}

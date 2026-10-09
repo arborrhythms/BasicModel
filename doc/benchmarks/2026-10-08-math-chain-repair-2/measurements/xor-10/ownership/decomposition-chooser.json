@@ -1,0 +1,133 @@
+{
+  "start": {
+    "feature_names": [
+      "negative_relative_residual",
+      "left_activation",
+      "right_activation",
+      "left_priming",
+      "right_priming"
+    ],
+    "weights": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "undos": 4,
+    "true_pair_in_shortlist": 4,
+    "absent_targets": 0,
+    "pick_equals_true": 2,
+    "true_pair_in_shortlist_rate": 1.0,
+    "pick_equals_true_rate": 0.5,
+    "pick_equals_true_given_present": 0.5,
+    "rows": [
+      {
+        "row": 0,
+        "operation": 1,
+        "target": [
+          0,
+          1
+        ],
+        "present": true,
+        "picked_true": true
+      },
+      {
+        "row": 1,
+        "operation": 1,
+        "target": [
+          0,
+          2
+        ],
+        "present": true,
+        "picked_true": true
+      },
+      {
+        "row": 2,
+        "operation": 0,
+        "target": [
+          4,
+          1
+        ],
+        "present": true,
+        "picked_true": false
+      },
+      {
+        "row": 3,
+        "operation": 0,
+        "target": [
+          4,
+          2
+        ],
+        "present": true,
+        "picked_true": false
+      }
+    ]
+  },
+  "training_calls": 800,
+  "end": {
+    "feature_names": [
+      "negative_relative_residual",
+      "left_activation",
+      "right_activation",
+      "left_priming",
+      "right_priming"
+    ],
+    "weights": [
+      6.3570709228515625,
+      -0.22897520661354065,
+      6.0983123779296875,
+      2.70512318611145,
+      0.5520808100700378
+    ],
+    "undos": 4,
+    "true_pair_in_shortlist": 4,
+    "absent_targets": 0,
+    "pick_equals_true": 2,
+    "true_pair_in_shortlist_rate": 1.0,
+    "pick_equals_true_rate": 0.5,
+    "pick_equals_true_given_present": 0.5,
+    "rows": [
+      {
+        "row": 0,
+        "operation": 0,
+        "target": [
+          0,
+          1
+        ],
+        "present": true,
+        "picked_true": true
+      },
+      {
+        "row": 1,
+        "operation": 0,
+        "target": [
+          0,
+          2
+        ],
+        "present": true,
+        "picked_true": true
+      },
+      {
+        "row": 2,
+        "operation": 0,
+        "target": [
+          4,
+          1
+        ],
+        "present": true,
+        "picked_true": false
+      },
+      {
+        "row": 3,
+        "operation": 0,
+        "target": [
+          4,
+          2
+        ],
+        "present": true,
+        "picked_true": false
+      }
+    ]
+  }
+}

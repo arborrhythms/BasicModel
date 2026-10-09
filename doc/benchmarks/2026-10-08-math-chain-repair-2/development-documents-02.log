@@ -1,0 +1,23 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"text": "x is zero.", "source": 0, "episode": true, "spent": 32, "slots": [], "refs": [["ltm", "address-v1", -565485399924715201], null, null], "forward": [], "row_id": -7313372762622997607, "query": [["referent", 0]]}
+{"text": "y is x plus zero.", "source": 6, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -565485399924715201, "query": null}
+{"text": "u is fourteen.", "source": 12, "episode": true, "spent": 32, "slots": [], "refs": [["ltm", "address-v1", -4435266106532356924], null, null], "forward": [], "row_id": 7540560762095918653, "query": [["referent", 0]]}
+{"text": "u is seven.", "source": 18, "episode": true, "spent": 32, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -4435266106532356924, "query": [["referent", 0]]}
+{"text": "y is x plus zero.", "source": 24, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 6686902260533257461, "query": null}
+{"text": "y is x plus zero.", "source": 30, "episode": true, "spent": 32, "slots": [["referent", 0], ["referent", 2]], "refs": [null, null, null], "forward": [[0, 18]], "row_id": -6938365761781207687, "query": [["referent", 0], ["referent", 2]]}
+{"text": "u is sixteen.", "source": 36, "episode": true, "spent": 32, "slots": [], "refs": [["ltm", "address-v1", 8955479416629299925], ["sym", 3404711439185107637], ["sym", 20]], "forward": null, "row_id": -6345564063035204672, "query": [["referent", 0]]}
+{"text": "u is ten.", "source": 42, "episode": true, "spent": 32, "slots": [], "refs": [["sym", 34], ["sym", 3404711439185107637], ["sym", 20]], "forward": null, "row_id": -6703770855618008326, "query": [["referent", 0]]}
+batch_seconds_total 23.86472520790994 store 34
+batch = 8 (Δ=47.615s)
+{"text": "y is x plus zero.", "source": 1, "episode": true, "spent": 32, "slots": [], "refs": [null, null, null], "forward": null, "row_id": 2877445352884157113, "query": [["referent", 0], ["referent", 2]]}
+{"text": "x is one.", "source": 7, "episode": false, "spent": 0, "slots": [], "refs": [["ltm", "address-v1", -565485399924715201], ["sym", 4010033338316264258], ["sym", 20]], "forward": null, "row_id": 8436398793416781313, "query": null}
+{"text": "x is two.", "source": 13, "episode": true, "spent": 32, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -4041139903111349554, "query": [["referent", 0]]}
+{"text": "v is twelve.", "source": 19, "episode": true, "spent": 32, "slots": [["referent", 2]], "refs": [null, null, null], "forward": null, "row_id": 1199780495984638990, "query": [["referent", 2]]}
+{"text": "v is fourteen.", "source": 25, "episode": true, "spent": 32, "slots": [["referent", 0]], "refs": [null, ["sym", 4010033338316264258], ["sym", 20]], "forward": [[0, 28]], "row_id": 5111127662135054095, "query": [["referent", 0]]}
+{"text": "v is nine.", "source": 31, "episode": false, "spent": 0, "slots": [], "refs": [["ltm", "address-v1", -6938365761781207687], ["sym", 3404711439185107637], ["sym", 20]], "forward": null, "row_id": -7052296295350263265, "query": null}
+{"text": "y is x plus zero.", "source": 37, "episode": true, "spent": 32, "slots": [], "refs": [["ltm", "address-v1", -6345564063035204672], ["sym", 3404711439185107637], ["sym", 20]], "forward": null, "row_id": -9022805544108230145, "query": [["referent", 0]]}
+{"text": "v is fourteen.", "source": 43, "episode": false, "spent": 0, "slots": [], "refs": [null, null, null], "forward": null, "row_id": -6967014769713473153, "query": null}
+batch_seconds_total 71.47970824991353 store 70

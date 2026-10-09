@@ -1,0 +1,39 @@
+........F                                                                [100%]
+=================================== FAILURES ===================================
+_____ test_native_worked_document_trains_unforced_without_numeric_oracles ______
+test/test_math_chain.py:159: in test_native_worked_document_trains_unforced_without_numeric_oracles
+    report = present(model, split='train', optimizer=model.getOptimizer(lr=.001))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+bin/Models.py:13599: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13738: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13909: in _run_batch_once
+    self._open_batch(
+bin/Models.py:9889: in _open_batch
+    return teacher.begin_batch(
+bin/Teacher.py:387: in begin_batch
+    objective_where, objective_when = self._resolve_staged_sources(
+bin/Teacher.py:370: in _resolve_staged_sources
+    addressed = tuple(self.where(split, int(row)) for row in source_row)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Teacher.py:370: in <genexpr>
+    addressed = tuple(self.where(split, int(row)) for row in source_row)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Teacher.py:296: in where
+    document=int(address.get("document", row)),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: invalid literal for int() with base 10: 'count:0:copula'
+=============================== warnings summary ===============================
+test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles
+1 failed, 8 passed, 1 warning in 2.94s

@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 9/9 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002229160163551569</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0015022919978946447</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0001356659922748804</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0011083749122917652</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00012158392928540707</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.009633000008761883</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.22993825003504753</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0020728750387206674</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.20959887490607798</pre></td><td><pre>test/test_math_chain.py:159: in test_native_worked_document_trains_unforced_without_numeric_oracles
+    report = present(model, split=&#x27;train&#x27;, optimizer=model.getOptimizer(lr=.001))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+bin/Models.py:13599: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13738: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13909: in _run_batch_once
+    self._open_batch(
+bin/Models.py:9889: in _open_batch
+    return teacher.begin_batch(
+bin/Teacher.py:387: in begin_batch
+    objective_where, objective_when = self._resolve_staged_sources(
+bin/Teacher.py:370: in _resolve_staged_sources
+    addressed = tuple(self.where(split, int(row)) for row in source_row)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Teacher.py:370: in &lt;genexpr&gt;
+    addressed = tuple(self.where(split, int(row)) for row in source_row)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Teacher.py:296: in where
+    document=int(address.get(&quot;document&quot;, row)),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: invalid literal for int() with base 10: &#x27;count:0:copula&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

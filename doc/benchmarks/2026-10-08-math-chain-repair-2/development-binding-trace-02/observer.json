@@ -1,0 +1,34 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 1,
+    "episodes": 1,
+    "sentences": 6,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "query": 2,
+    "not": 6
+  },
+  "credit": {
+    "reconstruction_and_answer": 1,
+    "nonzero_graph": 0,
+    "ties": 1,
+    "nonzero_chooser_gradients": 0
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

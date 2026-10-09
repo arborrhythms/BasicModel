@@ -36,7 +36,7 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
             draw.update(round=torch.zeros_like(draw['round']),narrowing=torch.ones_like(draw['narrowing']),
                         attention_round=torch.zeros_like(draw['round']),compose_round=torch.full_like(draw['round'],-1))
         else:
-            chosen=compose.long().argmax(-1)
+            chosen=kwargs['compose_round']
             draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
                         attention_round=torch.full_like(chosen,-1),compose_round=chosen)
         draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
@@ -54,13 +54,17 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
         kwargs['replay_action']=action
         return original_attend(module,keys,legal,space,**kwargs)
     def disjunction(module,x,**kwargs):
-        stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+        refs=kwargs.get('reference_data')
+        binary=tuple(range(module.r_reduce)) if refs is None else refs['binary_ops']
+        unary=tuple(range(module.r_apply)) if refs is None else refs['unary_ops']
+        stop=(x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
         depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
-        op=torch.ones_like(depth)
+        op=torch.full_like(depth,binary.index(1))
         if walk=='compose' and kwargs.get('masked_action') is not None:
-            op=torch.where(kwargs['masked_action']>=0,0,op)
-        kwargs['replay_action']=torch.where(depth>1,op,stop)
-        return original_forward(module,x,**kwargs)
+            op=torch.where(kwargs['masked_action']>=0,binary.index(0),op)
+        from operation_fixtures import selected_action
+        with selected_action(module, torch.where(depth>1,op,stop)):
+            return original_forward(module,x,**kwargs)
     monkeypatch.setattr(SentenceCredit,'departure',depart)
     monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
     monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)

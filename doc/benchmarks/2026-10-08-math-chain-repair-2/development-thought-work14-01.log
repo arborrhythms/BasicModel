@@ -1,0 +1,50 @@
+...........FF...............................                             [100%]
+=================================== FAILURES ===================================
+______ test_answer_credit_moves_shared_chooser_toward_the_completed_chain ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12818eb10>
+
+    def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch):
+        model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+        chooser=model.shared_grammar
+        before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
+        result=run(model,goal,work_budget=64,
+                score=lambda result:float(needs_episode(result.meaning)))
+        assert not model._last_thought_comparison['explore_kept']  # reconstruction tie
+>       assert model._last_thought_comparison['costs']==(1.,0.)
+E       assert (1.6400000000000001, 0.14) == (1.0, 0.0)
+E         
+E         At index 0 diff: 1.6400000000000001 != 1.0
+E         Use -v to get more diff
+
+test/test_item6_2_thinking.py:275: AssertionError
+______ test_expectation_trains_predictor_without_moving_departure_chooser ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1280724b0>
+
+    def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch):
+        from Layers import BracketExpectation
+        from test_sentence_expectation import observe as expose
+        model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+        discourse=BracketExpectation(4,8,8,concept_dim=8,expectation_scope='structured')
+        model.symbolSpace.expectation=discourse
+        expose(discourse,goal.roles*.25)
+        before=model.shared_grammar.thought_logits(goal,menu).detach().clone()
+        run(model,goal,work_budget=64)
+>       assert model._last_thought_score_function['costs']==(0.,0.)
+E       assert (0.64, 0.14) == (0.0, 0.0)
+E         
+E         At index 0 diff: 0.64 != 0.0
+E         Use -v to get more diff
+
+test/test_item6_2_thinking.py:299: AssertionError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain
+FAILED test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser
+2 failed, 42 passed, 1 warning in 3.08s

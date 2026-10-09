@@ -1,0 +1,138 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- POS_smoke: small inline corpus of basic English sentences for
+       smoke-testing parser POS tagging and grammar-rule
+       selection.  Built on the HeadEmission.xml shape (inline
+       sentences, modest dims) but with the MentalModel.xml English
+       grammar block so we exercise multiple rule alternatives.
+       writeSyntax=true dumps a parse tree per forward pass to
+       output/syntax_pos_smoke.xml so we can inspect what POS / rule
+       the chart picked. -->
+  <architecture>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptLayers>2</conceptLayers>
+
+    <writeSyntax>true</writeSyntax>
+    <syntaxOutPath>output/syntax_pos_smoke.xml</syntaxOutPath>
+    <!-- Match MereologicalTree V to the symbolic codebook nVectors so
+         _argmax_prototype indices are always in range. -->
+    <mereologicalTreeSize>128</mereologicalTreeSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>inline</dataset>
+      <!-- All sentences are exactly 3 content words (5 lex tokens including
+           spaces).  The STM capacity of 8 (stmCapacity) forces this constraint:
+           sentences longer than 7 tokens never reach the root S category,
+           leaving the derivation trace empty.
+
+           Grammar coverage by sentence pattern:
+              SVO    "cats chase mice"   (S=lift(NP,VP), VP=intersection(V,O))
+              EQUALS "cats are happy"    (S=equals(NP,AP))
+              CONJ   "cats and dogs"     (NP=conjunction(NP,NP))
+              ADJ-N  "big dogs run"      (NP=lower(ADJ,NP) then S=lift) -->
+      <input use="train">cats chase mice|dogs eat bones|birds catch worms|boys kick balls|cats are happy|dogs are big|birds are red|big cats sleep|red birds fly|small dogs bark|cats and dogs|boys and girls|happy cats sing|tall men walk|young girls smile|old dogs sleep</input>
+      <input use="test">cats chase mice|cats are happy|big cats sleep|cats and dogs</input>
+      <output use="train">0|0|0|0|1|1|1|0|0|0|0|0|0|0|0|0</output>
+      <output use="test">0|1|0|0</output>
+    </data>
+
+    <training>
+      <numEpochs>80</numEpochs>
+      <batchSize>16</batchSize>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+  </architecture>
+
+  <SymbolSpace>
+    <!-- Stage 3 cleanup: parserBackend, chartTau, chartTopK,
+         chartNoiseEps retired alongside the chart. The signal router
+         (LanguageLayer) is the canonical parser. -->
+    <language>
+      <start>S</start>
+      <grammar>
+        <!-- Full grammar restored: equals/part are now safe because
+             the MereologicalTree's writes are disabled by default
+             (writes_enabled=False) and the V-sizing bug is fixed
+             via <mereologicalTreeSize>. -->
+        <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
+          <symbols>
+            <!-- Sentence -->
+            <rule>S = NP</rule>
+            <rule>S = lift(NP, VP)</rule>
+            <rule>S = isEqual(NP, NP)</rule>
+            <rule>S = isEqual(NP, AP)</rule>
+            <rule>S = part(NP, NP)</rule>
+            <rule>S = not(S)</rule>
+            <rule>S = conjunction(S, S)</rule>
+            <rule>S = disjunction(S, S)</rule>
+
+            <!-- Noun Phrase -->
+            <rule>NP = N</rule>
+            <rule>NP = AP</rule>
+            <rule>NP = conjunction(NP, NP)</rule>
+            <rule>NP = disjunction(NP, NP)</rule>
+
+            <!-- Verb Phrase -->
+            <rule>VP = V</rule>
+            <rule>VP = intersection(V, O)</rule>
+            <rule>VP = lower(ADV, VP)</rule>
+            <rule>VP = lower(ADJ, VP)</rule>
+
+            <!-- Object -->
+            <rule>O = NP</rule>
+
+            <!-- Adjective Phrase -->
+            <rule>AP = lower(ADJ, NP)</rule>
+            <rule>AP = lower(ADJ, AP)</rule>
+            <rule>AP = lower(DET, NP)</rule>
+          </symbols>
+        </compose>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+  <InputSpace>
+    <nOutput>8</nOutput>
+    <nDim>20</nDim>
+    <nVectors>128</nVectors>
+    <codebook>quantize</codebook>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>8</nOutput>
+    <nDim>20</nDim>
+    <nVectors>256</nVectors>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>20</nDim>
+    <nVectors>128</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nOutput>8</nOutput>
+    <nDim>20</nDim>
+    <nVectors>128</nVectors>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

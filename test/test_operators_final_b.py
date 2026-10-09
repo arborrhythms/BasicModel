@@ -93,10 +93,14 @@ def forced_prefix_certificate():
         snapshots.append(id(derived))
         return begin(derived)
     def disjunction(module, x, **kw):
-        stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+        refs=kw.get('reference_data')
+        binary=tuple(range(module.r_reduce)) if refs is None else refs['binary_ops']
+        unary=tuple(range(module.r_apply)) if refs is None else refs['unary_ops']
+        stop=(x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
         depth=kw.get('depth',torch.full((len(x),),x.shape[1]))
-        kw['replay_action']=torch.where(depth>1,1,stop)
-        return original_forward(module,x,**kw)
+        from operation_fixtures import selected_action
+        with selected_action(module, torch.where(depth>1,binary.index(1),stop)):
+            return original_forward(module,x,**kw)
     def narrowing(module,keys,legal,space,**kw):
         action=legal.flatten(1).long().argmax(-1)
         for op in (0,2,1,4,3,5):

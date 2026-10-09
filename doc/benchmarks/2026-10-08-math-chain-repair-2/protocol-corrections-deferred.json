@@ -1,0 +1,25 @@
+{
+  "status": "deferred_not_implemented",
+  "authority": "thinking spec sections 14.10\u201314.11; Alec, 2026-10-09",
+  "original_protocol": "protocol.json",
+  "original_protocol_sha256": "bb86e5e753bbad39bd3c4dd3514ad9a55f9e1a7e1ff42b6960596ed626fcf42f",
+  "checkpoint": "item 0 trained checkpoint, after runtime optimization under item 1",
+  "corrections": [
+    {
+      "area": "curriculum",
+      "required": "One-step problems first: x is three. / what is x ?; then y is x; then plus zero, plus one, and longer chains."
+    },
+    {
+      "area": "answer_credit",
+      "required": "Worked steps are intermediate answers. Each expected inference row is scored 0 when produced and 1 otherwise; A is the mean over those rows and the final binding. The sentence judgement remains R + A."
+    },
+    {
+      "area": "episode",
+      "required": "After query finds candidates, the episode can bind a found candidate, or conclude with the best match bound."
+    }
+  ],
+  "implementation_in_this_pass": false,
+  "new_measurement_declared": false,
+  "retries": 0,
+  "replacements": 0
+}

@@ -1,0 +1,6 @@
+[collect] 22 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 5.1s; peak 0.47 GiB
+[worker-000] 57 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 21.8s; peak 2.17 GiB
+Result: passed, exit 0; 57/57 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/closing-thinking-4/result.json

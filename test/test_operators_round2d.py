@@ -13,7 +13,8 @@ def test_walk_probability_does_not_depend_on_its_number_of_rounds(monkeypatch):
     monkeypatch.setattr(torch,'rand',lambda *args,**kwargs:next(draws))
     reading=SimpleNamespace(alternatives=torch.tensor([[True,False,True]]).expand(count,-1))
     draw=departure(reading,torch.tensor([[True,True,True]]).expand(count,-1),
-                   active=torch.ones(count,dtype=torch.bool))
+                   active=torch.ones(count,dtype=torch.bool),
+                   compose_round=torch.arange(count).remainder(3))
     assert torch.bincount(draw['walk']).tolist()==[30,30]
     assert torch.bincount(draw['attention_round'][draw['narrowing']],minlength=3).tolist()==[15,0,15]
     assert torch.bincount(draw['compose_round'][~draw['narrowing']],minlength=3).tolist()==[10,10,10]
@@ -30,7 +31,8 @@ def test_eligible_walks_respect_sentence_and_active_rows(monkeypatch):
         round_words=torch.tensor([[0,1,-1]]).expand(4,-1))
     draw=departure(reading,torch.tensor([[False,False],[True,True],[False,False],[True,True]]),
         active=torch.tensor([True,True,True,False]),
-        sentence_ids=torch.tensor([[0,1]]).expand(4,-1),sentence=0)
+        sentence_ids=torch.tensor([[0,1]]).expand(4,-1),sentence=0,
+        compose_round=torch.tensor([-1,1,-1,1]))
     assert draw['walk'].tolist()==[0,1,-1,-1]
     assert draw['walk_count'].tolist()==[1,1,0,0]
     assert draw['walk_rounds'].tolist()==[1,2,0,0]
@@ -43,7 +45,7 @@ def test_compose_only_and_no_eligible_rounds(monkeypatch):
     from SentenceCredit import departure
     monkeypatch.setattr(torch,'rand',lambda n,**kwargs:torch.full((n,),.75))
     draw=departure(None,torch.tensor([[True,False,True],[False,False,False]]),
-                   active=torch.tensor([True,True]))
+                   active=torch.tensor([True,True]), compose_round=torch.tensor([2,-1]))
     assert draw['walk'].tolist()==[1,-1]
     assert draw['walk_count'].tolist()==[1,0]
     assert draw['walk_rounds'].tolist()==[2,0]

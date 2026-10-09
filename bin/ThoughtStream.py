@@ -3,13 +3,13 @@ from dataclasses import replace
 from collections import deque
 import torch
 
-from ThoughtReferences import bindings, evidence_pair, fill, open_slots, question, with_slots
+from ThoughtReferences import bindings, evidence_pair, fill, needs_episode, open_slots, question, with_slots
 
 
 def slots(records):
     """A result slot is its content, two poles, witnesses and producing action."""
     return tuple(record.result for record in records
-                 if record.kind == 'thought' and record.result is not None)
+                 if record.kind in ('thought', 'return') and record.result is not None)
 
 
 def materialize(result):
@@ -25,7 +25,10 @@ def materialize(result):
         elif torch.is_tensor(evidence.get('value')) and evidence['value'].ndim == 1:
             meaning = ConceptualMeaning.from_description(evidence['value'])
         else:
-            meaning = result.request
+            meaning = (result.request.constituents[0] if len(result.request.constituents) == 1
+                       else result.request)
+    if int(meaning.role_mask.sum()) == 2:
+        meaning = replace(meaning, sentence_kind='relation')
     data = bindings(meaning)
     data['_producing_operation'] = result.semantic_id
     data['_thought_witnesses'] = tuple(evidence.get('witnesses', ()))
@@ -55,7 +58,7 @@ def query_pattern(goal, kind, left, right, values=None, excluded=()):
     data['_query_exclude'] = tuple(excluded)
     return question(replace(goal, roles=roles, role_mask=mask,
                             role_refs=refs, bindings=data),
-                    (('referent', 2),) if right is None else (('evidence', -1),))
+                    (('referent', 2),) if right is None else ())
 
 
 def candidates(registry, root, active, current, records, descriptions=()):
@@ -72,6 +75,19 @@ def candidates(registry, root, active, current, records, descriptions=()):
     patterns = [current]
     frames = [frame for result in results for frame in result.evidence.get('frames', ())]
     excluded = tuple(frame['occurrence'] for frame in frames)
+    if kind is None:
+        data = bindings(current)
+        data['_query_exclude'] = tuple(dict.fromkeys((*data.get('_query_exclude', ()), *excluded)))
+        patterns = [replace(current, bindings=data)]
+        if data.get('_equality'):
+            free = [role for tag, role in open_slots(current) if tag == 'referent']
+            bound = [role for tag, role in data.get('_bound_roles', ()) if tag == 'referent']
+            roles = free or bound
+            if len(roles) == 1 and roles[0] in (0, 2):
+                role = 2-roles[0] if free else roles[0]
+                pattern = query_pattern(current, 'equal', current.role_refs[role], None,
+                                        current.roles[role], excluded)
+                patterns.append(replace(pattern, bindings=dict(bindings(pattern), _query_components=True)))
     if kind is not None:
         left, right = root.role_refs[0], root.role_refs[2]
         patterns = [query_pattern(root, kind, left, right),
@@ -118,6 +134,10 @@ def integrate(registry, goal, result, records):
     kind = relation(registry, goal)
     if kind is None:
         if result.semantic_id in ('query', 'ask'):
+            from ThoughtBinding import integrate as bind_region
+            aligned = bind_region(goal, result, tuple(item for item in slots(records) if item is not result))
+            if aligned is not None:
+                return aligned
             return fill(goal, result, witnesses=witnesses, operation=result.semantic_id)
         return goal
     results = (*slots(records), result)
@@ -161,12 +181,12 @@ def integrate(registry, goal, result, records):
     return goal
 
 
-def write(model, meaning, *, row, _active=None, _bound=None):
+def write(model, meaning, *, row, _active=None, _bound=None, replace_row=None):
     """The thought writer admits only conclusions and unresolved questions."""
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
     if store is None:
         return None
-    if not open_slots(meaning) and evidence_pair(meaning) == (0., 0.):
+    if not needs_episode(meaning) and evidence_pair(meaning) == (0., 0.):
         return None
     if _active is None:
         visited, checking = set(), set()
@@ -193,7 +213,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         references = []
         for child in meaning.constituents:
             if id(child) not in bound:
-                value = child if open_slots(child) or evidence_pair(child) != (0., 0.) else question(child, (('evidence', -1),))
+                value = child if needs_episode(child) or evidence_pair(child) != (0., 0.) else question(child)
                 index = write(model, value, row=row, _active=active, _bound=bound)
                 bound[id(child)] = store.occurrence_of(index)
             references.append(bound[id(child)])
@@ -210,9 +230,12 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         active.remove(id(original))
     else:
         active.remove(id(meaning))
-    kind = 'question' if open_slots(meaning) else 'inference'
+    kind = 'question' if needs_episode(meaning) else 'inference'
     if kind == 'inference' and evidence_pair(meaning) == (0., 0.):
         return None
+    if replace_row is not None:
+        store.upsert_resolved(replace_row, meaning)
+        return replace_row
     from Occurrence import source_at
     slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
     document, sentence = source_at(model, row, slot)
@@ -237,10 +260,59 @@ def write(model, meaning, *, row, _active=None, _bound=None):
 
 def commit(model, result, *, row):
     """Publish only the kept walk, after both complete trials were compared."""
+    derived = {}
+    def resolved_witnesses(meaning):
+        data = bindings(meaning)
+        data['_thought_witnesses'] = tuple(derived.get(ref, ref)
+            for ref in data.get('_thought_witnesses', ()))
+        return replace(meaning, bindings=data)
     for record in result.records:
         if record.kind == 'return' and record.meaning is not None and not open_slots(record.meaning):
-            write(model, record.meaning, row=row)
+            # A direct child lookup supplies evidence to its caller; it is
+            # not a newly derived proposition. Derived returns are published
+            # first so the parent's proof can cite their native occurrences.
+            if bindings(record.meaning).get('_direct_binding'):
+                continue
+            index = write(model, resolved_witnesses(record.meaning), row=row)
+            witness = None if record.result is None else record.result.evidence.get('derivation_witness')
+            if index is not None and witness is not None:
+                derived[witness] = model.symbolSpace.ltm_store.occurrence_of(index)
+    result = replace(result, meaning=resolved_witnesses(result.meaning))
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
+    occurrence = bindings(result.meaning).get('_query_occurrence')
+    prior = None if store is None else store._index_occurrences.get(occurrence)
+    if prior is not None:
+        # This episode owns the variable in the already committed source
+        # row. An exhausted search must not create a second independent
+        # variable for later copulas to fill.
+        original = store.meaning_of(prior)
+        positive, negative = evidence_pair(result.meaning)
+        resolved = fill(original, dict(meaning=result.meaning,
+            support_true=positive, support_false=negative),
+            witnesses=bindings(result.meaning).get('_thought_witnesses', ()),
+            operation=bindings(result.meaning).get('_producing_operation'))
+        data = bindings(resolved)
+        data['_pending'] = bool(open_slots(resolved))
+        data['_forward_references'] = tuple(item for item in data.get('_forward_references', ())
+                                             if resolved.role_refs[item[0]] is None)
+        resolved = replace(resolved, bindings=data)
+        if needs_episode(result.meaning):
+            return write(model, resolved, row=row, replace_row=prior)
+        index = write(model, result.meaning, row=row)
+        if index is not None:
+            # Rebase any newly minted local children through the concluded
+            # row before filling the original region, without replacing its
+            # already-bound roles with an unrelated serial result.
+            resolved = fill(original, dict(meaning=store.meaning_of(index),
+                support_true=positive, support_false=negative),
+                witnesses=bindings(result.meaning).get('_thought_witnesses', ()),
+                operation=bindings(result.meaning).get('_producing_operation'))
+            data = bindings(resolved)
+            data['_pending'] = bool(open_slots(resolved))
+            data['_forward_references'] = tuple(item for item in data.get('_forward_references', ())
+                                                 if resolved.role_refs[item[0]] is None)
+            store.upsert_resolved(prior, replace(resolved, bindings=data))
+        return index
     index = None
     # A zero-work closing already persisted this exact open row. Reuse its
     # occurrence rather than manufacturing a duplicate exhausted question.
@@ -256,17 +328,6 @@ def commit(model, result, *, row):
         index = write(model, result.meaning, row=row)
     if index is None or index < 0:
         return index
-    occurrence = store.occurrence_of(index)
-    if open_slots(result.meaning):
-        from Occurrence import source_at
-        document = source_at(model, row, int(getattr(model, '_open_sentence_slot', 0) or 0))[0]
-        model.__dict__.setdefault('_open_thought_rows', {}).setdefault(row, []).append(
-            (document, result.meaning.detached(), occurrence))
-    else:
-        discourse = getattr(model.symbolSpace, 'expectation', None)
-        if discourse is not None and discourse.expectation_enabled:
-            meaning = result.meaning.detached()
-            discourse._inter_context[row].append((int(meaning.role_mask.sum()), meaning.roles, meaning.role_mask))
-            discourse._inter_context_occurrences[row].append(occurrence)
-            discourse._inter_last_meaning[row] = None
+    # Pending questions are already LTM rows. Address upserts, not a second
+    # row-keyed question cache, fill them when their referenced occurrence arrives.
     return index

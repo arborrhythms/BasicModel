@@ -1,0 +1,471 @@
+{
+  "forced": true,
+  "forcing": "c/e operation and binding choices, including query/conclude logit preference; live masked departures",
+  "examples": [
+    {
+      "source_pair": [
+        1.0,
+        0.0
+      ],
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -7798633501528129740
+      ],
+      "operations": [
+        "query",
+        "conclude"
+      ],
+      "before": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "after": [],
+      "minted": true
+    },
+    {
+      "source_pair": [
+        0.0,
+        0.0
+      ],
+      "occurrence": [
+        "ltm",
+        "address-v1",
+        -2439973186814096551
+      ],
+      "operations": [
+        "query",
+        "conclude"
+      ],
+      "before": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "after": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "minted": false
+    }
+  ],
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": -2163921414245006691,
+      "address": [
+        "ltm",
+        "address-v1",
+        -2163921414245006691
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 29,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 1,
+      "row_id": -2439973186814096551,
+      "address": [
+        "ltm",
+        "address-v1",
+        -2439973186814096551
+      ],
+      "open": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "forward": [
+        [
+          0,
+          26
+        ]
+      ],
+      "episode": true,
+      "departure": -1,
+      "query_open": [
+        [
+          "referent",
+          0
+        ]
+      ]
+    }
+  ],
+  "choices": [
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "y"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "equal",
+      "action": 21,
+      "forced_departure": false,
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 55,
+      "forced_departure": false,
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "two"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "left": [
+        "two"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "two"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "lift",
+      "action": 33,
+      "forced_departure": false,
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false,
+      "left": [
+        "y"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "equal",
+      "action": 21,
+      "forced_departure": false,
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 55,
+      "forced_departure": false,
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "lift",
+      "action": 32,
+      "forced_departure": true,
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 51,
+      "forced_departure": false,
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 20,
+      "forced_departure": false,
+      "left": [
+        "y"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 64,
+      "forced_departure": false,
+      "left": [],
+      "right": []
+    }
+  ]
+}

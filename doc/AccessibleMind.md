@@ -45,6 +45,14 @@ Thought conclusions write only `inference` rows, with occurrence addresses and
 witness references. Unresolved `question` rows belong to closing. There is no
 generic writable-store capability on an executor.
 
+Open referent columns are addressed by the source row and role and participate
+in the same bounded bind menu as filled columns. Copula substitution fills
+that variable at its existing occurrence. A mint records its bind/mint/open
+choice and chooser probability as provenance; no reader consumes that record
+yet. Episode-local gain, priming and predictor effects are restored when the
+episode ends. Its lasting effects are the filled or still-open reference,
+new LTM rows with provenance, and the credit trail.
+
 `ThoughtResult` remains the immutable internal effect record and checkpoint
 representation. Its serialization kinds describe payload shape; the descriptor's
 subsystem write target determines ownership. The answer adapter reads those
@@ -69,7 +77,9 @@ value one. A cleared all-ones mask supplies no extra codes. The code addresses
 remain index metadata; their magnitudes never become chooser features.
 Open references gate conclusion. One `attentionBudget` covers every nested
 attempt; the grammar scorer receives the expectation image as context. Its
-paired owner credit uses the answer, next-sentence prediction error and work.
+sentence departure is judged by reconstruction and the supplied answer. A
+thought walk also pays its own metered work. Next-sentence prediction error
+trains the predictors through their owner-step registry.
 
 ## The existing LTM writer owns the index
 
@@ -84,17 +94,19 @@ Structural references follow the actual referenced field.
 
 The durable index is inverted: `(code, role)` maps to store row addresses.
 Checkpoint columns `posting_codes`, `posting_roles` and `posting_rows` serialize
-those global postings; `leaf_complete` and `index_stream` retain completion and
-stream metadata. Appends extend posting lists without copying all prior rows.
+those global postings; `leaf_complete` retains completion. The retired
+`index_stream` column does not restrict readers: LTM truth is shared, while
+document keys, occurrence addresses and timestamps distinguish its rows.
+Unfolding reads the current reader's priming row. Appends extend posting lists without copying all prior rows.
 Row-to-concept identity remains the allocator's index, independent of semantic
 vectors. [Writer](../bin/Layers.py), [index](../bin/MemoryIndex.py).
 
-Cues include the bound roles' leaf codes, occurrence references, priming and
-neighbors of previously retrieved frames in the same stream. The reader
+Cues include the bound roles' leaf codes, occurrence references and priming. The reader
 examines at most K candidates and charges before reading each record. Scope
-and bindings filter candidates; masked role similarity ranks them; contiguity
-breaks equal-match ties. Other streams' observations and estimate/question rows
-are excluded. `query` retains at most the best row. `isTrue` retains the ended pair and
+and bindings filter candidates; masked role similarity ranks them, with stable
+row order breaking ties. Batch-position filtering and adjacency preference are
+retired. Estimate/question rows remain excluded from asserted-truth queries.
+`query` retains at most the best row. `isTrue` retains the ended pair and
 trust separately; `exist` is the conceptual presence face. Fan increases examined candidates and
 work until the cap is reached.
 

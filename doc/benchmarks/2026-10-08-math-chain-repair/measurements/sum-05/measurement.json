@@ -1,0 +1,243 @@
+{
+  "kind": "sum",
+  "answers": [
+    0.4999999403953552,
+    0.4999999701976776,
+    0.49999991059303284,
+    0.4999999403953552
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "inputs": [
+    "hello world",
+    "hello there",
+    "loving world",
+    "loving there"
+  ],
+  "mse": 0.25,
+  "correct": 2,
+  "class_bar": false,
+  "read_backs": [
+    "hello world",
+    "hello there",
+    "world loving",
+    "there loving"
+  ],
+  "unavailable": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "reconstructed": 4,
+  "reconstruction_bar": true,
+  "contrast": 0.0,
+  "max_deviation_from_half": 8.940696716308594e-08,
+  "half_at_float32_precision": true,
+  "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+  "sum_bar": true,
+  "floor_bar": true,
+  "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators final-b control)",
+  "final_greedy_compose": [
+    {
+      "batch_row": 0,
+      "sentence_slot": 0,
+      "word_rows": [
+        0,
+        1
+      ],
+      "sequence": [
+        {
+          "arity": 2,
+          "rule_id": 0,
+          "rule_name": "sum",
+          "surface_name": "sum",
+          "position": 1
+        }
+      ],
+      "cost_components": {
+        "reconstruction": 0.0,
+        "expectation": 0.0,
+        "answer": 0.0
+      },
+      "selected_cost": 0.0,
+      "credit_total": 0.0,
+      "decision": "tie:greedy",
+      "trial": "greedy"
+    },
+    {
+      "batch_row": 1,
+      "sentence_slot": 0,
+      "word_rows": [
+        0,
+        2
+      ],
+      "sequence": [
+        {
+          "arity": 2,
+          "rule_id": 0,
+          "rule_name": "sum",
+          "surface_name": "sum",
+          "position": 1
+        }
+      ],
+      "cost_components": {
+        "reconstruction": 0.0,
+        "expectation": 0.0,
+        "answer": 0.0
+      },
+      "selected_cost": 0.0,
+      "credit_total": 0.0,
+      "decision": "tie:greedy",
+      "trial": "greedy"
+    },
+    {
+      "batch_row": 2,
+      "sentence_slot": 0,
+      "word_rows": [
+        4,
+        1
+      ],
+      "sequence": [
+        {
+          "arity": 2,
+          "rule_id": 0,
+          "rule_name": "sum",
+          "surface_name": "sum",
+          "position": 1
+        }
+      ],
+      "cost_components": {
+        "reconstruction": 0.0,
+        "expectation": 0.0,
+        "answer": 0.0
+      },
+      "selected_cost": 0.0,
+      "credit_total": 0.0,
+      "decision": "tie:greedy",
+      "trial": "greedy"
+    },
+    {
+      "batch_row": 3,
+      "sentence_slot": 0,
+      "word_rows": [
+        4,
+        2
+      ],
+      "sequence": [
+        {
+          "arity": 2,
+          "rule_id": 0,
+          "rule_name": "sum",
+          "surface_name": "sum",
+          "position": 1
+        }
+      ],
+      "cost_components": {
+        "reconstruction": 0.0,
+        "expectation": 0.0,
+        "answer": 0.0
+      },
+      "selected_cost": 0.0,
+      "credit_total": 0.0,
+      "decision": "tie:greedy",
+      "trial": "greedy"
+    }
+  ],
+  "storage": {
+    "rows_used": 8,
+    "capacity": 1024,
+    "sentence_rows": 4,
+    "definition_rows": 4,
+    "addresses": [
+      -6736319402935933635,
+      -2164899334207564249,
+      -2449234306209964231,
+      -8600101167942099913
+    ],
+    "sentence_indices": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "content_keys": [
+      "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+      "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+      "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+      "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+    ],
+    "witness_counts": [
+      401,
+      401,
+      401,
+      401
+    ],
+    "timestamps": [
+      401.0,
+      401.0,
+      401.0,
+      401.0
+    ],
+    "all_witness_counts": [
+      802,
+      802,
+      802,
+      802,
+      401,
+      401,
+      401,
+      401
+    ]
+  },
+  "storage_after_training": {
+    "rows_used": 8,
+    "capacity": 1024,
+    "sentence_rows": 4,
+    "definition_rows": 4,
+    "addresses": [
+      -6736319402935933635,
+      -2164899334207564249,
+      -2449234306209964231,
+      -8600101167942099913
+    ],
+    "sentence_indices": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "content_keys": [
+      "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+      "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+      "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+      "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+    ],
+    "witness_counts": [
+      400,
+      400,
+      400,
+      400
+    ],
+    "timestamps": [
+      400.0,
+      400.0,
+      400.0,
+      400.0
+    ],
+    "all_witness_counts": [
+      800,
+      800,
+      800,
+      800,
+      400,
+      400,
+      400,
+      400
+    ]
+  }
+}

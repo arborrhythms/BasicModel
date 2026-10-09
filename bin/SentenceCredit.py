@@ -23,7 +23,8 @@ def expectation_terms(registry, pred, logits, kind_logit, target, occupied,
         registry.error('kind', error*gate.mean(), math.log(2), row=row, category='expectation')
 
 
-def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0):
+def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
+              compose_round=None):
     """Uniform walk, then uniform eligible round; the chooser draws the action."""
     from WalkTrials import departure_at
     if narrowing is None:
@@ -39,13 +40,15 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0):
     walk_count = available.sum(-1)
     walk_rounds = torch.where(walk >= 0,
         counts.gather(1, walk.clamp_min(0)[:, None]).squeeze(1), 0)
-    eligible = torch.cat((attention & (walk == 0)[:, None],
-                          compose & (walk == 1)[:, None]), -1)
-    chosen = (departure_at(eligible) if eligible.shape[1] else
-              torch.full_like(walk, -1))
     width = attention.shape[1]
-    at_attention = (chosen >= 0) & (chosen < width)
-    at_compose = chosen >= width
+    attention_round = (departure_at(attention) if width else torch.full_like(walk, -1))
+    if compose_round is None:
+        if bool(compose.any()):
+            raise ValueError('compose departure requires its reservoir snapshot round')
+        compose_round = torch.full_like(walk, -1)
+    chosen = torch.where(walk == 0, attention_round,
+                         torch.where(walk == 1, width + compose_round, -1))
+    at_attention, at_compose = walk == 0, walk == 1
     return dict(round=chosen, rounds=counts.sum(-1), walk=walk,
         walk_count=walk_count, walk_rounds=walk_rounds, narrowing=at_attention,
         attention_round=torch.where(at_attention, chosen, -1),
@@ -61,13 +64,14 @@ def components(registry, expectation, like, *, answer=None):
 
 
 def comparison(parts, active):
-    """Reconstruction keeps the derivation; the full total credits its policy."""
-    costs = parts.sum(-1).detach()
+    """Reconstruction keeps the derivation; R + A credits its departure."""
+    costs = (parts[..., 0] + parts[..., 2]).detach()
     delta = parts[:, 1] - parts[:, 0]
     keep_costs = parts[:, :, 0].detach()
     wins = active & (keep_costs[:, 1] < keep_costs[:, 0])
     direction = torch.sign(costs[:, 1]-costs[:, 0])
     supports = delta * direction[:, None] > 0
+    supports[:, 1] = False  # E trains predictors, never the departure.
     names = ('reconstruction', 'expectation', 'answer')
     deciding = [('+'.join(name for name, yes in zip(names, row) if yes)
                  if sign else 'tie:greedy') for row, sign in
@@ -76,7 +80,7 @@ def comparison(parts, active):
                      for d in delta[:, 0].tolist()]
     # Negative advantage rewards explore. A positive advantage rewards greedy.
     against_keep = active & direction.ne(0) & ((direction < 0) != wins)
-    without_answer = torch.sign(delta[:, :2].sum(-1))
+    without_answer = torch.sign(delta[:, 0])
     answer_against_keep = against_keep & (without_answer != direction) & delta[:, 2].ne(0)
     return dict(costs=costs, keep_costs=keep_costs, components=parts.detach(), delta=delta.detach(),
                 wins=wins, deciding=deciding, keep_decision=keep_decision,

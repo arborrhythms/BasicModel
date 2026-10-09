@@ -1,5 +1,12 @@
 # Mathematical thinking: bounded specification for iterative `what()` evaluation
 
+> **Learning-testbed update, 2026-10-07:** [Thinking spec §10](2026-10-07-thinking.md#10-the-thinking-corpus-arithmetic-with-intermediate-steps-alec-2026-10-07)
+> replaces the numeric numeral codes and range-sized answer classifier with
+> opaque number words, worked successor steps and committed answer bindings.
+> The September numeric fixtures below remain historical regression fixtures;
+> they do not certify the current learning gate. See the
+> [MM_math_chain candidate receipt](../benchmarks/2026-10-07-math-chain/README.md).
+
 > **Target update, 2026-09-12:**
 > [Sentence-boundary thinking](2026-09-11-sentence-boundary-thinking.md)
 > supersedes the lexical ANSWER/OPEN policy and its execution/context limits

@@ -1,0 +1,2795 @@
+diff --git a/bin/Attention.py b/bin/Attention.py
+index 28203cc42..6c7d8cefa 100644
+--- a/bin/Attention.py
++++ b/bin/Attention.py
+@@ -391,6 +391,8 @@ class BracketKeys:
+         sim = torch.einsum('bkd,vd->bkv', kn, Wn)            # [B, K, V]
+         if boosts is not None and torch.is_tensor(boosts):
+             bv = boosts.detach().to(sim.dtype)
++            if bv.ndim not in (1, 2) or (bv.ndim == 2 and bv.shape[0] != keys.shape[0]):
++                raise ValueError('retrieval priming surface differs from the current batch; broadcasting is forbidden')
+             V = int(Wn.shape[0])
+             bv = F.pad(bv[..., :V], (0, max(0, V-bv.shape[-1])), value=1.)
+             sim = sim * (bv[:,None] if bv.ndim == 2 else bv)
+diff --git a/bin/ClauseJournal.py b/bin/ClauseJournal.py
+index 5196e318c..dba01e70e 100644
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -91,10 +91,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+                 mode = dict(getattr(rule, 'reference_kinds', ())).get('I'+str(role+1))
+                 if getattr(rule, 'head_role', 0) == role+1:
+                     mode = getattr(rule, 'determiner_mode', None) or mode
+-                if reference in (-1, 0) and mode in ('bind', 'pronoun'):
++                if reference == 0 or (reference == -1 and mode in ('bind', 'pronoun')):
+                     selected['ref'] = -1
+                     selected['open_reference'] = True
+                     operand['open_reference'] = True
++                    selected['forward_identity'] = int(program.concept_ids[selected['leaves'][0]])
++                elif reference == -1 and getattr(program, 'binding_choices', False):
++                    from ReferenceContext import binding_spec
++                    order, binding_mode = binding_spec(rule, 'I'+str(role+1), implicit=True)
++                    if order == 1 and binding_mode != 'kind' and not operand.get('open_reference'):
++                        selected['mint_reference'] = operand['mint_reference'] = True
+                 # A trial's newly requested singleton still had its source
+                 # address. Resolve that alias to the winning host's admitted
+                 # identity; an already selected earlier occurrence is unchanged.
+@@ -214,6 +220,15 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+                 excluded = True
+             mode = getattr(node['rule'], 'meaning_mode', None) or mode
+             node = head(node['children'][0], clause=True)
++        if not node['children'] and not node['has_point'] and store is not None:
++            index = store.index_of_row(node['ref'])
++            retained = None if index is None else store.meaning_of(index)
++            if retained is not None and int(retained.role_mask.sum()) == 3:
++                relation = {store.REL_PARTOF: 'part', store.REL_IMPLIES: 'implies'}.get(
++                    int(store.rel_type[index]), 'operator')
++                return Clause(replace(retained, polarity=polarity), relation=relation,
++                    refs=tuple(store.refs[index].tolist()), subject_word_id=subject_word_id(node),
++                    **metadata(root['leaves']), **bands(root))
+         operator = getattr(node['rule'], 'relation_kind', None)
+         children = []
+         owned = set()
+@@ -231,11 +246,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+ 
+         def member(item):
+             mode = getattr(item['rule'], 'determiner_mode', None)
+-            if mode != 'mint':
++            if mode != 'mint' and not item.get('mint_reference'):
+                 return None
+-            description = item['children'][item['rule'].head_role - 1]
++            description = (item['children'][item['rule'].head_role - 1]
++                           if mode == 'mint' else head(item))
+             meta = metadata(description['leaves'])
+-            meta['order'] = determined_order(item)
++            meta['order'] = determined_order(item) if mode == 'mint' else 1
+             return Clause(ConceptualMeaning.from_description(value(item)), point=value(item),
+                           subject_word_id=subject_word_id(description), **bands(item), **meta)
+ 
+@@ -325,6 +341,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+         equality = relation == 'equal'
+         if equality:
+             relation = 'part'
++            from ThoughtReferences import bindings
++            data = bindings(described)
++            data['_equality'] = True
++            described = replace(described, bindings=data)
+         if relation == 'whole':
+             relation = 'part'
+             references = references[2], references[1], references[0]
+@@ -378,6 +398,17 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+                        and (item.get('open_reference') or head(item).get('open_reference')))
+         if opened:
+             described = with_slots(described, opened, pair=evidence['evidence'])
++            from ThoughtReferences import bindings
++            data = bindings(described)
++            data['_forward_references'] = tuple((role,
++                head(role_nodes[role]).get('forward_identity',
++                    int(program.concept_ids[head(role_nodes[role])['leaves'][0]])))
++                for kind, role in opened if kind == 'referent')
++            described = replace(described, bindings=data)
++            if relation is None and int(described.role_mask.sum()) == 3:
++                # An unfilled operand cannot disappear into a fused point.
++                relation = 'operator'
++                references = factored_refs or references
+         if excluded:
+             support = evidence['evidence']
+             evidence['evidence'] = (0., support[1])
+@@ -391,9 +422,19 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             and program.symbol_when is None,
+             **bands(root))
+         if equality:
++            from ThoughtReferences import bindings
++            converse_bindings = bindings(field.meaning)
++            for key in ('_open_references', '_bound_roles'):
++                if key in converse_bindings:
++                    converse_bindings[key] = tuple((kind, 2-role if role >= 0 else role)
++                                                   for kind, role in converse_bindings[key])
++            if '_forward_references' in converse_bindings:
++                converse_bindings['_forward_references'] = tuple((2-role, identity)
++                    for role, identity in converse_bindings['_forward_references'])
+             converse = replace(field, refs=(field.refs[2], field.refs[1], field.refs[0]),
+                                meaning=replace(field.meaning, roles=field.meaning.roles[[2, 1, 0]],
+-                                               role_mask=field.meaning.role_mask[[2, 1, 0]]),
++                                               role_mask=field.meaning.role_mask[[2, 1, 0]],
++                                               bindings=converse_bindings),
+                                factored_refs=None if field.factored_refs is None else field.factored_refs[::-1])
+             field = replace(field, companions=(converse,))
+         return field
+diff --git a/bin/ClauseRow.py b/bin/ClauseRow.py
+index a6b1a1e11..b932699bf 100644
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -329,12 +329,10 @@ class ClauseRows:
+                              else self.point_of_row(ref))
+                     if relation is None and point is None:
+                         raise ValueError('a clause over a relation cannot fuse')
+-                elif relation is not None:
+-                    raise ValueError('a relation requires three resolved row references')
+             if relation == 'implies':
+                 for slot in (0, 2):
+                     ref = value.refs[slot]
+-                    if not isinstance(ref, tuple) and self.index_of_row(ref) is None:
++                    if ref not in (-1, 0) and not isinstance(ref, tuple) and self.index_of_row(ref) is None:
+                         raise ValueError('implication operands must be truth rows')
+             def reserve(addresses):
+                 nonlocal required
+@@ -346,7 +344,8 @@ class ClauseRows:
+                     return value.refs[0]
+                 if value.eternal and value.refs[0] in eternal_ids:
+                     return value.refs[0]
+-                if context is None and relation is not None and key in keys:
++                if (context is None and relation is not None and key in keys
++                        and all(ref not in (-1, 0) for ref in addresses)):
+                     return keys[key]
+                 required += 1
+                 result = value.refs[0] if value.eternal else -required - 1
+@@ -418,10 +417,9 @@ class ClauseRows:
+                     self.point_of_row(ref) is None for ref in references if ref not in (-1, 0)):
+                 raise ValueError('a clause over a relation cannot fuse')
+             if relation in ('part', 'implies', 'operator'):
+-                if references[0] in (-1, 0) or references[2] in (-1, 0):
+-                    raise ValueError('a relation requires two resolved row operands')
+                 if relation == 'implies' and any(
+-                        self.index_of_row(ref) is None for ref in (references[0], references[2])):
++                        ref not in (-1, 0) and self.index_of_row(ref) is None
++                        for ref in (references[0], references[2])):
+                     raise ValueError('implication operands must be truth rows')
+             degree = max(-1., min(1., float(trust))) if asserted and trust is not None else 0.
+             positive, negative = map(float, value.evidence if evidence is None or not asserted else evidence)
+@@ -457,7 +455,7 @@ class ClauseRows:
+                              & (self.refs[:len(self)] == self.refs.new_tensor(refs)).all(-1))
+                     # The VP address is canonical; its learned vector is not a key.
+                     found = match.nonzero().flatten()
+-                    if context is None and found.numel():
++                    if context is None and found.numel() and all(ref not in (-1, 0) for ref in refs):
+                         return update(int(found[0]))
+                 role_refs = (None, None, None) if relation is None else tuple(
+                     self.occurrence_of(self.index_of_row(ref))
+@@ -491,11 +489,22 @@ class ClauseRows:
+                 canonical = ConceptualMeaning(stored.roles, stored.role_mask,
+                     **dict(stored.metadata(), role_refs=role_refs,
+                            bindings=value.meaning.bindings, scope=value.meaning.scope))
++                from ThoughtReferences import bindings, open_slots, with_slots
++                opened = list(open_slots(value.meaning))
++                if relation is not None:
++                    opened.extend(('relation' if i == 1 else 'referent', i)
++                                  for i, ref in enumerate(refs) if ref in (-1, 0))
++                if opened:
++                    canonical = with_slots(canonical, opened, pair=(positive, negative))
++                    data = bindings(canonical)
++                    data['_pending'] = True
++                    canonical = replace(canonical, bindings=data)
+                 self._semantic_rows[int(self.address_keys[row])] = {
+                     key: canonical.metadata()[key] for key in ('role_refs', 'bindings', 'scope')}
++                self._update_forward_index(int(self.address_keys[row]))
+                 self.metadata_required[row] = True
+                 self._update_semantic_fingerprint(row)
+-                if relation == 'part':
++                if relation == 'part' and not opened:
+                     update = getattr(self, '_index_part_row', None)
+                     if update is not None:
+                         update(refs[0], refs[2], int(self.row_ids[row]))
+@@ -508,12 +517,117 @@ class ClauseRows:
+             return row
+ 
+         result = write(clause, asserted=True)
++        # The two equality directions supply the same ordinary substitution.
++        # Its operands and source references, never source words, determine
++        # which pending name is filled by the newly arrived occurrence.
++        from ThoughtReferences import bindings
++        for value_id, row in tuple(rows.items()):
++            meaning = self.meaning_of(row)
++            data = bindings(meaning)
++            if not data.get('_equality'):
++                continue
++            left, right = int(self.refs[row, 0]), int(self.refs[row, 2])
++            point = None if right in (-1, 0) else self.point_of_row(right)
++            if point is None:
++                continue
++            aliases = {identity for role, identity in data.get('_forward_references', ()) if role == 0}
++            if left not in (-1, 0):
++                aliases.add(left)
++                target = self.index_of_row(left)
++                if target is not None:
++                    aliases.update(identity for _, identity in bindings(self.meaning_of(target))
++                                   .get('_forward_references', ()))
++                if index_plan is not None:
++                    for identities in index_plan.alloc.word_forms.values():
++                        if left in identities:
++                            aliases.update(identities)
++            self.fill_forward_references(aliases, right, point)
+         if estimate_index >= 0:
+             self.link_estimate_observation(estimate_index, result)
+         if assertion is not None and result >= 0:
+             assertion['rows'].append(result)
+         return result
+ 
++    def _update_forward_index(self, address):
++        """Maintain the shared, derived posting list for unresolved identities."""
++        if self.__dict__.get('_forward_index_source') is not self._semantic_rows:
++            return  # A restored/replaced store is rebuilt on its next lookup.
++        postings = self._forward_postings
++        by_address = self._forward_by_address
++        for identity in by_address.pop(address, ()):
++            postings[identity].discard(address)
++            if not postings[identity]:
++                del postings[identity]
++        metadata = self._semantic_rows.get(address, {})
++        identities = {identity for _, identity in
++                      dict(metadata.get('bindings', ())).get('_forward_references', ())}
++        if identities:
++            by_address[address] = identities
++            for identity in identities:
++                postings.setdefault(identity, set()).add(address)
++
++    def _forward_addresses(self, identities):
++        if self.__dict__.get('_forward_index_source') is not self._semantic_rows:
++            self._forward_index_source = self._semantic_rows
++            self._forward_postings, self._forward_by_address = {}, {}
++            for address in self._semantic_rows:
++                self._update_forward_index(address)
++        return set().union(*(self._forward_postings.get(identity, ()) for identity in identities))
++
++    def fill_forward_references(self, identities, reference, point):
++        """Fill pending slots by identity at their original occurrence address.
++
++        This is a derived index of the shared truth rows, not stream state.
++        A supplied occurrence never matches a forward name by code similarity.
++        """
++        from ThoughtReferences import bindings, open_slots, fill
++        identities = set(identities)
++        if not identities:
++            return ()
++        completed = []
++        for address in sorted(self._forward_addresses(identities)):
++            metadata = self._semantic_rows[address]
++            data = dict(metadata.get('bindings', ()))
++            forwards = data.get('_forward_references', ())
++            selected = [(role, identity) for role, identity in forwards if identity in identities]
++            if not selected:
++                continue
++            row = self.index_of_row(address)
++            if row is None or int(self.row_ids[row]) == reference:
++                continue
++            meaning = self.meaning_of(row)
++            native = self.index_of_row(reference)
++            witness = self.occurrence_of(native) if native is not None else ('sym', reference)
++            resolved = meaning
++            for role, _ in selected:
++                resolved = fill(resolved, dict(reference=witness, value=point,
++                    support_true=float(self.c_plus[row]), support_false=float(self.c_minus[row])),
++                    slots=(('referent', role),), witnesses=(witness,), operation='bind')
++            data = bindings(resolved)
++            data['_forward_references'] = tuple(pair for pair in forwards if pair not in selected)
++            data['_pending'] = bool(open_slots(resolved))
++            resolved = replace(resolved, bindings=data)
++            # append_meaning's address upsert preserves document, position and
++            # occurrence identity; no inferred truth or new address is minted.
++            old_refs = self.refs[row].clone()
++            previous_context = self.__dict__.get('_write_address')
++            object.__setattr__(self, '_write_address', (
++                bytes(self.document_keys[row].tolist()), int(self.sentence_index[row]),
++                self.content_key(row), float(self.timestamp[row])))
++            try:
++                self.append_meaning(resolved, kind=self.KINDS[int(self.record_kind[row])],
++                    rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),
++                    evidence=(float(self.c_plus[row]), float(self.c_minus[row])),
++                    order=int(self.order[row]), address=int(self.address_keys[row]))
++            finally:
++                object.__setattr__(self, '_write_address', previous_context)
++            for role, _ in selected:
++                old_refs[role] = reference
++            self.refs[row].copy_(old_refs)
++            self._update_semantic_fingerprint(row)
++            completed.append(row)
++        return tuple(completed)
++
+     def relation_operands(self, idx):
+         """Resolve a relation's shared addresses without inventing fused points."""
+         if not 0 <= int(idx) < len(self) or int(self.rel_type[idx]) == self.REL_NONE:
+diff --git a/bin/ConceptIndex.py b/bin/ConceptIndex.py
+index c2a2b8c51..2da51a10d 100644
+--- a/bin/ConceptIndex.py
++++ b/bin/ConceptIndex.py
+@@ -187,11 +187,19 @@ class ClauseTaxonomyPlan:
+         """Associate the subject's form with its ended, order-one occurrence."""
+         if clause.slots.shape[0] != 1:
+             return
++        from ThoughtReferences import open_slots
++        if open_slots(clause.meaning):
++            return
+         sources = {clause.refs[0]} if type(clause.refs[0]) is int else set()
+         if clause.subject_word_id > 0:
+             sources.add(clause.subject_word_id)
+         for source in sources:
+             _inherit_forms(self.cs, source, row_id)
++        aliases = set(sources)
++        for identities in self.alloc.word_forms.values():
++            if identities.intersection(sources):
++                aliases.update(identities)
++        self.store.fill_forward_references(aliases, row_id, clause.point)
+ 
+     def order(self, cid):
+         return self.definitions[cid][1] if cid in self.definitions else self.cs._concept_source_order(cid)
+diff --git a/bin/Interpret.py b/bin/Interpret.py
+index a37a10da0..40242170c 100644
+--- a/bin/Interpret.py
++++ b/bin/Interpret.py
+@@ -283,8 +283,50 @@ class InterpretLayer(GrammarLayer):
+         width = atoms.shape[-1] if derived is None else derived.percept_event_width
+         return activate_code(atoms, presence, width, evidence=evidence)
+ 
++    def bind(self, value, *, identity, scope, candidate_ids, candidate_values,
++             candidate_relations, available, associations, mode, active):
++        """Bind backward, or offer mint and forward to the ordinary chooser.
++
++        Zero is the temporary open-reference marker (never a durable ID).
++        Minus one requests admission at the kept closing. No word class,
++        allocation, local softmax or random draw participates in this read.
++        """
++        from ClauseScope import ClauseScope
++        if mode == 'mint':
++            return [(value, torch.full_like(identity, -1), torch.zeros_like(active), active)]
++        matches = candidate_ids == identity[..., None]
++        if associations is not None and associations.numel():
++            source = identity[..., None] == associations[:, 0]
++            target = candidate_ids[..., None] == associations[:, 1]
++            matches = matches | (source[..., None, :] & target).any(-1)
++        available = available & (torch.ones_like(matches) if mode in ('bind', 'pronoun') else matches)
++        # A composed phrase, selected individual, or already-open operand
++        # retains the binding its own operation made.
++        explicit = mode in ('bind', 'pronoun')
++        eligible = active & (identity > 0) & (scope.bitwise_and(ClauseScope.LOCAL) == 0)
++        if explicit:
++            eligible = active
++        available = available & eligible[..., None]
++        found = available.any(-1) & eligible
++        columns = (range(candidate_ids.shape[-1]) if torch.compiler.is_compiling() else
++                   available.any(dim=(0, 1)).nonzero().flatten().tolist())
++        options = [(candidate_values[:, :, i], candidate_ids[:, :, i],
++                    candidate_relations[:, :, i], available[:, :, i] & eligible)
++                   for i in columns]
++        forward = eligible & ~found
++        if not explicit and (torch.compiler.is_compiling() or bool(forward.any())):
++            options.append((value, torch.full_like(identity, -1),
++                            torch.zeros_like(active), forward))
++        if torch.compiler.is_compiling() or bool(forward.any()):
++            options.append((value, torch.zeros_like(identity), torch.zeros_like(active), forward))
++        if not options or torch.compiler.is_compiling() or bool((active & ~eligible).any()):
++            options.append((value, identity, scope.bitwise_and(1) != 0, active & ~eligible))
++        return options
++
+     def forward(self, word, *, order=None, occurrence=None, selected=None,
+-                object_atoms=None, presence=None, evidence=None):
++                object_atoms=None, presence=None, evidence=None, binding=None):
++        if binding is not None:
++            return self.bind(word, **binding)
+         if torch.is_tensor(word):
+             if object_atoms is None or presence is None or evidence is None:
+                 raise ValueError('interpret tensor face requires the resolved object bank')
+diff --git a/bin/Language.py b/bin/Language.py
+index ff438e87f..1a42f4d37 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -6697,7 +6697,7 @@ class MLPTransformChooser(TransformChooser):
+     WHAT_CONTEXT_DIM = 29
+ 
+     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
+-                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False):
++                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False, binding_choices=False):
+         super().__init__()
+         self.d_model = int(d_model)
+         self.n_copy = int(n_copy)
+@@ -6719,6 +6719,14 @@ class MLPTransformChooser(TransformChooser):
+         in_dim = (2 * self.d_model + self.embed_dim
+                   + self.n_role_cats + self.pos_dim)
+         self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
++        # The two operand choices are features of this same scorer. Small
++        # weights start mint/open close to equiprobable; cloning existing
++        # initialization preserves the RNG stream of grammars without bind.
++        if binding_choices:
++            self.reference_choice = nn.Linear(2 * self.d_model, self.hidden,
++                                              bias=False, device='meta')
++            self.reference_choice.weight = nn.Parameter(
++                .01 * self.mlp[0].weight[:, :2 * self.d_model].detach().clone())
+         # The mean alone identifies (left, right) with (right, left).
+         # Feed their signed difference into THIS MLP's first hidden layer;
+         # together mean and difference retain both full-width operands and
+@@ -6763,6 +6771,8 @@ class MLPTransformChooser(TransformChooser):
+ 
+     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                               missing_keys, unexpected_keys, error_msgs):
++        if hasattr(self, 'reference_choice') and prefix + 'reference_choice.weight' not in state_dict:
++            state_dict[prefix + 'reference_choice.weight'] = self.reference_choice.weight.detach().clone()
+         if self.copy_order is not None:
+             marker, weight = prefix + "_copy_order_version", prefix + "copy_order.weight"
+             if marker not in state_dict and weight not in state_dict:
+@@ -6801,7 +6811,7 @@ class MLPTransformChooser(TransformChooser):
+         return pe[:, :self.pos_dim]
+ 
+     def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None,
+-               order_projection=None):
++               order_projection=None, reference_ctx=None):
+         """Score ``R`` candidates at each of ``Npos`` locations.
+ 
+         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
+@@ -6839,9 +6849,12 @@ class MLPTransformChooser(TransformChooser):
+         # zero fallbacks agree even under autocast (the MLP may emit
+         # bf16/fp16; the fallbacks keep the input dtype).
+         projection = self.operand_order if order_projection is None else order_projection
+-        if projection is not None and order_ctx is not None:
++        if (projection is not None and order_ctx is not None) or reference_ctx is not None:
+             hidden = self.mlp[0](feat)
+-            hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
++            if projection is not None and order_ctx is not None:
++                hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
++            if reference_ctx is not None:
++                hidden = hidden + self.reference_choice(reference_ctx).to(hidden.dtype)
+             for index, block in enumerate(self.mlp):
+                 if index:
+                     hidden = block(hidden)
+@@ -6866,7 +6879,7 @@ class MLPTransformChooser(TransformChooser):
+         return self.what_projection(ctx).to(dtype)
+ 
+     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+-                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
++                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None, reference_ctx=None):
+         B, N, D = x_score.shape
+         pos = self._pos_emb(N, x_score.device, x_score.dtype)
+         copy_rows = self.tool_embedding[:self.n_copy]
+@@ -6878,7 +6891,7 @@ class MLPTransformChooser(TransformChooser):
+             indices = indices + self.n_copy + op_offset
+             apply_rows = self.tool_embedding.index_select(0, indices)
+             apply_score = self._score(x_score, applied_score, apply_rows, pos,
+-                                      cat_ctx=cat_ctx)
++                                      cat_ctx=cat_ctx, reference_ctx=reference_ctx)
+         else:
+             apply_score = x_score.new_zeros(B, N, 0)
+         what_bias = self._what_bias(
+@@ -6890,7 +6903,7 @@ class MLPTransformChooser(TransformChooser):
+         return copy_score, apply_score
+ 
+     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+-                     cat_ctx=None, what_ctx=None, op_indices=None):
++                     cat_ctx=None, what_ctx=None, op_indices=None, reference_ctx=None):
+         B, N, D = x_score.shape
+         pos = self._pos_emb(N, x_score.device, x_score.dtype)
+         copy_rows = self.tool_embedding[:self.n_copy]
+@@ -6930,7 +6943,7 @@ class MLPTransformChooser(TransformChooser):
+             reduce_rows = self.tool_embedding.index_select(0, indices)
+             reduce_score = self._score(
+                 pair_slot, reduced_score, reduce_rows, pos_pair,
+-                cat_ctx=pair_cat, order_ctx=order_ctx)
++                cat_ctx=pair_cat, order_ctx=order_ctx, reference_ctx=reference_ctx)
+         else:
+             reduce_score = x_score.new_zeros(B, max(N - 1, 0), int(reduced_score.shape[2]) if reduced_score.dim() == 4 else self.n_op)
+         what_bias = self._what_bias(
+@@ -6966,7 +6979,11 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
+             "transformChooserDepth")
+         return MLPTransformChooser(
+             d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats,
+-            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary)
++            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary,
++            binding_choices=ordered_binary and any(
++                getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
++                any(order == 1 for _, order in getattr(rule, 'reference_orders', ()))
++                for rule in (getattr(TheGrammar, 'rules_upward', None) or ())))
+     # Accept exactly the values the <transformChooser> XSD enum allows, so
+     # the factory and schema validation agree on the legal set.
+     if k != "anchordot":
+@@ -7339,14 +7356,27 @@ class OperationSelectionLayer(nn.Module):
+         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
+         score_cats = None if cat_ctx is None else cat_ctx.detach()
+         score_context = None if what_ctx is None else what_ctx.detach()
++        reference_contexts = ({}, {})
++        if (reference_data is not None and reference_data.get('binding_choices')
++                and hasattr(self.chooser, 'reference_choice')):
++            contexts = []
++            for label, operands in (
++                    ('binary', (reference_data['left'], reference_data['right'])),
++                    ('unary', (reference_data['unary'], torch.zeros_like(reference_data['unary'])))):
++                choices = reference_data[label + '_choices']
++                signs = (choices == -2).to(x.dtype) - (choices == 0).to(x.dtype)
++                contexts.append(dict(reference_ctx=torch.cat(tuple(
++                    value[..., :self.d_model].detach() * signs[..., i, None]
++                    for i, value in enumerate(operands)), -1)))
++            reference_contexts = tuple(contexts)
+         stop_scores, binary_scores = self.chooser.score_binary(
+             content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
+             self.reduce_anchor.index_select(0, bi), cat_ctx=score_cats, what_ctx=score_context,
+-            op_indices=bi)
++            op_indices=bi, **reference_contexts[0])
+         _, unary_scores = self.chooser.score_unary(
+             content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
+             self.apply_anchor.index_select(0, ui), cat_ctx=score_cats, what_ctx=score_context,
+-            op_offset=self.r_reduce, op_indices=ui)
++            op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
+         prior = self._category_reduce_prior(cat_ctx)
+         if prior is not None:
+             binary_scores = binary_scores + prior.index_select(-1, bi).detach().to(binary_scores)
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 920ecca76..e6ba4b641 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -9231,12 +9231,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         self.definitions.rebuild()
+         if getattr(self, "_leaf_index_missing", False):
+             for row in range(len(self)):
+-                if self.KINDS[int(self.record_kind[row])] == "fact":
+-                    self.index_stream[row] = -1
+                 meaning = self.meaning_of(row)
+                 if meaning is not None:
+                     terms, complete = self._meaning_leaf_terms(meaning, order=int(self.order[row]))
+-                    self._append_leaf_terms(row, terms, complete, int(self.index_stream[row]))
++                    self._append_leaf_terms(row, terms, complete)
+             self._leaf_index_missing = False
+             self._leaf_needs_owner_reindex = self._index_unfold is None
+         self.rebuild_leaf_postings()
+@@ -9443,7 +9441,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+             evidence = tuple(map(float, evidence))
+         if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
+             raise ValueError('evidence poles must be finite and in [0, 1]')
+-        terms, complete = self._meaning_leaf_terms(meaning, order=order)
++        terms, complete = self._meaning_leaf_terms(meaning, order=order, stream=None if stream < 0 else stream)
+         identifier, document, position, content, previous = self._address_for_write(
+             meaning, kind=kind, document_key=document_key, sentence_index=sentence_index,
+             content_key=content_key, key=address)
+@@ -9488,6 +9486,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         self.witness_count[n] += 1
+         self._semantic_rows[identifier] = {key: meaning.metadata()[key]
+                                           for key in ("role_refs", "bindings", "scope")}
++        self._update_forward_index(identifier)
+         self.metadata_required[n] = (meaning.has_context or (previous is not None and self.text_of(n) is not None)
+                                      or identifier in self._expectation_rows)
+         self._ensure_texts(n + 1)
+@@ -9758,6 +9757,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+             'origin': int(self.origin[i].item()),
+             'text': self.text_of(i),
+             'kind': self.KINDS[int(self.record_kind[i])],
++            'pending': bool(dict(self._semantic_rows.get(int(self.address_keys[i]), {})
++                                .get('bindings', ())).get('_pending', False)),
+             'occurrence': self.occurrence_of(i),
+             'meaning': self.meaning_of(i),
+             'expectation': self.expectation_of(i),
+@@ -10055,7 +10056,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         self.where.zero_()
+         self.when.zero_()
+         self.leaf_complete.zero_()
+-        self.index_stream.fill_(-1)
+         self._leaf_postings, self._index_occurrences = {}, AddressIndex()
+         self._adjacent_postings = {}
+         self._adjacency_revision += 1
+diff --git a/bin/MemoryIndex.py b/bin/MemoryIndex.py
+index 626c78bc2..9942ef1f8 100644
+--- a/bin/MemoryIndex.py
++++ b/bin/MemoryIndex.py
+@@ -19,7 +19,6 @@ class LeafCodeIndex:
+ 
+     def _init_leaf_index(self):
+         self.register_buffer('leaf_complete', torch.zeros(self.capacity, 3, dtype=torch.bool))
+-        self.register_buffer('index_stream', torch.full((self.capacity,), -1, dtype=torch.long))
+         # These columns serialize global postings, never per-row sequences.
+         for name in ('posting_codes', 'posting_roles', 'posting_rows'):
+             self.register_buffer(name, torch.empty(0, dtype=torch.long))
+@@ -51,7 +50,7 @@ class LeafCodeIndex:
+             raise ValueError('leaf codes require three sequences of nonnegative code addresses')
+         return terms
+ 
+-    def _meaning_leaf_terms(self, meaning, *, order=0, max_nodes=1024, work=None):
++    def _meaning_leaf_terms(self, meaning, *, order=0, max_nodes=1024, work=None, stream=None):
+         """Unfold the actual occupied values, following only structural refs."""
+         remaining, active = [int(max_nodes)], set()
+         def visit(value, field_order):
+@@ -76,7 +75,7 @@ class LeafCodeIndex:
+                 elif not known and field_order >= 0 and self._index_unfold is not None and remaining[0] > 0:
+                     allowance = min(remaining[0], work.remaining) if work is not None else remaining[0]
+                     recovered = self._index_unfold(value.roles[role].detach(), allowance,
+-                                                   order=field_order, work=work)
++                        order=field_order, work=work, **({} if stream is None else {'stream': stream}))
+                     if recovered is not None:
+                         codes, spent, known = recovered
+                         if type(spent) is not int or not 0 <= spent <= remaining[0]:
+@@ -111,12 +110,12 @@ class LeafCodeIndex:
+         records = [(code, role, row) for (code, role), rows in sorted(self._leaf_postings.items())
+                    for row in rows]
+         for i, name in enumerate(('posting_codes', 'posting_roles', 'posting_rows')):
+-            destination[prefix + name] = self.index_stream.new_tensor([record[i] for record in records])
++            destination[prefix + name] = self.address_keys.new_tensor([record[i] for record in records])
+         pairs = sorted((left, right, address, position)
+                        for (left, right), witnesses in self._adjacent_postings.items()
+                        for address, position in witnesses)
+         for i, name in enumerate(('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')):
+-            destination[prefix + name] = self.index_stream.new_tensor([record[i] for record in pairs])
++            destination[prefix + name] = self.address_keys.new_tensor([record[i] for record in pairs])
+ 
+     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                               missing_keys, unexpected_keys, error_msgs):
+@@ -135,24 +134,25 @@ class LeafCodeIndex:
+         self._leaf_index_missing = not all(present) or legacy
+         self._leaf_needs_owner_reindex = self._leaf_index_missing
+         for name in names:
+-            value = state_dict.setdefault(prefix + name, self.index_stream.new_empty(0))
++            value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
+             if value.ndim != 1 or value.dtype != torch.long:
+                 error_msgs.append(prefix + 'invalid inverted retrieval column ' + name)
+                 return
+-            setattr(self, name, self.index_stream.new_empty(value.shape))
++            setattr(self, name, self.address_keys.new_empty(value.shape))
+         adjacent_names = ('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')
+         adjacent_present = [prefix + name in state_dict for name in adjacent_names]
+         if any(adjacent_present) and not all(adjacent_present):
+             error_msgs.append(prefix + 'incomplete adjacent whole index')
+             return
+         for name in adjacent_names:
+-            value = state_dict.setdefault(prefix + name, self.index_stream.new_empty(0))
++            value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
+             if value.ndim != 1 or value.dtype != torch.long:
+                 error_msgs.append(prefix + 'invalid adjacent whole column ' + name)
+                 return
+-            setattr(self, name, self.index_stream.new_empty(value.shape))
++            setattr(self, name, self.address_keys.new_empty(value.shape))
+         state_dict.setdefault(prefix + 'leaf_complete', torch.zeros_like(self.leaf_complete))
+-        state_dict.setdefault(prefix + 'index_stream', torch.full_like(self.index_stream, -2))
++        # Retired write-position ownership is not part of shared truth.
++        state_dict.pop(prefix + 'index_stream', None)
+         if legacy:
+             state_dict[prefix + 'leaf_complete'] = torch.zeros_like(self.leaf_complete)
+         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+@@ -171,7 +171,7 @@ class LeafCodeIndex:
+                 return
+             rows.append(row)
+         for name in names:
+-            setattr(self, name, self.index_stream.new_empty(0))
++            setattr(self, name, self.address_keys.new_empty(0))
+         self.rebuild_leaf_postings()
+         if len({getattr(self, name).numel() for name in adjacent_names}) != 1:
+             error_msgs.append(prefix + 'adjacent whole columns have different lengths')
+@@ -184,7 +184,7 @@ class LeafCodeIndex:
+             self._adjacent_postings.setdefault((left, right), set()).add((address, position))
+         self._adjacency_revision += 1
+         for name in adjacent_names:
+-            setattr(self, name, self.index_stream.new_empty(0))
++            setattr(self, name, self.address_keys.new_empty(0))
+ 
+     @torch.no_grad()
+     def witness_adjacency(self, row, codes):
+@@ -226,7 +226,6 @@ class LeafCodeIndex:
+                 if row not in rows:
+                     rows.append(row)
+                     rows.sort()
+-        self.index_stream[row] = int(stream)
+         self._index_occurrences[self.occurrence_of(row)] = row
+ 
+     def rebuild_leaf_postings(self):
+@@ -237,14 +236,13 @@ class LeafCodeIndex:
+     @torch.no_grad()
+     def reindex_meanings(self):
+         """Regenerate terms from stored fields with the current grammar owner."""
+-        streams = self.index_stream.clone()
+         self.leaf_complete.zero_()
+         self._leaf_postings = {}
+         self.rebuild_leaf_postings()
+         for row in range(len(self)):
+             meaning = self.meaning_of(row)
+             terms, complete = (((), (), ()), (False, False, False)) if meaning is None else self._meaning_leaf_terms(meaning, order=int(self.order[row]))
+-            self._append_leaf_terms(row, terms, complete, int(streams[row]))
++            self._append_leaf_terms(row, terms, complete)
+         self._leaf_needs_owner_reindex = self._index_unfold is None
+ 
+     @torch.no_grad()
+@@ -286,10 +284,10 @@ class LeafCodeIndex:
+ 
+     def cued_rows(self, cue, *, primed=(), references=(), retrieved=(), max_candidates=32,
+                   work=None, stream=None):
+-        """Rank K indexed candidates on bound roles, with hard scope isolation.
++        """Rank K indexed candidates over shared truth, keeping explicit query scope.
+ 
+-        Priming widens the cue codes. Contiguity widens only from already
+-        retrieved rows, in their own stream. No recent-store slice is read.
++        Priming widens the cue codes. Write-time batch positions neither hide
++        rows nor confer adjacency. No recent-store slice is read.
+         Every examined candidate is charged before its payload is accessed.
+         """
+         if type(max_candidates) is not int or max_candidates < 0:
+@@ -303,7 +301,7 @@ class LeafCodeIndex:
+                     code = self._index_code_row(reference)
+                     if code is not None:
+                         cue_order = max(cue_order, self._index_order_of(code))
+-        terms, _ = self._meaning_leaf_terms(cue, order=cue_order, work=work)
++        terms, _ = self._meaning_leaf_terms(cue, order=cue_order, work=work, stream=stream)
+         postings = [self._leaf_postings.get((code, role), ())
+                     for role, codes in enumerate(terms) if bool(cue.role_mask[role])
+                     for code in set(codes)]
+@@ -311,17 +309,7 @@ class LeafCodeIndex:
+                         for code in primed for role in range(3))
+         explicit = [self._index_occurrences[ref] for ref in references
+                     if ref in self._index_occurrences]
+-        adjacent = set()
+-        for reference in retrieved:
+-            row = self._index_occurrences.get(reference)
+-            if row is None:
+-                continue
+-            for neighbor in (row - 1, row + 1):
+-                if (0 <= neighbor < len(self)
+-                        and int(self.index_stream[row]) >= 0
+-                        and int(self.index_stream[neighbor]) == int(self.index_stream[row])):
+-                    adjacent.add(neighbor)
+-        postings.extend((sorted(explicit), sorted(adjacent)))
++        postings.append(sorted(explicit))
+         candidates = heapq.merge(*(iter(rows) for rows in postings))
+         found, seen, scanned, incomplete = [], set(), 0, []
+         for row in candidates:
+@@ -335,8 +323,6 @@ class LeafCodeIndex:
+                 incomplete.append('work_budget')
+                 break
+             scanned += 1
+-            if stream is not None and int(self.index_stream[row]) not in (-1, int(stream)):
+-                continue
+             if self.KINDS[int(self.record_kind[row])] in ('estimate', 'question'):
+                 continue
+             meaning = self.meaning_of(row)
+@@ -353,16 +339,16 @@ class LeafCodeIndex:
+             similarities = F.cosine_similarity(cue.roles.detach().to(meaning.roles), meaning.roles, dim=-1)
+             match = float(similarities[mask].clamp(0, 1).mean()) if bool(mask.any()) else 0.
+             record = self.row(row)
+-            found.append(dict(record, index=row, match=match, contiguous=row in adjacent,
++            found.append(dict(record, index=row, match=match, contiguous=False,
+                               leaf_codes=tuple(self.leaf_terms(row, role) for role in range(3))))
+-        found.sort(key=lambda item: (-item['match'], -int(item['contiguous']), item['index']))
++        found.sort(key=lambda item: (-item['match'], item['index']))
+         return {'value': tuple(found), 'records_scanned': scanned,
+                 'incomplete': tuple(dict.fromkeys(incomplete))}
+ 
+ 
+ @torch.no_grad()
+ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
+-                order=0, order_of=None, sigma_inverse=None):
++                order=0, order_of=None, sigma_inverse=None, stream=None):
+     """Unfold a detached idea with the current generate MLP and tied faces.
+ 
+     Neither recorded actions nor expected leaf codes are inputs. Stops count
+@@ -375,7 +361,19 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
+     weights = activation() if callable(activation) else activation
+     if not torch.is_tensor(weights):
+         return dict(codes=(), operations=(), spent=0, complete=False)
+-    weights = weights.reshape(-1)[:len(basis)]
++    if weights.ndim == 2:
++        if stream is None:
++            if weights.shape[0] != 1:
++                return dict(codes=(), operations=(), spent=0, complete=False)
++            stream = 0
++        if type(stream) is not int or not 0 <= stream < weights.shape[0]:
++            raise ValueError('unfold priming has no current stream row')
++        weights = weights[stream]
++    if weights.ndim != 1 or weights.numel() < len(basis):
++        raise ValueError('unfold priming differs from its vocabulary')
++    # Priming owns physical rows; unrestricted reads see the active prefix.
++    # These are the same row addresses, with dormant rows excluded.
++    weights = weights[:len(basis)]
+     candidates = (weights > 1.).nonzero().flatten()
+     if candidates.numel() > 32:
+         candidates = candidates[torch.argsort(weights[candidates], descending=True, stable=True)[:32]]
+@@ -474,9 +472,11 @@ def configure_model_index(model, store):
+         if not chosen or any(space._row_order(row) != order - 1 for row in chosen):
+             return ()
+         return tuple(basis[row] * signed[row] for row in chosen)
+-    def unfold(value, limit, *, order=0, work=None):
++    def unfold(value, limit, *, order=0, work=None, stream=None):
+         result = unfold_idea(language, _basis(space), value, limit, work=work,
+-                             activation=space.priming_weights, order=order,
++                             activation=lambda: space.priming_weights(batch=(
++                                 model._priming_batch_size() if hasattr(model, '_priming_batch_size') else None)),
++                             order=order, stream=stream,
+                              order_of=space._row_order, sigma_inverse=sigma_inverse)
+         return result['codes'], result['spent'], result['complete']
+     store.configure_leaf_index(code_row=code_row, unfold=unfold if language is not None else None,
+diff --git a/bin/ModelAttention.py b/bin/ModelAttention.py
+index eb5edd462..6850c64cb 100644
+--- a/bin/ModelAttention.py
++++ b/bin/ModelAttention.py
+@@ -135,6 +135,8 @@ def stage_input(model):
+     model._attention_poles=None
+     model._attention_grammar_mask=None
+     model._attention_read=None
++    model._attention_greedy=None
++    model._attention_pole_representation=False
+     model._word_expectation=None
+     model._word_expectation_input=None
+     from QueryWork import QueryWorkBudget
+@@ -147,6 +149,9 @@ def stage_input(model):
+     B,W,D=slab.shape
+     if len(model._attention_meters) != B:
+         model._attention_meters=tuple(QueryWorkBudget(model.attention_budget) for _ in range(B))
++    # Zero is the ordinary-composition control: no bracket walk or thought
++    # read is performed. The stem still supplies every word to the VP path.
++    if model.attention_budget == 0:return
+     if W == 0:return
+     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
+     texts=fi.get('word_texts') or ()
+@@ -208,7 +213,7 @@ def stage_input(model):
+         model._last_gist=(model._open_read*live[...,None]).sum((0,1))/live.sum().clamp_min(1)
+     codebook=getattr(owner,'similarity_codebook',None)
+     rows=codebook.getW() if codebook is not None else None
+-    boosts=owner.priming_weights()
++    boosts=owner.priming_weights(batch=B)
+     live_width = max(1, int(torch.where(live,
+         torch.arange(W, device=live.device)[None] + 1, 0).max()))
+     prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
+diff --git a/bin/Models.py b/bin/Models.py
+index ffab62279..07c35db7a 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -5724,7 +5724,7 @@ class BasicModel(BaseModel):
+         stream = meaning.roles
+         symbol_space = getattr(self, 'symbolSpace', None)
+         concept_owner = self._concept_owner()
+-        primed = concept_owner.priming_weights()
++        primed = concept_owner.priming_weights(batch=self._priming_batch_size())
+         primed = None if primed is None else primed[row]
+ 
+         from reasoning import TruthGroundedReasoner
+@@ -6433,7 +6433,7 @@ class BasicModel(BaseModel):
+         budget = self.attention_budget if work_budget is None else work_budget
+         results = []
+         for row, field in enumerate(fields):
+-            if field is None:
++            if field is None or getattr(field, 'thought_completed', False):
+                 continue
+             question = field.query if field.query is not None else field.meaning
+             if open_slots(question):
+@@ -6628,6 +6628,15 @@ class BasicModel(BaseModel):
+             cs0.prime_desire(torch.tensor([int(row)]), valence=v)
+         return cid
+ 
++    @torch.no_grad()
++    def _priming_batch_size(self):
++        """The loader's current forward size, without a stream-state registry."""
++        active = getattr(getattr(self, 'inputSpace', None), '_word_active_mask', None)
++        if torch.is_tensor(active):
++            return int(active.shape[0])
++        staged = getattr(self, '_staged_concepts_in', None)
++        return int(staged.shape[0]) if torch.is_tensor(staged) else None
++
+     @torch.no_grad()
+     def _assemble_relevance_priority(self, cut_cs, stage, last_cs, settled):
+         """The simplified relevance law (Architecture sec C): ONE quadratic
+@@ -6637,7 +6646,7 @@ class BasicModel(BaseModel):
+         (boost - 1: neutral 0, desire positive, hate negative). Pure READ:
+         the SEEN/DESIRE writes live in ``_prime_seen_step`` (unconditional,
+         both paths, once per batch)."""
+-        b = cut_cs.priming_weights()
++        b = cut_cs.priming_weights(batch=self._priming_batch_size())
+         if b is None:
+             return None
+         return (b - 1.0).transpose(0, 1)               # [N, 1] signed score
+@@ -6682,7 +6691,7 @@ class BasicModel(BaseModel):
+                 getattr(self, "perceptualSpace", None),
+                 (self.wholeSpaces[-1]
+                  if getattr(self, "wholeSpaces", None) else None),
+-                gain=self.priming_spread)
++                gain=self.priming_spread, batch=self._priming_batch_size())
+ 
+     def _prime_sentence_symbols(self, sid):
+         """Snapshot per-stream seen symbols before either trial is composed."""
+@@ -9729,6 +9738,9 @@ class BasicModel(BaseModel):
+                  self.__dict__.get("_ws_universe"))
+         try:
+             with self._synthesis_guard():
++                # A target's local stem shape cannot resize or clear the
++                # live source streams (attention, thought and discourse).
++                object.__setattr__(self.inputSpace, '_model_symbolSpace', None)
+                 for space in (getattr(self, "inputSpace", None),
+                               getattr(self, "perceptualSpace", None),
+                               getattr(self, "conceptualSpace", None),
+@@ -9736,7 +9748,7 @@ class BasicModel(BaseModel):
+                     if space is not None:
+                         object.__setattr__(space, "_online_learning_frozen", True)
+                 prepared = self.inputSpace.prepInput(list(texts))
+-                in_sub = self._lex_embed_stem(prepared)
++                in_sub = self._lex_embed_stem(prepared, target_only=True)
+                 event = (in_sub.materialize()
+                          if hasattr(in_sub, "materialize") else in_sub)
+                 if not torch.is_tensor(event):
+@@ -12826,6 +12838,7 @@ class BasicModel(BaseModel):
+                     addresses[b, columns[b, :L].clamp_min(0)]),
+                 operation_relations=(None if relations is None else
+                                      relations[b, columns[b, :L].clamp_min(0)]),
++                binding_choices=bool(getattr(self, '_component_reading', False)),
+                 **{name: value[b].index_select(0, pos.to(value.device))
+                    for name, value in (
+                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),
+@@ -13007,7 +13020,7 @@ class BasicModel(BaseModel):
+                 ws._predicate_masks()     # prime the host masks (main thread)
+         isp._unit_span_fn = fn
+ 
+-    def _lex_embed_stem(self, x):
++    def _lex_embed_stem(self, x, *, target_only=False):
+         """Eager stem: lex (InputSpace) -> embed (PartSpace) -> finalize
+         bookkeeping (InputSpace), model-orchestrated (2026-06-07).
+ 
+@@ -13027,7 +13040,9 @@ class BasicModel(BaseModel):
+         ``_staged_concepts_in`` for the symbolic branch (Phase 1: staged,
+         UNUSED; Phase 2 consumes it at WS stage 0). This unpack is the
+         orchestration-side shim the plan allows -- downstream contracts are
+-        unchanged.
++        unchanged. ``target_only`` stops after percept embedding: a loss-side
++        text target must not open attention, stage expectations or bind the
++        teacher's live source addresses.
+         """
+         # Keep the gated word-major radix mode in sync with the model flag on
+         # every forward.  Tests/ablations may toggle ``serialObjectMeta`` on a
+@@ -13137,15 +13152,20 @@ class BasicModel(BaseModel):
+                 _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
+                               for row in _spans_full.detach().to("cpu")]
+             object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
+-            self._observe_word_units(concepts_in, _unit_rows)
++            if not target_only:
++                self._observe_word_units(concepts_in, _unit_rows)
+             try:
+                 self.perceptualSpace.embed_stem(in_sub)
+             finally:
+                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
+             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
++            if target_only:
++                return in_sub
+             self._record_unit_pulls(_ws_list[0] if _ws_list else None)
+             self._pad_staged_unit_maps(_ws_list[0] if _ws_list else None)
+             self._ensure_pid_byte_table()
++        if target_only:
++            return in_sub
+         self._ensure_chunk_machinery()
+         # Resolve sparse concept identities only after the word-major PS stem
+         # has exposed its exact residual parts and WS has staged the matching
+@@ -15882,7 +15902,7 @@ class BasicModel(BaseModel):
+ 
+         self.bindingDepth = bindingDepth
+         self.attention_budget = int(TheXMLConfig.get('architecture.attentionBudget',default=32))
+-        if self.attention_budget < 1:raise ValueError('attentionBudget must be positive')
++        if self.attention_budget < 0:raise ValueError('attentionBudget must be nonnegative')
+         self.concept_order_limit = max(0,int(TheXMLConfig.get('architecture.conceptLayers',default=2))-1)
+ 
+         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
+@@ -15933,6 +15953,7 @@ class BasicModel(BaseModel):
+         self.allow_contradiction = int(
+             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
+         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
++        self.equality_loss_weight = float(TheXMLConfig.training("equalityLossWeight", default=0.0) or 0.0)
+         if float(TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0):
+             raise ValueError("answerLossWeight is retired; use the paired grammar cost")
+         if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
+@@ -19901,6 +19922,13 @@ class BasicModel(BaseModel):
+                               torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
+         observation = self._sentence_observation(state, sid, active)
+         observation['record'] = record
++        if getattr(self, 'equality_loss_weight', 0.) > 0:
++            from EqualityLearning import cost as equality_cost
++            equal_cost, equal_counts = equality_cost(self.languageSpace,
++                observation['entries'], active, root)
++            self._last_equality_learning = dict(cost=equal_cost.detach(), counts=equal_counts)
++            errors.add('expectation.equal', equal_cost, weight=self.equality_loss_weight,
++                       category='expectation')
+         observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
+             if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
+         observation['walk_loss'] = (self._decomposition_walk_teacher_loss(observation, record)
+@@ -20386,7 +20414,10 @@ class BasicModel(BaseModel):
+         from ReferenceContext import ReferenceBank
+         disc = getattr(self.symbolSpace, 'expectation', None)
+         B, D = active.shape[0], like.shape[-1]
+-        C = max(1, int(getattr(disc, '_inter_chain_window', 1)))
++        window = max(1, int(getattr(disc, '_inter_chain_window', 1)))
++        # A sentence occurrence is a referent in its own right. Keep the
++        # bounded situation's rows beside its identified noun columns.
++        C = 2 * window
+         ids = torch.full((B, C), -1, device=like.device, dtype=torch.long)
+         values = like.new_zeros(B, C, D)
+         valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
+@@ -20406,13 +20437,25 @@ class BasicModel(BaseModel):
+                     estimates, _, _ = disc._inter_predictor(*disc._prediction_inputs(inputs, replay=True))
+                     query = estimates[0, 0].detach().to(like)
+                 predicted[b] = True
+-            if components is not None and disc is not None and bool(active[b]):
+-                for i, (identity, frame) in enumerate(components.candidate_frames(disc.situation_references(b))[-C:]):
++            frames = (() if disc is None or not bool(active[b]) else
++                      tuple(disc.situation_references(b))[-window:])
++            if components is not None and frames:
++                for i, (identity, frame) in enumerate(components.candidate_frames(frames)[-window:]):
+                     point = components.situated_point(identity, frame)
+                     if point is not None:
+                         ids[b, i] = identity
+                         valid[b, i] = True
+                         values[b, i] = point.detach().to(like)
++            for i, frame in enumerate(frames, start=window):
++                # This bank supplies numerical NP operands. A relational
++                # row has no fusible point; its typed description remains
++                # available to the boundary query/ask capabilities.
++                if frame.row_id in (-1, 0):
++                    continue
++                ids[b, i] = frame.row_id
++                valid[b, i] = True
++                values[b, i] = (frame.roles[0] if frame.point is None else frame.point).detach().to(like)
++                relations[b, i] = frame.point is None
+             queries.append(query)
+         types = self._sentence_reference_types(like)
+         cases = None
+@@ -20424,7 +20467,22 @@ class BasicModel(BaseModel):
+             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
+         inventory = torch.tensor(() if components is None else components.nouns.ids,
+                                  dtype=torch.long, device=like.device)
+-        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases, inventory)
++        inventory = torch.unique(torch.cat((inventory, ids[valid])))
++        interpreter, associations = None, None
++        if getattr(self, '_component_reading', False):
++            owner = self._concept_owner()
++            interpreter = owner.interpret
++            pairs = set()
++            # Existing lexical associations identify candidate occurrences;
++            # the situation still bounds which of those can be read here.
++            from Spaces import _concept_alloc_of
++            for identities in _concept_alloc_of(owner).word_forms.values():
++                sources = [identity for identity in identities if identity > 0]
++                targets = set(identities).intersection(ids[valid].tolist())
++                pairs.update((source, target) for source in sources for target in targets)
++            associations = ids.new_tensor(sorted(pairs)).reshape(-1, 2)
++        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
++                             types, cases, inventory, interpreter, associations)
+ 
+     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
+                                 lang, empty_feedback, perceive, symbolize, compose_word):
+diff --git a/bin/Queries.py b/bin/Queries.py
+index 80c43d61c..40c1705eb 100644
+--- a/bin/Queries.py
++++ b/bin/Queries.py
+@@ -1862,10 +1862,11 @@ class GrammaticalThoughtRegistry:
+             descriptor = self.descriptors.get(identity[1])
+             if (descriptor is not None and self._predicate_name(identity) is not None
+                     and self._identifier(identity) == identifier):
+-                return predicate_point(self._predicate_name(identity), _basis(self.space))
++                # Identity codes need width/device, not a derived inventory.
++                return predicate_point(self._predicate_name(identity), self.space.similarity_codebook.getW())
+         relation = predicate_relation(identifier)
+         if relation in ('part', 'implies'):
+-            return predicate_point(relation, _basis(self.space))
++            return predicate_point(relation, self.space.similarity_codebook.getW())
+         row = _existing_row(self.space, reference)
+         basis = _basis(self.space)
+         if not 0 <= row < len(basis):
+@@ -2113,7 +2114,7 @@ class GrammaticalThoughtRegistry:
+         requests = []
+         try:
+             signature = self.signature_for(candidate)
+-        except ValueError:
++        except (TypeError, ValueError):
+             signature = None
+         if signature is not None:
+             requests.append(ThoughtOperationCandidate(
+@@ -2197,7 +2198,33 @@ class GrammaticalThoughtRegistry:
+                     {operation.operand_roles[0]: (value, reference)}, source=source)
+                 requests.append(ThoughtOperationCandidate(operation, request, ()))
+                 break
+-        return tuple(requests)
++        legal = []
++        for request in requests:
++            try:
++                if request.semantic_id == 'isPart':
++                    # LTM occurrence provenance is not a taxonomy concept.
++                    # Enforce the executor's operand contract before scoring.
++                    for slot in (0, 2):
++                        if bool(request.request.role_mask[slot]):
++                            reference = concept_reference(request.request.role_refs[slot])
++                            _existing_row(self.space, reference)
++                signature = self.signature_for(request.request, verify_reference=False)
++                for role, kind in zip(signature.occupied_roles, signature.argument_kinds):
++                    if kind != 'description':
++                        continue
++                    reference = request.request.role_refs[self._slot_for_operand(role)]
++                    if reference and reference[0] == 'constituent':
++                        if not 0 <= reference[1] < len(request.request.constituents):
++                            raise ValueError('thought description constituent is unavailable')
++                    elif not self._is_description_reference(reference):
++                        raise TypeError('thought description requires an occurrence')
++            except (TypeError, ValueError):
++                # A closed LTM reference is not a native taxonomy endpoint
++                # for an open traversal. Preserve the executor's type and
++                # polarity contract before the request enters the softmax.
++                continue
++            legal.append(request)
++        return tuple(legal)
+ 
+     def signature_for(self, meaning, *, work=None, verify_reference=True):
+         """Recover one checked operation from a canonical VP and role mask."""
+diff --git a/bin/ReferenceContext.py b/bin/ReferenceContext.py
+index 028d42677..7cd382d35 100644
+--- a/bin/ReferenceContext.py
++++ b/bin/ReferenceContext.py
+@@ -106,6 +106,25 @@ class ReferenceBank(NamedTuple):
+     types: object = None
+     cases: object = None
+     column_ids: object = None
++    interpreter: object = None
++    associations: object = None
++
++
++def binding_spec(rule, role, *, implicit=False):
++    """The grammatical operand's reference contract, independent of its word."""
++    order = dict(getattr(rule, 'reference_orders', ())).get(role)
++    mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
++    determiner = getattr(rule, 'determiner_mode', None)
++    if determiner is not None and role == 'I' + str(rule.head_role):
++        order, mode = 1, determiner
++    if implicit and order is None:
++        clause = getattr(rule, 'clause_form', None)
++        relation = getattr(rule, 'relation_kind', None)
++        if ((clause == 'S' and role == 'I1') or
++                (clause == 'VP' and role == 'I2') or
++                (relation in ('part', 'whole', 'equal') and role in ('I1', 'I2'))):
++            order = 1
++    return order, mode
+ 
+ 
+ def resolve_order(value, identity, order, types):
+@@ -208,24 +227,20 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
+     No local score, argmax, allocation or dictionary choice occurs here.
+     """
+     B, N, D = window.shape
++    interpreter = getattr(bank, 'interpreter', None)
+ 
+     def propose(value, ids, scope, pos, rule, role, valid):
+-        order = dict(getattr(rule, 'reference_orders', ())).get(role)
+-        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
+-        determiner = getattr(rule, 'determiner_mode', None)
+-        if determiner is not None and role == 'I' + str(rule.head_role):
+-            mode = determiner
+-            if mode == 'kind':
+-                return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+-            order = 1
+-        if mode == 'mint':
++        order, mode = binding_spec(rule, role, implicit=interpreter is not None)
++        if mode == 'kind':
++            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
++        if mode == 'mint' and interpreter is None:
+             return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid))]
+         if order is not None and order != 1:
+             value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+         if order != 1:
+             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+         inventory = getattr(bank, 'column_ids', None)
+-        if inventory is not None and inventory.numel() == 0:
++        if interpreter is None and inventory is not None and inventory.numel() == 0:
+             # A binder with no referent leaves an open slot. The sentence
+             # can still close; its closing will ask on this same reference.
+             return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)]
+@@ -255,6 +270,13 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
+         duplicate = ((candidate_ids[..., :, None] == candidate_ids[..., None, :])
+                      & preceding & available[..., None, :]).any(-1)
+         available = available & ~duplicate & valid[..., None]
++        if interpreter is not None:
++            # interpret owns bind; this only supplies the existing bounded
++            # situation and earlier constituents, with no additional reader.
++            return interpreter(value, binding=dict(identity=ids, scope=scope,
++                candidate_ids=candidate_ids, candidate_values=candidate_values,
++                candidate_relations=candidate_relations, available=available,
++                associations=bank.associations, mode=mode, active=valid))
+         # Enumerate no more than the existing situation/STM capacity, even
+         # when a column appears in both. This is recency enumeration, not a
+         # content score or a referent selection.
+@@ -277,11 +299,7 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
+         return options
+ 
+     def choice_tag(refs, rule, role):
+-        order = dict(getattr(rule, 'reference_orders', ())).get(role)
+-        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
+-        determiner = getattr(rule, 'determiner_mode', None)
+-        if determiner is not None and role == 'I' + str(rule.head_role):
+-            order, mode = 1, determiner
++        order, mode = binding_spec(rule, role, implicit=interpreter is not None)
+         if order != 1 or mode == 'kind':
+             return torch.full_like(refs, -1)
+         # -2 is a comparison-only tag for mint, never a native reference.
+@@ -333,6 +351,7 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
+     def stack(items, width, tail=(), *, dtype=None):
+         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
+     return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
++                binding_choices=interpreter is not None,
+                 case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
+                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
+                 binary_choices=stack(bchoices, N-1, (2,), dtype=torch.long), unary_choices=stack(uchoices, N, (2,), dtype=torch.long),
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index cd614f5b6..8de09ad0a 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -8187,17 +8187,28 @@ class Space(SpaceCarrierMixin, nn.Module):
+         positive = excess.clamp_min(0) / scale * (maximum - 1)
+         return 1 + positive + excess.clamp_max(0)
+ 
+-    def priming_weights(self):
++    def priming_weights(self, *, batch=None):
+         """The per-stream quadratic priming surface ``[B, V]`` over the CANONICAL
+         codebook rows (neutral 1.0), or ``None`` when never written."""
+         target = self._priming_target()
+-        return target._bounded_priming(getattr(target, "_priming_boosts", None))
+-
+-    def relevance_weights(self):
++        surface = getattr(target, '_priming_boosts', None)
++        if surface is not None:
++            if surface.ndim != 2:
++                raise ValueError('priming requires a [batch, vocabulary] surface')
++            if batch is not None:
++                if type(batch) is not int or batch < 1:
++                    raise ValueError('priming requires the current positive batch size')
++                surface = target._priming_surface(target._priming_dim(),
++                    device=surface.device, batch=batch)
++                if surface.shape != (batch, target._priming_dim()):
++                    raise ValueError('priming surface differs from the current batch')
++        return target._bounded_priming(surface)
++
++    def relevance_weights(self, *, batch=None):
+         """This tower's relevance IS its priming surface (Architecture
+         sec C, simplified law: one quadratic; SEEN + DESIRED/HATED are
+         its two write channels). ``None`` when dark (byte-identical)."""
+-        return self.priming_weights()
++        return self.priming_weights(batch=batch)
+ 
+     def get_vectors(self):
+         """Convenience accessor -- delegates to subspace."""
+@@ -17271,9 +17282,9 @@ class ConceptualSpace(Space):
+         return out, mask
+ 
+     @torch.no_grad()
+-    def project_priming_to_towers(self, ps_space, ws_space, gain=1.0):
++    def project_priming_to_towers(self, ps_space, ws_space, gain=1.0, *, batch=None):
+         """Project each stream's concept energy onto its native tower rows."""
+-        surface = self.priming_weights()
++        surface = self.priming_weights(batch=batch)
+         if surface is None:
+             return
+         # DEF carries the native surface references. Resolve them here rather
+diff --git a/bin/ThoughtAnswer.py b/bin/ThoughtAnswer.py
+index 0ce79940c..bd7ff71fe 100644
+--- a/bin/ThoughtAnswer.py
++++ b/bin/ThoughtAnswer.py
+@@ -53,6 +53,13 @@ def scorer(model, state, observation, sentence):
+             if reader is not None and value is not None:
+                 value = reader(model,bound,sentence,active,view,registry=comparison)
+         trials.append((presented,comparison,getattr(model,'_thought_walk',None)))
++        data = model.inputSpace.data
++        if getattr(data, 'answer_mode', None) == 'binding':
++            questions = model._sentence_answer_questions
++            answer = data.what(questions[row]) if row < len(questions) else None
++            if answer is not None and answer.available:
++                from BindingAnswers import cost
++                return cost(model, result.meaning, answer.what)
+         return 0. if value is None else value[row] if value.ndim else value
+     return score,trials
+ 
+diff --git a/bin/ThoughtClosing.py b/bin/ThoughtClosing.py
+index 8e775dcfb..1feebf119 100644
+--- a/bin/ThoughtClosing.py
++++ b/bin/ThoughtClosing.py
+@@ -12,12 +12,28 @@ def closing_question(meaning, clause, parsed=None, program=None):
+     Numerical ideas are already their own conceptual contents. Surface mode
+     is evidence only: a known pair and all bound roles close even a wh-row.
+     """
++    if not open_slots(clause.meaning):
++        # A headed outer phrase does not close a reference left in one of
++        # its completed constituents. Ask on that existing inner row.
++        for child in clause.children:
++            nested = closing_question(child.meaning, child)
++            if nested is not None:
++                return nested
+     source = parsed if parsed is not None else meaning
+     if (parsed is not None and torch.equal(parsed.roles, meaning.roles)
+             and torch.equal(parsed.role_mask, meaning.role_mask)):
+         source = replace(source, role_refs=meaning.role_refs, constituents=meaning.constituents)
+     surface_open = source.mode == 'interrogative'
+     slots = list(dict.fromkeys((*open_slots(source), *open_slots(clause.meaning))))
++    clause_open = open_slots(clause.meaning)
++    if clause_open:
++        refs = list(source.role_refs)
++        for kind, role in clause_open:
++            if kind != 'evidence':
++                refs[role] = None
++        data = bindings(source)
++        data['_forward_references'] = bindings(clause.meaning).get('_forward_references', ())
++        source = replace(source, role_refs=tuple(refs), bindings=data)
+     forms = () if program is None else (program.lexical_forms or ())
+     lexical = any(isinstance(word, (str, bytes)) and word for word in forms)
+     if lexical and clause.relation is None and clause.refs[0] in (-1, 0):
+@@ -45,6 +61,12 @@ def _later_binding(model, fields, *, sentence, ready):
+         for owner_document, source, occurrence in pending.pop(row, ()):
+             if owner_document != document:
+                 continue  # its durable question is already stored
++            store = model.symbolSpace.ltm_store
++            held = store._index_occurrences.get(occurrence)
++            arrived = None if held is None else store.meaning_of(held)
++            if arrived is not None and not open_slots(arrived):
++                write(model, arrived, row=row)
++                continue
+             if field.query is not None:
+                 remaining.append((owner_document, source, occurrence))
+                 continue
+@@ -52,6 +74,9 @@ def _later_binding(model, fields, *, sentence, ready):
+             # no scan or re-execution of a thought episode on later text.
+             roles = [role for kind, role in open_slots(source) if kind != 'evidence']
+             compared = roles or [role for role in range(3) if bool(source.role_mask[role])]
++            if any(not bool(field.meaning.role_mask[role]) for role in compared):
++                remaining.append((owner_document, source, occurrence))
++                continue
+             exact = all(torch.allclose(source.roles[role], field.meaning.roles[role]) for role in compared)
+             if not exact or field.row_id in (-1, 0) or tuple(field.evidence) == (0., 0.):
+                 remaining.append((owner_document, source, occurrence))
+@@ -118,11 +143,12 @@ def close(model, fields, *, sentence, ready, score=None):
+             work_budget=getattr(model, 'attention_budget', 32),
+             score=None if score is None else lambda result,row=row:score(row,result))
+         results.append((row, result))
++        fields[row] = replace(field, thought_completed=True)
+         if not open_slots(result.meaning):
+             # The answer is the binding; retain the original source field's
+             # address separately from the newly concluded inference.
+             if int(result.meaning.role_mask.sum()) in (1, 3):
+-                fields[row] = replace(field, meaning=result.meaning, query=None,
++                fields[row] = replace(fields[row], meaning=result.meaning, query=None,
+                                       evidence=evidence_pair(result.meaning))
+         model._end_finished_selected_thought_episodes()
+     model._sentence_fields[sentence] = tuple(fields)
+diff --git a/bin/ThoughtReferences.py b/bin/ThoughtReferences.py
+index ac7132a6a..a5f285e3c 100644
+--- a/bin/ThoughtReferences.py
++++ b/bin/ThoughtReferences.py
+@@ -89,7 +89,7 @@ def validate_local_references(meaning):
+     visit(meaning)
+ 
+ 
+-def fill(meaning, result, *, witnesses=(), operation=None):
++def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
+     """Bind from a checked result, retaining both poles and its provenance."""
+     validate_local_references(meaning)
+     evidence = result.evidence if hasattr(result, 'evidence') else result
+@@ -124,6 +124,8 @@ def fill(meaning, result, *, witnesses=(), operation=None):
+         return reference
+ 
+     for kind, role in open_slots(meaning):
++        if slots is not None and (kind, role) not in slots:
++            continue
+         if kind == 'evidence':
+             continue
+         if supplied is not None and supplied.role_refs[role] is not None:
+@@ -141,6 +143,10 @@ def fill(meaning, result, *, witnesses=(), operation=None):
+             references[role] = evidence['reference']
+             roles[role], mask[role] = evidence.get('binding_value', evidence.get('value')).to(roles), True
+     data = bindings(meaning)
++    filled_roles = tuple((kind, role) for kind, role in open_slots(meaning)
++                         if kind != 'evidence' and references[role] is not None)
++    if filled_roles:
++        data['_bound_roles'] = tuple(dict.fromkeys((*data.get('_bound_roles', ()), *filled_roles)))
+     data['_thought_witnesses'] = tuple(dict.fromkeys((*data.get('_thought_witnesses', ()),
+                                                    *witnesses)))
+     if operation is not None:
+diff --git a/bin/Understanding.py b/bin/Understanding.py
+index 07f91f839..5ca817b27 100644
+--- a/bin/Understanding.py
++++ b/bin/Understanding.py
+@@ -62,6 +62,7 @@ class AnswerProgram:
+     operation_values: Any = None
+     operation_refs: Any = None
+     operation_relations: Any = None
++    binding_choices: bool = False
+     leaf_orders: Any = None
+     leaf_evidence: Any = None
+     @property
+@@ -147,6 +148,7 @@ class AnswerProgram:
+                          getattr(self, name).detach().to("cpu"))
+                   for name in self._tensor_fields}
+         values["lexical_forms"] = self.lexical_forms
++        values['binding_choices'] = self.binding_choices
+         return type(self)(**values)
+ 
+ 
+@@ -189,6 +191,7 @@ class SentenceEndState:
+     order: int = 0
+     evidence: tuple = (0., 0.)
+     trust: float = 0.
++    thought_completed: bool = False
+ 
+     def __post_init__(self):
+         from Meaning import ConceptualMeaning
+@@ -226,7 +229,8 @@ class SentenceEndState:
+         return type(self)(self.meaning.detached(), self.refs, self.row_id,
+             None if self.where is None else self.where.detach(),
+             None if self.when is None else self.when.detach(),
+-            None if self.query is None else self.query.detached(), self.order, self.evidence, self.trust)
++            None if self.query is None else self.query.detached(), self.order, self.evidence, self.trust,
++            self.thought_completed)
+ 
+ 
+ @dataclass(frozen=True)
+diff --git a/bin/data.py b/bin/data.py
+index 6a318a9bc..d2bdcd3d1 100644
+--- a/bin/data.py
++++ b/bin/data.py
+@@ -676,6 +676,10 @@ class Data():
+         # Self-supervised corpora still carry placeholder OutputSpace tensors
+         # for batching, but those placeholders are not supervised targets.
+         self.has_supervised_outputs = False
++        # Optional text answers remain loss-side labels; the loader tensors
++        # are only batching sentinels, never a numeric answer vocabulary.
++        self.text_answers = None
++        self.answer_mode = None
+         self.grammar_lessons = {"train": [], "validation": [], "test": []}
+         self.source_manifest = None
+         # Parallel objective addresses for the Teacher's direct
+@@ -753,6 +757,8 @@ class Data():
+         values; finally moves tensors to ``TheDevice``.
+         """
+         self.has_supervised_outputs = False
++        self.text_answers = None
++        self.answer_mode = None
+         self.source_manifest = {"dataset": str(dataset)}
+         self.grammar_lessons = {"train": [], "validation": [], "test": []}
+         self.source_addresses = {
+@@ -784,6 +790,8 @@ class Data():
+             self.loadInline(dat or {})
+         if dataset == "math":
+             self.loadMath(dat or {})
++        if dataset == "math_chain":
++            self.loadMathChain(dat or {})
+         if dataset == "mnist":
+             self.has_supervised_outputs = True
+         self._compute_ranges()
+@@ -985,9 +993,13 @@ class Data():
+                 if not bool(self.has_supervised_outputs):
+                     return WhatAnswer.unavailable(
+                         question, "the split has no supplied supervised output")
+-                values = self._what_split_values(question.split, "output")
++                values = (self.text_answers.get(question.split, ())
++                          if self.text_answers is not None else
++                          self._what_split_values(question.split, "output"))
+                 value = self._what_value_at(
+                     values, question.where, split=question.split, role="output")
++                if value is None:
++                    return WhatAnswer.unavailable(question, "this sentence has no supplied answer")
+                 return WhatAnswer(
+                     question=question, what=value, provenance="data",
+                     source_where=question.where)
+@@ -1369,6 +1381,39 @@ class Data():
+         self.test_output       = data["test"]["label"]
+         self.processLM(data)
+ 
++    def loadMathChain(self, dat=None):
++        """Opaque-word worked corpus; labels are text, never numeral vectors."""
++        self.answer_mode = 'binding'
++        self.__dict__.pop('math_range', None)
++        self.__dict__.pop('math_problems', None)
++        from math_chain_corpus import MathChainCorpus
++        self.math_chain_corpus = MathChainCorpus()
++        self.refresh_math_chain(answer_line=True)
++
++    def refresh_math_chain(self, *, answer_line=True):
++        """Fresh source presentations, with premises shuffled each epoch.
++
++        Exact records stay on this data/evaluation owner. Only the ordinary
++        sentence strings, document addresses and separately held labels reach
++        the learner. Validation/test sources stop at the question.
++        """
++        from math_chain_corpus import flatten
++        presentations = self.math_chain_corpus.presentation(answer_line=answer_line)
++        flat = {name: flatten(documents, supplied=answer_line and name == 'train')
++                for name, documents in presentations.items()}
++        self.source_manifest = dict(dataset='math_chain')
++        self.processLM({name: dict(text=flat[name][0], label=[])
++                        for name in ('train', 'validation', 'test')})
++        self.text_answers = {name: values[1] for name, values in flat.items()}
++        self.has_supervised_outputs = any(value is not None
++                                          for value in self.text_answers['train'])
++        self.math_chain_documents = presentations
++        for name, (texts, _targets, addresses) in flat.items():
++            self.source_addresses[name] = [dict(address, split=name) for address in addresses]
++            if name == 'beyond':
++                self.beyond_input = texts
++                self.beyond_output = [torch.zeros(1) for _ in texts]
++
+     def loadMath(self, dat=None):
+         """Exact dependency-arithmetic / linear-constraint problems
+         (doc/specs/2026-09-09-mathematical-thinking.md section 4).
+diff --git a/bin/exact.py b/bin/exact.py
+index e5f4bbae6..964e50ad5 100644
+--- a/bin/exact.py
++++ b/bin/exact.py
+@@ -491,11 +491,11 @@ class MathProblemGenerator:
+     shuffled; distractors are consistent equations over off-chain variables.
+     """
+ 
+-    def __init__(self, seed: int = 0, range: int = 64,
++    def __init__(self, seed: Optional[int] = 0, range: int = 64,
+                  depths: Sequence[int] = (1, 2, 3),
+                  distractors: Sequence[int] = (0, 1, 2), stage: int = 1,
+                  operators: Sequence[str] = ("add",)):
+-        self.rng = random.Random(int(seed))
++        self.rng = random.Random(None if seed is None else int(seed))
+         self.range = int(range)
+         self.depths = tuple(int(d) for d in depths)
+         self.distractors = tuple(int(d) for d in distractors)
+diff --git a/data/model.xsd b/data/model.xsd
+index a82b5414b..da75ed068 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -709,6 +709,7 @@
+       <!-- exact dependency-arithmetic / linear-constraint problems
+            (bin/exact.py MathProblemGenerator; mathematical thinking spec 4). -->
+       <xs:enumeration value="math"/>
++      <xs:enumeration value="math_chain"/>
+     </xs:restriction>
+   </xs:simpleType>
+ 
+@@ -873,6 +874,7 @@
+       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
+       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
++      <xs:element name="equalityLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+       <!-- Retired separate soft bridge policy. Zero remains loadable for
+            old configurations; nonzero values are rejected by model setup. -->
+       <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+diff --git a/doc/AccessibleMind.md b/doc/AccessibleMind.md
+index 6dfe6d6ba..7ccb3f207 100644
+--- a/doc/AccessibleMind.md
++++ b/doc/AccessibleMind.md
+@@ -84,17 +84,19 @@ Structural references follow the actual referenced field.
+ 
+ The durable index is inverted: `(code, role)` maps to store row addresses.
+ Checkpoint columns `posting_codes`, `posting_roles` and `posting_rows` serialize
+-those global postings; `leaf_complete` and `index_stream` retain completion and
+-stream metadata. Appends extend posting lists without copying all prior rows.
++those global postings; `leaf_complete` retains completion. The retired
++`index_stream` column does not restrict readers: LTM truth is shared, while
++document keys, occurrence addresses and timestamps distinguish its rows.
++Unfolding reads the current reader's priming row. Appends extend posting lists without copying all prior rows.
+ Row-to-concept identity remains the allocator's index, independent of semantic
+ vectors. [Writer](../bin/Layers.py), [index](../bin/MemoryIndex.py).
+ 
+-Cues include the bound roles' leaf codes, occurrence references, priming and
+-neighbors of previously retrieved frames in the same stream. The reader
++Cues include the bound roles' leaf codes, occurrence references and priming. The reader
+ examines at most K candidates and charges before reading each record. Scope
+-and bindings filter candidates; masked role similarity ranks them; contiguity
+-breaks equal-match ties. Other streams' observations and estimate/question rows
+-are excluded. `query` retains at most the best row. `isTrue` retains the ended pair and
++and bindings filter candidates; masked role similarity ranks them, with stable
++row order breaking ties. Batch-position filtering and adjacency preference are
++retired. Estimate/question rows remain excluded from asserted-truth queries.
++`query` retains at most the best row. `isTrue` retains the ended pair and
+ trust separately; `exist` is the conceptual presence face. Fan increases examined candidates and
+ work until the cap is reached.
+ 
+diff --git a/doc/FutureWork.md b/doc/FutureWork.md
+index 7bab30b4b..14b7d07b2 100644
+--- a/doc/FutureWork.md
++++ b/doc/FutureWork.md
+@@ -19,7 +19,7 @@ FastICA solve. Learned identity, verb reuse and natural determiner cues remain
+ unproven pending the million-sentence prerequisite and all declared seeds.
+ See [the decisions and implementation limits](specs/2026-09-26-independent-components.md).
+ The detached role view carried beside the native occurrence anchor remains
+-transitional and is to be retired in later work (spec §10); item 5 owns
++transitional and is retired in todo item 2 (spec §10); item 5 owns
+ pruning of learned columns using their relevance scales.
+ 
+ ## 1. Operation profile: optimal versus human
+@@ -81,6 +81,16 @@ genuine topic change, and whether the boundary becomes a learned soft
+ signal rather than a cursor fact. The current per-row document key and
+ clause-scoped reset in the integrated plan §8.3 and §11 are the base.
+ 
++*Taken up in direction (Alec, 2026-10-08):* context is content to be
++learned, not state to be managed; the LTM is shared with identifiers that
++separate rows. The learning stages that force it — batch differentiation,
++return after interruption, shared truth across documents (situated versus
++absolute rows decided by credit), priming as a prior, expectation from the
++right history — are todo item 6.1's gates
++([stream-state plan §3](plans/2026-10-08-stream-state.md#3-required-learning-stages-the-replacement-for-explicit-context-management)).
++What survives a boundary under the `human` profile is then what those
++stages teach, not a specification here.
++
+ <a id="5-n-ary-meta-and-interpretation-time-discrimination"></a>
+ 
+ ## 5. Definition rows and interpretation-time discrimination
+@@ -96,18 +106,27 @@ selects among defined objects from context at interpretation time.
+ 
+ The remaining learning question is how the chooser ranks those objects in
+ context and credits a wrong selection through expectation and reconstruction.
+-Sentences that state a definition, and `Equals` versus `Def`, belong to the
+-grammatical operators update. Definitions' participation in forgetting is
++Sentences that state a definition, and `Equals` versus `Def`, landed with
++the operators update (accepted 2026-10-07). Definitions' participation in forgetting is
+ ordinary row participation; any bias by truth kind belongs to item 5.
++Item 6.2's thinking corpus deliberately writes **no** definition rows
++(Alec, 2026-10-07: numerals are opaque number words, counting facts are
++ordinary copula and two-sentence rows), so the ranking question is not
++exercised there.
+ 
+ ## 6. English arithmetic Q/A curriculum
+ 
+ **Proposal (Alec, 2026-09-20).** Generate English questions and answers from
+ bounded mathematics to supply output-training data and reproducible held-out
+-evaluation, for example “What is two plus two?” → “Four.” This belongs with
+-generation and supervised output (NEXT item 3 in [todo](../todo.md)); later
+-reasoning-utility comparisons remain item 4. This records a curriculum direction,
+-not an implemented English dataset or a new learning result.
++evaluation, for example “What is two plus two?” → “Four.” This records a
++curriculum direction, not an implemented English dataset or a new learning
++result. *Taken up (2026-10-07) as item 6.2's thinking corpus*,
++`MM_math_chain` ([thinking spec §10](specs/2026-10-07-thinking.md#10-the-thinking-corpus-arithmetic-with-intermediate-steps-alec-2026-10-07)):
++opaque number words, counting facts in copula and two-sentence forms,
++worked successor steps, and the question whose answer is a chain; the
++math is never direct and no definition rows are written. What stays here
++is the larger curriculum (multi-digit numbers, subtraction, word
++problems) once the chain is learned.
+ 
+ Start with a small vocabulary of number NPs and a learned successor VP:
+ `successor(two) = three`. Teach the finite counting facts, then compose
+@@ -326,6 +345,21 @@ strict-improvement/patience criterion is recorded for review in
+ Choosing new attention targets from a neither reading remains future policy
+ work. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
+ 
++*Handed here by the operators update ([plan §43](plans/2026-10-05-operators-update.md#43-attention-and-the-corners-alec-2026-10-07))
++and the thinking spec (§6.2).* Alec: "heterogeneity is a cue to narrow
++attention, or to learn more" — at two timescales. Within a reading, *both*
++over a bracket cues division until the parts are pure; that is the walk's
++law today (`narrowing_mask`: both permits divide, pure permits gloss,
++neither permits descend). Across occurrences, a *both* that **persists at
++the narrowest extent** cues refinement of the concept into parts where the
++predicate is uniform — at order 0 a distinguishing mint or a property
++split, above it a sub-concept — and *neither* cues witnessing. The policy
++owed here is the second cue: when to stop dividing the reading and refine
++the concept instead, and what counts as persistence (a candidate counter,
++undecided: the magnitude of definedness, `m = n/(n+k)`). Item 6.1's mask will
++read the same pair per candidate, so the policy becomes a mask-training
++question once 6.1 exists.
++
+ ### Shared-mode erosion measurement (item 9b)
+ 
+ The three-seed job is retired from the test suite. Its original
+@@ -544,14 +578,19 @@ Smaller items from the same discussion, none of them scheduled:
+ 
+ "The operator rename can also be future work." What each operator is to do
+ is decided in [the operator catalogue](specs/2026-09-29-operator-catalogue.md)
+-and stands; the names wait here.
++and stands. *Most of the renames were pulled forward into item 6.2 (Alec,
++2026-10-07: "sooner rather than later") and landed at `e43638a`
++([thinking spec §2.1](specs/2026-10-07-thinking.md#21-the-renames-alec-2026-10-07-sooner-rather-than-later)):*
++`chunk` → `synthesize`/`analyze`; `what` (thought) → `ask`, `what`/`lookup`
++(LTM) → `query`; `quantize` and `arma`/`expect` removed (all concepts are
++symbolized; expectation is the global `<sentenceExpectation>` setting);
++`true`/`exist` as scalars → `isTrue`/`exist` as pairs. The old names are
++one-release aliases that raise; their removal is todo item 2. What remains
++here:
+ 
+ | today | the new name | decided about it |
+ |---|---|---|
+-| `chunk` | `synthesize`, with `analyze` its reverse | it "pairs better with analyze" (catalogue §3.1) |
+-| `what`, `lookup` | `query` | one operator, which returns conceptual content (§3.6) |
+-| `quantize` | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only (§3.4) |
+-| `arma` | `expect`, or none | open (§3.5) |
++| — | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only (§3.4); no present operator is renamed to them, they are future operators |
+ | `verb`, `adverb`, `preposition`, `tense`, `aspect`, `morphology` | names by what is computed; candidates in §3.9 | the code reads declared properties of a rule and never its name (decided; that part is not deferred) |
+ 
+ A rename is made in one pass, in grammar files, code, tests and documents,
+@@ -569,7 +608,13 @@ after item 6."
+   the projection that takes the phrase back out, while the order is raised
+   by the fold and lowered by its inverse, the determiner
+   ([operator catalogue §5.4](specs/2026-09-29-operator-catalogue.md#54-lift-a-phrase-beside-a-phrase)).
+-  Today the two compute one symmetric sum, and neither undoes the other.
++  *Since the final operators update:* `lower` is the determiner (mint, bind
++  or kind by the rule's `determiner_mode`; its marker contributes no
++  content; `LowerLayer`), and the catalogue's compound selects among a
++  head's cases (`CompoundLayer`, landed with 6.8). `lift` is still the
++  binary sigma whose result is a sentence, inheriting its subject's order;
++  the *dimensional* lift (NP → NP + VP → NP + VP + MP, with `lower` as the
++  projection back) is unbuilt and stays here — not with 5.5.
+ * **`surface`, with tense, morphology and aspect.** `surface` is "a surface
+   transformation of the words, like tense and aspect", so that one lexeme
+   and its forms, and a language's freedoms of word order, are one structure
+@@ -605,6 +650,13 @@ through the idea. Whether the grammar's choices should answer to a teacher
+ at all, or only to reconstruction and expectation, is Alec's to decide when
+ it is taken up.
+ 
++*Decided since (operators round 2, landed `3de37eef5`; [GradientFlow](GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)):*
++the answer does enter the chooser's credit — the trial cost is the
++owner-step total `R + E + A`, read by a comparison reader on both detached
++roots — while only reconstruction decides the keep and the presented
++reader trains on the kept root. The question above is closed; nothing
++remains here.
++
+ <a id="separate-gradient-ownership"></a>
+ 
+ ## Separate gradient ownership for reconstruction, expectation and output (taken up in item 6.9, Alec, 2026-10-02)
+@@ -760,6 +812,95 @@ The first decision should be informed by the completed-step diagnostic. It can
+ separate objective interference from discrete derivation changes, inadequate
+ inverse learning, or read-back quality remaining poor despite decreasing cost.
+ 
++## Expectation by inversion and the reconstruction audit (decided 2026-10-06, unscheduled)
++
++**Taken up as todo item 4.5 (Alec, 2026-10-08: "needs to go in sooner
++rather than later"; a spec of its own, written in a separate conversation).
++This section is the record until that spec exists.**
++
++Decided in the operators update plan
++([§10.3](plans/2026-10-05-operators-update.md#103-the-invertible-forward-path-reconstruction-as-an-audit),
++[§11](plans/2026-10-05-operators-update.md#11-reflections-claude-2026-10-06-alec-asked-for-thoughts) items 2, 6 and 8,
++[§12.2](plans/2026-10-05-operators-update.md#122-two-complete-derivations-subtracted-layer-by-layer),
++[§13](plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06) points 2–3)
++and recorded as "rounds 3–4" of the
++[target scheme](GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
++the combined step that closed the update (§36–§45) did not include it, so
++it is decided and unbuilt. Three parts:
++
++1. **Expectation by inversion.** The row-level prediction, inverted through
++   the committed operations, gives an expected operand at every round; the
++   actual against it is the layer's surprise; the maps (verb, adverb, lift)
++   take exact targets by inversion — target propagation, no gradient through
++   the choice, no straight-through, no mixed forward. The word-level
++   expectation follows from the row-level predictor by inversion rather
++   than by a predictor of its own (today 6.8-1's word-level expectation has
++   its own). Expectation's sources then go live: the 2026-09-20 rule
++   detaching them existed against collapse, which an invertible path cannot
++   do. Alec, §13: expectation "propagates across the model … only once the
++   path is invertible; before that its sources stay detached".
++2. **Reconstruction as an audit.** With injective forms (round 3a's pairs
++   and length) and exact unbinding through the bank, reconstruction is a
++   structural audit that must read zero, not an objective; the
++   decomposition chooser becomes a lookup; the trainable surfaces are the
++   chooser, the maps, the predictors and the readers, trained by
++   expectation and output along one path. Where "mostly invertible" means
++   approximately, the reconstruction term stays as a loss for that part
++   (§13.3). Today identified-word reconstruction is already the R≡0 audit
++   at gate width; the rest of the path keeps the loss.
++3. **The width.** Exact clean-up of `k` bound items against `N` bank
++   entries needs `D ≈ c·k·log N` — thousands at production, far above the
++   gates' 22 — with clean-up through the index, never brute force. Never
++   derived; todo item 3 derives it for the run and reads the audit at that
++   width.
++
++The milestone (§11.8): the audit at zero at production width ⇒ item 0
++trains by expectation and output through one path. Todo item 0 carries the
++condition; item 4.5 builds parts 1–2 and says what part 3 must be. A
++candidate gate for the spec: the expectation discrepancy and the class bars
++at the standing XOR fixtures with the inverted targets on, against the
++detached-source baseline, with the collapse diagnostic (the *both* mass on
++the leaf) reported.
++
++## Compose follow-ups deferred from item 7.5 (2026-09-27)
++
++Non-blocking residue of the item 7.5 landing
++([receipt](benchmarks/2026-09-27-item7-5-landing/README.md)), moved out of
++the countdown on 2026-10-08 so the numbered list holds only what is on the
++path: a nonzero **training temperature** for the compose trials and a
++**sentence parsimony / work term**, both accepted in direction for a later
++spec, with evaluation deterministic; and the shared-operator report
++assertion to restate around closing contributions or forced parametric
++selection — probably moot since 6.9 gave every parameter one owner, to be
++verified at housekeeping. The `exploration_trial` rename is todo item 2.
++The depth-three campaign's red is recorded in the receipt and in
++[Testing](Testing.md); it is evidence, not work.
++
++## One bank: the collision rule for property rows, and a merge rule (decided 2026-10-06, unscheduled)
++
++Alec's one bank over "is X" and "contains X"
++([plan §10.1](plans/2026-10-05-operators-update.md#101-one-bank-two-relations);
++[Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture),
++"One bank, two relations") grows only when
++necessary to separate two objects. Round 3a built the collision rule for
++word identities (each word's own positional triple, bits drawn until
++separated). Not built:
++
++* **Property rows still split on dispersion.** `maybe_split_property_row`
++  (`Spaces.py`) splits a WholeSpace property row when assignment variance
++  over ≥ `lbgMinCount` pulls exceeds `lbgThreshold`. The decided rule
++  replaces it: a thing's code must differ from every other thing's; when a
++  new thing coincides with an old one, mint the cheapest distinguishing
++  feature, and otherwise nothing. This is the property-space half of the
++  rule the 3a mints gave words.
++* **A merge rule** ([§11.5](plans/2026-10-05-operators-update.md#11-reflections-claude-2026-10-06-alec-asked-for-thoughts)).
++  Collision-minting only separates, and its inventory depends on the order
++  in which words are read (inventories differ run to run). Abstraction
++  comes from the sigma fold one order up, from co-activation, and from the
++  forgetting spec's value pruning the distinctions that are never used;
++  the last is the rule todo item 5 still owes for the concept inventory
++  (order-0 definitions, alternatives, feature groups, mints).
++
+ ## A snapshot where a sentence's two trials branch (future work, Alec, 2026-09-30)
+ 
+ Item 6.9 costs a sentence's two derivations under the same parameters
+@@ -1099,7 +1240,7 @@ conceptual space and the remaining catalogue. Item 6.8 owns the open read and
+ MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
+ The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
+ including its explicit red gates; this is not a claim that every gate is green.
+-Next: query and ask under the [thought-loop plan §§5–7](plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07), then item 6.2, thinking, whose specification follows from Claude. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint.
++The renames, `query` and `ask` ([thought-loop plan §§5–7](plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07)) and item 6.2's mechanism landed at `e43638a` (accepted October 7); 6.2's learning step, `MM_math_chain`, is in its repair pass. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint. The current sequence is in [todo](../todo.md).
+ 
+ ## Carried from the 6.8 §13–§15 rounds (2026-10-04)
+ 
+@@ -1121,6 +1262,14 @@ Not in the 6.8 rounds; each names its home.
+   thermometer and collision mints. A word remains a max over its parts;
+   anagrams need no general positional fold. Higher-order forms still use
+   the binding kernels; round 4a composes the separate meaning block by the bilattice.
++  *Open, from [plan §7.3 and §7.9](plans/2026-10-05-operators-update.md#73-parts-chunk-up-serially-overlapping-parts-plus-length-would-identify-a-word-without-order):*
++  the same construction one rung up — adjacent **word** pairs plus the
++  sentence's word count as the sentence's parts — would make "dog bites
++  man" differ from "man bites dog" by form alone, as "bana"/"banana"
++  differ by letter pairs and length. Today operand order at the sentence
++  rung is recovered by the roles and surface markers, not by the form.
++  Whether the rung needs it is a measurement once 5.5's surface markers
++  exist.
+ - **The complement's bootstrap — closed in the accepted operators landing:** containing sentence
+   rows contribute fixed sparse identities from their content keys. The detached
+   recency mean fills the for pole; the against pole starts at zero. It is an
+@@ -1141,12 +1290,15 @@ Not in the 6.8 rounds; each names its home.
+ - **The `not` items — closed across rounds 1–4a:** exclusion clears the
+   expressed evidence, conjunction reads explicit poles, and negation exchanges
+   the meaning poles while preserving form.
+-- **The negative image on the concept face** (item 2): the §2.6.1 mechanism
+-  is implemented in the uncommitted round-2 candidate: gain, presence and
+-  role attention gate the concept complement; storage retains the observed
+-  value and thought reads the conceived value. Form is protected. Learning
+-  utility still waits for a populated complement and the later measurements
+-  ([receipt](benchmarks/2026-10-06-operators-round2/README.md)).
++- **The negative image on the concept face** — mechanism closed in round 2
++  (landed `3de37eef5`): gain, presence and role attention gate the concept
++  complement; storage retains the observed value and thought reads the
++  conceived value; form is protected
++  ([receipt](benchmarks/2026-10-06-operators-round2e/README.md)). The
++  complement it reads is populated since the final landing. Its learning
++  utility — joint and useful-query learning with the image on — is a
++  measurement that waits for the million-sentence checkpoint and sits with
++  todo item 9, as the `7d7dc4f` line already said.
+ - **Sparse percept presences** (perception, when it is trained): dense
+   prototypes' joins saturate toward everything (mean cosine between word
+   forms ≈ .98 at any scale, XOR term of a unit root .03–.05); presences on
+@@ -1190,105 +1342,28 @@ Not in the 6.8 rounds; each names its home.
+   is taken before context has a say, and the activation features (projection
+   coefficients, unbounded) are standardized.
+ 
+-**Status, 2026-10-06 (operators update [plan §9.5, §12.3, §14](plans/2026-10-05-operators-update.md)).**
+-Landed in round 1 (accepted 2026-10-06): the `not` items (withdrawal and pole
+-exchange, bilattice conjunction), footprints at load, the inverse's chooser
+-with exact-fit precedence and standardized features, the attention
+-estimator (score-function, found silent by construction — plan §5). Round 2
+-is an uncommitted candidate held for review after its gate missed: class
+-4/10, reconstruction 6/10, MM_xor convergence 9/10, sum 10/10; sweep green
+-and ownership zeros retained. The initial observer counted only the sentence payload
+-([round-2 receipt](benchmarks/2026-10-06-operators-round2/README.md)); the
+-round-2b replay establishes a live MM trajectory, so its miss counts:
+-the trial cost as the owner-step total, one departure over both walks with
+-the narrowed poles handed off, the negative image at the closing on the
+-concept face (spec §2.6.1, confidence-gated, so it needs no meanings to
+-exist). Round 3: the fold composing forms is replaced by boundary-marked
+-pairs plus length as the parts (anagrams separate without position), the
+-content width, the has-a wholes and the narrowing-weighted centroid. Round
+-4: the complement's bootstrap (membership as properties, co-activation
+-through shared wholes), the Kleene connectives over meanings, expectation
+-and targets by inversion. (A "round 5 attention filter" was withdrawn on
+-2026-10-07: attention is the `.where` mask the narrowing walk already is.) The dense chooser
+-signal is not wanted: the forward stays a tree (plan §12.2); sparse
+-presences are subsumed by round 3's sparse superposition.
+-
+-
+-Operators round 2b corrects the keep to reconstruction alone and trains the
+-answer reader on both detached trials; credit still uses `R+E+A`. It preserves
+-activation magnitude at the pole handoff and audits all consumer paths. The
+-closing image remains landed as a mechanism, with zero complement in the gate
+-fixtures. The [round-2b receipt](benchmarks/2026-10-06-operators-round2b/README.md)
+-records the live MM comparison and the residual signed interpretation before
+-disjunction. Centroid placement remains round 3; its final containment cap
+-will use decreasing part count and the new before/after audit. Higher-order
+-order preservation is conditional on monotone folds, not added here.
+-
+-The round-2b call-profile check distinguishes the configurations: `MM_xor`
+-bypasses all four pole consumers; `MM_grammar` reaches both reference-slab paths.
+-All three paired MM_xor trajectories still differ from the landing. That
+-difference is recorded without attributing it to a consumer that did not run.
+-
+-
+-Operators round 2c installs magnitude interpretation on forms and signed
+-interpretation on meanings. It restores one reader update per sentence:
+-both roots averaged only for compose departures, otherwise the kept root.
+-The concept-only image remains a mechanism with zero width in the grammar
+-gates. Narrowing negation has zero advantage there until meanings exist;
+-its shared SCG term remains available on configurations whose costs can see it.
+-The [round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md)
+-records class 5/10, reconstruction 10/10, sum 10/10 at the quarter floor,
+-and live MM_xor 9/10, with a green sweep and zero ownership, displacement
+-and sentence-path perception gradients. It misses the standing class gate;
+-§20 subsequently excludes its bisection-proven RNG-only MM path. The round-2c
+-candidate is not accepted. All final grammar policies
+-use conjunction; all narrowing credits tie; the one-step reader contract is
+-confirmed by its optimizer counters. MM_xor's path is now isolated: retired percept sampling
+-changes the generator state used by the later input-reconstruction mask.
+-Centroid placement, higher-order order enforcement and meaning connectives
+-remain in their subsequent rounds.
+-
+-Operators round 2d changes the sentence departure to a uniform walk draw,
+-then a uniform eligible-round draw within that walk. Its `K·R_walk·W`
+-correction preserves the estimator and the existing owner. The reader,
+-keep, costs, image and form/pole separation are unchanged. Plan §20 applies
+-the RNG-only amendment to MM_xor after repeating its first-forward bisection.
+-The [round-2d receipt](benchmarks/2026-10-06-operators-round2d/README.md)
+-retains the thirty unseeded gate runs, paired replays and prior receipts.
+-No centroid, meaning-connective or other later-round work is added.
+-
+-The round-2d mechanism is verified, but class **2/10** misses the standing
+-7/10 gate. Reconstruction is **10/10**, sum **10/10 at ¼**, and raw MM_xor
+-**10/10**; the repeated bisection confirms its RNG-only exclusion. All final
+-roots are conjunction and all labels are correct. The all-disjunction starts
+-switch permanently by epochs 22, 65 and 106, while three failed runs already
+-use conjunction throughout. The eight class MSE misses remain in the receipt
+-with their cost comparisons. Walk proposals are balanced, narrowing advantages
+-tie, reader counters confirm one update, the sweep is green, and the ownership,
+-gradient and displacement audits are zero. Round 2d is not accepted under
+-plan §21; later-round work stays carried.
+-
+-Operators round 2e separates the presented reader from the comparison
+-reader. The former trains once on the reconstruction-kept root only; the
+-latter retains 2d's paired compose-root training and supplies only the
+-advantage's answer cost. Both remain answer-owned and read detached roots.
+-The [round-2e receipt](benchmarks/2026-10-06-operators-round2e/README.md)
+-records their MSE on the same kept roots, reader norms, operator flips and
+-the late cost comparisons. The keep, walk-first departure and SCG correction
+-remain unchanged. Earlier receipts, Claude's plan and Philosophy are preserved.
+-The candidate is held uncommitted for Claude's review.
+-
+-Measured round 2e: class **9/10**, reconstruction
+-**10/10**, sum **10/10 at ¼**, and raw MM_xor
+-**10/10** under the repeated RNG-only bisection. The measured
+-standing gate is met; acceptance remains pending Claude's review.
+-Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
+-Every run uses greedy conjunction throughout from epoch 140 at the latest.
+-The receipt separates 1 miss categorized as late flip,
+-0 reader plateaus and 0 other misses, with both
+-reader trajectories and late trial costs. All twenty sum/XOR runs have
+-400 updates per reader, zero presented weight on the rejected root, and
+-final active reader Adam counters of 400. The complete source sweep is
+-green; ownership conflicts, sentence-path perception gradients and
+-code displacement are zero. All thirty unseeded gate trainings are
+-retained without retries or replacements. No commit or push.
++**Status, closed 2026-10-07 (operators update [plan §45](plans/2026-10-05-operators-update.md#45-review-of-the-repair-pass-claude-2026-10-07-accepted-as-the-operators-update-landing)).**
++Round 1 landed at `73cd7b71b` (the `not` items, footprints at load, the
++inverse's chooser with exact-fit precedence and standardized features, the
++score-function attention estimator). Round 2 landed at `3de37eef5` as 2e:
++the trial cost as the owner-step total `R+E+A`, one departure over both
++walks drawn walk-first, the narrowed poles handed off with the scope, keep
++by reconstruction alone, a presented reader on the kept root and a
++comparison reader on both roots for the advantage, the image at the
++closing on the concept face; rounds 2, 2b, 2c and 2d were rejected on the
++way for the reasons in plan §15, §17, §19 and §21 and their receipts
++(`benchmarks/2026-10-06-operators-round2*`). Round 3a landed at
++`cce3a4f7b`: identity by construction. The planned round 3 (has-a wholes,
++the narrowing-weighted centroid) and round 4 (Kleene connectives,
++membership as properties) were superseded by the combined step (plan
++§36–§40): meanings as the context mean of containing rows' fixed codes,
++the bipolar bilattice over pole pairs, the adjacent-word centroid
++`c = L + α(U−L)` under the containment cap, bounded membership priming, the
++addressed rows of 4a-0, and the two-lane leaf of §42, landed at `f4a68404e`
++and accepted on October 7. The "round 5 attention filter" was withdrawn
++(attention is the `.where` mask; now todo item 6.1). Not delivered by the
++update and recorded above: expectation by inversion with the
++reconstruction audit at production width, the collision rule for property
++rows and the merge rule, and word pairs at the sentence rung. The dense
++chooser signal is not wanted (the forward stays a tree, plan §12.2);
++sparse presences stay a perception item.
+diff --git a/doc/Params.md b/doc/Params.md
+index 32018b928..729ee4441 100644
+--- a/doc/Params.md
++++ b/doc/Params.md
+@@ -60,7 +60,7 @@ sub-elements `<training>` and `<data>` (see below).
+ | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
+ | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
+ | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
+-| `attentionBudget` | positive int | `32` | One allowance for input bracket operations, symbol recall and thought attention. Grammatical word composition does not spend it. Also sizes the padded bracket table. |
++| `attentionBudget` | nonnegative int | `32` | One allowance for input bracket operations, symbol recall and thought attention. Grammatical word composition does not spend it. A positive value also sizes the padded bracket table; zero disables the walk and thought work while retaining ordinary word composition for the VP-only control. |
+ | `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. |
+ | `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. |
+ | Removed attention controls | — | rejected | `subsymbolicOrder`, `symbolicOrder`, `subsymbolicLoop`, `serial`, `modeSchedule`, `readingAttention`, `globalAttention` and `globalAttentionConsume` are rejected by schema and runtime validation. |
+@@ -446,7 +446,7 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
+ |-----------|------|---------|-------------|
+ | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
+ | `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
+-| `ltmCapacity` | int | `1024` | Long-term-memory (LTM) chain capacity on `InterSentenceLayer`: the per-row bounded `deque` of STM end-states (the AR sequence feeding inter-sentence prediction) is capped at this many entries. Also sizes the model's shared `.when` ladder. Item 3 must set it for the intended million-row run and record the resulting clock range. Separate from `truthMaxEntries`. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
++| `ltmCapacity` | int | `1024` | Capacity of the shared LTM occurrence store, the bounded inter-sentence history, and the shared `.when` ladder. An explicit value takes precedence over `truthMaxEntries` for LTM; `truthMaxEntries` sizes the truth activation view. The store raises when full. MM_math_chain reserves 1,048,576 rows for its fifty separately addressed corpus presentations, embedded clauses, equality companions, DEF rows and worked-chain inferences, with margin. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+ | `parserBackend` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): the chart backend is gone and the signal router (`LanguageLayer`) is now the sole, fixed parser. The element is rejected — leaving it in an XML config raises a loud `ValueError` at load time (`Language._assert_retired_chart_knobs_absent`). |
+ | `routerKind` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): there is no longer a selectable router; the signal router is fixed. Rejected with a loud `ValueError` if present in a config. |
+ | `chartCollapse` | string | `"root"` | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/` (the writeback contract it described rode out with the chart). |
+diff --git a/doc/Reasoning.md b/doc/Reasoning.md
+index 175933611..a2dc04f9c 100644
+--- a/doc/Reasoning.md
++++ b/doc/Reasoning.md
+@@ -1,8 +1,13 @@
+ # Reasoning and thinking
+ 
+ The current contract is [item 6.2](specs/2026-10-07-thinking.md), following the
+-accepted 6.5 mechanism. The implementation is a review candidate; the receipt
+-is [here](benchmarks/2026-10-07-item6-2/README.md).
++accepted 6.5 mechanism. The 6.2 mechanism and repairs are accepted and landed;
++the [repair receipt](benchmarks/2026-10-07-item6-2-repair/README.md) records that
++acceptance. Learned chaining is the separate
++[MM_math_chain measurement](benchmarks/2026-10-07-math-chain/README.md), stopped
++for review after all thirty attempts failed before completing an epoch.
++Its sweep and mechanism gates pass, but no held-out learning result is
++available. Configured-run completion does not establish learning.
+ 
+ A question is a row with an open reference: referent, relation or evidence
+ pair. Wh-words and punctuation can suggest an opening, but a bound row is not
+diff --git a/doc/plans/2026-10-07-thought-loop.md b/doc/plans/2026-10-07-thought-loop.md
+index 94123b1b3..6b4292931 100644
+--- a/doc/plans/2026-10-07-thought-loop.md
++++ b/doc/plans/2026-10-07-thought-loop.md
+@@ -222,3 +222,26 @@ The `.grammar` `<thought>` sections list `ask`, `query`, `part`, `whole`,
+ `equal`, `not`; `arma` and `quantize` are removed from them. The thinking
+ spec (6.2) then adds `isTrue`/`exist`, `isPart`/`part`, `isEqual`/`equal`,
+ `isImplied`/`implies` as the two faces, and the gain act.
++
++## 9. Mechanism landing and learning measurement (Codex, 2026-10-07)
++
++Alec's accepted 6.2 repair is landed at `e43638a`, with WikiOracle's
++submodule bump at `1970001`. The [acceptance record](../benchmarks/2026-10-07-item6-2-repair/acceptance.json)
++preserves the limits: the configured MM_query_reasoning run completed but
++did not learn chaining, and 6.5's learning gates await the million-sentence
++checkpoint.
++
++The [MM_math_chain candidate](../benchmarks/2026-10-07-math-chain/README.md)
++follows the live thinking spec §10. Its final sweep completes all 5,587
++cases; 732 source files are frozen at receipt digest
++`cc0444cc4d920904c9b3454b4c235e332352f12aacd71d405e7ae029634245e3`.
++The unseeded thinking gate completes 57/57. The standing thirty retain 10/10
++on every bar with zero thought calls or episodes. All thirty declared math
++attempts ran once; none completed its first epoch or reached evaluation.
++Eighteen fail on a retained priming batch width, two on taxonomy operand
++references, eight on the inherited 1,024-row LTM limit, and two on unresolved
++relational rows at ordinary sentence commit. Held-out and beyond-range
++accuracy and final chooser movement are unavailable. The partial observations
++and every failed attempt remain in the receipt. The learning gate is not met;
++the candidate remains uncommitted for Claude's review. The 6.5 learning gates
++still await the million-sentence checkpoint.
+diff --git a/doc/specs/2026-09-09-mathematical-thinking.md b/doc/specs/2026-09-09-mathematical-thinking.md
+index 43adf21bb..b1734b0d3 100644
+--- a/doc/specs/2026-09-09-mathematical-thinking.md
++++ b/doc/specs/2026-09-09-mathematical-thinking.md
+@@ -1,5 +1,12 @@
+ # Mathematical thinking: bounded specification for iterative `what()` evaluation
+ 
++> **Learning-testbed update, 2026-10-07:** [Thinking spec §10](2026-10-07-thinking.md#10-the-thinking-corpus-arithmetic-with-intermediate-steps-alec-2026-10-07)
++> replaces the numeric numeral codes and range-sized answer classifier with
++> opaque number words, worked successor steps and committed answer bindings.
++> The September numeric fixtures below remain historical regression fixtures;
++> they do not certify the current learning gate. See the
++> [MM_math_chain candidate receipt](../benchmarks/2026-10-07-math-chain/README.md).
++
+ > **Target update, 2026-09-12:**
+ > [Sentence-boundary thinking](2026-09-11-sentence-boundary-thinking.md)
+ > supersedes the lexical ANSWER/OPEN policy and its execution/context limits
+diff --git a/doc/specs/2026-10-07-thinking.md b/doc/specs/2026-10-07-thinking.md
+index 8dd79aade..27e07e3f3 100644
+--- a/doc/specs/2026-10-07-thinking.md
++++ b/doc/specs/2026-10-07-thinking.md
+@@ -26,7 +26,22 @@ can be implicit, Alec 2026-10-07) binds it to nothing: no existing
+ occurrence, column or row matches. The row keeps the open slot (null
+ reference, open role). Wh-words, `?` and the interrogative mode are surface
+ evidence for an open reference, not its definition; a row with every
+-reference bound is not a question whatever its surface.
++reference bound is not a question whatever its surface. *How the evidence
++opens one (Alec, 2026-10-08, replacing a declared class — words cannot be
++created from birth; they are learned):* `bind()` is a method `interpret()`
++calls: it looks backward for a referent among the situation's candidates
++(the recency buffer, cued frames, earlier constituents; 6.5's enumeration).
++Found, the reference is bound. Not found, **the reference is forward** —
++open — and the chooser chooses, credited by what follows, between minting
++a new individual and leaving it open to be filled; a determiner forces the
++choice (`a` mints, `the` binds), a bare word leaves it to the chooser. A
++wh-word is a word whose backward referent is never found: minting for it
++never earns credit, leaving it open and having `the answer is X` fill it
++does, so the chooser learns that `what` is a question word — by the same
++mechanism that leaves `x` open in a premise until `x is three` arrives. `?`
++is a learned whole in whole-space, evidence the chooser may read. The
++chooser starts near uniform between mint and open, so questions open about
++half the time from the first epoch.
+ 
+ 1.2 Kinds of open slot: an open *referent* (who, what, which — a role's
+ reference), an open *evidence pair* (is it so? — the row's `(c⁺, c⁻)`
+@@ -37,7 +52,10 @@ terms.
+ 1.3 A forward reference is an expectation of a referent (Philosophy,
+ "identity is an expectation"). Later text may fill it (cataphora); thought
+ may fill it; at document end an unfilled reference stays stored as a
+-question row (record kind `question`).
++question row (record kind `question`). *Amended 2026-10-08 (§12):* a
++relational row with an unresolved reference is not rejected at commit; it
++is stored pending with the reference open, and the address upsert fills it
++when the referent's occurrence arrives.
+ 
+ ## 2. The operations
+ 
+@@ -322,3 +340,32 @@ yet shown is a learned chain, and `MM_query_reasoning` cannot show it — its
+ questions bind at once. That is what §10's `MM_math_chain` is for, and it is
+ the next step, with the one fixture given an unseeded construction path so
+ the thinking gate reads 57/57.
++
++## 12. Review of the first `MM_math_chain` measurement (Claude, 2026-10-08): no result; five repairs
++
++Receipt `doc/benchmarks/2026-10-07-math-chain/` (measured source 732 files).
++All thirty attempts failed inside their first epoch, before any held-out
++evaluation; the receipt correctly reports accuracy as unavailable, not
++zero. The corpus (`bin/math_chain_corpus.py`), driver, verifier and observer
++are as specified and verified by reading the rendered documents. The
++default sweep is green (5,587), the standing thirty unchanged at 10/10, the
++thinking gate 57/57.
++
++Findings, in order of importance: (1) **every `what is y ?` closed with no
++open reference** (`open: []`, no episode, all conditions) — on the ordinary
++path `what` is a known word and binds to its own concept; §1.1 called
++wh-words evidence for an open reference and did not say how the evidence
++opens one. *Amendment to §1.1 (Alec's rule, replacing Claude's declared
++class):* `bind()` looks backward; a reference whose backward referent
++cannot be identified is forward and open; the chooser chooses mint or
++open; question words are learned. (2) **forward
++references in premises are rejected at commit** (`a relation requires three
++resolved row references`) against §1.3. *Amendment to §1.3:* a relational
++row with an unresolved reference is stored pending with the reference
++open and filled by the address upsert when the referent arrives.
++(3) Plumbing: the priming surface read at the previous batch size when the
++document-preserving driver changes the stream count (18 attempts);
++`ltmCapacity=1024` inherited over the config's `truthMaxEntries` (8);
++`isPart` offered with an operand the taxonomy rejects (2); an unresolved
++relational row (2, finding 2). Repair pass given in chat on 2026-10-08;
++the measurement then as declared.
+diff --git a/test/test_accessible_mind.py b/test/test_accessible_mind.py
+index 621c063a3..f9bb13936 100644
+--- a/test/test_accessible_mind.py
++++ b/test/test_accessible_mind.py
+@@ -125,7 +125,7 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
+     assert 'work_budget' in result['incomplete']
+ 
+ 
+-def test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches():
++def test_priming_adds_code_disjoint_rows_without_write_position_contiguity():
+     store = TernaryTruthStore(8, capacity=8)
+     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+     first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
+@@ -136,7 +136,8 @@ def test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches():
+     found = store.cued_rows(cue, primed=(90, 94))['value']
+     assert [row['index'] for row in found] == [first, third]
+     found = store.cued_rows(cue, primed=(90, 94), retrieved=(store.occurrence_of(second),))['value']
+-    assert [row['index'] for row in found] == [third, first]
++    assert [row['index'] for row in found] == [first, third]
++    assert not any(row['contiguous'] for row in found)
+ 
+ 
+ def test_subsystem_permissions_and_structural_capability_refusal():
+@@ -375,7 +376,7 @@ def test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant():
+     assert context.primed_symbols is None
+ 
+ 
+-def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkeypatch):
++def test_legacy_index_rebuild_uses_real_rows_and_shares_truth(monkeypatch):
+     import copy
+     from dataclasses import replace
+     from MemoryIndex import configure_model_index
+@@ -387,7 +388,8 @@ def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkey
+     original.append_meaning(meaning, kind='observation', order=2, sentence_index=len(original))
+     state = copy.deepcopy(original.state_dict())
+     for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
+-        del state[key]
++        state.pop(key, None)
++    state['index_stream'] = torch.tensor([-1, 7, -1, -1])
+     store = TernaryTruthStore(8, capacity=4)
+     store.load_state_dict(state)
+     store.load_semantic_extras(original.semantic_extras())
+@@ -397,9 +399,9 @@ def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkey
+                                          grammatical_thoughts=registry), store)
+     from Queries import _existing_row
+     assert store.leaf_terms(0, 0) == (_existing_row(cs, a),)
+-    assert store.index_stream[:2].tolist() == [-1, -2]
++    assert not hasattr(store, 'index_stream')
+     found = store.cued_rows(replace(meaning, mode='interrogative'), stream=0)
+-    assert [row['index'] for row in found['value']] == [0]
++    assert [row['index'] for row in found['value']] == [0, 1]
+ 
+ 
+ def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch):
+@@ -423,7 +425,7 @@ def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch
+     assert store.leaf_terms(1, 2) == (_existing_row(cs, b),)
+ 
+ 
+-def test_nested_writes_inherit_stream_isolation():
++def test_nested_writes_are_shared_across_batch_positions():
+     from dataclasses import replace
+     child = _meaning()
+     parent = replace(child, role_mask=torch.tensor([True, False, False]),
+@@ -431,9 +433,10 @@ def test_nested_writes_inherit_stream_isolation():
+     store = TernaryTruthStore(8, capacity=4)
+     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+     store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
+-    assert store.index_stream[:2].tolist() == [2, 2]
+-    assert not store.cued_rows(child, stream=0)['value']
+-    assert store.cued_rows(child, stream=2)['value']
++    assert not hasattr(store, 'index_stream')
++    first = store.cued_rows(child, stream=0)['value']
++    moved = store.cued_rows(child, stream=2)['value']
++    assert first and [row['occurrence'] for row in first] == [row['occurrence'] for row in moved]
+ 
+ 
+ def test_executor_cannot_emit_outside_its_declared_write_scope():
+diff --git a/test/test_arithmetic_isolation.py b/test/test_arithmetic_isolation.py
+index d0aec993e..555699bfa 100644
+--- a/test/test_arithmetic_isolation.py
++++ b/test/test_arithmetic_isolation.py
+@@ -133,7 +133,10 @@ def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_pat
+         result, _ = model.runBatch(train=True, batchSize=2, split='train',
+             optimizer=optimizer, batch_override=batch,
+             questions=(What.supervised(0), What.supervised(1)))
+-        assert steps == ['exploit', 'explore']
++        assert steps[:2] == ['exploit', 'explore']
++        # An unresolved bare reference may now open an ordinary thought
++        # episode; its supplied-answer credit uses the batch optimizer.
++        assert steps[2:] in ([], ['batch'])
+         assert model._sentence_reader_updates == 1
+         assert bool(torch.isfinite(result.lossOut))
+         assert model._last_answer_mask.tolist() == [True, True]
+diff --git a/test/test_expectation_defaults.py b/test/test_expectation_defaults.py
+index 42b843c96..e94c6e5e8 100644
+--- a/test/test_expectation_defaults.py
++++ b/test/test_expectation_defaults.py
+@@ -146,10 +146,14 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
+     from test_meronomy_ladder import _build_ladder_variant
+     monkeypatch.setenv("MODEL_COMPILE", "none")
+     estimates = []
++    # Pair the counterfactuals at one unseeded initialization. The shared
++    # construction helper no longer installs a fixed learner seed.
++    initial_rng = torch.get_rng_state()
+     for index, rows in enumerate((
+         [["1 plus 2", "3 plus 4"], ["5 plus 6"]],
+         [["1 plus 2", "7 plus 8"], ["9 plus 0"]],
+     )):
++        torch.set_rng_state(initial_rng)
+         model = _build_ladder_variant(tmp_path, f"isolated_expectation_{index}", [
+             ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+             ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+@@ -236,7 +240,8 @@ def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeyp
+                        batch_override=(inputs, torch.zeros(1, 1, 0)))
+         rows = [store.row(i) for i in range(before, len(store))]
+         assert sum(row['kind'] == 'observation' for row in rows) == 2
+-        assert all(row['kind'] in ('observation', 'unverified') for row in rows)
++        assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference') for row in rows)
++        assert not any(row['kind'] == 'estimate' for row in rows)
+         assert all(int(store.meaning_of(i).role_mask.sum()) in (1, 3) for i in range(before, len(store)))
+         assert not hasattr(store, 'clause_derivation')
+     finally:
+diff --git a/test/test_output_path_supervised.py b/test/test_output_path_supervised.py
+index c84c57fb7..93e690f7b 100644
+--- a/test/test_output_path_supervised.py
++++ b/test/test_output_path_supervised.py
+@@ -188,6 +188,19 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
+         with torch.no_grad():
+             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
+             assert len(u.sentence_states) == 2 and all(p is not None for p in u.sentence_states)
++            # The untrained binder may legitimately select the same referent
++            # in both parses. This reader contract needs two distinct native
++            # ideas, not an assumption about that untrained policy's choices.
++            from Meaning import ConceptualMeaning
++            owner = m._concept_owner()
++            native_rows = torch.tensor([next(row for identity in owner.word_concepts(word)
++                if (row := owner._csw_row_of(identity)) is not None) for word in ('1', '3')],
++                device=owner.similarity_codebook.getW().device)
++            ideas = owner.similarity_codebook.lookup_rows(native_rows)
++            fields = tuple(replace(field, meaning=ConceptualMeaning.from_description(idea),
++                                   query=None, thought_completed=True)
++                           for field, idea in zip(u.sentence_states, ideas))
++            u = replace(u, sentence_states=fields)
+             # These dense compatibility carriers cannot own a production answer.
+             owned = replace(u, symbolic_state=None, conceptual_state=None, answer_seed=None)
+             c = m.reverseOutput(owned, m.resolveAnswer(owned, (What.supervised(0), What.supervised(1))))
+@@ -466,7 +479,9 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
+     m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+     m.eval()
+     m.what_thinking_iterations = 2
+-    memory = WhatInteractionMemory(batch=2, capacity=8)
++    # This fixture replaces the normal memory; preserve enough history for
++    # any legal unseeded episode and its nested-context drain records.
++    memory = WhatInteractionMemory(batch=2, capacity=2 * m.attention_budget + 4)
+     object.__setattr__(m.symbolSpace, "what_memory", memory)
+     questions = (What.supervised(0), What.supervised(1))
+     try:
+@@ -477,6 +492,9 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
+             module["value"].weight.fill_(0.003)
+             module["out"].weight.copy_(torch.eye(concept_width) * 0.1)
+             response = torch.linspace(0.1, 0.3, 104)
++            # Inject a legacy context through its own API; an unseeded
++            # reading may have produced ordinary thought records beforehand.
++            memory.reset()
+             for b in range(2):
+                 memory.append_what_slot(LTMSlot(input=torch.zeros(104), output=response), b=b)
+             deltas = torch.stack([m._attend_ltm(base[b, 0], [response]) for b in range(2)])
+@@ -499,6 +517,7 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
+             torch.testing.assert_close(query[0, 0], expected)
+             # Later state changes cannot revise the resolved thinking result.
+             _capture_program_probe(m, ["5 plus 6", "7 plus 8"])
++            memory.reset()
+             memory.append_what_slot(LTMSlot(input=torch.ones(104),
+                                            output=torch.full((104,), 8.0)), b=0)
+             again = m._materialize_answer_idea(u, d, questions)[0]
+diff --git a/test/test_output_walk.py b/test/test_output_walk.py
+index d08a07e15..1c3678ec0 100644
+--- a/test/test_output_walk.py
++++ b/test/test_output_walk.py
+@@ -249,7 +249,7 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
+     force_absolute_reading(m)
+     with torch.no_grad():
+         u = _capture_program_probe(m, ["one plus two", "three plus four"])
+-        derivation = m._resolve_answer(u, What.supervised(0))
++        derivation = m.resolveAnswer(u, What.supervised(0))
+         idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
+     D = int(m.conceptualSpace.stm.concept_dim)
+     assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())
+@@ -518,7 +518,7 @@ def test_materialised_idea_follows_the_symbol_rows():
+     m.loss.reconstruction_scale = 0.
+     with torch.no_grad():
+         u = _capture_program_probe(m, ["one plus two", "three plus four"])
+-        derivation = m._resolve_answer(u, (What.supervised(0), What.supervised(1)))
++        derivation = m.resolveAnswer(u, (What.supervised(0), What.supervised(1)))
+         idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+         end = torch.stack([field.end_state for field in u.sentence_states])
+         assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())
+@@ -533,7 +533,7 @@ def test_materialised_idea_follows_the_symbol_rows():
+         held, _r, _s, _t = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+         torch.testing.assert_close(held, idea0, rtol=0, atol=0)
+         exchanged = _capture_program_probe(m, ["plus one three", "plus two four"])
+-        new_derivation = m._resolve_answer(exchanged, (What.supervised(0), What.supervised(1)))
++        new_derivation = m.resolveAnswer(exchanged, (What.supervised(0), What.supervised(1)))
+         idea1, _r, _s, targets1 = m._materialize_answer_idea(
+             exchanged, new_derivation, (What.supervised(0), What.supervised(1)))
+     assert not torch.allclose(idea1, idea0, atol=1e-4)
+@@ -739,9 +739,11 @@ def test_held_answer_idea_ignores_later_staging_and_memory_context():
+             module = m._question_conditioner(D, device=torch.device("cpu"), dtype=torch.float32)
+             torch.manual_seed(19)
+             module.weight.normal_(0, 0.04)  # zero init must not hide live context reads
+-            d = m._resolve_answer(u, questions)
++            d = m.resolveAnswer(u, questions)
+             before = m._materialize_answer_idea(u, d, questions)[0].clone()
+             _capture_program_probe(m, ["8 plus 2", "5 plus 9"])
++            # Legacy parity injection cannot share ordinary thought history.
++            memory.reset()
+             for b in range(2):
+                 memory.append_what_slot(LTMSlot(input=torch.full((D,), 7.0),
+                                                output=torch.full((D,), -3.0)), b=b)
+@@ -766,7 +768,7 @@ def test_materialised_answer_uses_one_conditioning_application():
+             D = int(m.conceptualSpace.stm.concept_dim)
+             module = m._question_conditioner(D, device=torch.device("cpu"), dtype=torch.float32)
+             hook = module.register_forward_hook(lambda *_args: calls.append(1))
+-            d = m._resolve_answer(u, What.supervised(0))
++            d = m.resolveAnswer(u, What.supervised(0))
+             m._materialize_answer_idea(u, d, What.supervised(0))
+         assert len(calls) == 1
+     finally:
+@@ -794,14 +796,14 @@ def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
+             m._observe_discourse(disc, rep, understanding=first)
+             current = _capture_program_probe(m, ["8 plus 2", "5 plus 9"])
+             questions = (What.past(1), What.past(1))
+-            d = m._resolve_answer(current, questions)
++            d = m.resolveAnswer(current, questions)
+             assert d.row_sources == ("recall", "recall")
+             before = m._materialize_answer_idea(current, d, questions)[0].clone()
+             rep = current.answer_seed if torch.is_tensor(current.answer_seed) else current.symbolic_state
+             m._observe_discourse(disc, rep, understanding=current)
+             after = m._materialize_answer_idea(current, d, questions)[0]
+             # A pooled AR prediction is not a conceptual answer program.
+-            future = m._resolve_answer(current, (What.future(0), What.future(1)))
++            future = m.resolveAnswer(current, (What.future(0), What.future(1)))
+             assert future.sentence_states == (None, None) and not future.resolved
+             idea, resolved, sources, _ = m._materialize_answer_idea(
+                 current, future, (What.future(0), What.future(1)))
+@@ -832,7 +834,7 @@ def test_compiled_understanding_captures_explicit_sentence_products():
+             # owns the completed fields and discards its operation journal.
+             m._tensor_peer_while_eager = True
+             u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+-            d = m._resolve_answer(u, What.supervised(0))
++            d = m.resolveAnswer(u, What.supervised(0))
+             idea, resolved, _, _ = m._materialize_answer_idea(u, d, What.supervised(0))
+             assert torch.is_tensor(idea) and bool(idea.abs().sum() > 0)
+             assert bool(resolved.all())
+diff --git a/test/test_relation_closing.py b/test/test_relation_closing.py
+index 13f5da62f..2a369bbf8 100644
+--- a/test/test_relation_closing.py
++++ b/test/test_relation_closing.py
+@@ -67,7 +67,7 @@ def test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows(mon
+     score_binary, score_unary = chooser.score_binary, chooser.score_unary
+     def binary(*args, **kwargs):
+         stop, scores = score_binary(*args, **kwargs)
+-        mask = torch.arange(scores.shape[-1], device=scores.device) != part
++        mask = kwargs.get('op_indices', torch.arange(scores.shape[-1], device=scores.device)) != part
+         return stop, scores.masked_fill(mask, -torch.inf) + 1e6
+     def unary(*args, **kwargs):
+         stop, scores = score_unary(*args, **kwargs)
+diff --git a/test/test_unified_thought_controller.py b/test/test_unified_thought_controller.py
+index c06184a68..7cd18b3d1 100644
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -141,6 +141,10 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
+     from test_output_walk import _model, _capture_program_probe
+     from What import What
+     import ThoughtCredit
++    import ThoughtClosing
++    # The explicit questions below own this fixture. A random surface
++    # reading must not introduce a third, unrelated controller episode.
++    monkeypatch.setattr(ThoughtClosing, 'closing_question', lambda *_args: None)
+     model = _model()
+     model._tensor_peer_while_eager = True
+     model._chart_compose_per_word = lambda: None
+diff --git a/test/test_word_interpretation.py b/test/test_word_interpretation.py
+index 2c0b32cf1..dff6936cc 100644
+--- a/test/test_word_interpretation.py
++++ b/test/test_word_interpretation.py
+@@ -185,7 +185,7 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
+         forward = space.interpret.forward
+         def observed(word, _forward=forward, **kwargs):
+             result = _forward(word, **kwargs)
+-            if torch.is_tensor(word):
++            if torch.is_tensor(result):
+                 calls.append(result.detach().clone())
+             return result
+         monkeypatch.setattr(space.interpret, 'forward', observed)
+diff --git a/todo.md b/todo.md
+index 3ba383b95..23f5a6756 100644
+--- a/todo.md
++++ b/todo.md
+@@ -17,10 +17,10 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
+ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
+ lines below keep the numbers their items had when they landed.
+ 
+-**Current:** **6.2, thinking with query/ask and the operator renames**, is an uncommitted candidate after the [repair pass](doc/benchmarks/2026-10-07-item6-2-repair/README.md), awaiting Claude's review under [Claude's specification](doc/specs/2026-10-07-thinking.md). Measurements and the review handoff belong to its [receipt](doc/benchmarks/2026-10-07-item6-2/README.md); stop for Claude's review before a commit. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7. Its learning gates remain pending the million-sentence checkpoint and are not claimed.
++**Current:** **6.2's mechanism is accepted and landed** at `e43638a`; the parent bump is `1970001`. The first [MM_math_chain measurement](doc/benchmarks/2026-10-07-math-chain/README.md), under [thinking spec §10–§11](doc/specs/2026-10-07-thinking.md), has no result: the sweep is green, thinking is 57/57 and the standing thirty are unchanged, but all thirty math attempts failed inside their first epoch. Claude's [review §12](doc/specs/2026-10-07-thinking.md) names five repairs — the `bind()` backward / forward-open rule, pending relational rows, the priming surface's shape, `ltmCapacity` over `truthMaxEntries`, the `isPart` operand — and the [repair pass](doc/benchmarks/2026-10-08-math-chain-repair/README.md) is in progress, uncommitted, with the measurement to follow as declared. The earlier [repair receipt](doc/benchmarks/2026-10-07-item6-2-repair/README.md) establishes configured-run completion, not learned chaining. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7. Its learning gates remain pending the million-sentence checkpoint and are not claimed.
+ 
+-**Current sequence (6.5 mechanism accepted on October 7; no conference freeze):**
+-query and ask → 6.2 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
++**Current sequence (6.5 and 6.2's mechanism accepted on October 7; no conference freeze; 4.5 added by Alec on October 8):**
++6.2's math gate → 6.1 → 6 → 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
+ The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
+ acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
+ reviewed; what remains of them is empirical and waits for the
+@@ -117,30 +117,31 @@ generation is expected at this stage and is recorded, not tuned away.
+    single 4,980-case full sweep: 4,653 passed, 326 skipped and one expected
+    failure. Reconstruction exactly matches reviewed 9b. The review corrections
+    are validated for the requested commit; item 8's empirical gates remain open.
+-- **7.5. Deferred compose follow-ups (non-blocking).** Specify the nonzero
+-   training temperature and sentence parsimony/work term accepted for a later
+-   spec; evaluation remains deterministic. Restate the shared-operator report
+-   assertion around closing contributions or forced parametric selection, and
+-   rename the native context-read `exploration_trial` flag in housekeeping.
+-   **Found 2026-09-29 (6.9 plan §3.12):** the sentence pair costs its second
+-   trial after stepping on the first, so the comparison favours the second
+-   whatever its derivation; the correction is 6.9's step 5 (decided by
+-   Alec, 2026-09-30: "equal comparison").
+-   The unchanged depth-three campaign remains red; retain its assertion and
+-   the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
++   The MM_xor bar stays as written: its bests sit within 10% of the bar in
++   every campaign (plan §19), and the §20 rule — a miss whose path differs
++   from the landing only in global-RNG consumption, shown by bisection, is
++   not a regression of the round — is what handles that margin.
++Item 7.5's non-blocking compose follow-ups (the training temperature and
++parsimony term for a later spec) are in
++[FutureWork](doc/FutureWork.md#compose-follow-ups-deferred-from-item-75-2026-09-27);
++its 2026-09-29 costing finding is closed by 6.9's step 5, and the depth-three
++campaign stays a recorded red in the
++[accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md), not work.
+ Remaining operators work stays with its assigned items: surface, tense,
+ morphology, aspect, null and situation codes with 5.5; forgetting's truth-kind
+ bias with 5; trained-checkpoint evaluation with 4; the concept-face negative
+-image with 2; and the open-read/teacher-loss host island with 1. The
++image's learning measurement with 9 (its mechanism landed in round 2,
++`3de37eef5`, and the complement it reads is populated since final-b); the
++open-read/teacher-loss host island with 1; expectation across the
++architecture with **4.5**; the bank's collision and merge rules in
++[FutureWork](doc/FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled). The
+ [FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
+-retains the dynamic stop, operator renames and other deferred work. The
++retains the dynamic stop, the remaining operator names and other deferred work. The
+ [6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md) retains the reading
+ residue around forced `interpret` and digit boundaries. Historical operators
+ measurements and decisions are in the accepted receipt and its predecessors.
+-
+-**Deferred from 6.5 (non-blocking):** retire the detached role view carried
+-beside the native occurrence anchor; learned-column pruning remains with
+-item 5 ([limits](doc/FutureWork.md)).
++Deferred from 6.5 (non-blocking): the detached role view's retirement is in
++item 2; learned-column pruning is in item 5.
+ 
+ - **6.2 learning: MM_math_chain.** The mechanism is accepted under
+    [thinking spec §11](doc/specs/2026-10-07-thinking.md). The next learning
+@@ -148,8 +149,60 @@ item 5 ([limits](doc/FutureWork.md)).
+    forms and worked successor steps; the chooser learns the chain. Ten
+    unseeded trainings in each of the answer, expectation-only and zero-budget
+    conditions; standing thirty unchanged, thinking 57/57 and one green
+-   sweep; stop for Claude's review. Completion of MM_query_reasoning is not
++   sweep. The first declared measurement completes all thirty attempts but
++   no training epoch: runtime failures prevent evaluation
++   ([receipt and failure analysis](doc/benchmarks/2026-10-07-math-chain/README.md)).
++   **In progress:** the [repair pass](doc/benchmarks/2026-10-08-math-chain-repair/README.md)
++   under [review §12](doc/specs/2026-10-07-thinking.md) — `bind()` looks
++   backward and a reference whose referent is not found is forward and
++   open (the chooser chooses mint or open; question words are learned, no
++   declared class); a relational row with an unresolved reference is stored
++   pending and filled by the address upsert; the LTM position filter
++   retired and the priming surface's stale shape raising; `ltmCapacity` no
++   longer overriding `truthMaxEntries`; `isPart`'s operand contract — then
++   the measurement as declared; stop for Claude's review before a
++   learning-step commit. Completion of MM_query_reasoning is not
+    learned chaining. [Mechanism acceptance](doc/benchmarks/2026-10-07-item6-2-repair/acceptance.json).
++   *Thought residue not taken up by the spec* ([thought-loop plan §1](doc/plans/2026-10-07-thought-loop.md)
++   findings 6–7), to be resolved here or placed in FutureWork at this
++   item's close: open-role `part` sets are not seeded into knowing; the
++   thought faces have no specified inverse; `query`'s knowing write, which
++   the accessible-mind spec defers. The one-release rename aliases
++   (spec §2.1) are removed in item 2.
++- **6.1. Attention as a mask, and the context stages**
++   ([plan](doc/plans/2026-10-08-stream-state.md) §3–§5; Alec, 2026-10-08).
++   A multiplicative mask over all percepts, symbols included, on `.where`,
++   as the precursor to conceptual processing: per candidate a two- or
++   three-layer scorer over the current need (the open reference's slot, the
++   expectation image, the gist), the candidate's key and its structural
++   relations (in this word / sentence / document by the bands, recency,
++   priming as salience); several needs give several masks combined lane by
++   lane; divisive normalization over the pool keeps the budget; top-k under
++   the budget commits hard, soft weights train; the loss gradient is the
++   importance signal. Not QKV, though the chooser's scorer is already a
++   `QK` scorer; the structural masks are exact by the bands and need no
++   learning. Starts from attend-all with a small budget (the filter toy's
++   collapse). Its gates are the learning stages that force context as
++   content rather than managed state: mask training (the XOR pairs among
++   fillers; the math chain's question and its document), batch
++   differentiation, return after interruption, shared truth across
++   documents (situated vs absolute rows by credit), priming as a prior,
++   expectation from the right history. Per-stream state is not managed by
++   a registry: the LTM is shared with identifiers that separate rows, and
++   context is learned. After 6.2's math gate; before item 6, so that item
++   0's run does not read every document as one.
++   *Batch-shape defects* from the [audit table](doc/plans/2026-10-08-stream-state.md#1-what-the-audit-found-verified-in-the-working-tree),
++   beyond the two the 6.2 repair pass takes (`index_stream`, the priming
++   surface): `_closing_images`, `_open_thought_rows`,
++   `_pending_thought_credit` and `_what_recall_*` are not resized when the
++   batch size changes; `_word_reference_*` is read by row without a shape
++   check and never reset; taxonomy `_priming` keeps overlapping rows on
++   resize; `_last_gist` pools all rows; `unfold_idea` uses row 0's priming
++   for every stream. Stage 2 (batch differentiation) cannot be measured
++   while they stand, so they are repaired here, by a shape mismatch that
++   raises, not by a registry. The legacy typed STM `_buffer` that only
++   grows is deleted in item 2.
++
+ - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
+    on it. Item 1c's probe reports zero compound recovery
+    ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
+@@ -183,19 +236,25 @@ item 5 ([limits](doc/FutureWork.md)).
+    re-witnessing and fail-loud capacity. See its
+    [receipt](doc/benchmarks/2026-10-07-operators-final-b/).
+    The 10-03 amendment keeps `.when` in percepts and concepts; the absolute
+-   model clock remains in the timestamp column for recency. Remaining here:
++   model clock is written to the `timestamp` column by 4a-0, which spec §7
++   and test 6 retire — this item decides its fate with the recency use
++   (Alec's 09-30 age ruling: the document index suffices). Remaining here:
+    documents as situation codes in content; learned before/after; tense,
+-   aspect, prepositions and surface transformations. Every text
+-   configuration interleaves; tense and aspect are prepositions of the
+-   verb phrase with none written, the catalogue's compound selecting among
+-   the verb phrase's phases; the preposition is one operation with two
+-   attachments; markers are leaves, minted on recurrence, and `surface`
+-   is one operator with four suboperations, trained by reconstruction
+-   under parsimony. Removes the old tense, aspect and morphology code and
+-   its table of English forms. Exit: the ten mechanism tests of spec §8;
+-   learning measurements after 6.5, recorded and not tuned. Replace the
+-   legacy `get_stm_chain` recency across batch rows and test lookup by the
+-   row's occurrence address (two truths §21). Open for Alec: spec §10.
++   aspect, prepositions and surface transformations. Interleaving is
++   delivered by 6.8's open read (spec §0; `serial`/`modeSchedule` are
++   rejected at load), so spec test 8 is met; tense and aspect are
++   prepositions of the verb phrase with none written, the catalogue's
++   compound selecting among the verb phrase's phases; the preposition is
++   one operation with two attachments; markers are leaves, minted on
++   recurrence, and `surface` is one operator with four suboperations,
++   trained by reconstruction under parsimony. Removes the old tense, aspect
++   and morphology code and its table of English forms. Dimensional
++   `lift`/`lower` is not here (FutureWork; Architecture's "remains with
++   5.5" is corrected in item 2). Exit: the remaining mechanism tests of
++   spec §8; learning measurements after 6.5, recorded and not tuned.
++   Replace the legacy `get_stm_chain` recency across batch rows and test
++   lookup by the row's occurrence address (two truths §21). Open for Alec:
++   spec §10.
+ - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
+    (needs `refs` and every S writing a row). Document-boundary pass from the
+    high-water to the low-water mark deleting the lowest-value unprotected
+@@ -217,11 +276,40 @@ item 5 ([limits](doc/FutureWork.md)).
+    discarded. Open for Alec: forgetting
+    of the concept inventory itself — order-0 definitions, alternatives and
+    feature groups — is not in the spec; discovered rows are never recycled
+-   (item 11), so their retirement needs a rule here or in FutureWork.
++   (item 11), so their retirement needs a rule here or in FutureWork; the
++   same rule is the merge half of the bank's collision rule
++   ([FutureWork](doc/FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled)).
++   *Also here (deferred from 6.5):* pruning of learned identity/change
++   columns by their relevance scales (ICA spec §10), in the exit criteria.
+    *Age (Alec, 2026-09-30):* with no clock across documents (item 5.5), the
+    age term "can probably just be an increasing document index: more
+    important within a document will be its salience"
+    ([5.5 spec §9](doc/specs/2026-09-30-occurrence-tense-aspect.md#9-what-it-touches)).
++- **4.5. Expectation across the architecture** (Alec, 2026-10-08: "needs to
++   go in sooner rather than later"; a spec of its own). **Spec (draft,
++   2026-10-08 rev 2, seven questions open in §8):**
++   [expectation at every level](doc/specs/2026-10-08-expectation-at-every-level.md)
++   — Alec, 2026-10-08: a predictor per conceptual level used as a negation
++   that reduces signal to surprise (percepts are attended, not expected);
++   exploit per level, exploration at least partly free of expectation; one
++   departure, no chained random derivation; an age-appropriate corpus for
++   multi-step minima. The scheme confirmed on
++   2026-10-06 ([operators plan §10.3, §12.2, §13](doc/plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06);
++   [GradientFlow's target scheme](doc/GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)),
++   never built: the row-level prediction inverted through the committed
++   operations gives an expected operand at every round; the actual against
++   it is the layer's surprise; the maps take exact targets by inversion
++   (target propagation — no gradient through the choice, no
++   straight-through, no mixed forward); the word-level expectation follows
++   from the row-level predictor by inversion rather than by its own
++   predictor; expectation's sources go live (the 2026-09-20 detachment
++   existed against collapse, which an invertible path cannot do);
++   reconstruction retires to an audit where the path is exactly invertible
++   and stays a loss where it is not. The record until the spec exists is
++   [FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled).
++   Placed after 5 because the model has run without it so far; the spec
++   says what the content width (item 3) must be for the audit to read zero,
++   and whether that derivation moves here. Exit: the spec's gates.
+ - **4. Run harness and resume test.** *Once pulled forward for the
+    conference (Alec, 2026-09-27; no freeze since 2026-10-03, so it is built
+    in 6.8-1 and evaluated here):* the word-level predictor as the NanoChat gate's
+@@ -236,20 +324,27 @@ item 5 ([limits](doc/FutureWork.md)).
+    fixed four XOR and 68 FineWeb probes, reporting CP and within/between
+    distances without pass thresholds. Reuse captured readings and budget their
+    collection cost; the three-seed experiment is archived in FutureWork.
+-   Also log rows deleted per origin, value cut-off; luminosity of provisioned truths; the
+-   per-shared-operator gradient cosine and norm ratio — reconstruction against
+-   expectation, and against output where answers are supplied — with the
+-   operators in persistent opposition named; the held-out two-truths §7
++   Also log rows deleted per origin, value cut-off; luminosity of provisioned truths;
++   the held-out two-truths §7
+    test-12 probe and a fixed reconstruction sample; and from 11–11c: order-0
+    inventory rows used against `nVectors`, provisional-pool occupancy and
+    exhaustion warnings, raises per order with their run counts and stalled
+    patience, refinement requests, lexical references left unknown per order.
++   (The per-shared-operator gradient cosine and "persistent opposition"
++   logging is withdrawn: each parameter has one objective owner since 6.9,
++   so there is no shared operator to measure — [GradientFlow](doc/GradientFlow.md);
++   the dissonance diagnostic of the operators plan §10.3 guards E against O
++   on the maps instead.)
+    And a resume test proving
+    a mid-epoch checkpoint restores cursor, stream count, `refs` / surprise
+    columns and forgetting counters with the next batch byte-identical —
+    including the concept sidecar (feature groups, located brackets, sparse
+    context, refinement buffers), the radix part groups and pending groups,
+-   the word-form index and the understanding's conceptual field. Exit:
++   the word-form index and the understanding's conceptual field, and the
++   state added since: the address index and witness counts (4a-0), the
++   identity atoms and mints (3a), 6.5's identity/change columns and
++   relevance scales, the comparison reader's copy of the answer path (2e)
++   and the pending relational rows (6.2). Exit:
+    one command on a small config; the test in the suite.
+ - **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
+    measure sentence-list/address-table memory and loader time, confirm
+@@ -269,7 +364,14 @@ item 5 ([limits](doc/FutureWork.md)).
+    1,024 also sizes the shared `.when` ladder. Record retained-row memory, the
+    actual subjective-clock range needed by the run and the ladder's resulting
+    periods, so a long training history does not silently reuse temporal phases.
+-   Exit: the load and capacity measurement recorded, and
++   *The content width* (operators plan §10.3, §11.6; never derived): exact
++   clean-up of `k` bound items against `N` bank entries needs
++   `D ≈ c·k·log N`; derive it for the run's vocabulary and run the R≡0
++   identity audit (round 3a's) at that width on the run's config. Its
++   reading decides item 0's condition below
++   ([FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
++   Exit: the load and capacity measurement recorded, the width and the
++   audit's reading, and
+    `maxDocs`/`shardDir`/stream count/PS-CS-WS `nVectors`/`ltmCapacity` in the run config.
+ - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
+    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
+@@ -281,24 +383,55 @@ item 5 ([limits](doc/FutureWork.md)).
+    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
+    (`taxonomy_parent_map` is now initialised).
+    From the 11–11c refactor, verify legacy before deleting (no-legacy rule;
+-   reasoning methods need Alec's review): `overlap_where_tiling` and
+-   `where_tiling_for_pass`, `intent_boosts`, WholeSpace `part_chain`,
++   reasoning methods need Alec's review): `intent_boosts`, WholeSpace `part_chain`,
+    `_automatic_synthesize_higher_order` against the pool's discovery path,
+    and the META `insert_meta` / `taxonomy_parent` bindings once item 7's
+-   concept-level taxonomy owns them. Move the 2.9 MB
++   concept-level taxonomy owns them (`overlap_where_tiling` and
++   `where_tiling_for_pass` are already gone). Move the 2.9 MB
+    `evaluation-source.tar.gz` out of the repository (the receipt keeps its
+    hash) unless Alec wants it in-tree.
++   *Added 2026-10-08 (the coverage audit):* delete the legacy typed STM
++   `_buffer` that only grows, and the detached role view carried beside the
++   native occurrence anchor (ICA spec §10); rename the native context-read
++   `exploration_trial` flag; remove the one-release rename aliases that
++   raise with the new name (`Queries.py` `_operation_form`'s retired map,
++   `Language.py` `_check_operator_availability`) once the 6.2 learning step
++   has landed. Documents that still describe retired or superseded things,
++   to correct in one pass: [Params](doc/Params.md) lists `thinkingBudget`
++   as live and `selectedThoughtPolicyWeight` as a REINFORCE term (both
++   rejected at load; `attentionBudget` is the one budget) and
++   [QueryWork](doc/QueryWork.md) still meters `selectedThoughtBudget`;
++   `complete.grammar`, `ladder.grammar` and the tied-reconstruction fixture
++   still comment `chunk`/`lookup`/`quantize`/`arma`/`what`;
++   [GradientFlow](doc/GradientFlow.md) still heads rounds 2d, 2e, 3a and
++   the final update "review/uncommitted candidate … no commit or push"
++   (all landed at `3de37eef5`, `cce3a4f7b`, `f4a68404e`), gives the serial
++   leaf as "meaning poles exchanged for negative activation" (superseded by
++   the two lanes, plan §42) and the round-3 scheme as the
++   "narrowing-weighted ceiling" (superseded by the adjacent-word wholes,
++   plan §40); [Architecture](doc/Architecture.md) still offers "each word's
++   two symbols … either meaning-pole orientation" at pair search, "has-a …
++   narrows (round 3)" in the scheme, and "dimensional lift remains with
++   5.5" (FutureWork has it); the [catalogue](doc/specs/2026-09-29-operator-catalogue.md)
++   §12 headings still say "(uncommitted)" and its table lists `bind` as
++   open (decided, thought-loop plan §3–§4).
+ - **1. Compiler work.** *Added 2026-10-04:* the open read of 6.8-1 made the
+    whole forward 2.6× slower (.141 s against .055 s on the XOR fixture;
+    [profile](doc/benchmarks/2026-10-03-operators-attention/attention-profile-review/measurement.json));
+    Alec: "the slowdown will have to be addressed." The decoder's two-word
+    walk (6.8 plan §10.2) may pay part of it back. The throughput levers for the serial loop — batch
+-   across sentences, the known-word lookup concession under the serial
+-   flag, subsampled reconstruction, closing the host islands and moving
++   across sentences, the known-word lookup concession, subsampled
++   reconstruction, closing the host islands and moving
+    the sparse stores to device CSR, single passes — are listed in
+    [FutureWork](doc/FutureWork.md#throughput-levers-for-the-serial-loop-item-1-candidates)
+-   and belong here (Alec, 2026-09-25). Forward chooser split/lift once per slot; backward's
++   and belong here (Alec, 2026-09-25); the `serial` flag and the
++   `subsymbolicOrder`/`symbolicOrder` knobs those levers named are rejected
++   at load since 6.8, so the levers apply to the one interleaved loop.
++   Forward chooser split/lift once per slot; backward's
+    launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
++   The comparison reader of round 2e is a `functional_call` copy of the
++   whole answer path (plan §23, observation 1); share its structure when
++   the answer path grows.
+    Exit: sentences/s and peak memory at the run's batch and brick size against
+    the July baseline, re-taken on `99207a3` since the tower fold ladders are
+    gone. New eager hot spots from 11–11c to measure and vectorise: the
+@@ -313,9 +446,19 @@ item 5 ([limits](doc/FutureWork.md)).
+ - **0. The full training session**: the long FineWeb run, only with items 11–2
+    done and item 1 measured. Expectation on in `model.xml`; the
+    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
+-   expectation discrepancy, a reconstruction regression against the `99207a3`
+-   baseline, a forgetting pass deleting protected rows, a provisional-pool
+-   exhaustion warning, or order-0 inventory approaching `nVectors`.
++   expectation discrepancy, a reconstruction regression against the
++   re-taken baseline, a forgetting pass deleting protected rows, a
++   provisional-pool exhaustion warning, or order-0 inventory approaching
++   `nVectors`. *Baselines:* the `99207a3` and reviewed-9b reconstruction
++   figures predate round 3a, after which identified-word reconstruction is
++   an exact zero audit; re-baseline reconstruction on the accepted
++   `f4a68404e` source before the run (items 8 and 5 cite the old figures
++   until then). *Condition (operators plan §13, confirmed by Alec):* the
++   run trains by expectation and output along one path, with expectation's
++   sources live and reconstruction retired to an audit, only where item 3's
++   audit reads zero at the run's width; where it does not, the run keeps
++   reconstruction as a loss for that part. Expectation across the
++   architecture itself is item 4.5.
+ 
+ Everything that is decided in direction but not on this path is in
+ [FutureWork](doc/FutureWork.md).

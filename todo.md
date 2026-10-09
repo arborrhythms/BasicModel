@@ -17,10 +17,15 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** **6.2, thinking with query/ask and the operator renames**, is an uncommitted candidate after the [repair pass](doc/benchmarks/2026-10-07-item6-2-repair/README.md), awaiting Claude's review under [Claude's specification](doc/specs/2026-10-07-thinking.md). Measurements and the review handoff belong to its [receipt](doc/benchmarks/2026-10-07-item6-2/README.md); stop for Claude's review before a commit. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7. Its learning gates remain pending the million-sentence checkpoint and are not claimed.
+**Current:** **6.2 is closed: mechanism complete, decomposition demonstrated**
+([acceptance](doc/benchmarks/2026-10-09-item6-2-closing/acceptance.json),
+thinking spec §14.13). Learning is deferred to item 0's checkpoint under the
+four protocol corrections recorded there; no learning result is claimed.
+Next: 6.1. The accepted 6.5 mechanism's learning gates remain pending the
+million-sentence checkpoint.
 
-**Current sequence (6.5 mechanism accepted on October 7; no conference freeze):**
-query and ask → 6.2 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+**Current sequence (6.2 closed October 9; no conference freeze):**
+6.1 → 6 → 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -78,6 +83,12 @@ generation is expected at this stage and is recorded, not tuned away.
    determiner control — remain pending the million-sentence checkpoint,
    across **seeds 0/1/2**, and are **not claimed** by its mechanism acceptance
    ([receipt](doc/benchmarks/2026-10-07-item6-5/README.md#learning-limits)).
+   **6.2's learning measurement** (MM_math_chain: held-out binding 9 of 10,
+   the chain bar, the expectation-only and zero-budget controls) also waits
+   here, at item 0's checkpoint under [thinking spec §14.10–§14.13](doc/specs/2026-10-07-thinking.md):
+   one-step problems first, worked steps as intermediate answers, binding a
+   found candidate, and budget in steps with each query's record charge bounded
+   separately ([protocol corrections](doc/benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json)).
 - **8. Evidence: learned utility and structural preference.** Prefer
    understandable structural operators when they carry the meaning; any opaque
    operator must be an ordinary grammar-MLP choice, with the structural face
@@ -117,40 +128,76 @@ generation is expected at this stage and is recorded, not tuned away.
    single 4,980-case full sweep: 4,653 passed, 326 skipped and one expected
    failure. Reconstruction exactly matches reviewed 9b. The review corrections
    are validated for the requested commit; item 8's empirical gates remain open.
-- **7.5. Deferred compose follow-ups (non-blocking).** Specify the nonzero
-   training temperature and sentence parsimony/work term accepted for a later
-   spec; evaluation remains deterministic. Restate the shared-operator report
-   assertion around closing contributions or forced parametric selection, and
-   rename the native context-read `exploration_trial` flag in housekeeping.
-   **Found 2026-09-29 (6.9 plan §3.12):** the sentence pair costs its second
-   trial after stepping on the first, so the comparison favours the second
-   whatever its derivation; the correction is 6.9's step 5 (decided by
-   Alec, 2026-09-30: "equal comparison").
-   The unchanged depth-three campaign remains red; retain its assertion and
-   the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
+   The MM_xor bar stays as written: its bests sit within 10% of the bar in
+   every campaign (plan §19), and the §20 rule — a miss whose path differs
+   from the landing only in global-RNG consumption, shown by bisection, is
+   not a regression of the round — is what handles that margin.
+Item 7.5's non-blocking compose follow-ups (the training temperature and
+parsimony term for a later spec) are in
+[FutureWork](doc/FutureWork.md#compose-follow-ups-deferred-from-item-75-2026-09-27);
+its 2026-09-29 costing finding is closed by 6.9's step 5, and the depth-three
+campaign stays a recorded red in the
+[accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md), not work.
 Remaining operators work stays with its assigned items: surface, tense,
 morphology, aspect, null and situation codes with 5.5; forgetting's truth-kind
 bias with 5; trained-checkpoint evaluation with 4; the concept-face negative
-image with 2; and the open-read/teacher-loss host island with 1. The
+image's learning measurement with 9 (its mechanism landed in round 2,
+`3de37eef5`, and the complement it reads is populated since final-b); the
+open-read/teacher-loss host island with 1; expectation across the
+architecture with **4.5**; the bank's collision and merge rules in
+[FutureWork](doc/FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled). The
 [FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
-retains the dynamic stop, operator renames and other deferred work. The
+retains the dynamic stop, the remaining operator names and other deferred work. The
 [6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md) retains the reading
 residue around forced `interpret` and digit boundaries. Historical operators
 measurements and decisions are in the accepted receipt and its predecessors.
+Deferred from 6.5 (non-blocking): the detached role view's retirement is in
+item 2; learned-column pruning is in item 5.
 
-**Deferred from 6.5 (non-blocking):** retire the detached role view carried
-beside the native occurrence anchor; learned-column pruning remains with
-item 5 ([limits](doc/FutureWork.md)).
+- **6.1. Attention as a mask, and the context stages**
+   ([plan](doc/plans/2026-10-08-stream-state.md) §3–§5; Alec, 2026-10-08).
+   A multiplicative mask over all percepts, symbols included, on `.where`,
+   as the precursor to conceptual processing: per candidate a two- or
+   three-layer scorer over the current need (the open reference's slot, the
+   expectation image, the gist), the candidate's key and its structural
+   relations (in this word / sentence / document by the bands, recency,
+   priming as salience); several needs give several masks combined lane by
+   lane; divisive normalization over the pool keeps the budget; top-k under
+   the budget commits hard, soft weights train; the loss gradient is the
+   importance signal. Not QKV, though the chooser's scorer is already a
+   `QK` scorer; the structural masks are exact by the bands and need no
+   learning. *Amended (Alec, 2026-10-08, from the 4.5 conversation):* wire
+   the mask as **a single layer** whose input is the current perceptual and
+   symbolic activation (the spreading activation of the priming surface);
+   that is the top-down route of expectation into perception for now
+   ([4.5 spec §4.2](doc/specs/2026-10-08-expectation-at-every-level.md)).
+   Starts from attend-all with a small budget (the filter toy's
+   collapse). Its gates are the learning stages that force context as
+   content rather than managed state: mask training (the XOR pairs among
+   fillers; the math chain's question and its document), batch
+   differentiation, return after interruption, shared truth across
+   documents (situated vs absolute rows by credit), priming as a prior,
+   expectation from the right history. Per-stream state is not managed by
+   a registry: the LTM is shared with identifiers that separate rows, and
+   context is learned. After 6.2's closing; before item 6, so that item
+   0's run does not read every document as one.
+   *Batch-shape defects* from the [audit table](doc/plans/2026-10-08-stream-state.md#1-what-the-audit-found-verified-in-the-working-tree),
+   beyond the two the 6.2 repair pass takes (`index_stream`, the priming
+   surface): `_closing_images`, `_open_thought_rows`,
+   `_pending_thought_credit` and `_what_recall_*` are not resized when the
+   batch size changes; `_word_reference_*` is read by row without a shape
+   check and never reset; taxonomy `_priming` keeps overlapping rows on
+   resize; `_last_gist` pools all rows; `unfold_idea` uses row 0's priming
+   for every stream. Stage 2 (batch differentiation) cannot be measured
+   while they stand, so they are repaired here, by a shape mismatch that
+   raises, not by a registry. The legacy typed STM `_buffer` that only
+   grows is deleted in item 2.
 
-- **6.2 learning: MM_math_chain.** The mechanism is accepted under
-   [thinking spec §11](doc/specs/2026-10-07-thinking.md). The next learning
-   step follows the live §10: opaque number words, counting facts in both
-   forms and worked successor steps; the chooser learns the chain. Ten
-   unseeded trainings in each of the answer, expectation-only and zero-budget
-   conditions; standing thirty unchanged, thinking 57/57 and one green
-   sweep; stop for Claude's review. Completion of MM_query_reasoning is not
-   learned chaining. [Mechanism acceptance](doc/benchmarks/2026-10-07-item6-2-repair/acceptance.json).
-- **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
+- **6. Stored-idea generativity.** *Observation from 6.2's closing (thinking
+   spec §14.13):* under a live departure the keep rule committed a reading of
+   `three plus one is four.` with the bare `three` as left operand — a kept
+   derivation that drops a phrase; reconstruction should have charged it.
+   Forgetting's dropping of derivations depends
    on it. Item 1c's probe reports zero compound recovery
    ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
    small updates, so it mostly measures a split/stop policy that has not
@@ -183,19 +230,25 @@ item 5 ([limits](doc/FutureWork.md)).
    re-witnessing and fail-loud capacity. See its
    [receipt](doc/benchmarks/2026-10-07-operators-final-b/).
    The 10-03 amendment keeps `.when` in percepts and concepts; the absolute
-   model clock remains in the timestamp column for recency. Remaining here:
+   model clock is written to the `timestamp` column by 4a-0, which spec §7
+   and test 6 retire — this item decides its fate with the recency use
+   (Alec's 09-30 age ruling: the document index suffices). Remaining here:
    documents as situation codes in content; learned before/after; tense,
-   aspect, prepositions and surface transformations. Every text
-   configuration interleaves; tense and aspect are prepositions of the
-   verb phrase with none written, the catalogue's compound selecting among
-   the verb phrase's phases; the preposition is one operation with two
-   attachments; markers are leaves, minted on recurrence, and `surface`
-   is one operator with four suboperations, trained by reconstruction
-   under parsimony. Removes the old tense, aspect and morphology code and
-   its table of English forms. Exit: the ten mechanism tests of spec §8;
-   learning measurements after 6.5, recorded and not tuned. Replace the
-   legacy `get_stm_chain` recency across batch rows and test lookup by the
-   row's occurrence address (two truths §21). Open for Alec: spec §10.
+   aspect, prepositions and surface transformations. Interleaving is
+   delivered by 6.8's open read (spec §0; `serial`/`modeSchedule` are
+   rejected at load), so spec test 8 is met; tense and aspect are
+   prepositions of the verb phrase with none written, the catalogue's
+   compound selecting among the verb phrase's phases; the preposition is
+   one operation with two attachments; markers are leaves, minted on
+   recurrence, and `surface` is one operator with four suboperations,
+   trained by reconstruction under parsimony. Removes the old tense, aspect
+   and morphology code and its table of English forms. Dimensional
+   `lift`/`lower` is not here (FutureWork; Architecture's "remains with
+   5.5" is corrected in item 2). Exit: the remaining mechanism tests of
+   spec §8; learning measurements after 6.5, recorded and not tuned.
+   Replace the legacy `get_stm_chain` recency across batch rows and test
+   lookup by the row's occurrence address (two truths §21). Open for Alec:
+   spec §10.
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
    (needs `refs` and every S writing a row). Document-boundary pass from the
    high-water to the low-water mark deleting the lowest-value unprotected
@@ -217,11 +270,41 @@ item 5 ([limits](doc/FutureWork.md)).
    discarded. Open for Alec: forgetting
    of the concept inventory itself — order-0 definitions, alternatives and
    feature groups — is not in the spec; discovered rows are never recycled
-   (item 11), so their retirement needs a rule here or in FutureWork.
+   (item 11), so their retirement needs a rule here or in FutureWork; the
+   same rule is the merge half of the bank's collision rule
+   ([FutureWork](doc/FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled)).
+   *Also here (deferred from 6.5):* pruning of learned identity/change
+   columns by their relevance scales (ICA spec §10), in the exit criteria.
    *Age (Alec, 2026-09-30):* with no clock across documents (item 5.5), the
    age term "can probably just be an increasing document index: more
    important within a document will be its salience"
    ([5.5 spec §9](doc/specs/2026-09-30-occurrence-tense-aspect.md#9-what-it-touches)).
+- **4.5. Expectation across the architecture** (Alec, 2026-10-08: "needs to
+   go in sooner rather than later"; a spec of its own). **Spec (draft,
+   2026-10-08 rev 3; two questions open in §8):**
+   [expectation at every level](doc/specs/2026-10-08-expectation-at-every-level.md)
+   — Alec, 2026-10-08: a predictor per conceptual level used as a negation
+   that reduces signal to surprise (percepts are attended, not expected);
+   exploit per level, exploration at least partly free of expectation; one
+   departure, read at the end of the sentence, judged by `R + A`; a graded
+   set in 4.5 (the Viterbi-like principle: verified in a toy, graded 0.96 vs
+   root-only 0.04) and the age-appropriate corpus in item 3. The scheme confirmed on
+   2026-10-06 ([operators plan §10.3, §12.2, §13](doc/plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06);
+   [GradientFlow's target scheme](doc/GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)),
+   never built: the row-level prediction inverted through the committed
+   operations gives an expected operand at every round; the actual against
+   it is the layer's surprise; the maps take exact targets by inversion
+   (target propagation — no gradient through the choice, no
+   straight-through, no mixed forward); the word-level expectation follows
+   from the row-level predictor by inversion rather than by its own
+   predictor; expectation's sources go live (the 2026-09-20 detachment
+   existed against collapse, which an invertible path cannot do);
+   reconstruction retires to an audit where the path is exactly invertible
+   and stays a loss where it is not. The record until the spec exists is
+   [FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled).
+   Placed after 5 because the model has run without it so far; the spec
+   says what the content width (item 3) must be for the audit to read zero,
+   and whether that derivation moves here. Exit: the spec's gates.
 - **4. Run harness and resume test.** *Once pulled forward for the
    conference (Alec, 2026-09-27; no freeze since 2026-10-03, so it is built
    in 6.8-1 and evaluated here):* the word-level predictor as the NanoChat gate's
@@ -236,20 +319,27 @@ item 5 ([limits](doc/FutureWork.md)).
    fixed four XOR and 68 FineWeb probes, reporting CP and within/between
    distances without pass thresholds. Reuse captured readings and budget their
    collection cost; the three-seed experiment is archived in FutureWork.
-   Also log rows deleted per origin, value cut-off; luminosity of provisioned truths; the
-   per-shared-operator gradient cosine and norm ratio — reconstruction against
-   expectation, and against output where answers are supplied — with the
-   operators in persistent opposition named; the held-out two-truths §7
+   Also log rows deleted per origin, value cut-off; luminosity of provisioned truths;
+   the held-out two-truths §7
    test-12 probe and a fixed reconstruction sample; and from 11–11c: order-0
    inventory rows used against `nVectors`, provisional-pool occupancy and
    exhaustion warnings, raises per order with their run counts and stalled
    patience, refinement requests, lexical references left unknown per order.
+   (The per-shared-operator gradient cosine and "persistent opposition"
+   logging is withdrawn: each parameter has one objective owner since 6.9,
+   so there is no shared operator to measure — [GradientFlow](doc/GradientFlow.md);
+   the dissonance diagnostic of the operators plan §10.3 guards E against O
+   on the maps instead.)
    And a resume test proving
    a mid-epoch checkpoint restores cursor, stream count, `refs` / surprise
    columns and forgetting counters with the next batch byte-identical —
    including the concept sidecar (feature groups, located brackets, sparse
    context, refinement buffers), the radix part groups and pending groups,
-   the word-form index and the understanding's conceptual field. Exit:
+   the word-form index and the understanding's conceptual field, and the
+   state added since: the address index and witness counts (4a-0), the
+   identity atoms and mints (3a), 6.5's identity/change columns and
+   relevance scales, the comparison reader's copy of the answer path (2e)
+   and the pending relational rows (6.2). Exit:
    one command on a small config; the test in the suite.
 - **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
    measure sentence-list/address-table memory and loader time, confirm
@@ -269,8 +359,21 @@ item 5 ([limits](doc/FutureWork.md)).
    1,024 also sizes the shared `.when` ladder. Record retained-row memory, the
    actual subjective-clock range needed by the run and the ladder's resulting
    periods, so a long training history does not silently reuse temporal phases.
-   Exit: the load and capacity measurement recorded, and
+   *The content width* (operators plan §10.3, §11.6; never derived): exact
+   clean-up of `k` bound items against `N` bank entries needs
+   `D ≈ c·k·log N`; derive it for the run's vocabulary and run the R≡0
+   identity audit (round 3a's) at that width on the run's config. Its
+   reading decides item 0's condition below
+   ([FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
+   Exit: the load and capacity measurement recorded, the width and the
+   audit's reading, and
    `maxDocs`/`shardDir`/stream count/PS-CS-WS `nVectors`/`ltmCapacity` in the run config.
+   *Added (Alec, 2026-10-08, from item 4.5):* the age-appropriate corpus
+   ([gradual training](doc/FutureWork.md#gradual-training-an-age-ordered-corpus-read-in-stages-proposed-2026-09-29))
+   is assembled here so item 0 reads it in order; the
+   [Viterbi toy](doc/benchmarks/2026-10-08-viterbi-departure-toy/README.md)
+   shows the order, not only the content, is what lets one departure escape
+   multi-step minima ([4.5 spec §5.3–§5.4](doc/specs/2026-10-08-expectation-at-every-level.md)).
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or
@@ -281,24 +384,60 @@ item 5 ([limits](doc/FutureWork.md)).
    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
    (`taxonomy_parent_map` is now initialised).
    From the 11–11c refactor, verify legacy before deleting (no-legacy rule;
-   reasoning methods need Alec's review): `overlap_where_tiling` and
-   `where_tiling_for_pass`, `intent_boosts`, WholeSpace `part_chain`,
+   reasoning methods need Alec's review): `intent_boosts`, WholeSpace `part_chain`,
    `_automatic_synthesize_higher_order` against the pool's discovery path,
    and the META `insert_meta` / `taxonomy_parent` bindings once item 7's
-   concept-level taxonomy owns them. Move the 2.9 MB
+   concept-level taxonomy owns them (`overlap_where_tiling` and
+   `where_tiling_for_pass` are already gone). Move the 2.9 MB
    `evaluation-source.tar.gz` out of the repository (the receipt keeps its
    hash) unless Alec wants it in-tree.
+   *Added 2026-10-08 (the coverage audit):* delete the legacy typed STM
+   `_buffer` that only grows, and the detached role view carried beside the
+   native occurrence anchor (ICA spec §10); rename the native context-read
+   `exploration_trial` flag; remove the one-release rename aliases that
+   raise with the new name (`Queries.py` `_operation_form`'s retired map,
+   `Language.py` `_check_operator_availability`) after the one-release
+   compatibility period following 6.2's mechanism landing. Documents that still describe retired or superseded things,
+   to correct in one pass: [Params](doc/Params.md) lists `thinkingBudget`
+   as live and `selectedThoughtPolicyWeight` as a REINFORCE term (both
+   rejected at load; `attentionBudget` is the one budget) and
+   [QueryWork](doc/QueryWork.md) still meters `selectedThoughtBudget`;
+   `complete.grammar`, `ladder.grammar` and the tied-reconstruction fixture
+   still comment `chunk`/`lookup`/`quantize`/`arma`/`what`;
+   [GradientFlow](doc/GradientFlow.md) still heads rounds 2d, 2e, 3a and
+   the final update "review/uncommitted candidate … no commit or push"
+   (all landed at `3de37eef5`, `cce3a4f7b`, `f4a68404e`), gives the serial
+   leaf as "meaning poles exchanged for negative activation" (superseded by
+   the two lanes, plan §42) and the round-3 scheme as the
+   "narrowing-weighted ceiling" (superseded by the adjacent-word wholes,
+   plan §40); [Architecture](doc/Architecture.md) still offers "each word's
+   two symbols … either meaning-pole orientation" at pair search, "has-a …
+   narrows (round 3)" in the scheme, and "dimensional lift remains with
+   5.5" (FutureWork has it); the [catalogue](doc/specs/2026-09-29-operator-catalogue.md)
+   §12 headings still say "(uncommitted)" and its table lists `bind` as
+   open (decided, thought-loop plan §3–§4).
 - **1. Compiler work.** *Added 2026-10-04:* the open read of 6.8-1 made the
    whole forward 2.6× slower (.141 s against .055 s on the XOR fixture;
    [profile](doc/benchmarks/2026-10-03-operators-attention/attention-profile-review/measurement.json));
-   Alec: "the slowdown will have to be addressed." The decoder's two-word
+   Alec: "the slowdown will have to be addressed." *2026-10-09:* the
+   math-chain campaign ran at 1.5–2.5 s per sentence under two workers
+   (episodes of 32 thought steps included), a week for thirty trainings;
+   Alec deferred the thinking measurement "until we further optimize
+   things" — this item's measurement now includes a thought episode's
+   step and the per-sentence time at the math corpus. The decoder's two-word
    walk (6.8 plan §10.2) may pay part of it back. The throughput levers for the serial loop — batch
-   across sentences, the known-word lookup concession under the serial
-   flag, subsampled reconstruction, closing the host islands and moving
+   across sentences, the known-word lookup concession, subsampled
+   reconstruction, closing the host islands and moving
    the sparse stores to device CSR, single passes — are listed in
    [FutureWork](doc/FutureWork.md#throughput-levers-for-the-serial-loop-item-1-candidates)
-   and belong here (Alec, 2026-09-25). Forward chooser split/lift once per slot; backward's
+   and belong here (Alec, 2026-09-25); the `serial` flag and the
+   `subsymbolicOrder`/`symbolicOrder` knobs those levers named are rejected
+   at load since 6.8, so the levers apply to the one interleaved loop.
+   Forward chooser split/lift once per slot; backward's
    launch-bound kernel count per brick; B24 brick +25% against pre-ladder.
+   The comparison reader of round 2e is a `functional_call` copy of the
+   whole answer path (plan §23, observation 1); share its structure when
+   the answer path grows.
    Exit: sentences/s and peak memory at the run's batch and brick size against
    the July baseline, re-taken on `99207a3` since the tower fold ladders are
    gone. New eager hot spots from 11–11c to measure and vectorise: the
@@ -313,16 +452,33 @@ item 5 ([limits](doc/FutureWork.md)).
 - **0. The full training session**: the long FineWeb run, only with items 11–2
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
-   expectation discrepancy, a reconstruction regression against the `99207a3`
-   baseline, a forgetting pass deleting protected rows, a provisional-pool
-   exhaustion warning, or order-0 inventory approaching `nVectors`.
+   expectation discrepancy, a reconstruction regression against the
+   re-taken baseline, a forgetting pass deleting protected rows, a
+   provisional-pool exhaustion warning, or order-0 inventory approaching
+   `nVectors`. *Baselines:* the `99207a3` and reviewed-9b reconstruction
+   figures predate round 3a, after which identified-word reconstruction is
+   an exact zero audit; re-baseline reconstruction on the accepted
+   `f4a68404e` source before the run (items 8 and 5 cite the old figures
+   until then). *Condition (operators plan §13, confirmed by Alec):* the
+   run trains by expectation and output along one path, with expectation's
+   sources live and reconstruction retired to an audit, only where item 3's
+   audit reads zero at the run's width; where it does not, the run keeps
+   reconstruction as a loss for that part. Expectation across the
+   architecture itself is item 4.5. At the trained checkpoint, resume the
+   deferred **MM_math_chain learning measurement** under all four corrections:
+   one-step problems first; worked steps scored as intermediate answers;
+   an episode that binds a found candidate; and budget in steps, with each
+   query's record charge bounded separately. The stopped campaign supplies
+   no learning claim; preserve it and declare the corrected measurement
+   before running ([closing receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md),
+   [protocol corrections](doc/benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json)).
 
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
 
-- **Item 6.2 mechanism** (Alec accepted October 7; Claude's review §11): query/ask renames, open references, paired faces, serial chaining, inference provenance, shared chooser credit and absence inference; constituent ownership and stale-contract repairs. Learned chaining remains for MM_math_chain ([acceptance](doc/benchmarks/2026-10-07-item6-2-repair/acceptance.json)).
+- **Item 6.2 closed** (initial mechanism `e43638a`; Alec accepted the closing October 9, thinking §14.13): mechanism complete, decomposition demonstrated; learning deferred to item 0 under the four protocol corrections—one-step problems first, worked steps as intermediate answers, binding a found candidate, and budget in steps with each query’s record charge bounded separately ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md)).
 
 - **Item 6.5 mechanism** (Alec accepted October 7; one landing from `f4a68404e`): definedness, native identity/change columns and global bind/mint; learning gates remain pending the million-sentence checkpoint ([acceptance](doc/benchmarks/2026-10-07-item6-5/acceptance.json)).
 - `f4a68404e` **Operators update, final-b** (Alec accepted October 7): addressed rows, bipolar meanings, centroids, priming, catalogue and two-lane repair; all standing counts 10/10, R/E zero, green sweep ([acceptance](doc/benchmarks/2026-10-07-operators-final-b/acceptance.json)).

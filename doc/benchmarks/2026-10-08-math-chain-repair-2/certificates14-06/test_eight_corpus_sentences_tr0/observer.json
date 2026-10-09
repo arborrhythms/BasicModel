@@ -1,0 +1,97 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 3,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 6,
+    "sentences": 8
+  },
+  "operations": {
+    "query": 1,
+    "conclude": 1,
+    "ask": 4,
+    "part": 4,
+    "implies": 40
+  },
+  "credit": {
+    "reconstruction_and_answer": 6,
+    "nonzero_graph": 1,
+    "ties": 5,
+    "nonzero_chooser_gradients": 1
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.17,
+        0.32
+      ],
+      "graph": true,
+      "surrogate": 0.28677359223365784,
+      "raw_chooser_gradient_l2": 0.22049516911145356
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.32,
+        0.32
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.22049516911145356,
+  "raw_chooser_gradient_l2_max": 0.22049516911145356
+}

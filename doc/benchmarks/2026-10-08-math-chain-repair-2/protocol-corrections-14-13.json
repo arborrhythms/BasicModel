@@ -1,0 +1,28 @@
+{
+  "status": "deferred_to_item_0",
+  "authority": "Alec; thinking spec sections 14.10\u201314.13, 2026-10-09",
+  "original_protocol": "protocol.json",
+  "original_protocol_sha256": "bb86e5e753bbad39bd3c4dd3514ad9a55f9e1a7e1ff42b6960596ed626fcf42f",
+  "supersedes_for_future_measurement": "protocol-corrections-deferred.json (preserved as the three-correction stop record)",
+  "corrections": [
+    {
+      "area": "curriculum",
+      "required": "One-step problems first: x is three. / what is x ?; then y is x; then plus zero, plus one and longer chains."
+    },
+    {
+      "area": "answer_credit",
+      "required": "Score worked steps as intermediate answers, alongside the final binding, under R + A."
+    },
+    {
+      "area": "episode",
+      "required": "The episode can bind a found candidate, or conclude with the best match bound. The authorized closing repair demonstrates this mechanism with forced choices; learning it remains deferred."
+    },
+    {
+      "area": "work_budget",
+      "required": "Count the attention budget in steps; bound each query\u2019s record charge separately, so one query cannot consume the entire episode budget by scanning a populated region."
+    }
+  ],
+  "new_measurement_declared": false,
+  "learning_claim": false,
+  "changes_in_this_landing": "Documentation only; no new curriculum, intermediate-answer objective or budget implementation."
+}

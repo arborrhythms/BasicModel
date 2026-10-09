@@ -8,12 +8,15 @@ The [held 6.2 receipt](benchmarks/2026-10-07-item6-2/README.md) remains intact. 
 there is no separate planner stack. The owner's historical attribute name is
 not a callable thought operation: that operation is now `ask`.
 
-A closing with an open referent, relation or evidence pair opens one episode.
-Surface interrogatives with all references bound do not. Each nested `ask`
-shares the same `attentionBudget`; no callback replenishes work. `conclude`
-is illegal while a reference is open and work remains. Cutoff drains at most
-the existing depth of returns and one finish. Unfilled references remain on a
-durable question row, available to later text in the same document.
+A closing with a free referent or relation opens one episode. An interrogative
+region with no evidence also opens one; `(0,0)` is ignorance, not a slot.
+Each nested `ask` shares the same `attentionBudget`; no callback replenishes
+work. `conclude` requires bound variables and evidence while work remains,
+unless the configured number of complete queries has exhausted the search.
+An exhausted declarative provisionally mints its forward referent; an
+exhausted question remains open. Cutoff drains at most the existing depth of
+returns and one finish. Stored open columns have stable row-and-role addresses
+that later binds can co-refer with and copulas can fill in place.
 
 Every checked result is a serial slot carrying content, both evidence poles,
 witnessing rows and the operation that produced it. Later candidates can bind
@@ -27,15 +30,18 @@ provenance. The closing stores unresolved questions. Candidate formation does
 not append temporary descriptions to LTM.
 
 The existing compose scorer also scores thought requests. Greedy and one
-uniform departure are credited by `K · R · p(a_dep) · ΔC`: supplied answer,
-next-sentence expectation error and work. Exact ties contribute nothing.
+uniform departure are credited by `K · R · p(a_dep) · ΔC`: reconstruction
+and supplied answer, plus the thought walk's own metered work. Work does not
+enter the enclosing sentence comparison. Expectation trains its predictors
+through their owner-step registry. Exact ties contribute nothing.
 The REINFORCE/EMA path and `selectedThoughtPolicyWeight` are retired. There is
 one configured work name, `attentionBudget`; older budget names fail at load.
 
 Checked results detach reader tensors. Policy probabilities retain only the
 chooser graph until the owning cost arrives; no target enters a request.
-Checkpoint history preserves full meanings, pairs and provenance, and replay
-never replenishes work. The existing v3 result tags continue to carry nested
+Exploration forks the detached greedy episode at a reservoir-sampled departure
+and completes its suffix. Checkpoint history preserves full meanings, pairs
+and provenance; restoring it never replenishes work. The existing v3 result tags continue to carry nested
 meanings and typed results; old v1/v2 history remains readable.
 
 At a fully bound declarative, an uncancelled expectation image can yield

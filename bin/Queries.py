@@ -519,6 +519,24 @@ def _basis(space):
     return values
 
 
+def _payload_row(space, row):
+    """Read one existing payload without refreshing a reserved inventory."""
+    book = space.similarity_codebook
+    count = book.active_row_count() if callable(getattr(book, 'active_row_count', None)) else None
+    if row < 0 or (count is not None and row >= count):
+        raise ValueError('query concept payload is not active')
+    derived = getattr(book, 'mereology', None)
+    if derived is not None:
+        return derived.derive(row).detach().clone()
+    lookup = getattr(book, 'lookup_rows', None)
+    if callable(lookup):
+        return lookup(row).detach().clone()
+    values = _basis(space)
+    if row >= len(values):
+        raise ValueError('query concept payload is not active')
+    return values[row].detach().clone()
+
+
 def _detach_boundary_value(value):
     """Copy tensor-bearing reader output across the checked hard boundary."""
     if torch.is_tensor(value):
@@ -710,10 +728,7 @@ class ThoughtConceptualCapability:
             work.require('payload')
         space = object.__getattribute__(self, '_ThoughtConceptualCapability__space')
         row = _existing_row(space, reference)
-        basis = _basis(space)
-        if not 0 <= row < len(basis):
-            raise ValueError('thought conceptual payload is not active')
-        value = basis[row].detach().clone()
+        value = _payload_row(space, row)
         if value.ndim != 1 or int(value.numel()) != self.width:
             raise ValueError('thought conceptual payload differs from the full width')
         if not bool(torch.isfinite(value).all()):
@@ -791,7 +806,7 @@ class ThoughtTaxonomyCapability:
                 unavailable.append(target)
                 incomplete.append('unavailable_concept_payload')
                 continue
-            atom = _basis(space)[row].detach().clone()
+            atom = _payload_row(space, row)
             values.append({
                 'reference': target,
                 'value': atom,
@@ -831,7 +846,7 @@ class ThoughtLTMCapability:
         read = getattr(memory, 'retrieved_frames', None)
         return read(b=object.__getattribute__(self, '_ThoughtLTMCapability__row'), limit=limit) if callable(read) else ()
 
-    def _cued(self, description, *, max_records, work, references=()):
+    def _cued(self, description, *, max_records, work, references=(), role_mask=None):
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         from Layers import TernaryTruthStore
         if not isinstance(store, TernaryTruthStore):
@@ -842,7 +857,7 @@ class ThoughtLTMCapability:
                 ref for ref in description.role_refs if ref and ref[0] == 'ltm'),
             retrieved=tuple(frame['occurrence'] for frame in self.held_frames()),
             stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'),
-            max_candidates=max_records, work=work)
+            max_candidates=max_records, work=work, role_mask=role_mask)
 
     def existence_evidence(self, description, *, max_records, work):
         result = self._cued(description, max_records=max_records, work=work)
@@ -883,7 +898,7 @@ class ThoughtLTMCapability:
         if meaning is None:
             raise ValueError('ended clause metadata is unavailable')
         positive, negative = float(store.c_plus[index]), float(store.c_minus[index])
-        if store.KINDS[int(store.record_kind[index])] in ('question', 'estimate'):
+        if store.KINDS[int(store.record_kind[index])] == 'estimate':
             positive = negative = 0.
         return dict(value=meaning, support_true=positive, support_false=negative, meaning=meaning,
                     occurrence=reference, witnesses=(reference,), trust=float(store.trust[index]),
@@ -891,7 +906,7 @@ class ThoughtLTMCapability:
 
     def best_match(self, pattern, *, max_records, work, references=()):
         """One best matching row, with its poles and its own occurrence witness."""
-        from ThoughtReferences import bindings
+        from ThoughtReferences import bindings, open_slots
         data = bindings(pattern)
         relation = data.get('_query_relation')
         if relation == 'truth':
@@ -899,13 +914,24 @@ class ThoughtLTMCapability:
         if relation is not None:
             result = self.relation_evidence(relation, pattern.role_refs[0],
                 pattern.role_refs[2], max_records=max_records, work=work, excluded=data.get('_query_exclude', ()))
+            if data.get('_query_components'):
+                result = self._with_components(result, max_records=max_records, work=work)
             return result
+        mask = pattern.role_mask.clone()
+        for _kind, role in open_slots(pattern):
+            mask[role] = False
         clean = replace(pattern, bindings={key: value for key, value in data.items()
                                            if not key.startswith('_')})
-        found = self._cued(clean, max_records=max_records, work=work, references=references)
+        found = self._cued(clean, max_records=max_records, work=work, references=references,
+                           role_mask=mask)
         tau = object.__getattribute__(self, '_ThoughtLTMCapability__tau')
+        excluded = set(data.get('_query_exclude', ()))
+        if data.get('_query_occurrence') is not None:
+            excluded.add(data['_query_occurrence'])
         candidates = tuple(row for row in found['value']
-                           if row['match'] >= tau and row['kind'] not in ('question', 'estimate'))
+                           if row['match'] >= tau and row['kind'] != 'estimate'
+                           and (row['kind'] != 'question' or tuple(row['evidence']) != (0., 0.))
+                           and row['occurrence'] not in excluded)
         best = max(candidates, key=lambda row: row['match']) if candidates else None
         frames = () if best is None else (best,)
         positive, negative = (0., 0.) if best is None else best['evidence']
@@ -915,6 +941,41 @@ class ThoughtLTMCapability:
                     support_true=positive, support_false=negative,
                     witnesses=() if best is None else (best['occurrence'],),
                     records_scanned=found['records_scanned'], incomplete=found['incomplete'])
+
+    def _with_components(self, result, *, max_records, work):
+        """Read an ended row's native operand addresses on the same meter.
+
+        Absolute ideas retain only their permitted two-address cache. A
+        missing cached operand cannot be reconstructed from a former AST.
+        """
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        components, pending = {}, [frame['occurrence'] for frame in result.get('frames', ())]
+        scanned = result.get('records_scanned', 0)
+        incomplete = tuple(result.get('incomplete', ()))
+        while pending:
+            reference = pending.pop()
+            if reference in components or reference not in store._index_occurrences:
+                continue
+            if scanned >= max_records or not work.consume('record'):
+                incomplete = (*incomplete, 'component_read_limit')
+                break
+            scanned += 1
+            index = store._index_occurrences[reference]
+            kind = int(store.rel_type[index])
+            raw = tuple(int(value) for value in store.refs[index].tolist())
+            operands = raw[:2] if kind == store.REL_NONE else raw
+            if kind == store.REL_NONE and raw[0] not in (-1, 0) and raw[1] in (-1, 0):
+                operands = raw[:1]
+            operands = (() if any(value in (-1, 0) for value in operands) else
+                        tuple(store.semantic_reference(value) for value in operands))
+            meaning = store.meaning_of(index)
+            from ThoughtReferences import bindings
+            constructor = bindings(meaning).get('_point_constructor')
+            components[reference] = dict(kind=kind, operands=operands, meaning=meaning,
+                                         constructor=constructor)
+            pending.extend(value for value in operands if value and value[0] == 'ltm')
+        return dict(result, components=components, records_scanned=scanned,
+                    incomplete=tuple(dict.fromkeys(incomplete)))
 
     def truth_evidence(self, description, *, max_records, work):
         result = self.best_match(description, max_records=max_records, work=work)
@@ -968,10 +1029,15 @@ class ThoughtLTMCapability:
                 incomplete.append('work_budget' if work.remaining == 0 else 'capture_limit')
                 break
             scanned += 1
-            if int(store.rel_type[index]) != kinds[relation]:
+            tag = int(store.rel_type[index])
+            if tag != kinds[relation] and not (relation == 'equal' and tag == store.REL_PARTOF):
                 continue
             row = store.row(index)
             meaning = row['meaning']
+            from ThoughtReferences import bindings
+            equality_row = meaning is not None and bindings(meaning).get('_equality', False)
+            if tag != kinds[relation] and not equality_row:
+                continue
             if row['occurrence'] in excluded:
                 continue
             if meaning is None or row['kind'] in ('question', 'estimate', 'unverified'):
@@ -1117,10 +1183,7 @@ def _vector(context, value):
         return vector
     space = _concept_space(context)
     row = _existing_row(space, value)
-    values = _basis(space)
-    if not 0 <= row < len(values):
-        raise ValueError('query concept payload is not active')
-    vector = values[row].clone()
+    vector = _payload_row(space, row)
     if not bool(torch.isfinite(vector).all()):
         raise FloatingPointError('query native concept payload must be finite')
     return vector
@@ -1858,19 +1921,23 @@ class GrammaticalThoughtRegistry:
         if work is not None:
             work.require('payload')
         identifier = concept_reference(reference)[1]
+        book = self.space.similarity_codebook
+        # A grammatical address needs one row. Reading the full derived
+        # inventory for each menu entry made an episode scale with reserve.
+        shape = getattr(book, 'W', None)
+        if shape is None:
+            shape = book.getW()
         for identity in self.identities:
             descriptor = self.descriptors.get(identity[1])
             if (descriptor is not None and self._predicate_name(identity) is not None
                     and self._identifier(identity) == identifier):
-                return predicate_point(self._predicate_name(identity), _basis(self.space))
+                # Identity codes need width/device, not a derived inventory.
+                return predicate_point(self._predicate_name(identity), shape)
         relation = predicate_relation(identifier)
         if relation in ('part', 'implies'):
-            return predicate_point(relation, _basis(self.space))
+            return predicate_point(relation, shape)
         row = _existing_row(self.space, reference)
-        basis = _basis(self.space)
-        if not 0 <= row < len(basis):
-            raise ValueError('grammatical thought VP or operand payload is unavailable')
-        value = basis[row].clone()
+        value = _payload_row(self.space, row)
         if not bool(torch.isfinite(value).all()):
             raise FloatingPointError('grammatical thought native payload must be finite')
         return value
@@ -1999,7 +2066,7 @@ class GrammaticalThoughtRegistry:
         if mode == 'interrogative':
             from ThoughtReferences import question
             slots = tuple(('referent', self._slot_for_operand(role)) for role in canonical_open_roles)
-            result = question(result, slots or (('evidence', -1),))
+            result = question(result, slots)
         return result
 
     @staticmethod
@@ -2113,7 +2180,7 @@ class GrammaticalThoughtRegistry:
         requests = []
         try:
             signature = self.signature_for(candidate)
-        except ValueError:
+        except (TypeError, ValueError):
             signature = None
         if signature is not None:
             requests.append(ThoughtOperationCandidate(
@@ -2197,7 +2264,35 @@ class GrammaticalThoughtRegistry:
                     {operation.operand_roles[0]: (value, reference)}, source=source)
                 requests.append(ThoughtOperationCandidate(operation, request, ()))
                 break
-        return tuple(requests)
+        legal = []
+        for request in requests:
+            try:
+                if request.semantic_id == 'isPart':
+                    # LTM occurrence provenance is not a taxonomy concept.
+                    # Enforce the executor's operand contract before scoring.
+                    if request.open_roles or not all(bool(request.request.role_mask[slot])
+                                                      for slot in (0, 2)):
+                        continue
+                    for slot in (0, 2):
+                        reference = concept_reference(request.request.role_refs[slot])
+                        _existing_row(self.space, reference)
+                signature = self.signature_for(request.request, verify_reference=False)
+                for role, kind in zip(signature.occupied_roles, signature.argument_kinds):
+                    if kind != 'description':
+                        continue
+                    reference = request.request.role_refs[self._slot_for_operand(role)]
+                    if reference and reference[0] == 'constituent':
+                        if not 0 <= reference[1] < len(request.request.constituents):
+                            raise ValueError('thought description constituent is unavailable')
+                    elif not self._is_description_reference(reference):
+                        raise TypeError('thought description requires an occurrence')
+            except (TypeError, ValueError):
+                # A closed LTM reference is not a native taxonomy endpoint
+                # for an open traversal. Preserve the executor's type and
+                # polarity contract before the request enters the softmax.
+                continue
+            legal.append(request)
+        return tuple(legal)
 
     def signature_for(self, meaning, *, work=None, verify_reference=True):
         """Recover one checked operation from a canonical VP and role mask."""

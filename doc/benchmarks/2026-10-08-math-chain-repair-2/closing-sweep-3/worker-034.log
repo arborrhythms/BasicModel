@@ -1,0 +1,25 @@
+..................ssssssss.............................................. [ 97%]
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_matches_non_serial
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:199: UserWarning: Space ownership migration: removed 281 duplicate alias checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:199: UserWarning: Space ownership migration: rewrote 30 legacy Space.subspace Basis/Encoding checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:199: UserWarning: Codebook ownership migration: removed 5 duplicate VQ Parameter checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:5082: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 15 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+66 passed, 8 skipped, 5 warnings in 6.85s

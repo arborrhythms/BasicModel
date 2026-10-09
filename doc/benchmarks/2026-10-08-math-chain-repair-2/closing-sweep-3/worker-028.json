@@ -1,0 +1,1303 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+    "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-True]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]",
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+    "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_disjunction",
+    "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_conjunction",
+    "test/test_primed_reverse_combined.py::test_none_priming_matches_identity_priming",
+    "test/test_primed_reverse_combined.py::test_priming_lifts_argmax_choice_union_x1",
+    "test/test_primed_reverse_combined.py::test_priming_lifts_argmin_choice_intersection_x1",
+    "test/test_primed_reverse_combined.py::test_hard_mask_blocks_priming_in_disjunction",
+    "test/test_primed_reverse_combined.py::test_hard_mask_blocks_priming_in_intersection",
+    "test/test_primed_reverse_combined.py::test_priming_does_not_apply_to_sentinels",
+    "test/test_primed_reverse_combined.py::test_empty_priming_tensor_treated_as_identity",
+    "test/test_primed_reverse_combined.py::test_short_priming_tensor_pads_to_identity",
+    "test/test_primed_reverse_hard_mask.py::test_attach_allocates_priming_buffer",
+    "test/test_primed_reverse_hard_mask.py::test_attach_binds_view_for_propagation",
+    "test/test_primed_reverse_hard_mask.py::test_reattach_preserves_primed_values",
+    "test/test_primed_reverse_hard_mask.py::test_attach_without_view_is_noop_on_priming",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_returns_empty_without_knowledge",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_intersection_rows_for_binary_rule",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_present_when_buffer_allocated",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_reflects_primed_state",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+    "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte",
+    "test/test_primed_reverse_integration.py::test_unprimed_disjunction_picks_larger_norm",
+    "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
+    "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
+    "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+    "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+    "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref",
+    "test/test_priming_energy.py::test_edges_exposed_undirected",
+    "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+    "test/test_priming_energy.py::test_successive_primes_propagate_further",
+    "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+    "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+    "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+    "test/test_primitive_properties.py::test_complement_requires_an_observation",
+    "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+    "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+    "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+    "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+    "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+    "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+    "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+    "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+    "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+    "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions",
+    "test/test_prior_stm_symbol_peer.py::test_full_eight_slot_prior_slab_is_one_indexed_ss_source",
+    "test/test_prior_stm_symbol_peer.py::test_staged_sentence_bank_matches_prior_peer_without_an_inner_lookup",
+    "test/test_prior_stm_symbol_peer.py::test_ss_is_prior_tick_and_never_sees_a_later_push",
+    "test/test_prior_stm_symbol_peer.py::test_unknown_or_inactive_slots_zero_both_what_and_band",
+    "test/test_prior_stm_symbol_peer.py::test_prior_peer_requires_canonical_stm_location_geometry",
+    "test/test_prior_stm_symbol_peer.py::test_fixed_symbolic_loop_preserves_reference_and_raises_order_each_pass",
+    "test/test_prior_stm_symbol_peer.py::test_word_push_then_object_reference_replacement_is_cs_owned_and_masked",
+    "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss",
+    "test/test_property_configuration.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_property_configuration.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_property_configuration.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
+    "test/test_property_read.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "test/test_property_read.py::test_property_read_does_not_save_event_property_primitive_product",
+    "test/test_property_read.py::test_property_read_and_gradient_compile_as_one_graph",
+    "test/test_property_read.py::test_selected_property_rows_are_gathered_before_byte_read",
+    "test/test_property_tiling.py::test_char_class_letter",
+    "test/test_property_tiling.py::test_char_class_digit",
+    "test/test_property_tiling.py::test_char_class_whitespace",
+    "test/test_property_tiling.py::test_char_class_punct",
+    "test/test_property_tiling.py::test_char_class_or_union",
+    "test/test_property_tiling.py::test_complement_is_the_other_whole",
+    "test/test_property_tiling.py::test_layer_matches_function",
+    "test/test_property_tiling.py::test_batched",
+    "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+    "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+    "test/test_property_tiling.py::test_property_spans_letter_runs",
+    "test/test_property_tiling.py::test_property_spans_digit_runs",
+    "test/test_property_tiling.py::test_property_spans_or_union_runs",
+    "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+    "test/test_property_tiling.py::test_property_spans_none_passthrough",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_forward_signature_is_dual_towers",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_reverse_signature_is_single_arg",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardReturnsValidSubspace::test_forward_returns_valid_subspace",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_LP_permits_B_forbids_N",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_classical_penalizes_N_and_B",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_fde_permits_all_corners",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_kleene_permits_N_forbids_B",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_odd_dim_returns_zero",
+    "test/test_quaternary_corners.py::TestConfigScoping::test_default_values",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_both_poles_lit_on_B_corner",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_covers_both_positive_slots",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_dominates_each_truth",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_empty_truthset_is_zero",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_is_elementwise_max",
+    "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+    "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
+    "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+    "test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+    "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles"
+  ],
+  "completed": [
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+    "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+    "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-True]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]",
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+    "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_disjunction",
+    "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_conjunction",
+    "test/test_primed_reverse_combined.py::test_none_priming_matches_identity_priming",
+    "test/test_primed_reverse_combined.py::test_priming_lifts_argmax_choice_union_x1",
+    "test/test_primed_reverse_combined.py::test_priming_lifts_argmin_choice_intersection_x1",
+    "test/test_primed_reverse_combined.py::test_hard_mask_blocks_priming_in_disjunction",
+    "test/test_primed_reverse_combined.py::test_hard_mask_blocks_priming_in_intersection",
+    "test/test_primed_reverse_combined.py::test_priming_does_not_apply_to_sentinels",
+    "test/test_primed_reverse_combined.py::test_empty_priming_tensor_treated_as_identity",
+    "test/test_primed_reverse_combined.py::test_short_priming_tensor_pads_to_identity",
+    "test/test_primed_reverse_hard_mask.py::test_attach_allocates_priming_buffer",
+    "test/test_primed_reverse_hard_mask.py::test_attach_binds_view_for_propagation",
+    "test/test_primed_reverse_hard_mask.py::test_reattach_preserves_primed_values",
+    "test/test_primed_reverse_hard_mask.py::test_attach_without_view_is_noop_on_priming",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_returns_empty_without_knowledge",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_intersection_rows_for_binary_rule",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_present_when_buffer_allocated",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_reflects_primed_state",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+    "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte",
+    "test/test_primed_reverse_integration.py::test_unprimed_disjunction_picks_larger_norm",
+    "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
+    "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
+    "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+    "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+    "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref",
+    "test/test_priming_energy.py::test_edges_exposed_undirected",
+    "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+    "test/test_priming_energy.py::test_successive_primes_propagate_further",
+    "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+    "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+    "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+    "test/test_primitive_properties.py::test_complement_requires_an_observation",
+    "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+    "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+    "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+    "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+    "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+    "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+    "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+    "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+    "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+    "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions",
+    "test/test_prior_stm_symbol_peer.py::test_full_eight_slot_prior_slab_is_one_indexed_ss_source",
+    "test/test_prior_stm_symbol_peer.py::test_staged_sentence_bank_matches_prior_peer_without_an_inner_lookup",
+    "test/test_prior_stm_symbol_peer.py::test_ss_is_prior_tick_and_never_sees_a_later_push",
+    "test/test_prior_stm_symbol_peer.py::test_unknown_or_inactive_slots_zero_both_what_and_band",
+    "test/test_prior_stm_symbol_peer.py::test_prior_peer_requires_canonical_stm_location_geometry",
+    "test/test_prior_stm_symbol_peer.py::test_fixed_symbolic_loop_preserves_reference_and_raises_order_each_pass",
+    "test/test_prior_stm_symbol_peer.py::test_word_push_then_object_reference_replacement_is_cs_owned_and_masked",
+    "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss",
+    "test/test_property_configuration.py::test_configuration_without_property_element_binds_at_first_sentence",
+    "test/test_property_configuration.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+    "test/test_property_configuration.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
+    "test/test_property_read.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+    "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+    "test/test_property_read.py::test_property_read_does_not_save_event_property_primitive_product",
+    "test/test_property_read.py::test_property_read_and_gradient_compile_as_one_graph",
+    "test/test_property_read.py::test_selected_property_rows_are_gathered_before_byte_read",
+    "test/test_property_tiling.py::test_char_class_letter",
+    "test/test_property_tiling.py::test_char_class_digit",
+    "test/test_property_tiling.py::test_char_class_whitespace",
+    "test/test_property_tiling.py::test_char_class_punct",
+    "test/test_property_tiling.py::test_char_class_or_union",
+    "test/test_property_tiling.py::test_complement_is_the_other_whole",
+    "test/test_property_tiling.py::test_layer_matches_function",
+    "test/test_property_tiling.py::test_batched",
+    "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+    "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+    "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+    "test/test_property_tiling.py::test_property_spans_letter_runs",
+    "test/test_property_tiling.py::test_property_spans_digit_runs",
+    "test/test_property_tiling.py::test_property_spans_or_union_runs",
+    "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+    "test/test_property_tiling.py::test_property_spans_none_passthrough",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_forward_signature_is_dual_towers",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_reverse_signature_is_single_arg",
+    "test/test_ps_single_arg_refactor.py::TestPSForwardReturnsValidSubspace::test_forward_returns_valid_subspace",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_LP_permits_B_forbids_N",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_classical_penalizes_N_and_B",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_fde_permits_all_corners",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_kleene_permits_N_forbids_B",
+    "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_odd_dim_returns_zero",
+    "test/test_quaternary_corners.py::TestConfigScoping::test_default_values",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_both_poles_lit_on_B_corner",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_covers_both_positive_slots",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_dominates_each_truth",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_empty_truthset_is_zero",
+    "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_is_elementwise_max",
+    "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+    "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
+    "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+    "test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+    "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles"
+  ],
+  "slow_selected": [
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[normal]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04821100004483014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038117541000247,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[absent]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0376843330450356,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[normal]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04128325008787215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04305670806206763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04273075005039573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.3700782499508932,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.2181350000901148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6157763340743259,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8688267089892179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6897145829861984,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.879650125047192,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.751375750056468,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8328051660209894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7780004580272362,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.766406667069532,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010595901403576136,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_prepared_answer_boundary.py', 204, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013202079571783543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_conjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006917079444974661,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_none_priming_matches_identity_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028833397664129734,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_priming_lifts_argmax_choice_union_x1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032237498089671135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_priming_lifts_argmin_choice_intersection_x1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042495899833738804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_hard_mask_blocks_priming_in_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002536670072004199,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_hard_mask_blocks_priming_in_intersection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002737920731306076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_priming_does_not_apply_to_sentinels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027137494180351496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_empty_priming_tensor_treated_as_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026358396280556917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_combined.py::test_short_priming_tensor_pads_to_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002755420282483101,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_attach_allocates_priming_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042570894584059715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_attach_binds_view_for_propagation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002797499764710665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_reattach_preserves_primed_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004825829528272152,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_attach_without_view_is_noop_on_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.475008118897676e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_returns_empty_without_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001027500256896019,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_intersection_rows_for_binary_rule",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002906250301748514,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_present_when_buffer_allocated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029095797799527645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_reflects_primed_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030087505001574755,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027412502095103264,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027608289383351803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029737502336502075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045445794239640236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_unprimed_disjunction_picks_larger_norm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006142500787973404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047704100143164396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005660420283675194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004630410112440586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041629199404269457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047041696961969137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_edges_exposed_undirected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028051669942215085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002776875044219196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_successive_primes_propagate_further",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031672921031713486,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002907250076532364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010300008580088615,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_priming_energy.py', 101, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.679204620420933e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_priming_energy.py', 124, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.30420758575201e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_priming_energy.py', 141, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.625001646578312e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_priming_energy.py', 158, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.39579151943326e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_priming_energy.py', 170, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.979202877730131e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_priming_energy.py', 194, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00880108296405524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.041648250073194504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003369332989677787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_complement_requires_an_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006722499383613467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007577090291306376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006140000186860561,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.042143542086705565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05722866696305573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.043116417014971375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038976875017397106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07165537495166063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046116707380861044,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09641304099932313,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003349208040162921,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_full_eight_slot_prior_slab_is_one_indexed_ss_source",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013921669451519847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_staged_sentence_bank_matches_prior_peer_without_an_inner_lookup",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013643329730257392,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_ss_is_prior_tick_and_never_sees_a_later_push",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006441669538617134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_unknown_or_inactive_slots_zero_both_what_and_band",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00062112498562783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_prior_peer_requires_canonical_stm_location_geometry",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040141609497368336,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_fixed_symbolic_loop_preserves_reference_and_raises_order_each_pass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008230420062318444,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_word_push_then_object_reference_replacement_is_cs_owned_and_masked",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000563874957151711,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006928750080987811,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_configuration.py::test_configuration_without_property_element_binds_at_first_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5778832919895649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_configuration.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004897089675068855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_configuration.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.43181766697671264,
+      "message": "",
+      "stdout": "[BasicModel] checkpoint schema migration reset 20 obsolete WholeSpace dense tensor(s) (42.0 MiB); live property rows retain deterministic initialization\r\n[BasicModel] checkpoint schema migration dropped legacy WholeSpace word/META structure (\u00a711.4): vocab_extras.well_known_atoms, vocab_extras.ws_taxonomy_extras, structural_extras.whole_spaces\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4125/test_dictionary_checkpoint_war0/dictionary.ckpt\n  Keys in model but missing from file: 20 (initialized fresh)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4125/test_dictionary_checkpoint_war0/dictionary.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04464645904954523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005506791057996452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003963583963923156,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00365558301564306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0037215830525383353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_read_does_not_save_event_property_primitive_product",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017200420843437314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_property_read_and_gradient_compile_as_one_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.30132874997798353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_read.py::test_selected_property_rows_are_gathered_before_byte_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012175419833511114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_letter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017179199494421482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_digit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011454091873019934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_whitespace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011229200754314661,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_punct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012433307711035013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_or_union",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012241594959050417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_complement_is_the_other_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024212489370256662,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_layer_matches_function",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024204200599342585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_batched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013154104817658663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004925000248476863,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003933750558644533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00052370794583112,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_materialize_property_sinusoidal_when_untagged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039487506728619337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_property_spans_letter_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029054097831249237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_property_spans_digit_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002467499580234289,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_property_spans_or_union_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023820798378437757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_property_spans_feed_run_structure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042283302173018456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_property_spans_none_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.408302139490843e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_forward_signature_is_dual_towers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013070902787148952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSForwardSingleArg::test_reverse_signature_is_single_arg",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010387494694441557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ps_single_arg_refactor.py::TestPSForwardReturnsValidSubspace::test_forward_returns_valid_subspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03640795801766217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_LP_permits_B_forbids_N",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030316703487187624,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_classical_penalizes_N_and_B",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000254084006883204,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_fde_permits_all_corners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018333294428884983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_kleene_permits_N_forbids_B",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017887505237013102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_odd_dim_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013679207768291235,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestConfigScoping::test_default_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010058400221168995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_both_poles_lit_on_B_corner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020716700237244368,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_covers_both_positive_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002595830010250211,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_dominates_each_truth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023520796094089746,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_empty_truthset_is_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014150002971291542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_is_elementwise_max",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002248329110443592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004075750010088086,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023264579940587282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025582079542800784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003968707984313369,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024316704366356134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017058406956493855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016829196829348803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000179499969817698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001848749816417694,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

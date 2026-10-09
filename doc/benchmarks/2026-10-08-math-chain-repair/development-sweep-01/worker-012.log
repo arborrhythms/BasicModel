@@ -1,0 +1,34 @@
+..................sF..............ssssss...................ss.......s... [ 66%]
+.......................s.............                                    [100%]
+=================================== FAILURES ===================================
+__________ test_expectation_off_keeps_every_packed_observation_in_ltm __________
+test/test_expectation_defaults.py:243: in test_expectation_off_keeps_every_packed_observation_in_ltm
+    assert all(row['kind'] in ('observation', 'unverified') for row in rows)
+E   assert False
+E    +  where False = all(<generator object test_expectation_off_keeps_every_packed_observation_in_ltm.<locals>.<genexpr> at 0x14616c930>)
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_field_binding.py::test_vector_head_selects_symbols_without_truncating_knowing
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16797: RuntimeWarning: concept pool order 1 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7065: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3741/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7065: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3741/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm
+1 failed, 97 passed, 11 skipped, 5 warnings in 23.13s

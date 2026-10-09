@@ -1,0 +1,21 @@
+{
+  "kind": "development diagnosis",
+  "batch_count": 83,
+  "all_completed_batches_same_occupancy": true,
+  "same_error": true,
+  "failed_batch": 84,
+  "failed_source_rows": [
+    421,
+    432,
+    443,
+    454,
+    465,
+    476,
+    487,
+    498
+  ],
+  "cause": "verb binds a relational right operand; transparent tense operations retain its relation flag but closing overwrote that flag with the point status of the VP head reference",
+  "repair": "Retain the journal relation flag when validating a native head reference",
+  "regression": "Old archived source fails; repaired source passes",
+  "official_measurement": false
+}

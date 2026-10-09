@@ -1,0 +1,21 @@
+.s.ss..................................................sssss.s..ss...... [ 67%]
+..................................                                       [100%]
+=============================== warnings summary ===============================
+test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7136: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4118/test_real_mnist_subset_trains_0/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7136: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-4118/test_real_mnist_subset_trains_1/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7136: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+95 passed, 11 skipped, 4 warnings in 10.87s

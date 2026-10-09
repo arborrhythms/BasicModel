@@ -1,0 +1,28 @@
+{
+  "status": "stopped_by_decision",
+  "authority": "Alec, 2026-10-09; thinking spec sections 14.10\u201314.11",
+  "stopped_utc": "2026-10-09T04:08:51.635547+00:00",
+  "workers": [
+    {
+      "pid": 4082,
+      "command": " 4082     1 /opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/math_train.py train /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/math-trainings/answer_and_expectation-01 /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/math-trainings/paired-01 answer_and_expectation 1"
+    },
+    {
+      "pid": 4083,
+      "command": " 4083     1 /opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/math_train.py train /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/math-trainings/expectation_only-01 /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/math-trainings/paired-01 expectation_only 1"
+    }
+  ],
+  "trainings_started": 2,
+  "declared_trainings": 30,
+  "not_started": 28,
+  "completed_epochs": {
+    "answer_and_expectation-01": 8,
+    "expectation_only-01": 9
+  },
+  "reason": "Section 14.10: no correct bindings; drift as query candidates fill the store without an episode binding operation; the first graded rung requires coordinated departures; answer cost gives little credit to near-misses. Learning deferred to item 0 under the corrected protocol.",
+  "preservation": "Workers suspended before hashing, then terminated without running finalizers, preserving every existing partial outcome, log and archive byte-for-byte. Per-start and per-epoch completion reports are separate files.",
+  "controller_at_stop": "Absent; the two worker processes were reparented to PID 1. The saved campaign progress file remains as found.",
+  "retries": 0,
+  "replacements": 0,
+  "learning_claim": false
+}

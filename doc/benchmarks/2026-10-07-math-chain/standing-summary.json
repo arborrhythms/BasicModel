@@ -1,0 +1,422 @@
+{
+  "sum": [
+    {
+      "run": 1,
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 2,
+      "mse": 0.25,
+      "contrast": -2.9802322387695312e-08,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 3,
+      "mse": 0.25,
+      "contrast": -2.9802322387695312e-08,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 4,
+      "mse": 0.2499999850988388,
+      "contrast": -5.960464477539063e-08,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 5,
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 6,
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 7,
+      "mse": 0.25,
+      "contrast": 2.9802322387695312e-08,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 8,
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 9,
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_pass": true,
+      "floor_pass": true
+    },
+    {
+      "run": 10,
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_pass": true,
+      "floor_pass": true
+    }
+  ],
+  "xor": [
+    {
+      "run": 1,
+      "mse": 2.5979218776228663e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 2,
+      "mse": 8.881784197001252e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 3,
+      "mse": 3.552713678800501e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 4,
+      "mse": 9.237055564881302e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 5,
+      "mse": 8.881784197001252e-16,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 6,
+      "mse": 1.1546319456101628e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 7,
+      "mse": 7.327471962526033e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 8,
+      "mse": 5.267004610232107e-10,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 9,
+      "mse": 1.1102230246251565e-13,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    },
+    {
+      "run": 10,
+      "mse": 2.220446049250313e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "joint": true,
+      "same_training": true
+    }
+  ],
+  "mm": [
+    {
+      "run": 1,
+      "passed": true,
+      "best": 0.19275489449501038
+    },
+    {
+      "run": 2,
+      "passed": true,
+      "best": 0.19777324795722961
+    },
+    {
+      "run": 3,
+      "passed": true,
+      "best": 0.17685967683792114
+    },
+    {
+      "run": 4,
+      "passed": true,
+      "best": 0.19209495186805725
+    },
+    {
+      "run": 5,
+      "passed": true,
+      "best": 0.1706290990114212
+    },
+    {
+      "run": 6,
+      "passed": true,
+      "best": 0.18592984974384308
+    },
+    {
+      "run": 7,
+      "passed": true,
+      "best": 0.1845531463623047
+    },
+    {
+      "run": 8,
+      "passed": true,
+      "best": 0.19567960500717163
+    },
+    {
+      "run": 9,
+      "passed": true,
+      "best": 0.17956435680389404
+    },
+    {
+      "run": 10,
+      "passed": true,
+      "best": 0.14295247197151184
+    }
+  ],
+  "thinking": [
+    {
+      "run": "sum-01",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-01",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-01",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-02",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-02",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-02",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-03",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-03",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-03",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-04",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-04",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-04",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-05",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-05",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-05",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-06",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-06",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-06",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-07",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-07",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-07",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-08",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-08",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-08",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-09",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-09",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-09",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "sum-10",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "xor-10",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    },
+    {
+      "run": "mm-10",
+      "calls": 0,
+      "open_episodes": 0,
+      "bound_calls": 0
+    }
+  ],
+  "counts": {
+    "sum": 10,
+    "sum_floor": 10,
+    "xor_class": 10,
+    "xor_reconstruction": 10,
+    "xor_joint": 10,
+    "mm": 10,
+    "thought_calls": 0,
+    "open_episodes": 0
+  },
+  "completed": 30,
+  "processes_passed": 30
+}

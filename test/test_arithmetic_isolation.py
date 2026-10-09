@@ -30,7 +30,7 @@ def test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic(monke
     model, registry, _, part, whole = _catalog_world()
     question = registry.form('isPart', part, whole, bindings={'x': part})
     renamed = replace(question, role_refs=(('sym', 901), ('sym', 337), ('sym', 29)),
-                      bindings={'x': ('sym', 901)})
+                      bindings={**dict(question.bindings), 'x': ('sym', 901)})
     _poison_oracles(monkeypatch)
     feature = lambda q: model._selected_thought_context(q, level=0, pressure=0)
     torch.testing.assert_close(feature(question), feature(renamed), rtol=0, atol=0)
@@ -133,7 +133,10 @@ def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_pat
         result, _ = model.runBatch(train=True, batchSize=2, split='train',
             optimizer=optimizer, batch_override=batch,
             questions=(What.supervised(0), What.supervised(1)))
-        assert steps == ['exploit', 'explore']
+        assert steps[:2] == ['exploit', 'explore']
+        # An unresolved bare reference may now open an ordinary thought
+        # episode; its supplied-answer credit uses the batch optimizer.
+        assert steps[2:] in ([], ['batch'])
         assert model._sentence_reader_updates == 1
         assert bool(torch.isfinite(result.lossOut))
         assert model._last_answer_mask.tolist() == [True, True]

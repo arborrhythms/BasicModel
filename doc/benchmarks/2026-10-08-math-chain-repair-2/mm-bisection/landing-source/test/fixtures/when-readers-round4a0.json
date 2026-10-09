@@ -1,0 +1,1009 @@
+{
+  "version": 1,
+  "coverage": "All named band attributes/getattr readers, literal when/whenEncoding/when_encoding dispatches, and explicitly listed dynamic tail/clock helpers.",
+  "attributes": [
+    "_WHEN_WIDTH",
+    "_ar_word_symbol_when",
+    "_cs_field_when",
+    "_when_encoding",
+    "nWhen",
+    "n_when",
+    "percept_when",
+    "symbol_when",
+    "when",
+    "whenEncoding",
+    "when_band",
+    "when_encoding"
+  ],
+  "readers": [
+    {
+      "file": "bin/ClauseJournal.py",
+      "function": "finish_clause",
+      "attributes": [
+        "symbol_when"
+      ],
+      "role": "binding/closing reader",
+      "previous_absolute_time": true,
+      "now": "Closing inherits its first leaf band; the sentence writer fixes the source bracket."
+    },
+    {
+      "file": "bin/ClauseRow.py",
+      "function": "Clause.__post_init__",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Interpret.py",
+      "function": "InterpretLayer.define",
+      "attributes": [
+        "when"
+      ],
+      "role": "writer",
+      "previous_absolute_time": true,
+      "now": "Definitions are unlocated; their when band is zero."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "_WhenOpMixin._when_encoding",
+      "attributes": [
+        "_WHEN_WIDTH"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "_WhenOpMixin._split_when",
+      "attributes": [
+        "_WHEN_WIDTH"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "SymbolSubSpace.forwardSymbols",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "SymbolSpace._publish_symbol_snapshot",
+      "attributes": [
+        "whenEncoding"
+      ],
+      "role": "unlocated dictionary writer",
+      "previous_absolute_time": true,
+      "now": "Dictionary poles have zero when; located occurrences retain their source bracket."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore.append_meaning",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore.row",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore.reset",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "ModelLoss.compute",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "ModelLoss.compute_masked",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "ModelLoss.register",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "ModelLoss.compute_piecewise",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._reverse_event_loss",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "loss/layout reader",
+      "previous_absolute_time": true,
+      "now": "Sentence reconstruction excludes the shared when tail; general event comparison may score relative brackets. The scoring rule is unchanged."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._masked_event_loss",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._publish_reading_symbols",
+      "attributes": [
+        "_cs_field_when"
+      ],
+      "role": "binding/closing reader",
+      "previous_absolute_time": true,
+      "now": "Location matching and concept/percept binding read the relative interval."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._stage_serial_concept_rows",
+      "attributes": [
+        "_ar_word_symbol_when",
+        "when_encoding"
+      ],
+      "role": "binding/closing reader",
+      "previous_absolute_time": true,
+      "now": "Each word is stamped at its containing source sentence position."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._program_entries",
+      "attributes": [
+        "_ar_word_symbol_when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._commit_sentence",
+      "attributes": [
+        "when",
+        "when_encoding"
+      ],
+      "role": "binding/closing reader",
+      "previous_absolute_time": true,
+      "now": "The selected closing writes the source unit bracket; timestamp alone receives model time."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._leaf_distill_loss",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "loss/layout reader",
+      "previous_absolute_time": true,
+      "now": "Sentence reconstruction excludes the shared when tail; general event comparison may score relative brackets. The scoring rule is unchanged."
+    },
+    {
+      "file": "bin/PerceptField.py",
+      "function": "PerceptField.select",
+      "attributes": [
+        "when",
+        "when_band"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "EventEncoding.__init__",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "EventEncoding.set_band",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "Embedding.decode_reverse_meta",
+      "attributes": [
+        "whenEncoding"
+      ],
+      "role": "binding/closing reader",
+      "previous_absolute_time": true,
+      "now": "Returns encoded address bands with recovered lexical metadata, without interpreting absolute time."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.__init__",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.storage_versions",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.carrier_like",
+      "attributes": [
+        "when",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.set_demuxed",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace._compute_active",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace._coerce_basis",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.Start",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.End",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.set_when",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.demux",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.set_activation_from_event",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.mux",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.materialize",
+      "attributes": [
+        "nWhen",
+        "when",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.select",
+      "attributes": [
+        "nWhen",
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.put",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.encode",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.decode",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.pad",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.slice",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "Space.reverseBegin",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "Space.set_sigma",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "InputSpace._lex_and_embed",
+      "attributes": [
+        "nWhen",
+        "when",
+        "whenEncoding"
+      ],
+      "role": "writer",
+      "previous_absolute_time": true,
+      "now": "Stamps source-relative sentence positions; no model-clock input."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "PartSpace.__init__",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "PartSpace._radix_part_events",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "writer",
+      "previous_absolute_time": true,
+      "now": "Stamps source-relative sentence positions; no model-clock input."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "PartSpace._embed_radix",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "writer",
+      "previous_absolute_time": true,
+      "now": "Stamps source-relative sentence positions; no model-clock input."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "PartSpace.reverse",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ModalSpace.__init__",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ModalSpace.forward",
+      "attributes": [
+        "nWhen",
+        "when",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ModalSpace.reverse",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace._clear_percept_field",
+      "attributes": [
+        "when",
+        "when_band"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace._commit_autobind_from_stash",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.cs_read_memberships",
+      "attributes": [
+        "when",
+        "when_encoding"
+      ],
+      "role": "binding/closing reader",
+      "previous_absolute_time": true,
+      "now": "Percept fields carry the current sentence unit interval for located binding."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.decode_sparse_concept_rows",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.decode_prior_stm_tensors",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "WholeSpace.compute_stage0_carrier",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "WholeSpace.compute_stage0_unity_event",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "WholeSpace.compute_word_property_event",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "WholeSpace._stage0_unity_forward",
+      "attributes": [
+        "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Teacher.py",
+      "function": "Teacher.What",
+      "attributes": [
+        "when"
+      ],
+      "role": "separate objective-address API",
+      "previous_absolute_time": false,
+      "now": "Teacher.when is corpus/source metadata, not the event band; unchanged."
+    },
+    {
+      "file": "bin/Teacher.py",
+      "function": "Teacher._resolve_staged_sources",
+      "attributes": [
+        "when"
+      ],
+      "role": "separate objective-address API",
+      "previous_absolute_time": false,
+      "now": "Teacher.when is corpus/source metadata, not the event band; unchanged."
+    },
+    {
+      "file": "bin/Understanding.py",
+      "function": "SentenceEndState.detached",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/WhereRegistry.py",
+      "function": "install_where_registry",
+      "attributes": [
+        "_when_encoding",
+        "when_encoding"
+      ],
+      "role": "encoder owner",
+      "previous_absolute_time": false,
+      "now": "Selects a fixed coarse/fine period above both LTM capacity and the loaded document bound."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "SubSpaceSchema.__post_init__",
+      "attributes": [
+        "n_when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "SubSpaceSchema.event_width",
+      "attributes": [
+        "n_when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "_parts_for_factored",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "SubSpace._selected_parts",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "SubSpace.materialize",
+      "attributes": [
+        "n_when",
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "_payload_bytes",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "_payload_transfer_bytes",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/pipeline.py",
+      "function": "BoundaryAdapter.adapt",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/IndependentComponents.py",
+      "function": "IndependentComponents.situated_point",
+      "previous_absolute_time": false,
+      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "BracketExpectation.bind_observation_occurrence",
+      "previous_absolute_time": false,
+      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+    },
+    {
+      "file": "bin/ReferenceContext.py",
+      "function": "SituationFrame.detached",
+      "previous_absolute_time": false,
+      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+    },
+    {
+      "file": "bin/Queries.py",
+      "function": "ThoughtLTMCapability.relation_evidence",
+      "previous_absolute_time": false,
+      "now": "Read event endpoint .when on the shared thought meter; compare only within one document."
+    }
+  ],
+  "dynamic_readers": [
+    {
+      "file": "bin/Language.py",
+      "function": "_event_split",
+      "previous_absolute_time": true,
+      "now": "Separates when tail; its value is now relative."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "_lift_when",
+      "previous_absolute_time": true,
+      "now": "The standalone symbolic helper shifts a relative bracket by one; conceptual lift is opaque."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "_lower_when",
+      "previous_absolute_time": true,
+      "now": "The standalone symbolic helper shifts a relative bracket by minus one; conceptual lower is opaque."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "DocumentWhenEncoding",
+      "previous_absolute_time": true,
+      "now": "Encodes/decodes [i,i+1] with two endpoint-sum rungs; shift_time is a relative rotation."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "WhenRangeEncoding / WhenStartDurationEncoding",
+      "previous_absolute_time": true,
+      "now": "Legacy standalone codecs retained for explicit old encodings; the model uses DocumentWhenEncoding."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore.recent",
+      "previous_absolute_time": false,
+      "now": "Reads the timestamp column (absolute model time), never the when band."
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "function": "MereologicalCodes.occurrence_terms",
+      "previous_absolute_time": false,
+      "now": "Recency still reads timestamp; meanings remain empty in the 4a-0 gate configuration."
+    },
+    {
+      "file": "bin/AccessibleMind.py",
+      "function": "apply_thought_effect",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/ClauseRow.py",
+      "function": "ClauseRows.write_clause",
+      "previous_absolute_time": false,
+      "now": "Copies the completed clause band and writes its address; external input closings supply the document-relative bracket."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "LanguageLayer.reduce",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "SymbolSpace.forward_concept_to_symbol",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore.__init__",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore._load_from_state_dict",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "TernaryTruthStore.clear_origin",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/MemoryIndex.py",
+      "function": "LeafCodeIndex._scope_contains",
+      "previous_absolute_time": false,
+      "now": "Compares explicit conceptual scope intervals named when; this is separate from the event band and remains unchanged."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BaseModel._collect_structural_extras",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BaseModel._restore_structural_extras",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BaseModel.load_weights",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._synthesis_state_objects",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._forward_body",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Occurrence.py",
+      "function": "OccurrenceRows._resize_checkpoint_rows",
+      "previous_absolute_time": true,
+      "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
+    },
+    {
+      "file": "bin/Occurrence.py",
+      "function": "OccurrenceRows._migrate_address_tensors",
+      "previous_absolute_time": true,
+      "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
+    },
+    {
+      "file": "bin/PerceptField.py",
+      "function": "PerceptField.clone",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.normalize",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace._apply_normalization",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace._apply_reverse_normalization",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "SubSpace.denormalize",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "Space.__init__",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "Space._adopt_subspace_modules",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.forward",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/Understanding.py",
+      "function": "SentenceEndState.__post_init__",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/space_carrier.py",
+      "function": "SpaceCarrierMixin._carrier_basis",
+      "previous_absolute_time": false,
+      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    }
+  ]
+}

@@ -19,7 +19,7 @@ FastICA solve. Learned identity, verb reuse and natural determiner cues remain
 unproven pending the million-sentence prerequisite and all declared seeds.
 See [the decisions and implementation limits](specs/2026-09-26-independent-components.md).
 The detached role view carried beside the native occurrence anchor remains
-transitional and is to be retired in later work (spec §10); item 5 owns
+transitional and is retired in todo item 2 (spec §10); item 5 owns
 pruning of learned columns using their relevance scales.
 
 ## 1. Operation profile: optimal versus human
@@ -81,6 +81,16 @@ genuine topic change, and whether the boundary becomes a learned soft
 signal rather than a cursor fact. The current per-row document key and
 clause-scoped reset in the integrated plan §8.3 and §11 are the base.
 
+*Taken up in direction (Alec, 2026-10-08):* context is content to be
+learned, not state to be managed; the LTM is shared with identifiers that
+separate rows. The learning stages that force it — batch differentiation,
+return after interruption, shared truth across documents (situated versus
+absolute rows decided by credit), priming as a prior, expectation from the
+right history — are todo item 6.1's gates
+([stream-state plan §3](plans/2026-10-08-stream-state.md#3-required-learning-stages-the-replacement-for-explicit-context-management)).
+What survives a boundary under the `human` profile is then what those
+stages teach, not a specification here.
+
 <a id="5-n-ary-meta-and-interpretation-time-discrimination"></a>
 
 ## 5. Definition rows and interpretation-time discrimination
@@ -96,18 +106,27 @@ selects among defined objects from context at interpretation time.
 
 The remaining learning question is how the chooser ranks those objects in
 context and credits a wrong selection through expectation and reconstruction.
-Sentences that state a definition, and `Equals` versus `Def`, belong to the
-grammatical operators update. Definitions' participation in forgetting is
+Sentences that state a definition, and `Equals` versus `Def`, landed with
+the operators update (accepted 2026-10-07). Definitions' participation in forgetting is
 ordinary row participation; any bias by truth kind belongs to item 5.
+Item 6.2's thinking corpus deliberately writes **no** definition rows
+(Alec, 2026-10-07: numerals are opaque number words, counting facts are
+ordinary copula and two-sentence rows), so the ranking question is not
+exercised there.
 
 ## 6. English arithmetic Q/A curriculum
 
 **Proposal (Alec, 2026-09-20).** Generate English questions and answers from
 bounded mathematics to supply output-training data and reproducible held-out
-evaluation, for example “What is two plus two?” → “Four.” This belongs with
-generation and supervised output (NEXT item 3 in [todo](../todo.md)); later
-reasoning-utility comparisons remain item 4. This records a curriculum direction,
-not an implemented English dataset or a new learning result.
+evaluation, for example “What is two plus two?” → “Four.” This records a
+curriculum direction, not an implemented English dataset or a new learning
+result. *Taken up (2026-10-07) as item 6.2's thinking corpus*,
+`MM_math_chain` ([thinking spec §10](specs/2026-10-07-thinking.md#10-the-thinking-corpus-arithmetic-with-intermediate-steps-alec-2026-10-07)):
+opaque number words, counting facts in copula and two-sentence forms,
+worked successor steps, and the question whose answer is a chain; the
+math is never direct and no definition rows are written. What stays here
+is the larger curriculum (multi-digit numbers, subtraction, word
+problems) once the chain is learned.
 
 Start with a small vocabulary of number NPs and a learned successor VP:
 `successor(two) = three`. Teach the finite counting facts, then compose
@@ -325,6 +344,21 @@ strict-improvement/patience criterion is recorded for review in
 [Architecture](Architecture.md) and the [receipt](benchmarks/2026-09-24-item10/README.md).
 Choosing new attention targets from a neither reading remains future policy
 work. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
+
+*Handed here by the operators update ([plan §43](plans/2026-10-05-operators-update.md#43-attention-and-the-corners-alec-2026-10-07))
+and the thinking spec (§6.2).* Alec: "heterogeneity is a cue to narrow
+attention, or to learn more" — at two timescales. Within a reading, *both*
+over a bracket cues division until the parts are pure; that is the walk's
+law today (`narrowing_mask`: both permits divide, pure permits gloss,
+neither permits descend). Across occurrences, a *both* that **persists at
+the narrowest extent** cues refinement of the concept into parts where the
+predicate is uniform — at order 0 a distinguishing mint or a property
+split, above it a sub-concept — and *neither* cues witnessing. The policy
+owed here is the second cue: when to stop dividing the reading and refine
+the concept instead, and what counts as persistence (a candidate counter,
+undecided: the magnitude of definedness, `m = n/(n+k)`). Item 6.1's mask will
+read the same pair per candidate, so the policy becomes a mask-training
+question once 6.1 exists.
 
 ### Shared-mode erosion measurement (item 9b)
 
@@ -544,14 +578,19 @@ Smaller items from the same discussion, none of them scheduled:
 
 "The operator rename can also be future work." What each operator is to do
 is decided in [the operator catalogue](specs/2026-09-29-operator-catalogue.md)
-and stands; the names wait here.
+and stands. *Most of the renames were pulled forward into item 6.2 (Alec,
+2026-10-07: "sooner rather than later") and landed at `e43638a`
+([thinking spec §2.1](specs/2026-10-07-thinking.md#21-the-renames-alec-2026-10-07-sooner-rather-than-later)):*
+`chunk` → `synthesize`/`analyze`; `what` (thought) → `ask`, `what`/`lookup`
+(LTM) → `query`; `quantize` and `arma`/`expect` removed (all concepts are
+symbolized; expectation is the global `<sentenceExpectation>` setting);
+`true`/`exist` as scalars → `isTrue`/`exist` as pairs. The old names are
+one-release aliases that raise; their removal is todo item 2. What remains
+here:
 
 | today | the new name | decided about it |
 |---|---|---|
-| `chunk` | `synthesize`, with `analyze` its reverse | it "pairs better with analyze" (catalogue §3.1) |
-| `what`, `lookup` | `query` | one operator, which returns conceptual content (§3.6) |
-| `quantize` | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only (§3.4) |
-| `arma` | `expect`, or none | open (§3.5) |
+| — | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only (§3.4); no present operator is renamed to them, they are future operators |
 | `verb`, `adverb`, `preposition`, `tense`, `aspect`, `morphology` | names by what is computed; candidates in §3.9 | the code reads declared properties of a rule and never its name (decided; that part is not deferred) |
 
 A rename is made in one pass, in grammar files, code, tests and documents,
@@ -569,7 +608,13 @@ after item 6."
   the projection that takes the phrase back out, while the order is raised
   by the fold and lowered by its inverse, the determiner
   ([operator catalogue §5.4](specs/2026-09-29-operator-catalogue.md#54-lift-a-phrase-beside-a-phrase)).
-  Today the two compute one symmetric sum, and neither undoes the other.
+  *Since the final operators update:* `lower` is the determiner (mint, bind
+  or kind by the rule's `determiner_mode`; its marker contributes no
+  content; `LowerLayer`), and the catalogue's compound selects among a
+  head's cases (`CompoundLayer`, landed with 6.8). `lift` is still the
+  binary sigma whose result is a sentence, inheriting its subject's order;
+  the *dimensional* lift (NP → NP + VP → NP + VP + MP, with `lower` as the
+  projection back) is unbuilt and stays here — not with 5.5.
 * **`surface`, with tense, morphology and aspect.** `surface` is "a surface
   transformation of the words, like tense and aspect", so that one lexeme
   and its forms, and a language's freedoms of word order, are one structure
@@ -604,6 +649,13 @@ trials: credit by choice, which the cut allows, since no gradient passes
 through the idea. Whether the grammar's choices should answer to a teacher
 at all, or only to reconstruction and expectation, is Alec's to decide when
 it is taken up.
+
+*Decided since (operators round 2, landed `3de37eef5`; [GradientFlow](GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)):*
+the answer does enter the chooser's credit — the trial cost is the
+owner-step total `R + E + A`, read by a comparison reader on both detached
+roots — while only reconstruction decides the keep and the presented
+reader trains on the kept root. The question above is closed; nothing
+remains here.
 
 <a id="separate-gradient-ownership"></a>
 
@@ -759,6 +811,104 @@ check and reconstruction priority above are proposed integration requirements.
 The first decision should be informed by the completed-step diagnostic. It can
 separate objective interference from discrete derivation changes, inadequate
 inverse learning, or read-back quality remaining poor despite decreasing cost.
+
+## Expectation by inversion and the reconstruction audit (decided 2026-10-06, unscheduled)
+
+**Taken up as todo item 4.5 (Alec, 2026-10-08: "needs to go in sooner
+rather than later"; a spec of its own, written in a separate conversation).
+This section is the record until that spec exists.**
+
+Decided in the operators update plan
+([§10.3](plans/2026-10-05-operators-update.md#103-the-invertible-forward-path-reconstruction-as-an-audit),
+[§11](plans/2026-10-05-operators-update.md#11-reflections-claude-2026-10-06-alec-asked-for-thoughts) items 2, 6 and 8,
+[§12.2](plans/2026-10-05-operators-update.md#122-two-complete-derivations-subtracted-layer-by-layer),
+[§13](plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06) points 2–3)
+and recorded as "rounds 3–4" of the
+[target scheme](GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
+the combined step that closed the update (§36–§45) did not include it, so
+it is decided and unbuilt. Three parts:
+
+1. **Expectation by inversion.** The row-level prediction, inverted through
+   the committed operations, gives an expected operand at every round; the
+   actual against it is the layer's surprise; the maps (verb, adverb, lift)
+   take exact targets by inversion — target propagation, no gradient through
+   the choice, no straight-through, no mixed forward. The word-level
+   expectation follows from the row-level predictor by inversion rather
+   than by a predictor of its own (today 6.8-1's word-level expectation has
+   its own). Expectation's sources then go live: the 2026-09-20 rule
+   detaching them existed against collapse, which an invertible path cannot
+   do. Alec, §13: expectation "propagates across the model … only once the
+   path is invertible; before that its sources stay detached".
+2. **Reconstruction as an audit.** With injective forms (round 3a's pairs
+   and length) and exact unbinding through the bank, reconstruction is a
+   structural audit that must read zero, not an objective; the
+   decomposition chooser becomes a lookup; the trainable surfaces are the
+   chooser, the maps, the predictors and the readers, trained by
+   expectation and output along one path. Where "mostly invertible" means
+   approximately, the reconstruction term stays as a loss for that part
+   (§13.3). Today identified-word reconstruction is already the R≡0 audit
+   at gate width; the rest of the path keeps the loss.
+3. **The width.** Exact clean-up of `k` bound items against `N` bank
+   entries needs `D ≈ c·k·log N` — thousands at production, far above the
+   gates' 22 — with clean-up through the index, never brute force. Never
+   derived; todo item 3 derives it for the run and reads the audit at that
+   width.
+
+The milestone (§11.8): the audit at zero at production width ⇒ item 0
+trains by expectation and output through one path. Todo item 0 carries the
+condition; item 4.5 builds parts 1–2 and says what part 3 must be. A
+candidate gate for the spec: the expectation discrepancy and the class bars
+at the standing XOR fixtures with the inverted targets on, against the
+detached-source baseline, with the collapse diagnostic (the *both* mass on
+the leaf) reported.
+
+## Compose follow-ups deferred from item 7.5 (2026-09-27)
+
+Non-blocking residue of the item 7.5 landing
+([receipt](benchmarks/2026-09-27-item7-5-landing/README.md)), moved out of
+the countdown on 2026-10-08 so the numbered list holds only what is on the
+path: a nonzero **training temperature** for the compose trials and a
+**sentence parsimony / work term**, both accepted in direction for a later
+spec, with evaluation deterministic; and the shared-operator report
+assertion to restate around closing contributions or forced parametric
+selection — probably moot since 6.9 gave every parameter one owner, to be
+verified at housekeeping. The `exploration_trial` rename is todo item 2.
+The depth-three campaign's red is recorded in the receipt and in
+[Testing](Testing.md); it is evidence, not work.
+
+## One bank: the collision rule for property rows, and a merge rule (decided 2026-10-06, unscheduled)
+
+Alec's one bank over "is X" and "contains X"
+([plan §10.1](plans/2026-10-05-operators-update.md#101-one-bank-two-relations);
+[Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture),
+"One bank, two relations") grows only when
+necessary to separate two objects. Round 3a built the collision rule for
+word identities (each word's own positional triple, bits drawn until
+separated). Not built:
+
+* **Property rows still split on dispersion.** `maybe_split_property_row`
+  (`Spaces.py`) splits a WholeSpace property row when assignment variance
+  over ≥ `lbgMinCount` pulls exceeds `lbgThreshold`. The decided rule
+  replaces it: a thing's code must differ from every other thing's; when a
+  new thing coincides with an old one, mint the cheapest distinguishing
+  feature, and otherwise nothing. This is the property-space half of the
+  rule the 3a mints gave words.
+* **A merge rule** ([§11.5](plans/2026-10-05-operators-update.md#11-reflections-claude-2026-10-06-alec-asked-for-thoughts)).
+  Collision-minting only separates, and its inventory depends on the order
+  in which words are read (inventories differ run to run). Abstraction
+  comes from the sigma fold one order up, from co-activation, and from the
+  forgetting spec's value pruning the distinctions that are never used;
+  the last is the rule todo item 5 still owes for the concept inventory
+  (order-0 definitions, alternatives, feature groups, mints).
+* **Revision conditions formation (Alec, 2026-10-08;
+  [thinking spec §14.6](specs/2026-10-07-thinking.md)).** A mint made on
+  an exhausted search is provisional: identities may be broken or
+  associated after the fact, and "that alteration should condition the
+  probability with which we formed the identity in the first place" — a
+  delayed credit to the recorded bind/mint/open choice through its
+  provenance. There is no local metric for how many things there are;
+  "we will have to rely on ICA on a longer sequence" (item 6.5's
+  components over enough occurrences) to decide it.
 
 ## A snapshot where a sentence's two trials branch (future work, Alec, 2026-09-30)
 
@@ -1099,7 +1249,15 @@ conceptual space and the remaining catalogue. Item 6.8 owns the open read and
 MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
 The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
 including its explicit red gates; this is not a claim that every gate is green.
-Next: query and ask under the [thought-loop plan §§5–7](plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07), then item 6.2, thinking, whose specification follows from Claude. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint.
+The renames, `query` and `ask` ([thought-loop plan §§5–7](plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07)) and item 6.2's initial mechanism landed at `e43638a` (accepted October 7). The [6.2 closing](benchmarks/2026-10-09-item6-2-closing/README.md) is accepted under thinking §14.13: mechanism complete, decomposition demonstrated. The `MM_math_chain` campaign is stopped by decision; learning is deferred to item 0's checkpoint under the four recorded protocol corrections. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint. The current sequence is in [todo](../todo.md).
+
+## Thought residue carried from item 6.2 (2026-10-09; unscheduled)
+
+The [thought-loop audit §1](plans/2026-10-07-thought-loop.md) findings 6–7
+remain outside the completed thinking mechanism: seed open-role `part` sets
+into knowing, specify inverses for the thought faces, and resolve `query`'s
+knowing write, which the accessible-mind spec defers. These require a later
+specification. Removal of the one-release rename aliases remains in item 2.
 
 ## Carried from the 6.8 §13–§15 rounds (2026-10-04)
 
@@ -1121,6 +1279,14 @@ Not in the 6.8 rounds; each names its home.
   thermometer and collision mints. A word remains a max over its parts;
   anagrams need no general positional fold. Higher-order forms still use
   the binding kernels; round 4a composes the separate meaning block by the bilattice.
+  *Open, from [plan §7.3 and §7.9](plans/2026-10-05-operators-update.md#73-parts-chunk-up-serially-overlapping-parts-plus-length-would-identify-a-word-without-order):*
+  the same construction one rung up — adjacent **word** pairs plus the
+  sentence's word count as the sentence's parts — would make "dog bites
+  man" differ from "man bites dog" by form alone, as "bana"/"banana"
+  differ by letter pairs and length. Today operand order at the sentence
+  rung is recovered by the roles and surface markers, not by the form.
+  Whether the rung needs it is a measurement once 5.5's surface markers
+  exist.
 - **The complement's bootstrap — closed in the accepted operators landing:** containing sentence
   rows contribute fixed sparse identities from their content keys. The detached
   recency mean fills the for pole; the against pole starts at zero. It is an
@@ -1141,12 +1307,15 @@ Not in the 6.8 rounds; each names its home.
 - **The `not` items — closed across rounds 1–4a:** exclusion clears the
   expressed evidence, conjunction reads explicit poles, and negation exchanges
   the meaning poles while preserving form.
-- **The negative image on the concept face** (item 2): the §2.6.1 mechanism
-  is implemented in the uncommitted round-2 candidate: gain, presence and
-  role attention gate the concept complement; storage retains the observed
-  value and thought reads the conceived value. Form is protected. Learning
-  utility still waits for a populated complement and the later measurements
-  ([receipt](benchmarks/2026-10-06-operators-round2/README.md)).
+- **The negative image on the concept face** — mechanism closed in round 2
+  (landed `3de37eef5`): gain, presence and role attention gate the concept
+  complement; storage retains the observed value and thought reads the
+  conceived value; form is protected
+  ([receipt](benchmarks/2026-10-06-operators-round2e/README.md)). The
+  complement it reads is populated since the final landing. Its learning
+  utility — joint and useful-query learning with the image on — is a
+  measurement that waits for the million-sentence checkpoint and sits with
+  todo item 9, as the `7d7dc4f` line already said.
 - **Sparse percept presences** (perception, when it is trained): dense
   prototypes' joins saturate toward everything (mean cosine between word
   forms ≈ .98 at any scale, XOR term of a unit root .03–.05); presences on
@@ -1190,105 +1359,28 @@ Not in the 6.8 rounds; each names its home.
   is taken before context has a say, and the activation features (projection
   coefficients, unbounded) are standardized.
 
-**Status, 2026-10-06 (operators update [plan §9.5, §12.3, §14](plans/2026-10-05-operators-update.md)).**
-Landed in round 1 (accepted 2026-10-06): the `not` items (withdrawal and pole
-exchange, bilattice conjunction), footprints at load, the inverse's chooser
-with exact-fit precedence and standardized features, the attention
-estimator (score-function, found silent by construction — plan §5). Round 2
-is an uncommitted candidate held for review after its gate missed: class
-4/10, reconstruction 6/10, MM_xor convergence 9/10, sum 10/10; sweep green
-and ownership zeros retained. The initial observer counted only the sentence payload
-([round-2 receipt](benchmarks/2026-10-06-operators-round2/README.md)); the
-round-2b replay establishes a live MM trajectory, so its miss counts:
-the trial cost as the owner-step total, one departure over both walks with
-the narrowed poles handed off, the negative image at the closing on the
-concept face (spec §2.6.1, confidence-gated, so it needs no meanings to
-exist). Round 3: the fold composing forms is replaced by boundary-marked
-pairs plus length as the parts (anagrams separate without position), the
-content width, the has-a wholes and the narrowing-weighted centroid. Round
-4: the complement's bootstrap (membership as properties, co-activation
-through shared wholes), the Kleene connectives over meanings, expectation
-and targets by inversion. (A "round 5 attention filter" was withdrawn on
-2026-10-07: attention is the `.where` mask the narrowing walk already is.) The dense chooser
-signal is not wanted: the forward stays a tree (plan §12.2); sparse
-presences are subsumed by round 3's sparse superposition.
-
-
-Operators round 2b corrects the keep to reconstruction alone and trains the
-answer reader on both detached trials; credit still uses `R+E+A`. It preserves
-activation magnitude at the pole handoff and audits all consumer paths. The
-closing image remains landed as a mechanism, with zero complement in the gate
-fixtures. The [round-2b receipt](benchmarks/2026-10-06-operators-round2b/README.md)
-records the live MM comparison and the residual signed interpretation before
-disjunction. Centroid placement remains round 3; its final containment cap
-will use decreasing part count and the new before/after audit. Higher-order
-order preservation is conditional on monotone folds, not added here.
-
-The round-2b call-profile check distinguishes the configurations: `MM_xor`
-bypasses all four pole consumers; `MM_grammar` reaches both reference-slab paths.
-All three paired MM_xor trajectories still differ from the landing. That
-difference is recorded without attributing it to a consumer that did not run.
-
-
-Operators round 2c installs magnitude interpretation on forms and signed
-interpretation on meanings. It restores one reader update per sentence:
-both roots averaged only for compose departures, otherwise the kept root.
-The concept-only image remains a mechanism with zero width in the grammar
-gates. Narrowing negation has zero advantage there until meanings exist;
-its shared SCG term remains available on configurations whose costs can see it.
-The [round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md)
-records class 5/10, reconstruction 10/10, sum 10/10 at the quarter floor,
-and live MM_xor 9/10, with a green sweep and zero ownership, displacement
-and sentence-path perception gradients. It misses the standing class gate;
-§20 subsequently excludes its bisection-proven RNG-only MM path. The round-2c
-candidate is not accepted. All final grammar policies
-use conjunction; all narrowing credits tie; the one-step reader contract is
-confirmed by its optimizer counters. MM_xor's path is now isolated: retired percept sampling
-changes the generator state used by the later input-reconstruction mask.
-Centroid placement, higher-order order enforcement and meaning connectives
-remain in their subsequent rounds.
-
-Operators round 2d changes the sentence departure to a uniform walk draw,
-then a uniform eligible-round draw within that walk. Its `K·R_walk·W`
-correction preserves the estimator and the existing owner. The reader,
-keep, costs, image and form/pole separation are unchanged. Plan §20 applies
-the RNG-only amendment to MM_xor after repeating its first-forward bisection.
-The [round-2d receipt](benchmarks/2026-10-06-operators-round2d/README.md)
-retains the thirty unseeded gate runs, paired replays and prior receipts.
-No centroid, meaning-connective or other later-round work is added.
-
-The round-2d mechanism is verified, but class **2/10** misses the standing
-7/10 gate. Reconstruction is **10/10**, sum **10/10 at ¼**, and raw MM_xor
-**10/10**; the repeated bisection confirms its RNG-only exclusion. All final
-roots are conjunction and all labels are correct. The all-disjunction starts
-switch permanently by epochs 22, 65 and 106, while three failed runs already
-use conjunction throughout. The eight class MSE misses remain in the receipt
-with their cost comparisons. Walk proposals are balanced, narrowing advantages
-tie, reader counters confirm one update, the sweep is green, and the ownership,
-gradient and displacement audits are zero. Round 2d is not accepted under
-plan §21; later-round work stays carried.
-
-Operators round 2e separates the presented reader from the comparison
-reader. The former trains once on the reconstruction-kept root only; the
-latter retains 2d's paired compose-root training and supplies only the
-advantage's answer cost. Both remain answer-owned and read detached roots.
-The [round-2e receipt](benchmarks/2026-10-06-operators-round2e/README.md)
-records their MSE on the same kept roots, reader norms, operator flips and
-the late cost comparisons. The keep, walk-first departure and SCG correction
-remain unchanged. Earlier receipts, Claude's plan and Philosophy are preserved.
-The candidate is held uncommitted for Claude's review.
-
-Measured round 2e: class **9/10**, reconstruction
-**10/10**, sum **10/10 at ¼**, and raw MM_xor
-**10/10** under the repeated RNG-only bisection. The measured
-standing gate is met; acceptance remains pending Claude's review.
-Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
-Every run uses greedy conjunction throughout from epoch 140 at the latest.
-The receipt separates 1 miss categorized as late flip,
-0 reader plateaus and 0 other misses, with both
-reader trajectories and late trial costs. All twenty sum/XOR runs have
-400 updates per reader, zero presented weight on the rejected root, and
-final active reader Adam counters of 400. The complete source sweep is
-green; ownership conflicts, sentence-path perception gradients and
-code displacement are zero. All thirty unseeded gate trainings are
-retained without retries or replacements. No commit or push.
+**Status, closed 2026-10-07 (operators update [plan §45](plans/2026-10-05-operators-update.md#45-review-of-the-repair-pass-claude-2026-10-07-accepted-as-the-operators-update-landing)).**
+Round 1 landed at `73cd7b71b` (the `not` items, footprints at load, the
+inverse's chooser with exact-fit precedence and standardized features, the
+score-function attention estimator). Round 2 landed at `3de37eef5` as 2e:
+the trial cost as the owner-step total `R+E+A`, one departure over both
+walks drawn walk-first, the narrowed poles handed off with the scope, keep
+by reconstruction alone, a presented reader on the kept root and a
+comparison reader on both roots for the advantage, the image at the
+closing on the concept face; rounds 2, 2b, 2c and 2d were rejected on the
+way for the reasons in plan §15, §17, §19 and §21 and their receipts
+(`benchmarks/2026-10-06-operators-round2*`). Round 3a landed at
+`cce3a4f7b`: identity by construction. The planned round 3 (has-a wholes,
+the narrowing-weighted centroid) and round 4 (Kleene connectives,
+membership as properties) were superseded by the combined step (plan
+§36–§40): meanings as the context mean of containing rows' fixed codes,
+the bipolar bilattice over pole pairs, the adjacent-word centroid
+`c = L + α(U−L)` under the containment cap, bounded membership priming, the
+addressed rows of 4a-0, and the two-lane leaf of §42, landed at `f4a68404e`
+and accepted on October 7. The "round 5 attention filter" was withdrawn
+(attention is the `.where` mask; now todo item 6.1). Not delivered by the
+update and recorded above: expectation by inversion with the
+reconstruction audit at production width, the collision rule for property
+rows and the merge rule, and word pairs at the sentence rung. The dense
+chooser signal is not wanted (the forward stays a tree, plan §12.2);
+sparse presences stay a perception item.

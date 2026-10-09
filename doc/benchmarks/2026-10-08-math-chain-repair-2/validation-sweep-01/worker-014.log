@@ -1,0 +1,25 @@
+............................................F........................... [ 56%]
+........................................................                 [100%]
+=================================== FAILURES ===================================
+____ test_unary_query_keeps_full_description_through_an_existing_occurrence ____
+test/test_grammatical_query_vps.py:128: in test_unary_query_keeps_full_description_through_an_existing_occurrence
+    assert result.value[0]['trust'] == pytest.approx(0.75)
+E   assert 0.0 == 0.75 ± 7.5e-07
+E     
+E     comparison failed
+E     Obtained: 0.0
+E     Expected: 0.75 ± 7.5e-07
+=============================== warnings summary ===============================
+test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence
+1 failed, 127 passed, 2 warnings in 48.76s

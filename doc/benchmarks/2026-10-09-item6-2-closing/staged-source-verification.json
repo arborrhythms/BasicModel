@@ -1,0 +1,49 @@
+{
+  "recorded_utc": "2026-10-09T08:27:26.088290+00:00",
+  "source_files": 744,
+  "source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+  "all_staged_source_blobs_match": true,
+  "staged_changed_files": 10662,
+  "by_top_level": {
+    ".gitattributes": 1,
+    "bin": 35,
+    "data": 3,
+    "doc": 10584,
+    "test": 38,
+    "todo.md": 1
+  },
+  "staged_blobs_over_100_mib": {},
+  "lfs_evidence": {
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-14-04/last-state.pt": {
+      "sha256": "a6ee848ff07af80cc3558fc4bc15bceb45d5b19903c0bf77262237aebb6df139",
+      "bytes": 235452814,
+      "working_bytes_match": true
+    },
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-14-05/last-state.pt": {
+      "sha256": "3512919e7df3936e9a40af379494ef806d48d39b7c949e5c1323ed8b59171405",
+      "bytes": 235859278,
+      "working_bytes_match": true
+    },
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development-replay-answer14-04-03/last-state.pt": {
+      "sha256": "a6ee848ff07af80cc3558fc4bc15bceb45d5b19903c0bf77262237aebb6df139",
+      "bytes": 235452814,
+      "working_bytes_match": true
+    },
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/mm-bisection/landing-source.zip": {
+      "sha256": "fec78a3aed2d60d153737c416b8b3ebd4aab6a4c6bae596614ed904f5710e803",
+      "bytes": 113344457,
+      "working_bytes_match": true
+    },
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/mm-bisection/landing-source/data/fineweb/shard_00000.parquet": {
+      "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+      "bytes": 94511680,
+      "working_bytes_match": true
+    },
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/mm-bisection/landing-source/data/mnist_train.csv": {
+      "sha256": "06e64b0bf65de89c522348319ce5f63f43fb1cb40e1ce3c2ff43c1d3b8a0e14c",
+      "bytes": 109640201,
+      "working_bytes_match": true
+    }
+  },
+  "tracked_source_changes_after_measurement": false
+}

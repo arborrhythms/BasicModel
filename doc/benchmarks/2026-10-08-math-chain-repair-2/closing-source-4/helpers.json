@@ -1,0 +1,10 @@
+{
+  "doc/benchmarks/2026-10-08-math-chain-repair-2/closing_checks.py": "972d577197ffcb292488700a0beab10d1191359514ff2d7014dadc663969b312",
+  "doc/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py": "d19ba89fef960e375505faea818842972e4984b9772230aea5a1df2ac60efe8e",
+  "doc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py": "7d56875a88538178714bad2f780c7a5b59b1f80b834ae4c1325e1fa553a8b74f",
+  "doc/benchmarks/2026-10-08-math-chain-repair-2/closing_episode_state.py": "d688fba5a0c2ca3098aa09bc3a59da7583d78e21174f80a426c8295d64c2cd50",
+  "doc/benchmarks/2026-10-08-math-chain-repair/thinking-gate-plan.json": "6eaea89e13c9ad07e006ca590a624e13d13dd01cdc14a126200e8482d6728e52",
+  "doc/benchmarks/2026-10-08-math-chain-repair/thinking_gate_observer.py": "c2bbd45641a5a203d30ab2de01dfe565a8108acf17b1991c9f4ce0bea4b01422",
+  "doc/benchmarks/2026-10-07-math-chain/math_observer.py": "97dcda087b28e480560a85417ea7dbb0ca745d11bce5cdc0e769bf585e01793c",
+  "doc/benchmarks/2026-10-07-math-chain/protocol.json": "2aaa25278c4299c71c242359d6406731a15fed683f9d4a966aa6ea8ef4fc8b81"
+}

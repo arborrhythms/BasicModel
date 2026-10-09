@@ -1,0 +1,45 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_forced_native_decomposition_through_training_driver[2] __________
+
+tmp_path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/closing-certificates-3/test_forced_native_decompositi1')
+successors = 2
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('successors', (1, 2))
+    def test_forced_native_decomposition_through_training_driver(tmp_path, successors):
+        path = Path(__file__).resolve().parents[1]/'doc/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py'
+        spec = importlib.util.spec_from_file_location('forced_decomposition_certificate', path)
+        fixture = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixture)
+        folder = tmp_path/f'decomposition-{successors}'
+        report = fixture.run(folder, successors)
+        questions = [json.loads(line) for line in (folder/'questions.jsonl').read_text().splitlines()]
+        # This is an existence demonstration of the architecture, not an
+        # accuracy bar. A live compose departure may keep a different reading;
+        # every companion row is reported, including those without this proof.
+        proved = [question for question in questions if question['chain_correct']]
+>       assert proved, questions
+E       AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]
+E       assert []
+
+test/test_math_chain_decomposition.py:23: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 2 (Δ=2.164s)
+batch = 4 (Δ=2.808s)
+batch = 6 (Δ=2.815s)
+batch = 8 (Δ=3.832s)
+batch = 10 (Δ=29.981s)
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "0", "pair": [3, 2], "question_source": 5, "episode": true, "work": 550, "answer": "five", "bound_correct": false, "committed_binding": ["ltm", "address-v1", -387737957310912658], "open": [], "expected_chain_length": 2, "inference_count": 2, "chain_correct": false, "inferences": [{"occurrence": ["ltm", "address-v1", -1460435284408119000], "refs": [["ltm", "address-v1", -6328029018572301336], ["sym", 4010033338316264258], ["ltm", "address-v1", 5953710445011879307]], "open": [], "operation": "query", "witnesses": [["ltm", "address-v1", -6697850168895694038], ["ltm", "address-v1", -5674958780161553934], ["ltm", "address-v1", -6339896445218335225]], "known_witnesses": true, "witness_texts": ["z is x plus one.", "x is three.", "three plus one is four."], "bound_words": ["four"]}, {"occurrence": ["ltm", "address-v1", -387737957310912658], "refs": [["ltm", "address-v1", 8350984060397875904], ["sym", 4010033338316264258], ["ltm", "address-v1", 6703691943761714688]], "open": [], "operation": "query", "witnesses": [["ltm", "address-v1", 414085381083824309]], "known_witnesses": true, "witness_texts": ["y is z plus one."], "bound_words": []}], "operations": ["query", "ask", "query", "ask", "query", "conclude", "query", "conclude", "query", "conclude"]}
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "1", "pair": [3, 2], "question_source": 11, "episode": true, "work": 563, "answer": "five", "bound_correct": false, "committed_binding": ["ltm", "address-v1", 7539823410492653461], "open": [], "expected_chain_length": 2, "inference_count": 2, "chain_correct": false, "inferences": [{"occurrence": ["ltm", "address-v1", -6167981255116042330], "refs": [["ltm", "address-v1", 778190247995554593], ["sym", 4010033338316264258], ["ltm", "address-v1", 2598290711221196853]], "open": [], "operation": "query", "witnesses": [["ltm", "address-v1", -5234167734678835106], ["ltm", "address-v1", 5654943959208473331], ["ltm", "address-v1", 3748756043404157761]], "known_witnesses": true, "witness_texts": ["z is x plus one.", "x is three.", "three plus one is four."], "bound_words": ["four"]}, {"occurrence": ["ltm", "address-v1", 7539823410492653461], "refs": [["ltm", "address-v1", 6073107904407157948], ["sym", 4010033338316264258], ["ltm", "address-v1", -3159298415953721530]], "open": [], "operation": "query", "witnesses": [["ltm", "address-v1", 6405705225514673371]], "known_witnesses": true, "witness_texts": ["y is z plus one."], "bound_words": []}], "operations": ["query", "ask", "query", "ask", "query", "conclude", "query", "conclude", "query", "conclude"]}
+
+=============================== warnings summary ===============================
+test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]
+1 failed, 1 passed, 1 warning in 64.26s (0:01:04)

@@ -1,0 +1,2740 @@
+{
+  "protocol": {
+    "date": "2026-10-07",
+    "item": "6.2 learning step MM_math_chain",
+    "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+    "parent_bump": "1970001e6ad61f720784fc6192dfd453276a164a",
+    "spec_sha256": "e378624c27cd1208e2df68f0b549204a6765d6e763cb8890dac921958452d508",
+    "seed": null,
+    "retries": 0,
+    "conditions": [
+      "answer_and_expectation",
+      "expectation_only",
+      "zero_attention_budget"
+    ],
+    "runs_per_condition": 10,
+    "held_out_pairs": [
+      [
+        2,
+        7
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        7,
+        3
+      ],
+      [
+        9,
+        6
+      ]
+    ],
+    "beyond_range_pairs": [
+      [
+        11,
+        2
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        2,
+        11
+      ],
+      [
+        3,
+        12
+      ]
+    ],
+    "training_addends": [
+      0,
+      10
+    ],
+    "numeral_vocabulary": [
+      0,
+      20
+    ],
+    "epochs": 50,
+    "epoch_basis": "The existing MM_math pilot uses 50 epochs; fixed before any learning trial.",
+    "attention_budget": 64,
+    "conditions_share_corpus": true,
+    "per_presentation_premises_shuffled": true,
+    "answer_success_bar": "At least 9 of 10 trainings bind all four held-out rows correctly.",
+    "chain_bar": "Every question opens an episode; successor chain length equals the second addend; one inference row per step with correct provenance.",
+    "expectation_only_bar": "Report how many of the ten form the chain without the answer line or answer loss.",
+    "zero_budget_bar": "Report held-out binding accuracy of ten trainings with attentionBudget zero.",
+    "measurement": "After development certificates, freeze source and helpers; one complete green sweep, thinking 57/57, unchanged standing thirty, and all thirty math trainings exactly once. Preserve every outcome. No selection of seeds or retries.",
+    "runtime": "Ordinary source-text sentence driver and shared chooser. Arithmetic, worked-step generation and expected answers are data/verifier only; no definition rows, plus executor, numeric numeral encoding or mathRange-sized answer head.",
+    "publication": "Stop for Claude review before any learning-step commit.",
+    "initialization": "Ten fresh entropy-initialized states, each replayed across the three conditions; no chosen seed or outcome-dependent redraw.",
+    "paired_presentations": "Each run owns fifty freshly shuffled presentations; expectation-only removes only answer lines and labels. The verifier sees held targets only after the result is fixed.",
+    "resource_limits": {
+      "math_workers": 2,
+      "memory_gib_per_math_worker": 8,
+      "math_worker_timeout_seconds": 86400
+    },
+    "verifier": "Strict bound lexical identity; a chain requires one committed inference per successor, the licensing counting fact and its premise/prior-inference dependency. Surface answers and raw operation counts do not satisfy the gate.",
+    "development_failures_retained": true,
+    "zero_budget_semantics": "Ordinary word/VP composition remains active; bracket narrowing and thought work receive zero allowance. Model loading and a real optimizer pass certify this control.",
+    "scoring": "Only the binding read back from the committed LTM row is scored. Ephemeral conclusions, surface strings and nearest-numeral guesses do not count."
+  },
+  "source": {
+    "source_files": 732,
+    "protected_matches": {
+      "test/test_explicit_dimensions.py": true,
+      "test/test_mm_xor.py": true,
+      "data/XOR_grammar.xml": true,
+      "data/MM_xor.xml": true
+    },
+    "source_sha256": "cc0444cc4d920904c9b3454b4c235e332352f12aacd71d405e7ae029634245e3",
+    "helpers": 189,
+    "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1"
+  },
+  "conditions": {
+    "answer_and_expectation": {
+      "runs": [
+        {
+          "run": 1,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-01",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-01",
+              "answer_and_expectation",
+              "1"
+            ],
+            "pid": 27005,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3421556120,
+            "elapsed_seconds": 65.66922787495423,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-01.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 7,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 88
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 61.94864758301992
+        },
+        {
+          "run": 2,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-02",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-02",
+              "answer_and_expectation",
+              "2"
+            ],
+            "pid": 27274,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3646557832,
+            "elapsed_seconds": 118.13584974990226,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-02.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 6,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 2,
+              "sentences": 120
+            },
+            "operations": {
+              "not": 44
+            },
+            "credit": {
+              "answer_expectation_and_work": 1,
+              "nonzero_graph": 0,
+              "ties": 1,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7931332731246948,
+                  0.7931332731246948
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 113.99377425003331
+        },
+        {
+          "run": 3,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-03",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-03",
+              "answer_and_expectation",
+              "3"
+            ],
+            "pid": 28054,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3529838144,
+            "elapsed_seconds": 135.6453486670507,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-03.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 9,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 5,
+              "sentences": 80
+            },
+            "operations": {
+              "query": 5,
+              "not": 100
+            },
+            "credit": {
+              "answer_expectation_and_work": 5,
+              "nonzero_graph": 0,
+              "ties": 5,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7928856039047242,
+                  0.7928856039047242
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7914993667602539,
+                  0.7914993667602539
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7928856039047242,
+                  0.7928856039047242
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7915087366104127,
+                  0.7915087366104127
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7900407457351685,
+                  0.7900407457351685
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 131.60580762499012
+        },
+        {
+          "run": 4,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-04",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-04",
+              "answer_and_expectation",
+              "4"
+            ],
+            "pid": 28950,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3625635464,
+            "elapsed_seconds": 96.10945187497418,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-04.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 2,
+              "sentences": 120,
+              "equality_trials_with_verb_shift_gradient": 0
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 91.81437233299948
+        },
+        {
+          "run": 5,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-05",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-05",
+              "answer_and_expectation",
+              "5"
+            ],
+            "pid": 29619,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3627339400,
+            "elapsed_seconds": 99.51195204199757,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-05.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 1,
+              "sentences": 128,
+              "equality_trials_with_verb_shift_gradient": 0
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 95.12432445795275
+        },
+        {
+          "run": 6,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-06",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-06",
+              "answer_and_expectation",
+              "6"
+            ],
+            "pid": 30797,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3449392512,
+            "elapsed_seconds": 38.8888131249696,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-06.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 2,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 48
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 34.729616667027585
+        },
+        {
+          "run": 7,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-07",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-07",
+              "answer_and_expectation",
+              "7"
+            ],
+            "pid": 30970,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3656929000,
+            "elapsed_seconds": 102.23573866696097,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-07.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 30,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 136
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 97.75983925000764
+        },
+        {
+          "run": 8,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-08",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-08",
+              "answer_and_expectation",
+              "8"
+            ],
+            "pid": 31632,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3692302008,
+            "elapsed_seconds": 85.23411091708113,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-08.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 2,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 3,
+              "sentences": 48
+            },
+            "operations": {
+              "query": 3,
+              "not": 60
+            },
+            "credit": {
+              "answer_expectation_and_work": 3,
+              "nonzero_graph": 0,
+              "ties": 3,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7884453201293946,
+                  0.7884453201293946
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.8035067105293274,
+                  0.8035067105293274
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7940329217910767,
+                  0.7940329217910767
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 80.87022849998903
+        },
+        {
+          "run": 9,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-09",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+              "answer_and_expectation",
+              "9"
+            ],
+            "pid": 32154,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2999503992,
+            "elapsed_seconds": 34.555781874922104,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-09.log"
+          },
+          "status": "failed",
+          "error": "TypeError(\"taxonomy operands require a ('sym', positive concept id) reference\")",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 7,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 2
+            },
+            "operations": {
+              "query": 5,
+              "not": 22
+            },
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 0,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 30.0085627080407
+        },
+        {
+          "run": 10,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-10",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-10",
+              "answer_and_expectation",
+              "10"
+            ],
+            "pid": 32954,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3456175584,
+            "elapsed_seconds": 52.61426370800473,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/answer_and_expectation-10.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 2,
+              "sentences": 64,
+              "equality_trials_with_verb_shift_gradient": 0
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 48.377651958027855
+        }
+      ],
+      "completed": 0,
+      "all_four_correct": 0,
+      "held_out_rows_tested": 0,
+      "held_out_rows_correct": 0,
+      "held_out_accuracy": null,
+      "held_out_chain_runs": 0
+    },
+    "expectation_only": {
+      "runs": [
+        {
+          "run": 1,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-01",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-01",
+              "expectation_only",
+              "1"
+            ],
+            "pid": 27006,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 4054044560,
+            "elapsed_seconds": 62.45418762497138,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-01.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 7,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 80
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 58.52588225004729
+        },
+        {
+          "run": 2,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-02",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-02",
+              "expectation_only",
+              "2"
+            ],
+            "pid": 27585,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 4240281680,
+            "elapsed_seconds": 115.0195332079893,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-02.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 4,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 2,
+              "sentences": 112
+            },
+            "operations": {
+              "not": 44
+            },
+            "credit": {
+              "answer_expectation_and_work": 1,
+              "nonzero_graph": 0,
+              "ties": 1,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.7931332731246948,
+                  0.7931332731246948
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 110.99520650005434
+        },
+        {
+          "run": 3,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-03",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-03",
+              "expectation_only",
+              "3"
+            ],
+            "pid": 28525,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3692777168,
+            "elapsed_seconds": 130.53206633392256,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-03.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 10,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 5,
+              "sentences": 72
+            },
+            "operations": {
+              "query": 5,
+              "not": 100
+            },
+            "credit": {
+              "answer_expectation_and_work": 5,
+              "nonzero_graph": 0,
+              "ties": 5,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7928856039047243,
+                  1.7928856039047243
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7914993667602541,
+                  1.7914993667602541
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7928856039047243,
+                  1.7928856039047243
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7915087366104128,
+                  1.7915087366104128
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7900932216644287,
+                  1.7900932216644287
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 126.36264970793854
+        },
+        {
+          "run": 4,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-04",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-04",
+              "expectation_only",
+              "4"
+            ],
+            "pid": 29244,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3614936664,
+            "elapsed_seconds": 89.2394952919567,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-04.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 3,
+              "sentences": 112,
+              "equality_trials_with_verb_shift_gradient": 0
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 85.24159437499475
+        },
+        {
+          "run": 5,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-05",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-05",
+              "expectation_only",
+              "5"
+            ],
+            "pid": 29951,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3567095408,
+            "elapsed_seconds": 101.67613658402115,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-05.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 8,
+              "sentences": 120,
+              "equality_trials_with_verb_shift_gradient": 0
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 97.14605308393948
+        },
+        {
+          "run": 6,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-06",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-06",
+              "expectation_only",
+              "6"
+            ],
+            "pid": 30851,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3388837272,
+            "elapsed_seconds": 32.813727916101925,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-06.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 1,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 40
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 28.293000625097193
+        },
+        {
+          "run": 7,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-07",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-07",
+              "expectation_only",
+              "7"
+            ],
+            "pid": 31281,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3691024128,
+            "elapsed_seconds": 107.09051083296072,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-07.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 29,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 128
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 102.68276262492873
+        },
+        {
+          "run": 8,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-08",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-08",
+              "expectation_only",
+              "8"
+            ],
+            "pid": 31896,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3625291496,
+            "elapsed_seconds": 80.1405127090402,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-08.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 1,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 3,
+              "sentences": 40
+            },
+            "operations": {
+              "query": 3,
+              "not": 60
+            },
+            "credit": {
+              "answer_expectation_and_work": 3,
+              "nonzero_graph": 0,
+              "ties": 3,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7884453201293946,
+                  1.7884453201293946
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.8035067105293274,
+                  1.8035067105293274
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  1.7940329217910769,
+                  1.7940329217910769
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 75.7478819169337
+        },
+        {
+          "run": 9,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-09",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+              "expectation_only",
+              "9"
+            ],
+            "pid": 32260,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3000667256,
+            "elapsed_seconds": 34.00441504199989,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-09.log"
+          },
+          "status": "failed",
+          "error": "TypeError(\"taxonomy operands require a ('sym', positive concept id) reference\")",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 7,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 2
+            },
+            "operations": {
+              "query": 5,
+              "not": 22
+            },
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 0,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 29.561429709079675
+        },
+        {
+          "run": 10,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-10",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-10",
+              "expectation_only",
+              "10"
+            ],
+            "pid": 33041,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 3422604768,
+            "elapsed_seconds": 45.99330970807932,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/expectation_only-10.log"
+          },
+          "status": "failed",
+          "error": "RuntimeError('The size of tensor a (3) must match the size of tensor b (8) at non-singleton dimension 0')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 0,
+              "sentences": 56
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 41.72002995794173
+        }
+      ],
+      "completed": 0,
+      "all_four_correct": 0,
+      "held_out_rows_tested": 0,
+      "held_out_rows_correct": 0,
+      "held_out_accuracy": null,
+      "held_out_chain_runs": 0
+    },
+    "zero_attention_budget": {
+      "runs": [
+        {
+          "run": 1,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-01",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-01",
+              "zero_attention_budget",
+              "1"
+            ],
+            "pid": 27262,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2168375912,
+            "elapsed_seconds": 89.64849258295726,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-01.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 86,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 56
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 85.72274129197467
+        },
+        {
+          "run": 2,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-02",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-02",
+              "zero_attention_budget",
+              "2"
+            ],
+            "pid": 27712,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2229029504,
+            "elapsed_seconds": 243.06824108306319,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-02.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 31,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 22,
+              "sentences": 290
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 11,
+              "nonzero_graph": 0,
+              "ties": 11,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15102927684783937,
+                  0.15102927684783937
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1524082899093628,
+                  0.1524082899093628
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14981743097305297,
+                  0.14981743097305297
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15186090469360353,
+                  0.15186090469360353
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15236246585845947,
+                  0.15236246585845947
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1502124905586243,
+                  0.1502124905586243
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1505128860473633,
+                  0.1505128860473633
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1551445722579956,
+                  0.1551445722579956
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1551445722579956,
+                  0.1551445722579956
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.17126530408859253,
+                  0.17126530408859253
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.19691803455352785,
+                  0.19691803455352785
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 18,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 238.69238433300052
+        },
+        {
+          "run": 3,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-03",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-03",
+              "zero_attention_budget",
+              "3"
+            ],
+            "pid": 28613,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2021935792,
+            "elapsed_seconds": 276.4456610409543,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-03.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 98,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 311,
+              "episodes": 32
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 16,
+              "nonzero_graph": 0,
+              "ties": 16,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15024360418319704,
+                  0.15024360418319704
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14917598962783815,
+                  0.14917598962783815
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14938436746597292,
+                  0.14938436746597292
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15457575321197511,
+                  0.15457575321197511
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.13729723691940307,
+                  0.13729723691940307
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.09881784319877625,
+                  0.09881784319877625
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1076711654663086,
+                  0.1076711654663086
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.10861986875534058,
+                  0.10861986875534058
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.13897511623799802,
+                  0.13897511623799802
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1372344631701708,
+                  0.1372344631701708
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.28248501755297184,
+                  0.28248501755297184
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.09628028869628907,
+                  0.09628028869628907
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.27185533046722415,
+                  0.27185533046722415
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.11067408323287964,
+                  0.11067408323287964
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1134581208229065,
+                  0.1134581208229065
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1208805799484253,
+                  0.1208805799484253
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 21,
+          "question_episodes": 3,
+          "completed_chains": 0,
+          "seconds": 272.285279624979
+        },
+        {
+          "run": 4,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-04",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-04",
+              "zero_attention_budget",
+              "4"
+            ],
+            "pid": 29494,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2087979600,
+            "elapsed_seconds": 359.8425809170585,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-04.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 26,
+              "equality_trials_with_verb_shift_gradient": 10,
+              "sentences": 449,
+              "episodes": 44
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 9,
+              "nonzero_graph": 0,
+              "ties": 22,
+              "nonzero_chooser_gradients": 0,
+              "document_end_answer_and_work": 13
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.16832152605056763,
+                  0.16832152605056763
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.13120051622390747,
+                  0.13120051622390747
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15441039800643921,
+                  0.15441039800643921
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15441039800643921,
+                  0.15441039800643921
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1204627275466919,
+                  0.1204627275466919
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.13490688800811768,
+                  0.13490688800811768
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.11361877918243408,
+                  0.11361877918243408
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.11361877918243408,
+                  0.11361877918243408
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.07002494335174561,
+                  0.07002494335174561
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 39,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 355.5902957089711
+        },
+        {
+          "run": 5,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-05",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-05",
+              "zero_attention_budget",
+              "5"
+            ],
+            "pid": 30334,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2004290176,
+            "elapsed_seconds": 161.39167349995114,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-05.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 8,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 88
+            },
+            "operations": {},
+            "credit": {},
+            "credit_sample": [],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 8,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 157.40598937496543
+        },
+        {
+          "run": 6,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-06",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-06",
+              "zero_attention_budget",
+              "6"
+            ],
+            "pid": 30934,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2038614632,
+            "elapsed_seconds": 127.33580004097894,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-06.log"
+          },
+          "status": "failed",
+          "error": "ValueError('a relation requires three resolved row references')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 61,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 82,
+              "episodes": 6
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 1,
+              "nonzero_graph": 0,
+              "ties": 3,
+              "nonzero_chooser_gradients": 0,
+              "document_end_answer_and_work": 2
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15315353870391846,
+                  0.15315353870391846
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "document_end_answer_and_work",
+                "costs": [
+                  0.0,
+                  0.0
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 11,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 122.95348237501457
+        },
+        {
+          "run": 7,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-07",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-07",
+              "zero_attention_budget",
+              "7"
+            ],
+            "pid": 31320,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2034207456,
+            "elapsed_seconds": 202.78459949989337,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-07.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 18,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "sentences": 151,
+              "episodes": 2
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 1,
+              "nonzero_graph": 0,
+              "ties": 1,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15678882598876953,
+                  0.15678882598876953
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 11,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 198.66809858300257
+        },
+        {
+          "run": 8,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-08",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-08",
+              "zero_attention_budget",
+              "8"
+            ],
+            "pid": 31969,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2112358992,
+            "elapsed_seconds": 335.2261876249686,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-08.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 35,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 28,
+              "sentences": 423
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 14,
+              "nonzero_graph": 0,
+              "ties": 14,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14894754886627198,
+                  0.14894754886627198
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14766345024108887,
+                  0.14766345024108887
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14894754886627198,
+                  0.14894754886627198
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1490162968635559,
+                  0.1490162968635559
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.16348559856414796,
+                  0.16348559856414796
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.16205217838287356,
+                  0.16205217838287356
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15918868780136108,
+                  0.15918868780136108
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1419692039489746,
+                  0.1419692039489746
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1103638768196106,
+                  0.1103638768196106
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.09975191354751588,
+                  0.09975191354751588
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.1425570249557495,
+                  0.1425570249557495
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.12185384035110475,
+                  0.12185384035110475
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.34849841594696046,
+                  0.34849841594696046
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.07276581525802613,
+                  0.07276581525802613
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 43,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 330.843732584035
+        },
+        {
+          "run": 9,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-09",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-09",
+              "zero_attention_budget",
+              "9"
+            ],
+            "pid": 32370,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2213595608,
+            "elapsed_seconds": 184.87331687496044,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-09.log"
+          },
+          "status": "failed",
+          "error": "OverflowError('LTM capacity 1024 exhausted; forgetting is required')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 45,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 18,
+              "sentences": 193
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 9,
+              "nonzero_graph": 0,
+              "ties": 9,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15248212814331055,
+                  0.15248212814331055
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15332536697387697,
+                  0.15332536697387697
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15332536697387697,
+                  0.15332536697387697
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15248212814331055,
+                  0.15248212814331055
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15332536697387697,
+                  0.15332536697387697
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15332536697387697,
+                  0.15332536697387697
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15676739215850832,
+                  0.15676739215850832
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.15248212814331055,
+                  0.15248212814331055
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14740145206451416,
+                  0.14740145206451416
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 19,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 180.80926745804027
+        },
+        {
+          "run": 10,
+          "process": {
+            "command": [
+              "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math_train.py",
+              "train",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-10",
+              "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/paired-10",
+              "zero_attention_budget",
+              "10"
+            ],
+            "pid": 33124,
+            "exit_code": 1,
+            "reason": "exit",
+            "peak_memory_bytes": 2087521064,
+            "elapsed_seconds": 77.65214329201262,
+            "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/math-trainings/zero_attention_budget-10.log"
+          },
+          "status": "failed",
+          "error": "ValueError('a relation requires three resolved row references')",
+          "completed_epochs": 0,
+          "held_out": null,
+          "beyond": null,
+          "held_out_bar": false,
+          "chain_bar": false,
+          "chooser_movement": null,
+          "observer": {
+            "counts": {
+              "equality_loss_trial_acts": 65,
+              "equality_trials_with_verb_shift_gradient": 0,
+              "episodes": 4,
+              "sentences": 88
+            },
+            "operations": {},
+            "credit": {
+              "answer_expectation_and_work": 2,
+              "nonzero_graph": 0,
+              "ties": 2,
+              "nonzero_chooser_gradients": 0
+            },
+            "credit_sample": [
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.14935901165008544,
+                  0.14935901165008544
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              },
+              {
+                "epoch": 1,
+                "phase": "train",
+                "source": "answer_expectation_and_work",
+                "costs": [
+                  0.31934959888458253,
+                  0.31934959888458253
+                ],
+                "graph": false,
+                "surrogate": null,
+                "raw_chooser_gradient_l2": 0.0
+              }
+            ],
+            "raw_chooser_gradient_l2_sum": 0.0,
+            "raw_chooser_gradient_l2_max": 0.0
+          },
+          "question_observations": 11,
+          "question_episodes": 0,
+          "completed_chains": 0,
+          "seconds": 73.43398462503683
+        }
+      ],
+      "completed": 0,
+      "all_four_correct": 0,
+      "held_out_rows_tested": 0,
+      "held_out_rows_correct": 0,
+      "held_out_accuracy": null,
+      "held_out_chain_runs": 0
+    }
+  },
+  "no_retry": true,
+  "learning_claim": false,
+  "final-sweep": {
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 5587,
+    "completed": 5587
+  },
+  "thinking-gate": {
+    "reason": "passed",
+    "exit_code": 0,
+    "selected": 57,
+    "completed": 57
+  },
+  "standing": {
+    "completed": 30,
+    "processes_passed": 30
+  },
+  "status": "learning_gate_not_met"
+}

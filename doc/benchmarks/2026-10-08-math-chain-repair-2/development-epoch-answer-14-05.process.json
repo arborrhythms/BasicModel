@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development_epoch.py",
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-14-05",
+    "answer_and_expectation",
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-14-04"
+  ],
+  "pid": 88623,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4120434064,
+  "elapsed_seconds": 1622.4282686249353,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-14-05.log"
+}

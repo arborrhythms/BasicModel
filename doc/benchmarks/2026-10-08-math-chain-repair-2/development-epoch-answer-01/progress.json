@@ -1,0 +1,36 @@
+{
+  "kind": "development",
+  "condition": "answer_and_expectation",
+  "seed": null,
+  "attention_budget": 32,
+  "ltm_capacity": 32768,
+  "completed_epochs": 0,
+  "status": "started",
+  "elapsed_seconds": 1352.1906745000742,
+  "counts": {
+    "plain": 560,
+    "declaratives_observed": 560,
+    "declaratives_open": 437,
+    "declaratives_references_open": 629,
+    "declaratives_episodes": 437,
+    "batches": 124,
+    "question_without_episode": 34,
+    "questions_observed": 65,
+    "questions_open": 31,
+    "questions_references_open": 49,
+    "questions_episodes": 31,
+    "answer_line": 65,
+    "answer_lines_observed": 65,
+    "answer_lines_open": 53,
+    "answer_lines_references_open": 96,
+    "answer_lines_episodes": 53,
+    "question_with_episode": 31
+  },
+  "timing_seconds": {
+    "plain": 1120.0628493813574,
+    "question_without_episode": 39.067252372672854,
+    "answer_line": 116.8251512099523,
+    "question_with_episode": 74.40002704441821
+  },
+  "occupancy": 3253
+}

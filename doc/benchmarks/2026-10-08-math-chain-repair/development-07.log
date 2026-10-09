@@ -1,0 +1,37 @@
+..............F
+=================================== FAILURES ===================================
+_ test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False] _
+
+has_point = False
+
+    @pytest.mark.parametrize('has_point', [True, False])
+    def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_point):
+        from types import SimpleNamespace
+        from Models import BasicModel
+        from ReferenceContext import SituationFrame
+        frame = SituationFrame(1, torch.eye(4)[:3], torch.tensor([True, False, False]),
+                               12345, torch.eye(4)[0] if has_point else None)
+        discourse = SimpleNamespace(_inter_chain_window=2, _inter_last_meaning=[None],
+                                    situation_references=lambda row: (frame,))
+        owner = SimpleNamespace(components=None)
+        model = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=discourse),
+            languageSpace=SimpleNamespace(_compose_binary_rules=()),
+            _concept_owner=lambda: owner, _sentence_reference_types=lambda _: None)
+        bank = BasicModel._sentence_reference_bank(model, torch.tensor([True]), torch.zeros(1, 4))
+>       assert bank.ids[bank.valid].tolist() == ([12345] if has_point else [])
+E       assert [12345] == []
+E         
+E         Left contains one more item: 12345
+E         Use -v to get more diff
+
+test/test_math_chain.py:285: AssertionError
+=============================== warnings summary ===============================
+test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 14 passed, 1 warning in 166.20s (0:02:46)

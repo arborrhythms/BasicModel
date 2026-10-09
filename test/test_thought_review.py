@@ -110,21 +110,21 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     """A real grammar softmax completes a departure inside nested asks."""
     from test_item6_2_thinking import credit_chain_world, run
     from Queries import ThoughtOperationCandidate
-    from ThoughtReferences import open_slots
+    from ThoughtReferences import needs_episode, open_slots
     import ThoughtStream
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
     base_menu = ThoughtStream.candidates
     outer = goal
     for _ in range(depth): outer = registry.form('ask', outer)
     def nested(registry, root, active, current, records, descriptions=()):
-        if not open_slots(current): return ()
+        if not needs_episode(current): return ()
         name = registry.signature_for(root, verify_reference=False).operation.semantic_id
         if name == 'ask':
             return (ThoughtOperationCandidate(registry.operation_spec('ask'), root, ()),)
         return base_menu(registry, root, active, current, records, descriptions)
     monkeypatch.setattr(ThoughtStream, 'candidates', nested)
     selected = run(model, outer, work_budget=128,
-        score=lambda result: float(bool(open_slots(result.meaning))))
+        score=lambda result: dict(reconstruction=float(needs_episode(result.meaning)), answer=0.))
     assert not open_slots(selected.meaning)
     assert max(record.level for record in selected.records) == depth
     assert sum(record.kind == 'descend' for record in selected.records) == depth

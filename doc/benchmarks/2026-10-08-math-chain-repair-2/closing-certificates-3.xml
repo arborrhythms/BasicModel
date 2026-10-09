@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="64.216" timestamp="2026-10-08T22:46:43.714807-07:00" hostname="ArborStudio.local"><testcase classname="test.test_math_chain_decomposition" name="test_forced_native_decomposition_through_training_driver[1]" time="20.673" /><testcase classname="test.test_math_chain_decomposition" name="test_forced_native_decomposition_through_training_driver[2]" time="43.500"><failure message="AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]&#10;assert []">tmp_path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/closing-certificates-3/test_forced_native_decompositi1')
+successors = 2
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('successors', (1, 2))
+    def test_forced_native_decomposition_through_training_driver(tmp_path, successors):
+        path = Path(__file__).resolve().parents[1]/'doc/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py'
+        spec = importlib.util.spec_from_file_location('forced_decomposition_certificate', path)
+        fixture = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixture)
+        folder = tmp_path/f'decomposition-{successors}'
+        report = fixture.run(folder, successors)
+        questions = [json.loads(line) for line in (folder/'questions.jsonl').read_text().splitlines()]
+        # This is an existence demonstration of the architecture, not an
+        # accuracy bar. A live compose departure may keep a different reading;
+        # every companion row is reported, including those without this proof.
+        proved = [question for question in questions if question['chain_correct']]
+&gt;       assert proved, questions
+E       AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]
+E       assert []
+
+test/test_math_chain_decomposition.py:23: AssertionError</failure></testcase></testsuite></testsuites>

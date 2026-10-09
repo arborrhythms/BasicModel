@@ -1,0 +1,211 @@
+{
+  "phase": "declared; awaiting freeze and checks",
+  "protocol_declared": true,
+  "measurement_started": false,
+  "committed": false,
+  "thinking_development": {
+    "passed": 57,
+    "selected": 57,
+    "explicit_seed_calls": "rejected by the existing observer",
+    "source_version": "Before section 14; not current-source measured gate"
+  },
+  "previous_development_sweep": {
+    "selected": 5620,
+    "failed": 11,
+    "all_failures_fixed_in_focused_check": true,
+    "focused_passed": 13
+  },
+  "ordinary_certificates": {
+    "a_eight_sentence_training": "passing in development",
+    "b_initial_opening_rate": "Superseded by \u00a714: certify all-alternative distribution; report greedy openings without per-start rate bar.",
+    "c_answer_fills_question": "Passing forced grammar/binding on ordinary path",
+    "d_bound_declarative_no_episode": "Passing forced grammar/binding on ordinary path",
+    "e_pending_both_orders": "Passing forced grammar/binding on ordinary path with zero attention budget",
+    "f_episode_footprint": "passing in development on first ordinary episode"
+  },
+  "pending_decisions": [],
+  "dry_source": "development-epoch-02-source.zip; all 737 entries match each running epoch source.json",
+  "frozen_contracts": "BindingAnswers.cost has the explicitly requested \u00a714 correction; original seven hashes remain recorded, other contracts unchanged.",
+  "current_development_sweep": {
+    "selected": 5621,
+    "completed": 5621,
+    "outcomes": {
+      "passed": 5336,
+      "skipped": 284,
+      "xpassed": 1
+    },
+    "elapsed_seconds": 1268.3722749169683,
+    "source_version": "Before section 14; not current-source measured sweep"
+  },
+  "updated_utc": "2026-10-08T19:07:55.607515+00:00",
+  "development_runs": {
+    "answer": {
+      "folder": "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-answer-02",
+      "status": "completed",
+      "completed_epochs": 1,
+      "epoch_seconds": 4510.965201458079,
+      "occupancy": 18766,
+      "first_epoch_questions": {
+        "observed": 117,
+        "references_left_open": 91,
+        "episodes_opened": 91,
+        "bindings_correct": 0
+      }
+    },
+    "expectation": {
+      "folder": "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-expectation-02",
+      "status": "completed",
+      "completed_epochs": 1,
+      "epoch_seconds": 2058.5586303749587,
+      "occupancy": 6863,
+      "first_epoch_questions": {
+        "observed": 117,
+        "references_left_open": 3,
+        "episodes_opened": 3,
+        "bindings_correct": 0
+      }
+    },
+    "zero": {
+      "folder": "doc/benchmarks/2026-10-08-math-chain-repair-2/development-epoch-zero-02",
+      "status": "stopped_after_lost_guard_and_timeout",
+      "completed_epochs": 0,
+      "epoch_seconds": null,
+      "occupancy": 11959,
+      "first_epoch_questions": null
+    }
+  },
+  "active_guarded_workers": {},
+  "development_limit_seconds": 7200,
+  "next_action": "Freeze source and helpers, then sweep, thinking 57/57, standing thirty, and declared trainings.",
+  "governing_spec": "thinking \u00a714.8",
+  "section14": {
+    "phase": "development certificate accepted under \u00a714.8",
+    "focused_checks": {
+      "focus07": {
+        "passed": 114
+      },
+      "focus08": {
+        "passed": 83
+      },
+      "region01": {
+        "passed": 18
+      },
+      "certificates05": {
+        "passed": 13,
+        "seconds": 61.82
+      },
+      "certificates06": {
+        "passed": 26,
+        "seconds": 73.76
+      },
+      "pending02": {
+        "passed": 2,
+        "seconds": 23.91
+      },
+      "clause03": {
+        "passed": 69,
+        "seconds": 73.89
+      },
+      "clause_regression": {
+        "passed": 1,
+        "archived_source_fails": true
+      }
+    },
+    "ordinary_certificates": {
+      "a": "passing",
+      "b": "passing full menu distribution: relative probability 0.95503\u20131.08844; 224 retained-candidate entries; 0/8 committed outer openings and 8/8 observed episodes reported without rate bar",
+      "c": "passing FORCED operation/binding through live paired suffix",
+      "d": "passing FORCED operation/binding through live paired suffix",
+      "e": "Passing forced grammar, zero attention budget to preserve pending arrivals; whitespace uses the actual surface operation; both sentence orders.",
+      "f": "passing ordinary episode footprint",
+      "g": "Passing conditional mechanism on ordinary c/e source sentences with forced grammar and query/conclude preference; unforced exhaustion examples separately recorded in development epoch."
+    },
+    "epoch_attempts": [
+      {
+        "folder": "development-epoch-answer-14-01",
+        "status": "failed before first completed batch",
+        "reason": "all-free query attempted to construct an empty meaning; source and outcome retained",
+        "seconds": 6.095223041949794
+      },
+      {
+        "folder": "development-epoch-answer-14-02",
+        "condition": "answer_and_expectation",
+        "attentionBudget": 32,
+        "ltmCapacity": 32768,
+        "graded": true,
+        "seed": null,
+        "status": "stopped_for_repair",
+        "process_session": 93385,
+        "timeout_seconds": 7200,
+        "memory_limit_bytes": 8589934592,
+        "reason": "A provisional mint omitted _bound_roles at pre-commit trial scoring; diagnostic partial outcome retained.",
+        "elapsed_seconds": 449.4686421250226
+      },
+      {
+        "folder": "development-epoch-answer-14-03",
+        "status": "stopped_for_repair",
+        "condition": "answer_and_expectation",
+        "attentionBudget": 32,
+        "ltmCapacity": 32768,
+        "graded": true,
+        "seed": null,
+        "timeout_seconds": 7200,
+        "elapsed_seconds": 713.7132428339683,
+        "reason": "Formation provenance entered generic chooser metadata, contrary to item 5; partial outcome and exact loaded helpers retained."
+      },
+      {
+        "folder": "development-epoch-answer-14-04",
+        "condition": "answer_and_expectation",
+        "status": "failed",
+        "attentionBudget": 32,
+        "ltmCapacity": 32768,
+        "graded": true,
+        "seed": null,
+        "timeout_seconds": 7200,
+        "elapsed_seconds": 599.8768432500074,
+        "reason": "ValueError('a clause over a relation cannot fuse')",
+        "completed_sentences": 477,
+        "source_unchanged": true
+      },
+      {
+        "folder": "development-epoch-answer-14-05",
+        "condition": "answer_and_expectation",
+        "status": "completed_certificate_failed",
+        "attentionBudget": 32,
+        "ltmCapacity": 32768,
+        "graded": true,
+        "seed": null,
+        "development_replay_of": "development-epoch-answer-14-04",
+        "timeout_seconds": 7200,
+        "epoch_seconds": 1618.2190406250302,
+        "completed_sentences": 1449,
+        "development_certificate": {
+          "question_answer_costs_nontied": true,
+          "chooser_moved": true,
+          "declarative_episode_share_fell": false,
+          "passed": false
+        },
+        "declarative_episode_halves": [
+          {
+            "sentences": 607,
+            "episodes": 116,
+            "share": 0.19110378912685339
+          },
+          {
+            "sentences": 608,
+            "episodes": 119,
+            "share": 0.19572368421052633
+          }
+        ],
+        "source_unchanged": true
+      }
+    ],
+    "work_cost": "Restored metered episode work in its own trial credit per \u00a714.3; sentence judgement and both keep rules remain R + A and reconstruction, respectively.",
+    "all_free_region_repair": "Passed 18 focused tests in development-region14-02; retrieval masks free roles without constructing an empty meaning.",
+    "active_epoch": null,
+    "formation_provenance": "Encoder excludes formation records and reason; feature-invariance test passes. No credit or reader consumes the stored choice/probability.",
+    "active_diagnostic": null,
+    "measurement_launchers": "Prepared only; declaration and passed development certificate are enforced before launching.",
+    "acceptance": "development-acceptance-14-8.json"
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 12,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 12,
+    "sentences": 18
+  },
+  "operations": {
+    "query": 17,
+    "not": 61,
+    "equal": 30
+  },
+  "credit": {
+    "reconstruction_and_answer": 12,
+    "nonzero_graph": 0,
+    "ties": 12,
+    "nonzero_chooser_gradients": 0
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 2,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 2,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 2,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 2,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 3,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 3,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 3,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        1.0,
+        1.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 3,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 3,
+      "phase": "development",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

@@ -5,6 +5,8 @@ import torch
 
 def departure_at(eligible):
     """One uniformly selected legal departure per row; -1 means none."""
+    if eligible.shape[-1] == 0:
+        return torch.full((eligible.shape[0],), -1, device=eligible.device, dtype=torch.long)
     rank=(torch.rand(eligible.shape[0],device=eligible.device)*eligible.sum(-1)).long()
     selected=eligible & (eligible.long().cumsum(-1)==rank[:,None]+1)
     return torch.where(eligible.any(-1),selected.long().argmax(-1),-1)
@@ -56,6 +58,38 @@ def _copy_containers(value):
     return value
 
 
+def _detached(value):
+    """Detach a fork's values without retaining an earlier policy graph."""
+    from collections import deque
+    if torch.is_tensor(value):
+        return value.detach().clone()
+    if isinstance(value, dict):
+        return {key: _detached(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list, deque)):
+        return type(value)(_detached(item) for item in value)
+    if callable(getattr(value, 'detached', None)):
+        return value.detached()
+    if callable(getattr(value, 'snapshot', None)):
+        return value.snapshot(detach=True)
+    return value
+
+
+def capture_thought_fork(model, trace, meter, **continuation):
+    """Replace the episode reservoir with probability 1/k, before execution."""
+    if not trace['eligible'][-1]:
+        return
+    count = sum(trace['eligible'])
+    device = trace['choices'][-1]['probability'].device
+    if float(torch.rand((), device=device)) >= 1. / count:
+        return
+    from copy import copy
+    work = copy(meter)
+    work._counts = meter._counts.copy()
+    trace['fork'] = dict(_detached(continuation),
+        state=ThoughtTrialState(model, detach=True), work=work,
+        departure=len(trace['actions'])-1, excluded=trace['actions'][-1])
+
+
 class ThoughtTrialState:
     """Snapshot only the declared thought-effect owners, never model weights.
 
@@ -63,21 +97,27 @@ class ThoughtTrialState:
     expectation replaces its pending estimate. Their old graphs therefore
     remain safe to restore without detaching the kept policy's credit.
     """
-    def __init__(self,model):
+    def __init__(self,model, *, detach=False):
         memory=model._what_memory()
-        owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id')),
-                (model,('expectation_gain',))]
+        owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
+                (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
+                        '_last_output_comparison', '_last_output_walk_trace',
+                        '_sentence_answer_cost', '_sentence_answer_predictions',
+                        '_sentence_answer_raw_cost'))]
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
                 if name.startswith('_concept_'))+('_thought_occurrence',)))
         expectation=getattr(getattr(model,'symbolSpace',None),'expectation',None)
         if expectation is not None:owners.append((expectation,('_inter_last_meaning',)))
-        self.saved=[(owner,{name:_copy_containers(getattr(owner,name)) for name in names if hasattr(owner,name)},names)
+        copy = _detached if detach else _copy_containers
+        self.saved=[(owner,{name:copy(getattr(owner,name)) for name in names if hasattr(owner,name)},names)
                     for owner,names in owners if owner is not None]
 
-    def restore(self):
+    def restore(self, *, effects_only=False):
         for owner,values,names in self.saved:
+            if effects_only and '_what_slots' in names:
+                continue
             # A trial may introduce a knowing carrier for the first time.
             dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if '_thought_occurrence' in names else ()
             for name in set(names)|set(dynamic):
@@ -157,50 +197,73 @@ def select_forecast(pending, roles, occupied, kind):
 
 
 def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
-    """Two complete ordinary episodes; only the strictly better one survives."""
+    """One detached episode fork; keep R, credit R + A and local work."""
     from copy import copy
     from QueryWork import QueryWorkBudget
-    base=ThoughtTrialState(model)
-    initial=QueryWorkBudget(work_budget) if work is None else work
-    def run(exploit=None,departure=-1):
-        meter=copy(initial)
-        meter._counts=initial._counts.copy()
-        trace=dict(actions=[],eligible=[],exploit=exploit,departure=departure)
-        model._thought_walk=trace
-        result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
-        error=0. if score is None else score(result)
-        cost=float(error.detach() if torch.is_tensor(error) else error)+model.WHAT_STEP_COST*meter.spent
-        return result,cost,trace,ThoughtTrialState(model)
-    old=getattr(model,'_thought_walk',None)
+    base = ThoughtTrialState(model)
+    initial = QueryWorkBudget(work_budget) if work is None else work
+    old = getattr(model, '_thought_walk', None)
+
+    def run(trace, meter, fork=None):
+        model._thought_walk = trace
+        result = model._run_selected_thought_once(meaning, row=row, work_budget=work_budget,
+                                                  registry=registry, work=meter, fork=fork)
+        error = 0. if score is None else score(result)
+        # A standalone scorer may provide both owned terms. The ordinary
+        # closing has a fixed compose reconstruction and a binding answer.
+        if isinstance(error, dict):
+            reconstruction, answer = error['reconstruction'], error['answer']
+        else:
+            reconstruction, answer = 0., error
+        def number(value):
+            return float(value.detach() if torch.is_tensor(value) else value)
+        return result, (number(reconstruction), number(answer)), ThoughtTrialState(model)
+
     try:
-        greedy,first,trace,state=run()
-        from ThoughtCredit import forecast
-        greedy_forecast=forecast(model,greedy.meaning,row)
-        greedy_gain=float(getattr(model,'expectation_gain',1.))
-        base.restore()
-        eligible=torch.tensor([trace['eligible']],dtype=torch.bool,device=meaning.roles.device)
-        departure=int(departure_at(eligible)[0]) if eligible.numel() else -1
-        explore,second,other,other_state=run(tuple(trace['actions']),departure)
-        explore_forecast=forecast(model,explore.meaning,row)
-        explore_gain=float(getattr(model,'expectation_gain',1.))
-        wins=departure>=0 and second<first
-        trace['reader_weight'],other['reader_weight']=float(not wins),float(wins)
-        trace['comparison_weight']=.5 if departure>=0 else 1.
-        other['comparison_weight']=.5 if departure>=0 else 0.
-        result=explore if wins else greedy
+        meter = copy(initial)
+        meter._counts = initial._counts.copy()
+        trace = dict(actions=[], eligible=[], choices=[], collect_fork=True)
+        greedy, first, state = run(trace, meter)
+        fork = trace.pop('fork', None)
+        departure = -1 if fork is None else fork['departure']
+        if fork is None:
+            explore, second, other_state = greedy, first, state
+            other = dict(actions=list(trace['actions']), eligible=list(trace['eligible']),
+                         choices=[], reader_weight=0., comparison_weight=0.)
+        else:
+            fork['state'].restore()
+            other = dict(actions=list(trace['actions'][:departure]),
+                eligible=list(trace['eligible'][:departure]),
+                choices=_detached(trace['choices'][:departure]),
+                departure=departure, excluded=fork['excluded'])
+            explore, second, other_state = run(other, fork['work'], fork=fork)
+        wins = departure >= 0 and second[0] < first[0]
+        trace['reader_weight'], other['reader_weight'] = float(not wins), float(wins)
+        trace['comparison_weight'] = .5 if departure >= 0 else 1.
+        other['comparison_weight'] = .5 if departure >= 0 else 0.
+        result = explore if wins else greedy
         (other_state if wins else state).restore()
+        # Local knowing/gain/prediction effects end with the episode. History
+        # is the credit trail; its chosen result is committed by the caller.
+        base.restore(effects_only=True)
         if work is not None:
-            work._spent=result.work.spent
-            work._counts=result.work._counts.copy()
-            result=replace(result,work=work)
-        model._last_thought_comparison=dict(costs=(first,second),explore_kept=wins,
-            departure=departure,greedy=tuple(trace['actions']),explore=tuple(other['actions']),
-            stable=trace['actions']==other['actions'])
+            work._spent, work._counts = result.work.spent, result.work._counts.copy()
+            result = replace(result, work=work)
+        # §14 keeps sentence departure judgement at R + A. The episode's
+        # own walk still pays for its metered work, as §5 specifies; that
+        # local cost never enters the enclosing compose comparison or keep.
+        work_costs = tuple(float(model.WHAT_STEP_COST) * result.work.spent
+                           for result in (greedy, explore))
+        costs = (sum(first)+work_costs[0], sum(second)+work_costs[1])
+        model._last_thought_comparison = dict(costs=costs, keep_costs=(first[0],second[0]),
+            components=(first,second), work_costs=work_costs,
+            explore_kept=wins, departure=departure,
+            greedy=tuple(trace['actions']), explore=tuple(other['actions']),
+            stable=trace['actions'] == other['actions'])
         from ThoughtCredit import complete
-        complete(model,greedy,explore,trace,other,departure,(first,second),row,
-            forecasts=(greedy_forecast,explore_forecast),gains=(greedy_gain,explore_gain))
-        width=max(len(trace['actions']),len(other['actions']))
-        audit=dict(model._last_thought_comparison,
+        complete(model,greedy,explore,trace,other,departure,costs,row)
+        width = max(len(trace['actions']),len(other['actions']))
+        audit = dict(model._last_thought_comparison, costs=(first[0],second[0]),
             greedy=tuple(trace['actions'])+(-1,)*(width-len(trace['actions'])),
             explore=tuple(other['actions'])+(-1,)*(width-len(other['actions'])))
         observe_comparison(model,'think',audit,row=row)
@@ -208,7 +271,8 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
     except BaseException:
         base.restore()
         raise
-    finally:model._thought_walk=old
+    finally:
+        model._thought_walk = old
 
 
 def observe_comparison(model,kind,audit,*,sentence=None,row=None,active=None):

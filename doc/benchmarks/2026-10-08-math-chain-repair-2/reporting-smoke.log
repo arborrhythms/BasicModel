@@ -1,0 +1,8 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 2 (Δ=2.173s)
+Traceback (most recent call last):
+  File "<stdin>", line 25, in <module>
+AssertionError: {'definition': 'Existing greedy compose closing, before the keep decision is committed; free referent attributed to the lexical what by the native forward identity. No extra forward pass.', 'first_question': {'epoch': 1, 'phase': 'train', 'split': 'train', 'document': 'reporter-0', 'completed_batch': True, 'what_identified': False, 'what_open': None, 'what_open_roles': [], 'open_references': [['referent', 0], ['referent', 2], ['relation', 1]], 'kept_trial': 'greedy'}, 'first_epoch_questions_observed': 2, 'first_epoch_what_opens': 0, 'first_epoch_what_identified': 0, 'detail_file': 'episode-batches.jsonl'}

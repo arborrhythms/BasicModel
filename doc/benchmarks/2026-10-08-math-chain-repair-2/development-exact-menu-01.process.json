@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_math_chain_repair2.py",
+    "-k",
+    "large_menu",
+    "-q"
+  ],
+  "pid": 71644,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 461407576,
+  "elapsed_seconds": 5.162960208021104,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-exact-menu-01.log"
+}

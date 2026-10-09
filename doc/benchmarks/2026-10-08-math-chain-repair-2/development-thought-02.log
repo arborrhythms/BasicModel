@@ -1,0 +1,170 @@
+.................................FFFF...............                     [100%]
+=================================== FAILURES ===================================
+_________ test_open_closing_and_later_binding_are_reference_driven[?] __________
+
+surface = '?'
+
+    @pytest.mark.parametrize('surface', ['?', 'who', 'which', 'unicorn'])
+    def test_open_closing_and_later_binding_are_reference_driven(surface):
+        from ThoughtClosing import closing_question, close
+        from ClauseRow import Clause
+        from Understanding import SentenceEndState
+        model,registry,store,(a,b,c)=world()
+        source=ConceptualMeaning.from_description(torch.arange(8.).float())
+        clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
+        parsed=replace(source,mode='interrogative') if surface!='unicorn' else None
+        q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))
+        assert q is not None and open_slots(q)
+        q=replace(q,bindings=dict(bindings(q),_forward_references=((0, a[1]),)))
+        model.attention_budget=0
+        model._sentence_fields={}
+        fields=[SentenceEndState(source,query=q)]
+        with model._query_boundary_scope((0,)):
+            close(model,fields,sentence=0,ready=(0,))
+        assert store.row(0)['kind']=='question'
+        assert len(model._last_closing_thoughts)==1
+        # A new occurrence can fill the earlier null. Its source address remains
+        # distinct from the question's address and from the new inference.
+        supplied=with_slots(replace(source,role_refs=(a,None,None)),(),pair=(1.,0.))
+        index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),sentence_index=1)
+        address=store.occurrence_of(0)
+        completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
+        assert completed==(0,)
+        assert store.occurrence_of(0)==address
+>       assert not open_slots(store.meaning_of(0))
+E       AssertionError: assert not (('evidence', -1),)
+E        +  where (('evidence', -1),) = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea'))
+E        +    where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea') = meaning_of(0)
+E        +      where meaning_of = TernaryTruthStore().meaning_of
+
+test/test_item6_2_thinking.py:352: AssertionError
+________ test_open_closing_and_later_binding_are_reference_driven[who] _________
+
+surface = 'who'
+
+    @pytest.mark.parametrize('surface', ['?', 'who', 'which', 'unicorn'])
+    def test_open_closing_and_later_binding_are_reference_driven(surface):
+        from ThoughtClosing import closing_question, close
+        from ClauseRow import Clause
+        from Understanding import SentenceEndState
+        model,registry,store,(a,b,c)=world()
+        source=ConceptualMeaning.from_description(torch.arange(8.).float())
+        clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
+        parsed=replace(source,mode='interrogative') if surface!='unicorn' else None
+        q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))
+        assert q is not None and open_slots(q)
+        q=replace(q,bindings=dict(bindings(q),_forward_references=((0, a[1]),)))
+        model.attention_budget=0
+        model._sentence_fields={}
+        fields=[SentenceEndState(source,query=q)]
+        with model._query_boundary_scope((0,)):
+            close(model,fields,sentence=0,ready=(0,))
+        assert store.row(0)['kind']=='question'
+        assert len(model._last_closing_thoughts)==1
+        # A new occurrence can fill the earlier null. Its source address remains
+        # distinct from the question's address and from the new inference.
+        supplied=with_slots(replace(source,role_refs=(a,None,None)),(),pair=(1.,0.))
+        index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),sentence_index=1)
+        address=store.occurrence_of(0)
+        completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
+        assert completed==(0,)
+        assert store.occurrence_of(0)==address
+>       assert not open_slots(store.meaning_of(0))
+E       AssertionError: assert not (('evidence', -1),)
+E        +  where (('evidence', -1),) = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea'))
+E        +    where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea') = meaning_of(0)
+E        +      where meaning_of = TernaryTruthStore().meaning_of
+
+test/test_item6_2_thinking.py:352: AssertionError
+_______ test_open_closing_and_later_binding_are_reference_driven[which] ________
+
+surface = 'which'
+
+    @pytest.mark.parametrize('surface', ['?', 'who', 'which', 'unicorn'])
+    def test_open_closing_and_later_binding_are_reference_driven(surface):
+        from ThoughtClosing import closing_question, close
+        from ClauseRow import Clause
+        from Understanding import SentenceEndState
+        model,registry,store,(a,b,c)=world()
+        source=ConceptualMeaning.from_description(torch.arange(8.).float())
+        clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
+        parsed=replace(source,mode='interrogative') if surface!='unicorn' else None
+        q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))
+        assert q is not None and open_slots(q)
+        q=replace(q,bindings=dict(bindings(q),_forward_references=((0, a[1]),)))
+        model.attention_budget=0
+        model._sentence_fields={}
+        fields=[SentenceEndState(source,query=q)]
+        with model._query_boundary_scope((0,)):
+            close(model,fields,sentence=0,ready=(0,))
+        assert store.row(0)['kind']=='question'
+        assert len(model._last_closing_thoughts)==1
+        # A new occurrence can fill the earlier null. Its source address remains
+        # distinct from the question's address and from the new inference.
+        supplied=with_slots(replace(source,role_refs=(a,None,None)),(),pair=(1.,0.))
+        index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),sentence_index=1)
+        address=store.occurrence_of(0)
+        completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
+        assert completed==(0,)
+        assert store.occurrence_of(0)==address
+>       assert not open_slots(store.meaning_of(0))
+E       AssertionError: assert not (('evidence', -1),)
+E        +  where (('evidence', -1),) = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea'))
+E        +    where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea') = meaning_of(0)
+E        +      where meaning_of = TernaryTruthStore().meaning_of
+
+test/test_item6_2_thinking.py:352: AssertionError
+______ test_open_closing_and_later_binding_are_reference_driven[unicorn] _______
+
+surface = 'unicorn'
+
+    @pytest.mark.parametrize('surface', ['?', 'who', 'which', 'unicorn'])
+    def test_open_closing_and_later_binding_are_reference_driven(surface):
+        from ThoughtClosing import closing_question, close
+        from ClauseRow import Clause
+        from Understanding import SentenceEndState
+        model,registry,store,(a,b,c)=world()
+        source=ConceptualMeaning.from_description(torch.arange(8.).float())
+        clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
+        parsed=replace(source,mode='interrogative') if surface!='unicorn' else None
+        q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))
+        assert q is not None and open_slots(q)
+        q=replace(q,bindings=dict(bindings(q),_forward_references=((0, a[1]),)))
+        model.attention_budget=0
+        model._sentence_fields={}
+        fields=[SentenceEndState(source,query=q)]
+        with model._query_boundary_scope((0,)):
+            close(model,fields,sentence=0,ready=(0,))
+        assert store.row(0)['kind']=='question'
+        assert len(model._last_closing_thoughts)==1
+        # A new occurrence can fill the earlier null. Its source address remains
+        # distinct from the question's address and from the new inference.
+        supplied=with_slots(replace(source,role_refs=(a,None,None)),(),pair=(1.,0.))
+        index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),sentence_index=1)
+        address=store.occurrence_of(0)
+        completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
+        assert completed==(0,)
+        assert store.occurrence_of(0)==address
+>       assert not open_slots(store.meaning_of(0))
+E       AssertionError: assert not (('evidence', -1),)
+E        +  where (('evidence', -1),) = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea'))
+E        +    where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6373964387338011246), None, N...ion', 'bind'), ('_thought_witnesses', (('ltm', 'address-v1', -6373964387338011246),))), scope=(), sentence_kind='idea') = meaning_of(0)
+E        +      where meaning_of = TernaryTruthStore().meaning_of
+
+test/test_item6_2_thinking.py:352: AssertionError
+=============================== warnings summary ===============================
+test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7087: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdg53kt28/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]
+4 failed, 48 passed, 2 warnings in 13.61s

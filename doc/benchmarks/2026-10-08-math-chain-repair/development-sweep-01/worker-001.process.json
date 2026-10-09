@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/development-sweep-01/worker-001.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/development-sweep-01/worker-001.json"
+  ],
+  "pid": 42255,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2252426192,
+  "elapsed_seconds": 11.131612166995183,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/development-sweep-01/worker-001.log"
+}

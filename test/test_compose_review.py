@@ -36,19 +36,26 @@ def test_temperature_and_forced_mask_do_not_change_model_credit():
         torch.testing.assert_close(route['probability'], expected.gather(1, route['action'][:, None]).squeeze(1))
 
 
-def test_zero_temperature_explore_is_identical_until_the_forced_round(monkeypatch):
+def test_zero_temperature_explore_joins_detached_state_at_its_departure(monkeypatch):
     step = layer()
     step.temperature = 0.
     x = torch.tensor([[[1.], [2.], [3.]]]).expand(3, -1, -1)
+    draws = iter(([0., 0., 0.], [.9, .1, .9], [.9, .9, .1]))
+    monkeypatch.setattr(torch, 'rand_like', lambda like, **kw:
+                        torch.tensor(next(draws), device=like.device))
     exploit = step.derive(x, slots=1, rounds=6)
-    # Exploit's optimizer step can change the preferred action. Its prefix
-    # must still be replayed when exploring under the updated parameters.
-    with torch.no_grad():
-        step.reduce_anchor.fill_(-2.)
-    monkeypatch.setattr(torch, 'rand', lambda *a, **kw:
-                        torch.tensor([.0, .34, .99], device=kw.get('device')))
+    assert not exploit['fork'].state[0].requires_grad
+    live = []
+    forward = step.forward
+    def observed(value, **kwargs):
+        live.append(kwargs['active'].clone())
+        return forward(value, **kwargs)
+    monkeypatch.setattr(step, 'forward', observed)
     explore = step.derive(x, slots=1, rounds=6, exploit=exploit)
     assert explore['forced_round'].tolist() == [0, 1, 2]
+    assert [row.tolist() for row in live[:3]] == [[True, False, False],
+                                                [True, True, False],
+                                                [True, True, True]]
     for b, forced in enumerate(explore['forced_round'].tolist()):
         assert torch.equal(explore['actions'][b, :forced], exploit['actions'][b, :forced])
         assert explore['actions'][b, forced] != exploit['actions'][b, forced]
@@ -100,20 +107,20 @@ def test_sampling_temperature_is_read_from_the_shared_xml_element():
         model.symbolSpace.soft_reset()
 
 
-def test_zero_temperature_prefix_uses_execution_order_for_packed_ends():
+def test_fork_joins_by_saved_slot_when_packed_end_slots_are_out_of_order():
     from types import SimpleNamespace as NS
-    from Models import BasicModel
+    from SentenceFork import SentenceFork
     # Two one-word sentences: first closing is group 1, final closing is group 0.
-    actions = torch.full((1, 14), -1, dtype=torch.long)
-    actions[0, [0, 10, 3, 6]] = 2
-    forced = torch.zeros_like(actions, dtype=torch.bool)
-    forced[0, [10, 6]] = True
-    model = NS(inputSpace=NS(_word_active_mask=torch.ones(1, 2, dtype=torch.bool),
-                            _packed_sentence_ids=torch.tensor([[0, 1]])),
-               conceptualSpace=NS(stm=NS(capacity=2)))
-    owners, _, _ = BasicModel._compose_round_owners(model, actions)
-    prefix = BasicModel._exploration_prefix_slots(model, actions, forced, owners)
-    assert prefix.nonzero().tolist() == [[0, 0], [0, 3]]
+    fork = SentenceFork(torch.tensor([True, True]))
+    fork.slot = torch.tensor([10, 6])
+    fork.state = (torch.tensor([[7.], [9.]]),)
+    fork.start(dict(compose_round=fork.slot, narrowing=torch.tensor([False, False])))
+    state = (torch.zeros(2, 1),)
+    seen = []
+    for slot in (0, 10, 3, 6):
+        state = fork.resume(torch.tensor(slot), state)
+        seen.append(state[0].flatten().tolist())
+    assert seen == [[0., 0.], [7., 0.], [7., 0.], [7., 9.]]
 
 
 @pytest.mark.parametrize('explore_loss, expected', [(1., True), (2., False), (3., False)])

@@ -1,0 +1,105 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+WORDS (None, None, None, None, None, None)
+ACTIONS [(0, 0, [-1, -1]), (0, 1, [-1, -1]), (1, 'union', [12, 16]), (0, 2, [-1, -1]), (1, 'surface', [-1, 18]), (0, 3, [-1, -1]), (1, 'whole', [-1, 0]), (0, 4, [-1, -1]), (1, 'equal', [-20, 0]), (0, 5, [-1, -1]), (1, 'whole', [-26, -1])]
+ part (('clause', 1), ClausePredicate(name='whole'), ('clause', 0)) {}
+   part (('clause', 0), ClausePredicate(name='equal'), -1) {'_evidence_pair': (1.0, 0.0), '_forward_references': ((2, 22),), '_open_references': (('referent', 2),)}
+     part (-1, ClausePredicate(name='whole'), ('clause', 0)) {'_evidence_pair': (1.0, 0.0), '_forward_references': ((0, 20),), '_open_references': (('referent', 0),)}
+       None (-1, -1, -1) {}
+   None (-1, -1, -1) {}
+WORDS (None, None, None, None, None, None)
+ACTIONS [(0, 0, [-1, -1]), (0, 1, [-1, -1]), (1, 'union', [12, 16]), (0, 2, [-1, -1]), (1, 'surface', [-1, 18]), (0, 3, [-1, -1]), (1, 'whole', [-1, 0]), (0, 4, [-1, -1]), (1, 'equal', [-20, 0]), (0, 5, [-1, -1]), (1, 'whole', [-26, -1])]
+ part (('clause', 1), ClausePredicate(name='whole'), ('clause', 0)) {}
+   part (('clause', 0), ClausePredicate(name='equal'), -1) {'_evidence_pair': (1.0, 0.0), '_forward_references': ((2, 22),), '_open_references': (('referent', 2),)}
+     part (-1, ClausePredicate(name='whole'), ('clause', 0)) {'_evidence_pair': (1.0, 0.0), '_forward_references': ((0, 20),), '_open_references': (('referent', 0),)}
+       None (-1, -1, -1) {}
+   None (-1, -1, -1) {}
+WORDS (None, None, None, None, None, None)
+ACTIONS [(0, 0, [-1, -1]), (0, 1, [-1, -1]), (1, 'union', [12, 16]), (0, 2, [-1, -1]), (1, 'surface', [-1, 18]), (0, 3, [-1, -1]), (1, 'whole', [-1, 0]), (0, 4, [-1, -1]), (1, 'equal', [-20, 0]), (0, 5, [-1, -1]), (1, 'whole', [-26, -1])]
+ part (('clause', 1), ClausePredicate(name='whole'), ('clause', 0)) {}
+   part (('clause', 0), ClausePredicate(name='equal'), -1) {'_evidence_pair': (1.0, 0.0), '_forward_references': ((2, 22),), '_open_references': (('referent', 2),)}
+     part (-1, ClausePredicate(name='whole'), ('clause', 0)) {'_evidence_pair': (1.0, 0.0), '_forward_references': ((0, 20),), '_open_references': (('referent', 0),)}
+       None (-1, -1, -1) {}
+   None (-1, -1, -1) {}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/inspect_sentences.py", line 42, in <module>
+    present(model, split='train', after_batch=after)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 48, in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13618, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13757, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14139, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8777, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10208, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8462, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8240, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23489, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17223, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22023, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21576, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20751, in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20344, in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtClosing.py", line 133, in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6026, in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6394, in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6355, in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6211, in execute
+    actions = tuple(candidates(current, state)) + (() if open_slots(current) else (None,))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6191, in candidates
+    return stream_candidates(registry, state.contexts[-1].initial, state.contexts[-1].meaning,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtStream.py", line 67, in candidates
+    requests = list(registry.controller_candidates(root, active, current,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 2115, in controller_candidates
+    signature = self.signature_for(candidate)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 2224, in signature_for
+    reference = concept_reference(meaning.role_refs[1])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Taxonomy.py", line 15, in concept_reference
+    raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+TypeError: taxonomy operands require a ('sym', positive concept id) reference

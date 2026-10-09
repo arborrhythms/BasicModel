@@ -1,0 +1,42 @@
+--- BasicModel._sentence_path_cost.original
++++ BasicModel._sentence_path_cost.observed
+@@ -99,4 +99,5 @@
+         cost = root.sum(-1) * 0
+     elif cost.ndim == 0:
+         cost = cost.expand(B)
++    _objective_probe.trial(self, locals())
+     return cost, reconstruction, observation, pending
+--- BasicModel._output_generate_walk.original
++++ BasicModel._output_generate_walk.observed
+@@ -69,6 +69,11 @@
+             basis, basis_valid, case_bank=case_bank) if require_symbols else available)
+         is_binary = torch.arange(stop + 1, device=event.device) < R2
+         legal = legal & (~is_binary[None] | (depth < N)[:, None])
++        if not torch.compiler.is_compiling() and _objective_probe.in_batch and getattr(self, "_sentence_training", False):
++            _objective_probe.decoder_margin.capture(self, logits, parent, legal, round=t,
++                explore=exploit_actions is not None, live=live,
++                metadata=dict(epoch=_objective_probe.epoch, batch=_objective_probe.training_batches,
++                              trial=getattr(self, "_sentence_trial", None)))
+         logits = logits.masked_fill(~legal, -torch.inf)
+         # An unreadable or capacity-blocked top remains pending. A finite
+         # no-op distribution avoids NaNs but does not admit an emit.
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -123,6 +123,7 @@
+         trial_mode=trial_mode,
+     )
+     self._sentence_answer_questions = what_questions
++    _objective_probe.opened(self, locals())
+ 
+     # Advance the serialized model clock once per PROCESSED batch (this
+     # point is past the no-batch early raise, so it ticks exactly once on
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -928,6 +928,7 @@
+         gradient_objectives = {name: self.errors.total(objective=name)
+             for name in ('reconstruction', 'output', 'expectation')} if train else None
+ 
++        _objective_probe.batch(self, locals())
+         # Snapshot the breakdown before the backward pass so later
+         # calls to TheError.covariance() can see it in the history
+         # even if the step is aborted by a non-finite detector below.

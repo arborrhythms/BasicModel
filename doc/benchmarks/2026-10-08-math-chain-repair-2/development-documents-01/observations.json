@@ -1,0 +1,247 @@
+[
+  {
+    "text": "v is fourteen.",
+    "source": 0,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [],
+    "row_id": 4595408206063254258,
+    "query": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ]
+  },
+  {
+    "text": "x is one.",
+    "source": 6,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [],
+    "row_id": -3759709709642169944,
+    "query": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ]
+  },
+  {
+    "text": "x is two.",
+    "source": 12,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ],
+      [
+        "evidence",
+        -1
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [],
+    "row_id": 5015501411466080383,
+    "query": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ],
+      [
+        "evidence",
+        -1
+      ]
+    ]
+  },
+  {
+    "text": "v is nine.",
+    "source": 18,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": null,
+    "row_id": 2522108957464881112,
+    "query": null
+  },
+  {
+    "text": "u is twenty.",
+    "source": 24,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [],
+    "row_id": 8080192662708003188,
+    "query": [
+      [
+        "relation",
+        1
+      ],
+      [
+        "referent",
+        2
+      ]
+    ]
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 30,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": -4988437674243963483,
+    "query": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 36,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": 8081013999966102660,
+    "query": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 42,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": -1241961858620536750,
+    "query": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  }
+]

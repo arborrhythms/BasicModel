@@ -51,14 +51,17 @@ def test_nested_compose_preserves_complete_child_roles_without_a_write(monkeypat
 def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
     _cs, registry, language, entry, leaves = _nested(monkeypatch)
     store = _write_selected_observation(language, registry, entry, path)
-    assert len(store) == 4
-    assert all(store.row(i)['kind']=='question' for i in (1,2,3))
+    # Bound child and parent carry ignorance without creating question rows.
+    assert len(store) == 2
+    from ThoughtReferences import open_slots
+    assert all(not open_slots(store.meaning_of(i)) for i in range(len(store)))
+    assert all(store.row(i)['evidence'] == (0., 0.) for i in range(len(store)))
     child, parent = store.row(0), store.row(1)
     assert parent["meaning"].role_refs[2] == child["occurrence"]
     assert child["kind"] == "unverified" and child["trust"] == 0
     torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
     assert not child["meaning"].roles.requires_grad
-    assert parent["kind"] == "question"
+    assert parent["kind"] == "observation"
 
 
 def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/thinking-gate/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/thinking-gate/worker-000.json"
+  ],
+  "pid": 26994,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2261289552,
+  "elapsed_seconds": 30.229803082998842,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/thinking-gate/worker-000.log"
+}

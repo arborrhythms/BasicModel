@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/campaign.py",
+    "sum",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/measurements/sum-03"
+  ],
+  "pid": 50526,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 782878256,
+  "elapsed_seconds": 152.49362312501762,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair/measurements/sum-03/run.log"
+}

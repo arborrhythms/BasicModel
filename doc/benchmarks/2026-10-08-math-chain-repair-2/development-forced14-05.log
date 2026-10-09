@@ -1,0 +1,124 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development_forced.py", line 45, in <module>
+    values=train_documents(model,documents,folder,after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/math_chain_ordinary.py", line 80, in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 48, in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/forced_math_grammar.py", line 32, in run_batch
+    return batch(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13685, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13822, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14204, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8842, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10273, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8527, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8305, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23597, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17288, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22131, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21684, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20572, in _run_sentence_word_bricks
+    payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1297, in compile_wrapper
+    raise RuntimeError(msg)
+RuntimeError: torch.compile with fullgraph=True found no compiled frames. Skipped frames:
+  - stage_cs_sub (/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:21145): Dynamo tracing is disabled
+  - _gather_word (/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:21141): Dynamo tracing is disabled
+  - __torch_function__ (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:118): frame is in the Dynamo skipfiles list
+  - synthesize_word_parts (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:11025): Dynamo tracing is disabled
+  - _radix_part_events (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:10969): Dynamo tracing is disabled
+  - __getattr__ (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1959): frame is in the Dynamo skipfiles list
+  - is_tensor (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/__init__.py:1526): frame is in the Dynamo skipfiles list
+  - lookup_rows (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:2420): Dynamo tracing is disabled
+  - pack (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py:35): Dynamo tracing is disabled
+  - is_fake (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py:259): frame is in the Dynamo skipfiles list
+  - is_fake_tensor (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py:252): frame is in the Dynamo skipfiles list
+  - is_traceable_wrapper_subclass (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_python_dispatch.py:547): frame is in the Dynamo skipfiles list
+  - __instancecheck__ (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/parameter.py:21): frame is in the Dynamo skipfiles list
+  - get (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:194): Dynamo tracing is disabled
+  - __init__ (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py:9): Dynamo tracing is disabled
+  - __setitem__ (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:164): Dynamo tracing is disabled
+  - __new__ (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:347): Dynamo tracing is disabled
+  - __init__ (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:352): Dynamo tracing is disabled
+  - _unorm_ste (/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py:101): Dynamo tracing is disabled
+  - remove (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/weakref.py:105): Dynamo tracing is disabled
+  - pad (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/functional.py:5761): frame is in the Dynamo skipfiles list
+  - handle_torch_function (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py:1722): frame is in the Dynamo skipfiles list
+  - _get_overloaded_args (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py:1643): frame is in the Dynamo skipfiles list
+  - helper (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:299): Dynamo tracing is disabled
+  - __init__ (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:104): Dynamo tracing is disabled
+  - _pop_mode_temporarily (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py:2126): frame is in the Dynamo skipfiles list
+  - __enter__ (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:132): Dynamo tracing is disabled
+  - _pop_mode (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py:2121): frame is in the Dynamo skipfiles list
+  - is_scripting (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_jit_internal.py:104): frame is in the Dynamo skipfiles list
+  - are_deterministic_algorithms_enabled (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/__init__.py:1906): frame is in the Dynamo skipfiles list
+  - __exit__ (/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:141): Dynamo tracing is disabled
+  - _push_mode (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py:2117): frame is in the Dynamo skipfiles list
+  - encode (/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py:25): Dynamo tracing is disabled
+  - intervals (/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py:39): Dynamo tracing is disabled
+  - encode (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:604): Dynamo tracing is disabled
+  - where_origin (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:592): Dynamo tracing is disabled
+  - _ladder_phase (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:504): Dynamo tracing is disabled
+  - period_hf (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:587): Dynamo tracing is disabled
+  - event_positions (/Users/arogers/github/WikiOracle/basicmodel/bin/Occurrence.py:201): Dynamo tracing is disabled
+  - encode (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:998): Dynamo tracing is disabled
+  - encode (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:895): Dynamo tracing is disabled
+  - period_hf (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:878): Dynamo tracing is disabled
+  - compute_word_property_event (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:21075): Dynamo tracing is disabled
+  - getW (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:2393): Dynamo tracing is disabled
+  - meronomy_enabled (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:145): Dynamo tracing is disabled
+  - get (/Users/arogers/github/WikiOracle/basicmodel/bin/util.py:1519): Dynamo tracing is disabled
+  - _has_traceable_wrapper_subclass_protocol (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_python_dispatch.py:543): frame is in the Dynamo skipfiles list
+  - on_counts (/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:139): Dynamo tracing is disabled
+  - coefficients (/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:98): Dynamo tracing is disabled
+  - forward (/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:41): Dynamo tracing is disabled
+  - save_for_backward (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/function.py:41): frame is in the Dynamo skipfiles list
+  - percept_code_evidence (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13279): Dynamo tracing is disabled
+  - fit (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13284): Dynamo tracing is disabled
+  - matched_code_evidence (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13256): Dynamo tracing is disabled
+  - wrapped (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_tensor.py:32): frame is in the Dynamo skipfiles list
+  - __rsub__ (/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_tensor.py:1116): frame is in the Dynamo skipfiles list
+  - _tensor_write_word_column (/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:19467): Dynamo tracing is disabled
+  - reduce_aligned_percept_peers (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18255): Dynamo tracing is disabled
+  - reduce_aligned_word_peers (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18144): Dynamo tracing is disabled
+  - <genexpr> (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18185): Dynamo tracing is disabled
+  - fit_locations (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18171): Dynamo tracing is disabled
+  - <genexpr> (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18186): Dynamo tracing is disabled
+  - from_coefficients (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:3985): Dynamo tracing is disabled
+  - decode_sparse_concept_rows (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:17896): Dynamo tracing is disabled

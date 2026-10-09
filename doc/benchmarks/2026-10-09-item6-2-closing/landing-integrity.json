@@ -1,0 +1,65 @@
+{
+  "recorded_utc": "2026-10-09T08:25:44.633336+00:00",
+  "exact_closing_source": {
+    "source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+    "source_files": 744,
+    "sweep": true,
+    "thinking": 57,
+    "stopped_files_unchanged": 59
+  },
+  "retained_evidence": {
+    "closing_helpers": {
+      "files": 8,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/closing-source-4/helpers.json"
+    },
+    "closing_artifacts": {
+      "files": 246,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/closing-artifacts-sha256.json"
+    },
+    "stopped_files": {
+      "files": 59,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/retained-files-sha256.json"
+    },
+    "stop_receipt": {
+      "files": 9,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/receipt-sha256.json"
+    },
+    "old_campaign_helpers": {
+      "files": 222,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-08-math-chain-repair-2/measured-source/measurement-helpers.json"
+    },
+    "standing_campaign_helpers": {
+      "files": 224,
+      "unchanged": true,
+      "manifest": "doc/benchmarks/2026-10-09-item6-2-closing/measured-source/measurement-helpers.json"
+    },
+    "prior_receipts": [
+      {
+        "files": 2393,
+        "unchanged": true,
+        "manifest": "doc/benchmarks/2026-10-07-math-chain/receipt-sha256.json"
+      },
+      {
+        "files": 1967,
+        "unchanged": true,
+        "manifest": "doc/benchmarks/2026-10-08-math-chain-repair/receipt-sha256.json"
+      }
+    ]
+  },
+  "frozen_contracts_unchanged": true,
+  "binding_matches_unchanged": true,
+  "original_protocol_unchanged": true,
+  "four_corrections_recorded": true,
+  "document_links": {
+    "passed": 348,
+    "failed": 0,
+    "result": "landing-doc-links.xml"
+  },
+  "standing_condition_satisfied": true,
+  "learning_claim": false
+}

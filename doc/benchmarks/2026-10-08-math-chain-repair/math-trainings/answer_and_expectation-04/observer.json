@@ -1,0 +1,422 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 23,
+    "episodes": 35,
+    "sentences": 140,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "query": 52,
+    "conclude": 16,
+    "equal": 83,
+    "not": 218,
+    "exist": 1
+  },
+  "credit": {
+    "answer_expectation_and_work": 32,
+    "nonzero_graph": 16,
+    "ties": 17,
+    "nonzero_chooser_gradients": 16,
+    "document_end_answer_and_work": 1
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.22318711996078494,
+        0.2531871199607849
+      ],
+      "graph": true,
+      "surrogate": 0.04750978946685791,
+      "raw_chooser_gradient_l2": 0.02998156370541621
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.2237857532501221,
+        0.2537857532501221
+      ],
+      "graph": true,
+      "surrogate": 0.04750978946685791,
+      "raw_chooser_gradient_l2": 0.029981563876063613
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.38020837783813477,
+        0.4102083778381348
+      ],
+      "graph": true,
+      "surrogate": 0.10829786956310272,
+      "raw_chooser_gradient_l2": 0.07552956588370843
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.34607968807220457,
+        0.3760796880722046
+      ],
+      "graph": true,
+      "surrogate": 0.07913345843553543,
+      "raw_chooser_gradient_l2": 0.03382158840676894
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8464870357513428,
+        0.8464870357513428
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.46808705806732176,
+        0.4380870580673218
+      ],
+      "graph": true,
+      "surrogate": -0.11434296518564224,
+      "raw_chooser_gradient_l2": 0.14212918176885322
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.41384240150451657,
+        0.41384240150451657
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.42789603233337403,
+        0.517896032333374
+      ],
+      "graph": true,
+      "surrogate": 0.33685827255249023,
+      "raw_chooser_gradient_l2": 0.5866591857997633
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7291434848308563,
+        0.4485473203659058
+      ],
+      "graph": true,
+      "surrogate": -5.604977130889893,
+      "raw_chooser_gradient_l2": 8.600685213951772
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.34241135358810426,
+        0.19241135358810424
+      ],
+      "graph": true,
+      "surrogate": -0.687779426574707,
+      "raw_chooser_gradient_l2": 1.1162850868773764
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.30719163894653323,
+        0.3371916389465332
+      ],
+      "graph": true,
+      "surrogate": 0.0803375318646431,
+      "raw_chooser_gradient_l2": 0.09023834943841734
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7469441914558411,
+        0.7469441914558411
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        2.68138126373291,
+        2.7113812637329104
+      ],
+      "graph": true,
+      "surrogate": 0.1332872211933136,
+      "raw_chooser_gradient_l2": 0.09253259794456037
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7412667417526245,
+        0.7412667417526245
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7027433776855467,
+        1.7027433776855467
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8015302562713623,
+        0.8015302562713623
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.2074184226989746,
+        1.2674184226989746
+      ],
+      "graph": true,
+      "surrogate": 0.16459357738494873,
+      "raw_chooser_gradient_l2": 0.2376926762554366
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8604651260375977,
+        1.8904651260375978
+      ],
+      "graph": true,
+      "surrogate": 0.07939468324184418,
+      "raw_chooser_gradient_l2": 0.090558182106521
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        48.52017333984375,
+        48.55017333984375
+      ],
+      "graph": true,
+      "surrogate": 0.07845284044742584,
+      "raw_chooser_gradient_l2": 0.04667576642924679
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        0.64,
+        0.64
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7172895812988281,
+        0.7172895812988281
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.6699047768115998,
+        0.6699047768115998
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.21094367027282715,
+        0.12855589091777803
+      ],
+      "graph": true,
+      "surrogate": -0.1250874102115631,
+      "raw_chooser_gradient_l2": 0.08651672460967647
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8752944850921631,
+        0.8752944850921631
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.23733109951019288,
+        0.26733109951019285
+      ],
+      "graph": true,
+      "surrogate": 0.05805413797497749,
+      "raw_chooser_gradient_l2": 0.06183429643079683
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8426196479797363,
+        0.8426196479797363
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7150777244567872,
+        0.7150777244567872
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.9569090747833252,
+        0.8824834966659546
+      ],
+      "graph": true,
+      "surrogate": -1.0983957052230835,
+      "raw_chooser_gradient_l2": 1.1761389968054545
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8513479137420654,
+        0.8513479137420654
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.1061922454833986,
+        1.1061922454833986
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8382663154602051,
+        0.8382663154602051
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.2118071937561035,
+        1.2118071937561035
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.843228521347046,
+        0.843228521347046
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 12.497260540289833,
+  "raw_chooser_gradient_l2_max": 8.600685213951772
+}

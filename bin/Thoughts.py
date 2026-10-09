@@ -53,9 +53,10 @@ class ThoughtRecord:
             raise TypeError("thought content requires a complete ConceptualMeaning")
         if self.kind in ("begin", "thought", "descend") and self.meaning is None:
             raise ValueError("thought content cannot be empty")
-        if self.kind in ("begin", "descend") and self.meaning.mode != "interrogative":
+        from ThoughtReferences import needs_episode
+        if self.kind in ("begin", "descend") and not needs_episode(self.meaning):
             raise ValueError(
-                "a thinking context requires an interrogative initiating meaning"
+                "a thinking context requires a free variable or an unsupported interrogative region"
             )
         for name in ("support_true", "support_false"):
             value = float(getattr(self, name))

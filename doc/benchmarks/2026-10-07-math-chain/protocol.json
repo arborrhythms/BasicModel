@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-07",
+  "item": "6.2 learning step MM_math_chain",
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "parent_bump": "1970001e6ad61f720784fc6192dfd453276a164a",
+  "spec_sha256": "e378624c27cd1208e2df68f0b549204a6765d6e763cb8890dac921958452d508",
+  "seed": null,
+  "retries": 0,
+  "conditions": [
+    "answer_and_expectation",
+    "expectation_only",
+    "zero_attention_budget"
+  ],
+  "runs_per_condition": 10,
+  "held_out_pairs": [
+    [
+      2,
+      7
+    ],
+    [
+      4,
+      8
+    ],
+    [
+      7,
+      3
+    ],
+    [
+      9,
+      6
+    ]
+  ],
+  "beyond_range_pairs": [
+    [
+      11,
+      2
+    ],
+    [
+      12,
+      3
+    ],
+    [
+      2,
+      11
+    ],
+    [
+      3,
+      12
+    ]
+  ],
+  "training_addends": [
+    0,
+    10
+  ],
+  "numeral_vocabulary": [
+    0,
+    20
+  ],
+  "epochs": 50,
+  "epoch_basis": "The existing MM_math pilot uses 50 epochs; fixed before any learning trial.",
+  "attention_budget": 64,
+  "conditions_share_corpus": true,
+  "per_presentation_premises_shuffled": true,
+  "answer_success_bar": "At least 9 of 10 trainings bind all four held-out rows correctly.",
+  "chain_bar": "Every question opens an episode; successor chain length equals the second addend; one inference row per step with correct provenance.",
+  "expectation_only_bar": "Report how many of the ten form the chain without the answer line or answer loss.",
+  "zero_budget_bar": "Report held-out binding accuracy of ten trainings with attentionBudget zero.",
+  "measurement": "After development certificates, freeze source and helpers; one complete green sweep, thinking 57/57, unchanged standing thirty, and all thirty math trainings exactly once. Preserve every outcome. No selection of seeds or retries.",
+  "runtime": "Ordinary source-text sentence driver and shared chooser. Arithmetic, worked-step generation and expected answers are data/verifier only; no definition rows, plus executor, numeric numeral encoding or mathRange-sized answer head.",
+  "publication": "Stop for Claude review before any learning-step commit.",
+  "initialization": "Ten fresh entropy-initialized states, each replayed across the three conditions; no chosen seed or outcome-dependent redraw.",
+  "paired_presentations": "Each run owns fifty freshly shuffled presentations; expectation-only removes only answer lines and labels. The verifier sees held targets only after the result is fixed.",
+  "resource_limits": {
+    "math_workers": 2,
+    "memory_gib_per_math_worker": 8,
+    "math_worker_timeout_seconds": 86400
+  },
+  "verifier": "Strict bound lexical identity; a chain requires one committed inference per successor, the licensing counting fact and its premise/prior-inference dependency. Surface answers and raw operation counts do not satisfy the gate.",
+  "development_failures_retained": true,
+  "zero_budget_semantics": "Ordinary word/VP composition remains active; bracket narrowing and thought work receive zero allowance. Model loading and a real optimizer pass certify this control.",
+  "scoring": "Only the binding read back from the committed LTM row is scored. Ephemeral conclusions, surface strings and nearest-numeral guesses do not count."
+}

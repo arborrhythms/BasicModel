@@ -1,0 +1,243 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "total_sentences": 8, "seconds": 9.205780584015884, "occupancy": 58}
+batch = 8 (Δ=7.738s)
+{"batch": 2, "total_sentences": 16, "seconds": 7.655786291928962, "occupancy": 102}
+batch = 16 (Δ=5.073s)
+{"batch": 3, "total_sentences": 20, "seconds": 4.9862947090296075, "occupancy": 124}
+batch = 20 (Δ=6.047s)
+{"batch": 4, "total_sentences": 28, "seconds": 6.002546083997004, "occupancy": 166}
+batch = 28 (Δ=8.561s)
+{"batch": 5, "total_sentences": 36, "seconds": 8.557666333043016, "occupancy": 190}
+batch = 36 (Δ=5.647s)
+{"batch": 6, "total_sentences": 44, "seconds": 5.5771390839945525, "occupancy": 222}
+batch = 44 (Δ=12.881s)
+{"batch": 7, "total_sentences": 52, "seconds": 12.877027374925092, "occupancy": 273}
+batch = 52 (Δ=3.708s)
+{"batch": 8, "total_sentences": 56, "seconds": 3.638130832929164, "occupancy": 294}
+batch = 56 (Δ=7.007s)
+{"batch": 9, "total_sentences": 60, "seconds": 7.001664959010668, "occupancy": 325}
+batch = 60 (Δ=5.577s)
+{"batch": 10, "total_sentences": 68, "seconds": 5.539665499934927, "occupancy": 340}
+batch = 68 (Δ=7.984s)
+{"batch": 11, "total_sentences": 76, "seconds": 7.980259959003888, "occupancy": 376}
+batch = 76 (Δ=10.858s)
+{"batch": 12, "total_sentences": 84, "seconds": 10.853905832977034, "occupancy": 413}
+batch = 84 (Δ=10.744s)
+{"batch": 13, "total_sentences": 92, "seconds": 10.740143042057753, "occupancy": 451}
+batch = 92 (Δ=11.723s)
+{"batch": 14, "total_sentences": 100, "seconds": 11.88215091591701, "occupancy": 487}
+batch = 100 (Δ=10.062s)
+{"batch": 15, "total_sentences": 108, "seconds": 9.894359375000931, "occupancy": 526}
+batch = 108 (Δ=2.831s)
+{"batch": 16, "total_sentences": 111, "seconds": 2.7600074160145596, "occupancy": 539}
+batch = 111 (Δ=4.024s)
+{"batch": 17, "total_sentences": 114, "seconds": 4.020014500012621, "occupancy": 549}
+batch = 114 (Δ=4.241s)
+{"batch": 18, "total_sentences": 117, "seconds": 4.23761520802509, "occupancy": 564}
+batch = 117 (Δ=3.552s)
+{"batch": 19, "total_sentences": 120, "seconds": 3.547808542032726, "occupancy": 578}
+batch = 120 (Δ=4.727s)
+{"batch": 20, "total_sentences": 123, "seconds": 4.7233302081003785, "occupancy": 592}
+batch = 123 (Δ=4.720s)
+{"batch": 21, "total_sentences": 126, "seconds": 4.715795792057179, "occupancy": 606}
+batch = 126 (Δ=6.041s)
+{"batch": 22, "total_sentences": 134, "seconds": 6.011944542056881, "occupancy": 632}
+batch = 134 (Δ=9.906s)
+{"batch": 23, "total_sentences": 142, "seconds": 9.901807790971361, "occupancy": 675}
+batch = 142 (Δ=12.652s)
+{"batch": 24, "total_sentences": 150, "seconds": 12.648113458999433, "occupancy": 720}
+batch = 150 (Δ=12.592s)
+{"batch": 25, "total_sentences": 158, "seconds": 12.588046667049639, "occupancy": 766}
+batch = 158 (Δ=8.799s)
+{"batch": 26, "total_sentences": 166, "seconds": 8.795034375041723, "occupancy": 809}
+batch = 166 (Δ=12.223s)
+{"batch": 27, "total_sentences": 174, "seconds": 12.217938625020906, "occupancy": 865}
+batch = 174 (Δ=11.214s)
+{"batch": 28, "total_sentences": 182, "seconds": 11.211713708005846, "occupancy": 915}
+batch = 182 (Δ=9.637s)
+{"batch": 29, "total_sentences": 190, "seconds": 9.630667333025485, "occupancy": 958}
+batch = 190 (Δ=3.748s)
+{"batch": 30, "total_sentences": 193, "seconds": 3.6749899169662967, "occupancy": 970}
+batch = 193 (Δ=3.253s)
+{"batch": 31, "total_sentences": 196, "seconds": 3.2483792080311105, "occupancy": 982}
+batch = 196 (Δ=3.754s)
+{"batch": 32, "total_sentences": 199, "seconds": 3.751515083014965, "occupancy": 995}
+batch = 199 (Δ=7.214s)
+{"batch": 33, "total_sentences": 202, "seconds": 7.208923666039482, "occupancy": 1011}
+batch = 202 (Δ=4.541s)
+{"batch": 34, "total_sentences": 205, "seconds": 4.536527500022203, "occupancy": 1026}
+batch = 205 (Δ=5.911s)
+{"batch": 35, "total_sentences": 208, "seconds": 5.906574624939822, "occupancy": 1044}
+batch = 208 (Δ=6.121s)
+{"batch": 36, "total_sentences": 211, "seconds": 6.116546791046858, "occupancy": 1063}
+batch = 211 (Δ=4.630s)
+{"batch": 37, "total_sentences": 214, "seconds": 4.627789083053358, "occupancy": 1078}
+batch = 214 (Δ=9.193s)
+{"batch": 38, "total_sentences": 222, "seconds": 9.160253540962003, "occupancy": 1111}
+batch = 222 (Δ=11.079s)
+{"batch": 39, "total_sentences": 230, "seconds": 11.07416729198303, "occupancy": 1155}
+batch = 230 (Δ=12.388s)
+{"batch": 40, "total_sentences": 238, "seconds": 12.384173040976748, "occupancy": 1191}
+batch = 238 (Δ=11.568s)
+{"batch": 41, "total_sentences": 246, "seconds": 11.56359395897016, "occupancy": 1221}
+batch = 246 (Δ=8.509s)
+{"batch": 42, "total_sentences": 254, "seconds": 8.504989458946511, "occupancy": 1255}
+batch = 254 (Δ=10.325s)
+{"batch": 43, "total_sentences": 262, "seconds": 10.319945916999131, "occupancy": 1297}
+batch = 262 (Δ=10.074s)
+{"batch": 44, "total_sentences": 270, "seconds": 10.069499333039857, "occupancy": 1336}
+batch = 270 (Δ=9.646s)
+{"batch": 45, "total_sentences": 278, "seconds": 9.641664874972776, "occupancy": 1374}
+batch = 278 (Δ=8.289s)
+{"batch": 46, "total_sentences": 286, "seconds": 8.285053916973993, "occupancy": 1407}
+batch = 286 (Δ=4.939s)
+{"batch": 47, "total_sentences": 289, "seconds": 4.866383042070083, "occupancy": 1421}
+batch = 289 (Δ=3.702s)
+{"batch": 48, "total_sentences": 292, "seconds": 3.6971548750298098, "occupancy": 1433}
+batch = 292 (Δ=2.638s)
+{"batch": 49, "total_sentences": 295, "seconds": 2.6335250000702217, "occupancy": 1443}
+batch = 295 (Δ=5.002s)
+{"batch": 50, "total_sentences": 298, "seconds": 4.999092374928296, "occupancy": 1451}
+batch = 298 (Δ=4.020s)
+{"batch": 51, "total_sentences": 301, "seconds": 4.016048833960667, "occupancy": 1457}
+batch = 301 (Δ=4.692s)
+{"batch": 52, "total_sentences": 304, "seconds": 4.687811249983497, "occupancy": 1463}
+batch = 304 (Δ=4.681s)
+{"batch": 53, "total_sentences": 307, "seconds": 4.67711133393459, "occupancy": 1469}
+batch = 307 (Δ=4.651s)
+{"batch": 54, "total_sentences": 310, "seconds": 4.64711683394853, "occupancy": 1477}
+batch = 310 (Δ=4.229s)
+{"batch": 55, "total_sentences": 313, "seconds": 4.224909958080389, "occupancy": 1483}
+batch = 313 (Δ=5.593s)
+{"batch": 56, "total_sentences": 321, "seconds": 5.563451624941081, "occupancy": 1505}
+batch = 321 (Δ=7.814s)
+{"batch": 57, "total_sentences": 329, "seconds": 7.809656040975824, "occupancy": 1525}
+batch = 329 (Δ=11.264s)
+{"batch": 58, "total_sentences": 337, "seconds": 11.259979375055991, "occupancy": 1547}
+batch = 337 (Δ=10.822s)
+{"batch": 59, "total_sentences": 345, "seconds": 10.818146375007927, "occupancy": 1567}
+batch = 345 (Δ=7.650s)
+{"batch": 60, "total_sentences": 353, "seconds": 7.646657542092726, "occupancy": 1587}
+batch = 353 (Δ=8.574s)
+{"batch": 61, "total_sentences": 361, "seconds": 8.569159999955446, "occupancy": 1605}
+batch = 361 (Δ=8.533s)
+{"batch": 62, "total_sentences": 369, "seconds": 8.529520540963858, "occupancy": 1624}
+batch = 369 (Δ=9.142s)
+{"batch": 63, "total_sentences": 377, "seconds": 9.137241458985955, "occupancy": 1653}
+batch = 377 (Δ=8.771s)
+{"batch": 64, "total_sentences": 385, "seconds": 8.766807707957923, "occupancy": 1681}
+batch = 385 (Δ=7.587s)
+{"batch": 65, "total_sentences": 393, "seconds": 7.583377082948573, "occupancy": 1697}
+batch = 393 (Δ=2.049s)
+{"batch": 66, "total_sentences": 395, "seconds": 1.9767723749391735, "occupancy": 1699}
+batch = 395 (Δ=2.189s)
+{"batch": 67, "total_sentences": 397, "seconds": 2.1845577500062063, "occupancy": 1704}
+batch = 397 (Δ=1.869s)
+{"batch": 68, "total_sentences": 399, "seconds": 1.8651639589807019, "occupancy": 1708}
+batch = 399 (Δ=3.123s)
+{"batch": 69, "total_sentences": 401, "seconds": 3.1197777919005603, "occupancy": 1712}
+batch = 401 (Δ=2.436s)
+{"batch": 70, "total_sentences": 403, "seconds": 2.431978417094797, "occupancy": 1716}
+batch = 403 (Δ=2.933s)
+{"batch": 71, "total_sentences": 405, "seconds": 2.9292730409651995, "occupancy": 1720}
+batch = 405 (Δ=3.385s)
+{"batch": 72, "total_sentences": 407, "seconds": 3.381643542088568, "occupancy": 1726}
+batch = 407 (Δ=4.524s)
+{"batch": 73, "total_sentences": 409, "seconds": 4.520538416923955, "occupancy": 1737}
+batch = 409 (Δ=4.913s)
+{"batch": 74, "total_sentences": 411, "seconds": 4.909625749918632, "occupancy": 1748}
+batch = 411 (Δ=4.870s)
+{"batch": 75, "total_sentences": 413, "seconds": 4.865912375040352, "occupancy": 1758}
+batch = 413 (Δ=6.427s)
+{"batch": 76, "total_sentences": 421, "seconds": 6.405233458033763, "occupancy": 1785}
+batch = 421 (Δ=8.242s)
+{"batch": 77, "total_sentences": 429, "seconds": 8.238319667056203, "occupancy": 1809}
+batch = 429 (Δ=10.945s)
+{"batch": 78, "total_sentences": 437, "seconds": 10.941321708960459, "occupancy": 1828}
+batch = 437 (Δ=10.476s)
+{"batch": 79, "total_sentences": 445, "seconds": 10.472176457988098, "occupancy": 1846}
+batch = 445 (Δ=8.251s)
+{"batch": 80, "total_sentences": 453, "seconds": 8.247572457999922, "occupancy": 1871}
+batch = 453 (Δ=8.897s)
+{"batch": 81, "total_sentences": 461, "seconds": 8.892404917045496, "occupancy": 1909}
+batch = 461 (Δ=10.314s)
+{"batch": 82, "total_sentences": 469, "seconds": 10.309975584037602, "occupancy": 1949}
+batch = 469 (Δ=11.636s)
+{"batch": 83, "total_sentences": 477, "seconds": 11.631611457909457, "occupancy": 1999}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_clause14.py", line 126, in <module>
+    development_epoch.main(output, 'answer_and_expectation')
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development_epoch.py", line 223, in main
+    report = present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=after)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 48, in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development_epoch.py", line 170, in batch
+    return ordinary_batch(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_clause14.py", line 112, in batch
+    return ordinary_batch(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13690, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13827, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14209, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8847, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10278, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8532, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8310, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23617, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17293, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22151, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21704, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20830, in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20339, in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 173, in _append_observed_meaning
+    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_clause14.py", line 86, in write
+    return ordinary_write(store, clause, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py", line 404, in write_clause
+    preflight(clause)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py", line 371, in preflight
+    raise ValueError('a clause over a relation cannot fuse')
+ValueError: a clause over a relation cannot fuse

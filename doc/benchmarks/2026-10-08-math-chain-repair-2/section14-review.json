@@ -1,0 +1,66 @@
+{
+  "status": "development held; item 7 certificate failed",
+  "spec": "2026-10-07-thinking.md \u00a714.7",
+  "protocol_declared": false,
+  "source_frozen_for_measurement": false,
+  "measurement_started": false,
+  "commit_created": false,
+  "epoch_folder": "development-epoch-answer-14-05",
+  "epoch_seconds": 1618.2190406250302,
+  "sentences": 1449,
+  "source_unchanged": true,
+  "development_certificate": {
+    "question_answer_costs_nontied": true,
+    "chooser_moved": true,
+    "declarative_episode_share_fell": false,
+    "passed": false
+  },
+  "first_epoch_questions": {
+    "observed": 117,
+    "references_left_open": 4,
+    "episodes_opened": 4,
+    "bindings_correct": 0
+  },
+  "question_comparisons": {
+    "comparisons": 4,
+    "answer_nonties": 1,
+    "total_nonties": 2
+  },
+  "declarative_episode_halves": [
+    {
+      "sentences": 607,
+      "episodes": 116,
+      "share": 0.19110378912685339
+    },
+    {
+      "sentences": 608,
+      "episodes": 119,
+      "share": 0.19572368421052633
+    }
+  ],
+  "seconds_per_sentence": {
+    "plain": 1.1263150189577797,
+    "question_with_episode": 1.8953233750216896,
+    "question_without_episode": 0.9915080678466894,
+    "answer_line": 1.0906293087869756
+  },
+  "occupancy": 4510,
+  "focused_checks": {
+    "wider": 69,
+    "regression": 1,
+    "regression_reproduces_on_archived_source": true
+  },
+  "pending": "The fixed full-epoch decline check has not passed; declaration, current-source sweep, thinking 57/57, standing thirty and the declared measurement remain pending.",
+  "preserved_prior_receipts": [
+    {
+      "receipt": "2026-10-07-math-chain",
+      "files": 2393,
+      "mismatches": []
+    },
+    {
+      "receipt": "2026-10-08-math-chain-repair",
+      "files": 1967,
+      "mismatches": []
+    }
+  ]
+}

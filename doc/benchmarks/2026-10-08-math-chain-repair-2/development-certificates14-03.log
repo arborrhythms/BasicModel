@@ -1,0 +1,248 @@
+..........FF.                                                            [100%]
+=================================== FAILURES ===================================
+___ test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage ___
+
+tmp_path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-certificates14-03/test_forced_c_e_closings_exerc0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12f5d6390>
+
+    def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp_path, monkeypatch):
+        """g on the authorized forced c/e grammars; both explore suffixes stay live."""
+        import json
+        from forced_math_grammar import ForcedGrammar
+        from math_chain_ordinary import ordinary_model, train_documents
+        from math_chain_corpus import ChainDocument
+        model = ordinary_model(tmp_path)
+        chooser = model._selected_thought_chooser(None)
+        logits = chooser.thought_logits
+        def query_then_conclude(active, requests):
+            value = logits(active, requests)
+            bonus = value.new_tensor([10. if candidate is None else
+                5. if candidate.semantic_id == 'query' else 0. for candidate in requests])
+            return value + bonus
+        monkeypatch.setattr(chooser, 'thought_logits', query_then_conclude)
+        examples = []
+        def episode(original, model, meaning, **kwargs):
+            result = original(model, meaning, **kwargs)
+            operations = [record.operation for record in result.records if record.kind == 'thought']
+            examples.append(dict(source_pair=bindings(meaning).get('_source_evidence'),
+                occurrence=bindings(meaning).get('_query_occurrence'), operations=operations,
+                before=open_slots(meaning), after=open_slots(result.meaning),
+                minted=any(bindings(child).get('_formation_reason') == 'search_exhausted'
+                           for child in result.meaning.constituents)))
+            return result
+        try:
+            documents = [ChainDocument('declarative', ('y is x plus two.',)),
+                         ChainDocument('question', ('what is y ?',), question=0)]
+            with ForcedGrammar(model, open_names=('what','x')) as forced:
+>               rows = train_documents(model, documents, tmp_path, episode=episode)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain_section14.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+test/forced_math_grammar.py:33: in run_batch
+    return batch(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13690: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13827: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14209: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8847: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10278: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8532: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8310: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23617: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17293: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22151: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21704: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20830: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20385: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:110: in close
+    result = model.run_selected_thought(field.query, row=row,
+test/math_chain_ordinary.py:57: in observe_episode
+    return episode(original, model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_math_chain_section14.py:266: in episode
+    result = original(model, meaning, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-07-math-chain/math_observer.py:64: in observed
+    value = run(model, meaning, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6037: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:223: in thought_pair
+    greedy, first, state = run(trace, meter)
+                           ^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:206: in run
+    result = model._run_selected_thought_once(meaning, row=row, work_budget=work_budget,
+bin/Models.py:6464: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6427: in run_context
+    action = self._choose_selected_thought_action(
+bin/Models.py:5996: in _choose_selected_thought_action
+    logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+active = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 20), ('ltm', 'address-v1', -21079324446184...ce', ('ltm', 'address-v1', 959891185957465558)), ('_source_evidence', (1.0, 0.0))), scope=(), sentence_kind='relation')
+requests = (ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 4010033338316264258), ('ltm', 'address-v1...ce', ('ltm', 'address-v1', 959891185957465558)), ('_source_evidence', (1.0, 0.0))), scope=(), sentence_kind=None), ...)
+
+    def query_then_conclude(active, requests):
+        value = logits(active, requests)
+        bonus = value.new_tensor([10. if candidate is None else
+>           5. if candidate.semantic_id == 'query' else 0. for candidate in requests])
+                  ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'ConceptualMeaning' object has no attribute 'semantic_id'
+
+test/test_math_chain_section14.py:261: AttributeError
+__________ test_forced_ordinary_pending_premise_in_both_orders[False] __________
+
+tmp_path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-certificates14-03/test_forced_ordinary_pending_p0')
+reverse = False
+
+    @pytest.mark.parametrize('reverse', [False, True])
+    def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse):
+        """Certificate e, FORCED operation/binding; address upsert on actual rows."""
+        import json
+        from forced_math_grammar import ForcedGrammar
+        from math_chain_ordinary import ordinary_model, train_documents
+        from math_chain_corpus import ChainDocument
+        model = ordinary_model(tmp_path)
+        sentences = ('y is x plus two.', 'x is three.')
+        if reverse:
+            sentences = sentences[::-1]
+        documents = [ChainDocument(str(i), sentences) for i in range(8)]
+        pending, report = [], []
+        batches = 0
+        def after(model, split, rows, result, observed, observer):
+            nonlocal batches
+            batches += 1
+            store = model.symbolSpace.ltm_store
+            if batches == 1 and not reverse:
+                names = set(model._concept_owner().word_concepts('x'))
+                for index in range(len(store)):
+                    if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                        continue
+                    value = store.meaning_of(index)
+                    forwards = () if value is None else bindings(value).get('_forward_references', ())
+                    # A live departure may also open a different name. This
+                    # certificate follows the actual pending x columns; arrival
+                    # of x must not fill an unrelated y or numeral variable.
+                    if forwards and all(identity in names for _, identity in forwards):
+                        pending.append((index,store.occurrence_of(index)))
+                assert len(pending) >= 2, 'the first premise must persist pending x constituents in the batch'
+            if batches == 2:
+                for index, address in pending:
+                    value = store.meaning_of(index)
+                    report.append(dict(occurrence=address,open=open_slots(value),refs=value.role_refs))
+                    assert store.occurrence_of(index) == address and not open_slots(value)
+                    assert not bindings(value).get('_pending')
+                if reverse:
+                    for index in range(len(store)):
+                        if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                            continue
+                        value = store.meaning_of(index)
+                        assert not bindings(value).get('_forward_references')
+        try:
+            with ForcedGrammar(model, open_names=('x',), named_bindings={'x':'three'}) as forced:
+>               rows = train_documents(model, documents, tmp_path, after=after)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain_section14.py:343: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=104, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)
+)
+split = 'train', rows = [0, 2, 4, 6, 8, 10, ...]
+result = BatchResult(outputPred=tensor([[[-0.0361]],
+
+        [[-0.0361]],
+
+        [[-0.0361]],
+
+        [[-0.0361]],
+
+       ...000, 0.0000, 0.0000,  ..., 0.0000, 0.0000, 0.0000],
+         [0.0000, 0.0000, 0.0000,  ..., 0.0000, 0.0000, 0.0000]]]))
+observed = [{'epoch': 1, 'source': 0, 'row_id': -4965080833227665625, 'address': ('ltm', 'address-v1', -4965080833227665625), ......h': 1, 'source': 10, 'row_id': -2906596660622552063, 'address': ('ltm', 'address-v1', -2906596660622552063), ...}, ...]
+observer = <frozen_math_observer.Observer object at 0x12f7350d0>
+
+    def after(model, split, rows, result, observed, observer):
+        nonlocal batches
+        batches += 1
+        store = model.symbolSpace.ltm_store
+        if batches == 1 and not reverse:
+            names = set(model._concept_owner().word_concepts('x'))
+            for index in range(len(store)):
+                if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                    continue
+                value = store.meaning_of(index)
+                forwards = () if value is None else bindings(value).get('_forward_references', ())
+                # A live departure may also open a different name. This
+                # certificate follows the actual pending x columns; arrival
+                # of x must not fill an unrelated y or numeral variable.
+                if forwards and all(identity in names for _, identity in forwards):
+                    pending.append((index,store.occurrence_of(index)))
+>           assert len(pending) >= 2, 'the first premise must persist pending x constituents in the batch'
+E           AssertionError: the first premise must persist pending x constituents in the batch
+E           assert 0 >= 2
+E            +  where 0 = len([])
+
+test/test_math_chain_section14.py:328: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+2 failed, 11 passed, 1 warning in 48.37s

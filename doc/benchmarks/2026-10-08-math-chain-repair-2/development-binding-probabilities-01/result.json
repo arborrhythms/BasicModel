@@ -1,0 +1,26 @@
+{
+  "kind": "development",
+  "seed": null,
+  "questions": 8,
+  "committed_open": 0,
+  "episodes": 6,
+  "departures": [
+    18,
+    12,
+    18,
+    12,
+    18,
+    18,
+    -1,
+    12
+  ],
+  "legal_mint_open_pairs": 378,
+  "conditional_open_probability": {
+    "minimum": 0.49904918670654297,
+    "maximum": 0.500019371509552,
+    "mean": 0.4996234966175897
+  },
+  "selected_pairs": 24,
+  "selected_open_pairs": 12,
+  "note": "Conditional probabilities over legal mint/open variants of the same operation and other operand; not the probability over all backward candidates or a certificate of the empirical question-opening rate."
+}

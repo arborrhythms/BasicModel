@@ -1,0 +1,5 @@
+{
+  "kind": "development diagnostic",
+  "reason": "The corpus generator owns an independent unseeded Random; restoring global RNG does not restore presentation. Stop this diagnostic and replay the saved presentation as well.",
+  "completed": false
+}

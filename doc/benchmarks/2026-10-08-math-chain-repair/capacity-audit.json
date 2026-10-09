@@ -1,0 +1,13 @@
+{
+  "sentences": 1449,
+  "words": 6229,
+  "punctuation_tokens": 7621,
+  "worked_steps": 581,
+  "epochs": 50,
+  "ltmCapacity": 1048576,
+  "truthMaxEntries": 65536,
+  "sentence_tree_rows": 998250,
+  "worked_inference_rows": 29050,
+  "definition_allowance": 4096,
+  "evaluation_and_margin": 17180
+}

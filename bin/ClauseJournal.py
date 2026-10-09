@@ -30,7 +30,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     if store is not None:
         native_ids.update(store.row_ids[:len(store)].tolist())
     def native(reference):
-        return reference > 0 or reference in native_ids
+        return (reference > 0 or reference in native_ids or
+                (store is not None and store.slot_of_reference(reference) is not None))
     def reference_has_point(reference, default):
         if store is not None and store.index_of_row(reference) is not None:
             return store.point_of_row(reference) is not None
@@ -91,10 +92,23 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 mode = dict(getattr(rule, 'reference_kinds', ())).get('I'+str(role+1))
                 if getattr(rule, 'head_role', 0) == role+1:
                     mode = getattr(rule, 'determiner_mode', None) or mode
-                if reference in (-1, 0) and mode in ('bind', 'pronoun'):
+                from ReferenceContext import binding_spec
+                binding_order, binding_mode = binding_spec(rule, 'I'+str(role+1), implicit=True)
+                if (getattr(program, 'binding_choices', False) and binding_order == 1
+                        and binding_mode != 'kind' and program.operation_probabilities is not None):
+                    formation = dict(choice='open' if reference == 0 else 'mint' if reference == -1 else 'bind',
+                        probability=float(program.operation_probabilities[action]), reference=reference)
+                    selected['formation'] = operand['formation'] = formation
+                if reference == 0 or (reference == -1 and mode in ('bind', 'pronoun')):
                     selected['ref'] = -1
                     selected['open_reference'] = True
                     operand['open_reference'] = True
+                    selected['forward_identity'] = int(program.concept_ids[selected['leaves'][0]])
+                elif reference == -1 and getattr(program, 'binding_choices', False):
+                    from ReferenceContext import binding_spec
+                    order, binding_mode = binding_spec(rule, 'I'+str(role+1), implicit=True)
+                    if order == 1 and binding_mode != 'kind' and not operand.get('open_reference'):
+                        selected['mint_reference'] = operand['mint_reference'] = True
                 # A trial's newly requested singleton still had its source
                 # address. Resolve that alias to the winning host's admitted
                 # identity; an already selected earlier occurrence is unchanged.
@@ -107,8 +121,20 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                         reference = int(refs[leaf])
                 if native(reference) or pending_order:
                     selected['ref'] = reference
+                    # A later bond can resolve an earlier open operand. The
+                    # selected native reference, not a stale journal flag,
+                    # determines whether the closing is still a question.
+                    for item in (selected, operand):
+                        item.pop('open_reference', None)
+                        item.pop('forward_identity', None)
+                        item.pop('mint_reference', None)
                     selected_refs[role] = reference
-                    operand['has_point'] = reference_has_point(reference, operand['has_point'])
+                    # A headed VP may retain a point-valued head while one
+                    # of its operands is a relation. Transparent enclosing
+                    # operations carry that relative field in their journal;
+                    # looking up its head must not flatten the whole field.
+                    operand['has_point'] = (operand['has_point']
+                        and reference_has_point(reference, True))
         stack.append(dict(value=frames[action, 2], local=local, ref=-1,
                           rule=catalog[local], children=operands,
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
@@ -146,7 +172,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     def head(node, *, clause=False):
         while node['children']:
             if clause and getattr(node['rule'], 'clause_form', None) == 'VP':
-                break
+                # A headed modifier of an already completed sentence keeps
+                # that sentence's region. Only a lexical VP is the boundary
+                # at which its verb and object must be recovered separately.
+                content = head(node['children'][0])
+                if (getattr(content['rule'], 'clause_form', None) != 'S'
+                        and getattr(content['rule'], 'relation_kind', None) is None):
+                    break
             role = getattr(node['rule'], 'head_role', 0)
             if not role:
                 break
@@ -200,7 +232,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 (len(node['children']) == 2 and not node['has_point']
                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
 
-    def recover(root, *, top=False):
+    def recover(root, *, top=False, cache_operands=False):
         # Syntactic assertion polarity is a grammar property. Identification
         # evidence remains a pair, including both and neither, through storage.
         polarity = True
@@ -214,6 +246,15 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 excluded = True
             mode = getattr(node['rule'], 'meaning_mode', None) or mode
             node = head(node['children'][0], clause=True)
+        if not node['children'] and not node['has_point'] and store is not None:
+            index = store.index_of_row(node['ref'])
+            retained = None if index is None else store.meaning_of(index)
+            if retained is not None and int(retained.role_mask.sum()) == 3:
+                relation = {store.REL_PARTOF: 'part', store.REL_IMPLIES: 'implies'}.get(
+                    int(store.rel_type[index]), 'operator')
+                return Clause(replace(retained, polarity=polarity), relation=relation,
+                    refs=tuple(store.refs[index].tolist()), subject_word_id=subject_word_id(node),
+                    **metadata(root['leaves']), **bands(root))
         operator = getattr(node['rule'], 'relation_kind', None)
         children = []
         owned = set()
@@ -231,17 +272,31 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
 
         def member(item):
             mode = getattr(item['rule'], 'determiner_mode', None)
-            if mode != 'mint':
+            if mode != 'mint' and not item.get('mint_reference'):
                 return None
-            description = item['children'][item['rule'].head_role - 1]
+            description = (item['children'][item['rule'].head_role - 1]
+                           if mode == 'mint' else head(item))
             meta = metadata(description['leaves'])
-            meta['order'] = determined_order(item)
-            return Clause(ConceptualMeaning.from_description(value(item)), point=value(item),
+            meta['order'] = determined_order(item) if mode == 'mint' else 1
+            formed = ConceptualMeaning.from_description(value(item))
+            formation = item.get('formation') or head(item).get('formation')
+            if formation is not None:
+                formed = replace(formed, bindings={'_formation_records': (dict(formation, role=0),)})
+            return Clause(formed, point=value(item),
                           subject_word_id=subject_word_id(description), **bands(item), **meta)
 
         def operand(item, *, sentence=False):
             if item.get('open_reference') or head(item).get('open_reference'):
                 return value(item), -1
+            if sentence or is_clause(item):
+                # A composed statement owns its constituent bindings. A
+                # later mint of the enclosing operand cannot flatten away
+                # a pending variable (or its already completed children).
+                child = recover(item, cache_operands=relation is not None or cache_operands)
+                ref = ('clause', len(children))
+                children.append(child)
+                owned.add(id(item))
+                return child.point, ref
             fresh = member(item)
             if fresh is not None:
                 ref = ('clause', len(children))
@@ -254,7 +309,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             # as an unasserted one-slot S before the parent refers to it.
             # Do not invent a concept ID or infer one from its vector.
             needs_row = (relation is not None or not root['has_point']) and reference == -1
-            if sentence or is_clause(item) or needs_row:
+            if needs_row:
                 child = recover(item)
                 ref = ('clause', len(children))
                 children.append(child)
@@ -311,6 +366,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             described = ConceptualMeaning(roles, mask, polarity=polarity, mode=mode)
             references = ((left_ref, predicate_ref, right_ref) if relation is not None else
                           (left_ref, concept(operands[1]), -1))
+            if cache_operands and relation is None and operands[1]['children']:
+                # The second cached address of an absolute S names its
+                # completed operand, not an absent lexical head. Keep the
+                # operand as its own ordinary point row; no factored target
+                # or derivation journal is stored beside either point.
+                child = recover(operands[1], cache_operands=True)
+                right_address = ('clause', len(children))
+                children.append(child)
+                owned.add(id(operands[1]))
+                references = left_ref, right_address, -1
             factored_refs = left_ref, predicate_ref, right_ref
             if relation is None and node.get('operand_refs') is not None:
                 # Unknown composite addresses stay unknown. The temporary
@@ -325,6 +390,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         equality = relation == 'equal'
         if equality:
             relation = 'part'
+            from ThoughtReferences import bindings
+            data = bindings(described)
+            data['_equality'] = True
+            described = replace(described, bindings=data)
         if relation == 'whole':
             relation = 'part'
             references = references[2], references[1], references[0]
@@ -372,15 +441,45 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     getattr(rule, 'determiner_mode', None) in ('mint', 'bind') else value)
             return orders[id(item)]
         evidence['order'] = node_order(root)
+        formations = tuple(dict(formation, role=role) for role, item in enumerate(role_nodes)
+            if item is not None and (formation := item.get('formation') or head(item).get('formation')) is not None)
+        if formations:
+            from ThoughtReferences import bindings
+            data = bindings(described)
+            data['_formation_records'] = formations
+            described = replace(described, bindings=data)
+        if mode == 'interrogative':
+            evidence['evidence'] = (0., 0.)
         from ThoughtReferences import with_slots
         opened = tuple(('relation' if role == 1 else 'referent', role)
                        for role, item in enumerate(role_nodes) if item is not None
                        and (item.get('open_reference') or head(item).get('open_reference')))
         if opened:
             described = with_slots(described, opened, pair=evidence['evidence'])
+            from ThoughtReferences import bindings
+            data = bindings(described)
+            data['_forward_references'] = tuple((role,
+                head(role_nodes[role]).get('forward_identity',
+                    int(program.concept_ids[head(role_nodes[role])['leaves'][0]])))
+                for kind, role in opened if kind == 'referent')
+            described = replace(described, bindings=data)
+            if relation is None and int(described.role_mask.sum()) > 1:
+                # An unfilled operand cannot disappear into a fused point.
+                relation = 'operator'
+                references = factored_refs or references
+                missing = tuple(('relation' if role == 1 else 'referent', role)
+                                for role in range(3) if not bool(described.role_mask[role]))
+                described = with_slots(replace(described,
+                    role_mask=torch.ones_like(described.role_mask)), (*opened, *missing),
+                    pair=evidence['evidence'])
         if excluded:
             support = evidence['evidence']
             evidence['evidence'] = (0., support[1])
+        if cache_operands and relation is None:
+            from ThoughtReferences import bindings
+            constructor = getattr(node['rule'], 'predicate_identity', None) or 'reference'
+            described = replace(described, bindings=dict(bindings(described),
+                _point_constructor=(constructor, polarity)))
         field = Clause(described, point=None if relation else (
             program.end_state[0] if top else value(root)), relation=relation,
             refs=references, children=tuple(children),
@@ -391,9 +490,23 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             and program.symbol_when is None,
             **bands(root))
         if equality:
+            from ThoughtReferences import bindings
+            converse_bindings = bindings(field.meaning)
+            for key in ('_open_references', '_bound_roles'):
+                if key in converse_bindings:
+                    converse_bindings[key] = tuple((kind, 2-role if role >= 0 else role)
+                                                   for kind, role in converse_bindings[key])
+            if '_forward_references' in converse_bindings:
+                converse_bindings['_forward_references'] = tuple((2-role, identity)
+                    for role, identity in converse_bindings['_forward_references'])
+            if '_formation_records' in converse_bindings:
+                converse_bindings['_formation_records'] = tuple(
+                    dict(record, role=2-dict(record)['role'])
+                    for record in converse_bindings['_formation_records'])
             converse = replace(field, refs=(field.refs[2], field.refs[1], field.refs[0]),
                                meaning=replace(field.meaning, roles=field.meaning.roles[[2, 1, 0]],
-                                               role_mask=field.meaning.role_mask[[2, 1, 0]]),
+                                               role_mask=field.meaning.role_mask[[2, 1, 0]],
+                                               bindings=converse_bindings),
                                factored_refs=None if field.factored_refs is None else field.factored_refs[::-1])
             field = replace(field, companions=(converse,))
         return field

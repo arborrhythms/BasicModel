@@ -1,0 +1,134 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+  ],
+  "completed": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09/worker-000.json"
+      ],
+      "pid": 21226,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1046431568,
+      "elapsed_seconds": 19.16424629103858,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 12.471334791975096,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.1020659579662606,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00014166696928441525,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py', 461, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.4031221669865772,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09",
+  "elapsed_seconds": 23.572924167034216,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1046431568,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09/collect.json"
+    ],
+    "pid": 21189,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 442156232,
+    "elapsed_seconds": 3.8535975420381874,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-09/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

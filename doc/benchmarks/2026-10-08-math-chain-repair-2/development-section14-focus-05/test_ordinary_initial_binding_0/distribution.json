@@ -1,0 +1,28 @@
+{
+  "forced": false,
+  "conditional_band": [
+    0.9,
+    1.1
+  ],
+  "alternatives_relative_to_uniform": [
+    0.9593285620212555,
+    1.0328122228384018
+  ],
+  "initialization_read_menus": 720,
+  "training_menus": 294,
+  "retained_candidates": 1632,
+  "menus": 1014,
+  "questions": 8,
+  "observed_committed_open": 0,
+  "observed_episodes": 7,
+  "departures": [
+    18,
+    -1,
+    18,
+    12,
+    18,
+    -1,
+    -1,
+    -1
+  ]
+}

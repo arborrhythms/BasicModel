@@ -1,0 +1,114 @@
+..F.                                                                     [100%]
+=================================== FAILURES ===================================
+__________ test_forced_ordinary_pending_premise_in_both_orders[False] __________
+
+tmp_path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-forced-certificates14-02/test_forced_ordinary_pending_p0')
+reverse = False
+
+    @pytest.mark.parametrize('reverse', [False, True])
+    def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse):
+        """Certificate e, FORCED operation/binding; address upsert on actual rows."""
+        import json
+        from forced_math_grammar import ForcedGrammar
+        from math_chain_ordinary import ordinary_model, train_documents
+        from math_chain_corpus import ChainDocument
+        model = ordinary_model(tmp_path)
+        sentences = ('y is x plus two.', 'x is three.')
+        if reverse:
+            sentences = sentences[::-1]
+        documents = [ChainDocument(str(i), sentences) for i in range(8)]
+        pending, report = [], []
+        batches = 0
+        def after(model, split, rows, result, observed, observer):
+            nonlocal batches
+            batches += 1
+            store = model.symbolSpace.ltm_store
+            if batches == 1 and not reverse:
+                for index in range(len(store)):
+                    value = store.meaning_of(index)
+                    if value is not None and bindings(value).get('_forward_references'):
+                        pending.append((index,store.occurrence_of(index)))
+                assert len(pending) >= 8, 'the first premise must persist its pending constituents'
+            if batches == 2:
+                for index, address in pending:
+                    value = store.meaning_of(index)
+                    report.append(dict(occurrence=address,open=open_slots(value),refs=value.role_refs))
+                    assert store.occurrence_of(index) == address and not open_slots(value)
+                    assert not bindings(value).get('_pending')
+                if reverse:
+                    for index in range(len(store)):
+                        if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                            continue
+                        value = store.meaning_of(index)
+                        assert not bindings(value).get('_forward_references')
+        try:
+            with ForcedGrammar(model, open_names=('x',), named_bindings={'x':'three'}) as forced:
+>               rows = train_documents(model, documents, tmp_path, after=after)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain_section14.py:241: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=104, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)
+)
+split = 'train', rows = [1, 3, 5, 7, 9, 11, ...]
+result = BatchResult(outputPred=tensor([[[0.0653]],
+
+        [[0.0653]],
+
+        [[0.0653]],
+
+        [[0.0653]],
+
+        [[0...000, 0.0000, 0.0000,  ..., 0.0000, 0.0000, 0.0000],
+         [0.0000, 0.0000, 0.0000,  ..., 0.0000, 0.0000, 0.0000]]]))
+observed = [{'epoch': 1, 'source': 0, 'row_id': -5650740638553869606, 'address': ('ltm', 'address-v1', -5650740638553869606), ......h': 1, 'source': 10, 'row_id': -9130322051302290506, 'address': ('ltm', 'address-v1', -9130322051302290506), ...}, ...]
+observer = <frozen_math_observer.Observer object at 0x12a331f40>
+
+    def after(model, split, rows, result, observed, observer):
+        nonlocal batches
+        batches += 1
+        store = model.symbolSpace.ltm_store
+        if batches == 1 and not reverse:
+            for index in range(len(store)):
+                value = store.meaning_of(index)
+                if value is not None and bindings(value).get('_forward_references'):
+                    pending.append((index,store.occurrence_of(index)))
+            assert len(pending) >= 8, 'the first premise must persist its pending constituents'
+        if batches == 2:
+            for index, address in pending:
+                value = store.meaning_of(index)
+                report.append(dict(occurrence=address,open=open_slots(value),refs=value.role_refs))
+>               assert store.occurrence_of(index) == address and not open_slots(value)
+E               AssertionError: assert (('ltm', 'addr...5520692900285) == ('ltm', 'addr...5520692900285)
+E                 
+E                 Use -v to get more diff and not (('referent', 0),))
+E                +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 4010033338316264258), ('ltm', 'address-v1'...('_pending', True), ('_producing_operation', 'query'), ('_thought_witnesses', ())), scope=(), sentence_kind='relation'))
+
+test/test_math_chain_section14.py:231: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=3.860s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+1 failed, 3 passed, 6 deselected, 1 warning in 40.68s

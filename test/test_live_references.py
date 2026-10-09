@@ -2,6 +2,49 @@ import torch
 from ReferenceContext import ReferenceBank, resolve_operand
 
 
+def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
+    """The failed development verb/tense suffix retains three native roles."""
+    from dataclasses import replace
+    from types import SimpleNamespace
+    import weakref
+    from ClauseJournal import finish_clause
+    from ClauseRow import predicate_identity
+    from test_clause_storage import clause_store, idea_clause, part_clause
+    from test_sentence_references import language_and_program
+    store, _ = clause_store()
+    prior = store.write_clause(part_clause())
+    identity = int(store.row_ids[prior])
+    head_row = store.write_clause(idea_clause(point=torch.eye(4)[0]))
+    head_identity = int(store.row_ids[head_row])
+    language, entry = language_and_program()
+    language._compose_binary_rules = (SimpleNamespace(method_name='verb',
+        clause_form='VP', head_role=1, predicate_identity='verb'),)
+    language._compose_unary_rules = (SimpleNamespace(method_name='tense',
+        scope_transparent=True, head_role=0),)
+    point, other = entry.leaves
+    # The numerical journal says the verb's right operand is the earlier
+    # relation. Its head's point-valued identity survives the unary suffix.
+    entry = replace(entry, reference_ids=torch.tensor([head_identity, identity]), word_ids=torch.tensor([1,3]),
+        actions=torch.tensor([[0,-1,0], [0,-1,1], [1,0,-1], [2,0,-1]]),
+        operation_refs=torch.tensor([[-1,-1],[-1,-1],[head_identity,identity],[head_identity,-1]]),
+        operation_relations=torch.tensor([[False,False],[False,False],
+                                           [False,True],[True,False]]),
+        operation_values=torch.stack((torch.zeros(3,4),torch.zeros(3,4),
+            torch.stack((point,other,point+other)),
+            torch.stack((point+other,point*0,point+other)))),
+        end_state=torch.stack((point+other,point*0,point*0)))
+    registry = SimpleNamespace(space=SimpleNamespace(_clause_store_ref=weakref.ref(store)))
+    field = finish_clause(language, entry, registry=registry)
+    assert field.relation == 'operator' and field.point is None
+    assert field.slots.shape[0] == 3
+    assert field.refs[0] == head_identity and field.refs[2] == identity
+    assert field.refs[1].identity == predicate_identity('verb')
+    row = store.write_clause(field)
+    assert int(store.rel_type[row]) == store.REL_OPERATOR
+    child = store.index_of_row(int(store.refs[row,2]))
+    assert child == prior and int(store.rel_type[child]) == store.REL_PARTOF
+
+
 def test_grammar_order_resolution_survives_the_numerical_journal():
     from dataclasses import replace
     from ClauseJournal import finish_clause
@@ -97,10 +140,11 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
     scope = torch.tensor([[[0, 3], [0, 1], [0, -1]]])
 
     def choose(state, scope):
-        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope,
-                                               replay_action=torch.tensor([0]))
-    eager = choose(state, scope)
-    compiled = torch.compile(choose, backend='eager', fullgraph=True)(state, scope)
+        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)
+    from operation_fixtures import selected_action
+    with selected_action(layer, torch.tensor([0])):
+        eager = choose(state, scope)
+        compiled = torch.compile(choose, backend='eager', fullgraph=True)(state, scope)
     for result in (eager, compiled):
         choice, refs, relations, operands = result
         torch.testing.assert_close(choice.candidate[0], prior+second, rtol=0, atol=0)
@@ -149,8 +193,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         stop = (x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
         # Force the grammar operation with the first (held-column) binding,
         # whose global action is no longer its local operation number.
-        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, binary.index(op), stop)
-        result = original(x, **kwargs)
+        from operation_fixtures import selected_action
+        with selected_action(layer, torch.where(kwargs['depth'] >= 2, binary.index(op), stop)):
+            result = original(x, **kwargs)
         routes.append(result[2])
         return result
     monkeypatch.setattr(layer, 'forward', forced)

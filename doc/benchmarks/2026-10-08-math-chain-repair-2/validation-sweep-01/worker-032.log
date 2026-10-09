@@ -1,0 +1,34 @@
+........................................................................ [ 56%]
+.......................ss............FFF................                 [100%]
+=================================== FAILURES ===================================
+_ test_nested_observation_writers_retain_children_without_certifying_them[forward] _
+test/test_selected_nested_meaning.py:54: in test_nested_observation_writers_retain_children_without_certifying_them
+    assert len(store) == 4
+E   assert 2 == 4
+E    +  where 2 = len(TernaryTruthStore())
+_ test_nested_observation_writers_retain_children_without_certifying_them[batch_eval] _
+test/test_selected_nested_meaning.py:54: in test_nested_observation_writers_retain_children_without_certifying_them
+    assert len(store) == 4
+E   assert 2 == 4
+E    +  where 2 = len(TernaryTruthStore())
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+test/test_selected_nested_meaning.py:54: in test_nested_observation_writers_retain_children_without_certifying_them
+    assert len(store) == 4
+E   assert 2 == 4
+E    +  where 2 = len(TernaryTruthStore())
+=============================== warnings summary ===============================
+test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+3 failed, 123 passed, 2 skipped, 2 warnings in 22.72s

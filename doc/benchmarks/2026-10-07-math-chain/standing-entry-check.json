@@ -1,0 +1,52 @@
+{
+  "sum-01": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "5965768587429a523c35cd5e3455f2b35214facb4676d65b419af4c9f264c2f6"
+  },
+  "sum-02": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "03b2e4c6c821aa08704b3f021bb819204ed88898a81266efab09fd3db7c78136"
+  },
+  "sum-03": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "30d70aeff1ddf508dda7159b1c26bdc797d99467b0b74e7029c76936dfeec75e"
+  },
+  "sum-04": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "3ebd0c52946e891c774de5d3d48f4fb2c1e82715dff8f7ef37043c7defbf9248"
+  },
+  "sum-05": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "f0080ae4c9910342e3e1b16044f5f96174576077a33c32251d07d24d99ac6c41"
+  },
+  "sum-06": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "ec3c6d40a8224203b1715e09e3183e7dfa5f5f9beeb928a1a7e064422194f9f8"
+  },
+  "sum-07": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "76a06368758a3928d8f2f2a2597e3fcadeb41f14f373dc9468592eac84ce1e8e"
+  },
+  "sum-08": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "1b2edde5f424b5d0cf40423590da8c8a1f452953941cd0b6d5fc12e9d9f429f2"
+  },
+  "sum-09": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "c2cd34e0c5844220ecc92e99843ed063ab38f62732da5e9acf1953ba498eed89"
+  },
+  "sum-10": {
+    "second_launcher_matches_original": true,
+    "actual_training_matches_original": true,
+    "original_entry_sha256": "5bc14017a6762283d470798b6c8c2bc0ac34f623b1e8cc6ceb3e5f07256d1b91"
+  }
+}

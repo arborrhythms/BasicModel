@@ -1,0 +1,32 @@
+[
+  {
+    "epoch": 1,
+    "phase": "train",
+    "split": "train",
+    "kind": "answer_line",
+    "sentences": 2,
+    "episodes": 0,
+    "work": 0,
+    "references_left_open": 0,
+    "sentences_left_open": 0,
+    "seconds": 2.12129725003615,
+    "mean_work_per_episode": null,
+    "episode_share": 0.0,
+    "seconds_per_sentence": 1.060648625018075
+  },
+  {
+    "epoch": 1,
+    "phase": "train",
+    "split": "train",
+    "kind": "question",
+    "sentences": 2,
+    "episodes": 2,
+    "work": 64,
+    "references_left_open": 4,
+    "sentences_left_open": 2,
+    "seconds": 3.148942624917254,
+    "mean_work_per_episode": 32.0,
+    "episode_share": 1.0,
+    "seconds_per_sentence": 1.574471312458627
+  }
+]

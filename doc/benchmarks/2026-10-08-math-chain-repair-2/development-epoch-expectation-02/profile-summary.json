@@ -1,0 +1,104 @@
+{
+  "kind": "development",
+  "context": {
+    "seconds": 0.5466082090279087,
+    "occupancy": 45,
+    "capacity": 32768,
+    "references_open": 1,
+    "work": 32,
+    "thought_steps": 9
+  },
+  "functions": [
+    {
+      "file": "Queries.py",
+      "line": 511,
+      "name": "_basis",
+      "calls": 10,
+      "own_seconds": 4.1203000000000005e-05,
+      "cumulative_seconds": 0.23268408200000001,
+      "mean_cumulative_seconds": 0.0232684082
+    },
+    {
+      "file": "Models.py",
+      "line": 6215,
+      "name": "execute",
+      "calls": 16,
+      "own_seconds": 0.000413857,
+      "cumulative_seconds": 0.183743081,
+      "mean_cumulative_seconds": 0.0114839425625
+    },
+    {
+      "file": "Queries.py",
+      "line": 2279,
+      "name": "execute",
+      "calls": 16,
+      "own_seconds": 0.00030121,
+      "cumulative_seconds": 0.15389475300000002,
+      "mean_cumulative_seconds": 0.009618422062500001
+    },
+    {
+      "file": "Models.py",
+      "line": 5969,
+      "name": "_choose_selected_thought_action",
+      "calls": 16,
+      "own_seconds": 0.000619907,
+      "cumulative_seconds": 0.133722125,
+      "mean_cumulative_seconds": 0.0083576328125
+    },
+    {
+      "file": "Queries.py",
+      "line": 2114,
+      "name": "controller_candidates",
+      "calls": 16,
+      "own_seconds": 0.002255258,
+      "cumulative_seconds": 0.108585417,
+      "mean_cumulative_seconds": 0.0067865885625
+    },
+    {
+      "file": "Language.py",
+      "line": 7354,
+      "name": "thought_logits",
+      "calls": 16,
+      "own_seconds": 0.0006825020000000001,
+      "cumulative_seconds": 0.101255669,
+      "mean_cumulative_seconds": 0.0063284793125
+    },
+    {
+      "file": "ThoughtStream.py",
+      "line": 240,
+      "name": "commit",
+      "calls": 1,
+      "own_seconds": 8.916e-06,
+      "cumulative_seconds": 0.09519075,
+      "mean_cumulative_seconds": 0.09519075
+    },
+    {
+      "file": "ThoughtFeatures.py",
+      "line": 21,
+      "name": "semantic_metadata",
+      "calls": 16,
+      "own_seconds": 0.000138627,
+      "cumulative_seconds": 0.084143043,
+      "mean_cumulative_seconds": 0.0052589401875
+    },
+    {
+      "file": "Queries.py",
+      "line": 1868,
+      "name": "_payload",
+      "calls": 394,
+      "own_seconds": 0.0022258440000000003,
+      "cumulative_seconds": 0.036826331000000004,
+      "mean_cumulative_seconds": 9.346784517766499e-05
+    },
+    {
+      "file": "WalkTrials.py",
+      "line": 75,
+      "name": "capture_thought_fork",
+      "calls": 9,
+      "own_seconds": 5.7165000000000006e-05,
+      "cumulative_seconds": 0.0030133760000000003,
+      "mean_cumulative_seconds": 0.0003348195555555556
+    }
+  ],
+  "note": "Cumulative function times overlap; these are per-call costs, not additive fractions."
+}

@@ -1,0 +1,253 @@
+"""MM_math regression and optional syntax-learning experiments.
+
+The retired ANSWER/OPEN parity chooser is not part of these probes. Nested
+ordinary thoughts and their credit are tested in test_thought_review.py.
+"""
+import os
+import sys
+from pathlib import Path
+
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+os.environ.setdefault("MODEL_COMPILE", "eager")
+
+import pytest
+import torch
+
+_ROOT = Path(__file__).resolve().parent.parent
+_BIN = _ROOT / "bin"
+_DATA = _ROOT / "data"
+if str(_BIN) not in sys.path:
+    sys.path.insert(0, str(_BIN))
+
+from What import What  # noqa: E402
+
+_MATH_DAT = {"mathRange": 16, "mathDepths": "1-2", "mathTestDepths": "3",
+             "mathDistractors": 1, "mathProblems": 64, "mathSeed": 0}
+
+
+def _config(tmp_path_factory, name, **overrides):
+    src = (_DATA / "MM_math.xml").read_text()
+    for key, value in overrides.items():
+        tag = f"<{key}>"
+        if tag in src:
+            start = src.index(tag) + len(tag)
+            end = src.index(f"</{key}>", start)
+            src = src[:start] + str(value) + src[end:]
+        else:
+            src = src.replace("</training>", f"      <{key}>{value}</{key}>\n    </training>", 1)
+    path = tmp_path_factory.mktemp("cfg") / name
+    path.write_text(src)
+    return path
+
+
+def _build(config_path, dat=None):
+    import Language
+    from util import init_config
+    from data import TheData
+    import Models
+
+    init_config(path=str(config_path), defaults_path=str(_DATA / "model.xml"))
+    Language.TheGrammar._configured = False
+    TheData.load("math", dat=dict(_MATH_DAT) if dat is None else dat)
+    torch.manual_seed(0)
+    m, _ = Models.BaseModel.from_config(str(config_path), data=TheData)
+    return m.to("cpu")
+
+
+def _batch(m, rows=2):
+    loader = m.inputSpace.data.data_loader(split="train", num_streams=rows)
+    inp_items, out_items = next(iter(loader))
+    return (m.inputSpace.prepInput(inp_items),
+            m.outputSpace.prepOutput(out_items))
+
+
+@pytest.fixture(scope="module")
+def episode_config(tmp_path_factory):
+    return _config(tmp_path_factory, "MM_math_episode.xml")
+
+
+def test_iterations_one_is_byte_identical_to_a_plain_batch(episode_config, tmp_path_factory, monkeypatch):
+    off = _config(tmp_path_factory, "MM_math_off.xml", whatThinkingIterations="1")
+    m = _build(off)
+    assert not m._thinking_enabled()
+    thinks = []
+    real_think = m.think
+    monkeypatch.setattr(m, "think", lambda *a, **k: thinks.append(1) or real_think(*a, **k))
+    opt = m.getOptimizer(lr=1e-3)
+    batch = _batch(m, rows=2)
+    m.train()
+    result, _ = m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                           batch_override=batch)
+    assert not thinks and torch.isfinite(result.lossOut)
+    assert m.what_report()["thinking"]["episodes"] == 0
+
+
+def test_primitives_knob_is_retired(tmp_path_factory):
+    """<whatThinkingPrimitives> is gone from the schema (and the model
+    raises 'retired' should a config slip past validation)."""
+    path = _config(tmp_path_factory, "MM_math_prims.xml", whatThinkingPrimitives="4")
+    with pytest.raises(Exception, match="whatThinkingPrimitives"):
+        _build(path)
+
+
+# -- the learning gates on the syntactic route (strict xfail) --------------------
+
+def _exact_accuracy(m, split, limit=128):
+    data = m.inputSpace.data
+    n = min(limit, data.what_extent(split))
+    correct = 0
+    m.eval()
+    with torch.no_grad():
+        for start in range(0, n, 32):
+            idx = list(range(start, min(n, start + 32)))
+            x = m.inputSpace.prepInput(
+                [data._what_split_values(split, "input")[i] for i in idx])
+            y = m.outputSpace.prepOutput(
+                [data._what_split_values(split, "output")[i] for i in idx])
+            result = m.think(tuple(What.supervised(i, split=split) for i in idx), x)
+            pred = torch.stack([a.what.reshape(-1) for a in result.answers]).argmax(-1)
+            correct += int((pred == y.reshape(len(idx), -1).argmax(-1)).sum())
+    m.train()
+    return correct / max(1, n)
+
+
+def _learn(config_path, dat, epochs, lr=0.01):
+    m = _build(config_path, dat=dat)
+    assert _exact_accuracy(m, "train") < 0.5
+    opt = m.getOptimizer(lr=lr)
+    best = (0.0, 0.0)
+    for epoch in range(1, epochs + 1):
+        m.train()
+        m.runEpoch(optimizer=opt, batchSize=32, split="train")
+        if epoch % 5 == 0:
+            best = (_exact_accuracy(m, "train"), _exact_accuracy(m, "test"))
+            if min(best) >= 0.9:
+                break
+    return best
+
+
+@pytest.fixture(scope="module")
+def stage_zero_config(tmp_path_factory):
+    """MM_add (direct arithmetic, ``3 plus 4`` -> 7) at R = 16, 32 wide,
+    256 stochastic problems split by unseen pairs, a two-iteration
+    episode with policy credit."""
+    src = (_DATA / "MM_add.xml").read_text()
+    for tag in ("nDim", "nInputDim", "nOutputDim"):
+        src = src.replace(f"<{tag}>14</{tag}>", f"<{tag}>32</{tag}>")
+    src = (src.replace("<mathRange>32</mathRange>", "<mathRange>16</mathRange>")
+              .replace("<nOutput>32</nOutput>", "<nOutput>16</nOutput>")
+              .replace("<mathProblems>4096</mathProblems>", "<mathProblems>256</mathProblems>")
+              .replace("<answerSynthesis>true</answerSynthesis>",
+                       "<answerSynthesis>true</answerSynthesis>\n"
+                       "    <whatThinkingDetach>episode</whatThinkingDetach>\n"
+                       "    <whatThinkingIterations>2</whatThinkingIterations>")
+              .replace("</training>",
+                       "      <whatThinkingPolicyWeight>0.5</whatThinkingPolicyWeight>\n"
+                       "    </training>", 1))
+    path = tmp_path_factory.mktemp("cfg") / "MM_add_syntax.xml"
+    path.write_text(src)
+    return path
+
+
+@pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason=(
+    "learning gate (Alec 2026-09-09: no mathematical machinery in the runtime; "
+    "plus is a transitive verb the grammar learns): the small syntactic "
+    "configuration does not yet learn direct arithmetic -- the large stage-0 "
+    "run is the experiment; flip to required when a configuration passes"))
+def test_stage_zero_direct_arithmetic_learns_as_syntax(stage_zero_config):
+    """Alec 2026-09-09: the stack must answer direct problems ("3 plus 4"
+    in, 7 out, the input reconstructed) before any substitution, with
+    ``plus`` learned as a transitive verb over numeral nouns.  Gate: at
+    least 90 % exact accuracy on training AND unseen operand pairs within
+    40 epochs of the small configuration."""
+    best = _learn(stage_zero_config, {"mathStage": 0, "mathRange": 16,
+                                      "mathProblems": 256, "mathSeed": 0}, 40)
+    assert min(best) >= 0.9, best
+
+
+@pytest.fixture(scope="module")
+def stage_one_config(tmp_path_factory):
+    """MM_math (dependency chains, depths 1-2, depth 3 held out) at
+    R = 16, 32 wide, 384 problems, eight-iteration episodes with policy
+    credit; codebooks sized for the corpus."""
+    src = (_DATA / "MM_math.xml").read_text()
+    for tag in ("nDim", "nInputDim", "nOutputDim"):
+        src = src.replace(f"<{tag}>14</{tag}>", f"<{tag}>32</{tag}>")
+    src = (src.replace("<mathProblems>64</mathProblems>", "<mathProblems>384</mathProblems>")
+              .replace("</training>",
+                       "      <whatThinkingPolicyWeight>0.5</whatThinkingPolicyWeight>\n"
+                       "    </training>", 1)
+              .replace("<nVectors>8</nVectors>\n    <nDim>", "<nVectors>512</nVectors>\n    <nDim>", 1)
+              .replace("<nVectors>128</nVectors>", "<nVectors>2048</nVectors>")
+              .replace("<nVectors>200</nVectors>", "<nVectors>2048</nVectors>"))
+    path = tmp_path_factory.mktemp("cfg") / "MM_math_syntax.xml"
+    path.write_text(src)
+    return path
+
+
+@pytest.mark.slow
+@pytest.mark.xfail(strict=True, reason=(
+    "learning gate (Alec 2026-09-09: no mathematical machinery in the runtime): "
+    "dependency chains must be resolved by subquestions whose answers live in "
+    "LTM and by the grammar's verbs; not yet learned -- flip when a "
+    "configuration passes"))
+def test_stage_one_dependency_chains_learn_as_syntax(stage_one_config):
+    """The original variable-substitution problems (spec section 1, stage
+    1) on the syntactic route: subquestions about presented words, their
+    answers in LTM, the root conditioned on them.  Gate: at least 90 %
+    exact accuracy on training and on unseen structures / the held-out
+    depth within 30 epochs of the small configuration."""
+    best = _learn(stage_one_config, {"mathRange": 16, "mathDepths": "1,2",
+                                     "mathTestDepths": "3", "mathDistractors": 1,
+                                     "mathProblems": 384, "mathSeed": 0}, 30)
+    assert min(best) >= 0.9, best
+
+
+# -- the first learned rung: the successor as a verb (RUN_SLOW) -----------------
+
+@pytest.fixture(scope="module")
+def successor_config(tmp_path_factory):
+    """``MM_add_verb`` (the serial verb grammar, 230M parameters) on the
+    successor corpus: ``n plus one`` -> the next numeral, single-digit
+    facts only (R = 10), 256 presentations per epoch."""
+    src = (_DATA / "MM_add_verb.xml").read_text()
+    assert src.count("<nOutput>16</nOutput>") == 1          # the one-hot head
+    src = (src.replace("<mathRange>16</mathRange>", "<mathRange>10</mathRange>")
+              .replace("<nOutput>16</nOutput>", "<nOutput>10</nOutput>")
+              .replace("<mathProblems>2048</mathProblems>", "<mathProblems>256</mathProblems>")
+              .replace("<mathSeed>0</mathSeed>",
+                       "<mathSeed>0</mathSeed>\n      <mathOperators>succ</mathOperators>"))
+    assert "<mathOperators>succ</mathOperators>" in src
+    path = tmp_path_factory.mktemp("cfg") / "MM_succ_verb.xml"
+    path.write_text(src)
+    return path
+
+
+@pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1", reason="RUN_SLOW: ~20 min on CPU")
+def test_successor_is_learned_as_a_verb(successor_config):
+    """Alec 2026-09-09: addition is iterated succession, and the successor
+    must be learnable by the existing VP.  On the verb grammar with the
+    answer path seeded from the root idea, every single-digit fact
+    ``n plus one`` is answered (pilot report, "The successor is learned as
+    a VP").  Gate: at least 90 % exact accuracy on the presented facts
+    within 30 epochs at lr 1e-3 (two-digit numerals are excluded: they
+    are read as their digit parts until the multi-digit rung lands)."""
+    m = _build(successor_config, dat={"mathStage": 0, "mathRange": 10,
+                                      "mathProblems": 256, "mathSeed": 0,
+                                      "mathOperators": "succ"})
+    assert _exact_accuracy(m, "train") < 0.5
+    opt = m.getOptimizer(lr=1e-3)
+    best = 0.0
+    for epoch in range(1, 31):
+        m.train()
+        out_err, _, _, _ = m.runEpoch(optimizer=opt, batchSize=8, split="train")
+        # A zero answer loss means the target never reached the head (the
+        # shape gate zeroes an irreconcilable pair): no learning claim.
+        assert float(out_err) > 0.0, "answer loss is zero: target/head mismatch"
+        if epoch % 5 == 0:
+            best = max(best, _exact_accuracy(m, "train", limit=256))
+            if best >= 0.9:
+                break
+    assert best >= 0.9, best

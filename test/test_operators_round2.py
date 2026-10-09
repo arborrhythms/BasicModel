@@ -54,12 +54,12 @@ def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
     def choose(mask):
         seen.append(mask)
         if len(seen)==1:return torch.tensor([0 if walk=='narrowing' else 1])
-        return torch.tensor([2 if walk=='narrowing' else 4])
+        return torch.tensor([2])
     monkeypatch.setattr(WalkTrials,'departure_at',choose)
-    draw=departure(attention,torch.tensor([[False,True,True,True]]),active=torch.tensor([True]))
+    draw=departure(attention,torch.tensor([[False,True,True,True]]),
+                   active=torch.tensor([True]), compose_round=torch.tensor([1]))
     assert seen[0].tolist()==[[True,True]]
-    assert seen[1].tolist()==([[True,False,True,False,False,False,False]] if walk=='narrowing'
-                             else [[False,False,False,False,True,True,True]])
+    assert seen[1].tolist()==[[True,False,True]]
     assert draw['rounds'].item()==5
     assert draw['walk_count'].item()==2
     assert draw['walk_rounds'].item()==(2 if walk=='narrowing' else 3)

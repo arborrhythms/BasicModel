@@ -1,0 +1,15 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 7,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 2
+  },
+  "operations": {
+    "query": 5,
+    "not": 22
+  },
+  "credit": {},
+  "credit_sample": [],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

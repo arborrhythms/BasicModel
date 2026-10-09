@@ -1,0 +1,102 @@
+......F
+=================================== FAILURES ===================================
+_____ test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3728/test_zero_budget_loads_and_tra0')
+
+    def test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention(tmp_path):
+        from MathChainTraining import present
+        config = tmp_path / 'zero.xml'
+        config.write_text((ROOT / 'data/MM_math_chain.xml').read_text().replace(
+            '<attentionBudget>64</attentionBudget>', '<attentionBudget>0</attentionBudget>'))
+        model = build_model(config)
+        data = model.inputSpace.data
+        texts, labels, addresses = flatten(data.math_chain_corpus.counting()[:2], supplied=False)
+        data.train_input, data.train_output = texts, [torch.zeros(1) for _ in texts]
+        data.text_answers['train'] = labels
+        data.source_addresses['train'] = [dict(value, split='train') for value in addresses]
+        observations = []
+        def observe(model, *_args):
+            observations.append((int(model.inputSpace._word_active_mask.sum()),
+                                 bool(model._tensor_pushed_ideas.abs().any())))
+            assert model._attention_words is None
+            assert all(meter.spent == 0 for meter in model._attention_meters)
+        try:
+            assert model.attention_budget == 0
+>           report = present(model, split='train', optimizer=model.getOptimizer(lr=.001),
+                             after_batch=observe)
+
+test/test_math_chain.py:125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+bin/Models.py:13619: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13758: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14140: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8777: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10208: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8462: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8240: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23490: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22024: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21577: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20752: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20217: in _commit_sentence
+    view['clauses'] = [None if entry is None else frozen_values(
+bin/Models.py:20215: in frozen_values
+    children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20215: in <genexpr>
+    children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
+                   ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+admitted = Clause(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(None, None, None), bindings=(('_evide...=17, eternal=False, factored_refs=(-1, ClausePredicate(name='whole'), 14), order=0, evidence=(0.6822618246078491, 0.0))
+scored = Clause(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(None, None, None), bindings=(('_evide...l=False, factored_refs=(-1, ClausePredicate(name='whole'), ('clause', 0)), order=0, evidence=(0.6822618246078491, 0.0))
+
+    def frozen_values(admitted, scored):
+        if (len(admitted.children) != len(scored.children)
+                or len(admitted.companions) != len(scored.companions)):
+>           raise RuntimeError('admission changed the selected clause structure')
+E           RuntimeError: admission changed the selected clause structure
+
+bin/Models.py:20211: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 6 passed, 1 warning in 5.02s

@@ -1,0 +1,27 @@
+Close item 6.2 with demonstrated decomposition and deferred learning
+
+Record Alec's acceptance under thinking specification section 14.13.
+Land the reviewed 21320d47 closing source, native reference binding and
+nested return, with the forced one- and two-successor decomposition
+certificates, repair development, stopped campaign and retained evidence.
+The failed companion row remains part of the result; no learning claim.
+
+Run the standing thirty once on that exact 744-file source: sum 10/10,
+XOR class 10/10 and reconstruction 10/10 on the same ten trainings, raw
+MM 9/10. MM-03 remains a miss at .227972 after 200 epochs; diagnostic
+bisection exactly reproduces its original trajectory on both the closing
+source and e43638a, including RNG and final parameters, under operators
+plan section 20. No gate attempt is retried or replaced. Zero episodes.
+
+The source-matched sweep stands at 5,359 passed, 286 skipped and one XPASS;
+thinking stands at 57/57. Document links pass 348/348. All 744 staged source
+blobs match the reviewed hash; stopped evidence and earlier receipts are
+unchanged. Preserve large checkpoint/archive bytes with Git LFS.
+
+Move 6.2 to Done: mechanism complete, decomposition demonstrated. Defer
+learning to item 0 under four corrections: one-step problems first, worked
+steps as intermediate answers, binding a found candidate, and budget in
+steps with each query record charge bounded separately. Keep all six
+6.5 learning gates pending the million-sentence checkpoint, seeds 0/1/2.
+
+Co-Authored-By: Codex <noreply@openai.com>

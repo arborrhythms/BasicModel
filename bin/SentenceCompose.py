@@ -130,7 +130,7 @@ def sentence_pair(cache, compose, score, step, *, active, training=True, before_
     """Compare reconstruction at one parameter state, then train both paths.
 
     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
-    path on its second call so it can replay its prefix and exclude one choice.
+    path on its second call so it can fork a saved state and exclude one choice.
     ``score`` returns a cost per row and the candidate's scratch commit value.
     Selection costs contain reconstruction only; strict improvement keeps
     explore and ties keep greedy. ``before_step`` receives all active rows:

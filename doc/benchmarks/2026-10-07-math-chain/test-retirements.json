@@ -1,0 +1,16 @@
+[
+  {
+    "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+    "reason": "WholeSpace no longer snaps raw unity to word rows. Its production stage sets _stage0_indices to None; injecting a fake word-row index tests a retired path.",
+    "surviving_coverage": "test_set_reading_primes_the_concept; test_cs_to_ws_projection_live",
+    "old_text": "baseline-tests/test_reading_wiring_desires_staged_wholes.txt",
+    "sha256": "b95ca7f421efcaaef14714efe99f6803f3aa6f86d358e8d81b589f4bb56a77b6"
+  },
+  {
+    "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+    "reason": "The hard-coded _primed_reading_step / passback-scope consumer is removed; native reading uses the shared attended field.",
+    "surviving_coverage": "test_one_canonical_surface_per_tower; test_cs_to_ws_projection_live",
+    "old_text": "baseline-tests/test_reading_heat_from_canonical_on_multistage.txt",
+    "sha256": "0c239bae6d06a151a3abcffe87da72102b0a9f4bc1931bb02fc7de2c4faba1c1"
+  }
+]

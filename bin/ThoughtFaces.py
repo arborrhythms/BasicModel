@@ -99,14 +99,18 @@ def query(context, arguments):
 
 
 def ask(context, arguments):
-    from ThoughtReferences import open_slots
+    from ThoughtReferences import needs_episode
     requested = arguments['I1']
+    if needs_episode(requested) and callable(context.continuation):
+        return returned_subgoal(context.continuation(requested))
     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
     found = context.ltm.best_match(requested, max_records=context.max_records,
                                     work=context.work, references=references)
-    if found['frames'] or not open_slots(requested) or not callable(context.continuation):
-        return found
-    result = context.continuation(requested)
+    return found
+
+
+def returned_subgoal(result):
+    """The return half of ask, shared with a suspended episode continuation."""
     if hasattr(result, 'evidence'):
         return dict(result.evidence, value=result, result_kind='subgoal')
     return pair(incomplete=('open_reference',)) if result is None else dict(result)

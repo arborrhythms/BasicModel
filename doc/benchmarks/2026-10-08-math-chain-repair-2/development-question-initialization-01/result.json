@@ -1,0 +1,18 @@
+{
+  "kind": "development",
+  "seed": null,
+  "questions": 8,
+  "committed_open": 0,
+  "episodes": 0,
+  "departures": [
+    -1,
+    12,
+    -1,
+    18,
+    18,
+    -1,
+    -1,
+    -1
+  ],
+  "declaration": "A single diagnostic construction, not a measurement attempt or a learning claim."
+}

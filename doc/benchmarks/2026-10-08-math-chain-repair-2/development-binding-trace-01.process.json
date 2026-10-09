@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_ordinary.py",
+    "development-binding-trace-01",
+    "1"
+  ],
+  "pid": 69593,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 213088,
+  "elapsed_seconds": 1.261589333997108,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-binding-trace-01.log"
+}

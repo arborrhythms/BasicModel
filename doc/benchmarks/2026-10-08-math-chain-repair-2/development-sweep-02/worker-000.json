@@ -1,0 +1,1297 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+    "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+    "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+    "test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary",
+    "test/test_abstraction_order_canonical.py::test_property_passes_never_mint_symbolic_word_winners",
+    "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+    "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+    "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+    "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+    "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+    "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+    "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+    "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+    "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+    "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+    "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+    "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+    "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+    "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_without_write_position_contiguity",
+    "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+    "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+    "test/test_accessible_mind.py::test_query_retrieves_every_old_cued_frame_without_an_implicit_write",
+    "test/test_accessible_mind.py::test_higher_order_missing_edge_keeps_content_with_zero_evidence",
+    "test/test_accessible_mind.py::test_thought_retrieval_keeps_history_and_restores_episode_knowing",
+    "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+    "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+    "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+    "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+    "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+    "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+    "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+    "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+    "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+    "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
+    "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+    "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates",
+    "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+    "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+    "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+    "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming",
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+    "test/test_active_decode_candidates.py::test_radix_ws_decode_searches_bound_active_intersection_with_remap",
+    "test/test_active_decode_candidates.py::test_chunk_reverse_and_peel_preserve_active_prefix_row_ids",
+    "test/test_active_decode_candidates.py::test_impenetrable_trust_slices_physical_ema_to_active_prefix",
+    "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+    "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_getw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_codebook_slot_event_for_muxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
+    "test/test_active_payload_audit.py::test_subspace_lookup_replaces_getW_indexing",
+    "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+    "test/test_active_payload_audit.py::test_codebook_forward_writes_selection_for_muxed_subspace",
+    "test/test_admission_capacity.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+    "test/test_admission_capacity.py::test_atomic_byte_admission_preflights_the_complete_batch",
+    "test/test_admission_capacity.py::test_admission_preserves_optimizer_parameter_and_moments",
+    "test/test_admission_capacity.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+    "test/test_admission_capacity.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+    "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+    "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+    "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+    "test/test_adverb_eig_edit.py::test_delta_is_sparse",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows",
+    "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+    "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_assertion_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_assertion_provenance.py::test_external_assertion_context_cannot_declare_a_kind",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_modes_on_each_space",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_primer_resolves",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_local_overrides_architecture",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_ninputdim_accepted",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error",
+    "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
+    "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+    "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+    "test/test_attention_promotion.py::test_nonrecurring_row_decays_and_is_recycled",
+    "test/test_attention_promotion.py::test_interpretation_replaces_the_word_row_without_inventing_a_kind",
+    "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
+    "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
+    "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+    "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment"
+  ],
+  "completed": [
+    "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+    "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+    "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+    "test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary",
+    "test/test_abstraction_order_canonical.py::test_property_passes_never_mint_symbolic_word_winners",
+    "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+    "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+    "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+    "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+    "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+    "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+    "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+    "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+    "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+    "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+    "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+    "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+    "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+    "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_without_write_position_contiguity",
+    "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+    "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+    "test/test_accessible_mind.py::test_query_retrieves_every_old_cued_frame_without_an_implicit_write",
+    "test/test_accessible_mind.py::test_higher_order_missing_edge_keeps_content_with_zero_evidence",
+    "test/test_accessible_mind.py::test_thought_retrieval_keeps_history_and_restores_episode_knowing",
+    "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+    "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+    "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+    "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+    "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+    "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+    "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+    "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+    "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+    "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
+    "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+    "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates",
+    "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+    "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+    "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+    "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+    "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming",
+    "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+    "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+    "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+    "test/test_active_decode_candidates.py::test_radix_ws_decode_searches_bound_active_intersection_with_remap",
+    "test/test_active_decode_candidates.py::test_chunk_reverse_and_peel_preserve_active_prefix_row_ids",
+    "test/test_active_decode_candidates.py::test_impenetrable_trust_slices_physical_ema_to_active_prefix",
+    "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+    "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_getw_audit_after_selection_write",
+    "test/test_active_payload_audit.py::test_codebook_slot_event_for_muxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+    "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
+    "test/test_active_payload_audit.py::test_subspace_lookup_replaces_getW_indexing",
+    "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+    "test/test_active_payload_audit.py::test_codebook_forward_writes_selection_for_muxed_subspace",
+    "test/test_admission_capacity.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+    "test/test_admission_capacity.py::test_atomic_byte_admission_preflights_the_complete_batch",
+    "test/test_admission_capacity.py::test_admission_preserves_optimizer_parameter_and_moments",
+    "test/test_admission_capacity.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+    "test/test_admission_capacity.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+    "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+    "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+    "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+    "test/test_adverb_eig_edit.py::test_delta_is_sparse",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+    "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows",
+    "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+    "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+    "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+    "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "test/test_assertion_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+    "test/test_assertion_provenance.py::test_external_assertion_context_cannot_declare_a_kind",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_modes_on_each_space",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_primer_resolves",
+    "test/test_attention_mode_config.py::TestAttentionModeResolution::test_local_overrides_architecture",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+    "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_ninputdim_accepted",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+    "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error",
+    "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
+    "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+    "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+    "test/test_attention_promotion.py::test_nonrecurring_row_decays_and_is_recycled",
+    "test/test_attention_promotion.py::test_interpretation_replaces_the_word_row_without_inventing_a_kind",
+    "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
+    "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
+    "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+    "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment"
+  ],
+  "slow_selected": [
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005112079670652747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05904304201249033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_radix_multibyte_percept_stamps_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023849995341151953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08764849998988211,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_property_passes_never_mint_symbolic_word_winners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07531949994154274,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000288125011138618,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002584579633548856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003814169904217124,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003671670565381646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005093329818919301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010236249072477221,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021697920747101307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006976541015319526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05165129096712917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003843792015686631,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022812921088188887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005112079670652747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004506499972194433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_without_write_position_contiguity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001993000041693449,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029908306896686554,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004015083075501025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_query_retrieves_every_old_cued_frame_without_an_implicit_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011538416030816734,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_higher_order_missing_edge_keeps_content_with_zero_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002851707977242768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_thought_retrieval_keeps_history_and_restores_episode_knowing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03202349995262921,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031965000089257956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0119151669787243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00878675002604723,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00071154092438519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030539160361513495,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008489500032737851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025712919887155294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012036083033308387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008673417032696307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015807499876245856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029277499997988343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007481541018933058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_multiplies_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025174999609589577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_identity_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015499989967793226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011424999684095383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_none_activation_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010258296970278025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001350409584119916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015458394773304462,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_default_config",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010391697287559509,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_configure_priming_overrides_defaults",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001011659624055028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.245797991752625e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005565409082919359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011654198169708252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001800829777494073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018495798576623201,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002495420631021261,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004572079051285982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000843374989926815,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004593339981511235,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008083082968369126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_decode_candidates.py::test_radix_ws_decode_searches_bound_active_intersection_with_remap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005407920107245445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_decode_candidates.py::test_chunk_reverse_and_peel_preserve_active_prefix_row_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041091698221862316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_decode_candidates.py::test_impenetrable_trust_slices_physical_ema_to_active_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001593329943716526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012649159180000424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006391250062733889,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_getw_audit_after_selection_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006277500651776791,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_slot_event_for_muxed_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005015409551560879,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047379208263009787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002487919991835952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_subspace_lookup_replaces_getW_indexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005133340600878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034566596150398254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_active_payload_audit.py::test_codebook_forward_writes_selection_for_muxed_subspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012785829603672028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_admission_capacity.py::test_admission_at_capacity_is_atomic_and_names_the_physical_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006467080675065517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_admission_capacity.py::test_atomic_byte_admission_preflights_the_complete_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003209579735994339,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_admission_capacity.py::test_admission_preserves_optimizer_parameter_and_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007604160346090794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_admission_capacity.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004468749975785613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_admission_capacity.py::test_lexicon_reserves_its_physical_capacity_before_admission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026797079481184483,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013578750658780336,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003384159645065665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005938330432400107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008390829898416996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007066249381750822,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006997910095378757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_delta_is_sparse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005305419908836484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029411669820547104,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Expanded aligned codebook checkpoint rows [4] -> 8 across 10 state keys (5 physical tensors); learned prefixes copied in place and initialized tails preserved\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025647920556366444,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Expanded aligned codebook checkpoint rows [4] -> 8 across 30 state keys (5 physical tensors); learned prefixes copied in place and initialized tails preserved\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_keeps_stage_zero_and_drops_old_stage_aliases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014016707427799702,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_optimizer_remap_drops_fully_retired_optimizer_leaf",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013162498362362385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013392079854384065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000892958021722734,
+      "message": "",
+      "stdout": "[AdamCapacityTest] Zero-padded 2 optimizer moment tensor(s) for larger configured inventories\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012457920238375664,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Activated aligned codebook prefix 2 -> 4 rows (physical capacity 8; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011445829877629876,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009957499569281936,
+      "message": "",
+      "stdout": "[AlignedCapacityTest] Activated aligned codebook prefix 2 -> 8 rows (physical capacity 8; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029570807237178087,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020008301362395287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004290839424356818,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026241596788167953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002572080120444298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1044141249731183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09549079101998359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_wrong_symbolic_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09590216598007828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09856512490659952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09512033290229738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012920796871185303,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_aligned_fold_binding.py', 191, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19007066590711474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015387958032079041,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11371633294038475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014808957930654287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06721612496767193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013561959029175341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.999508790904656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9451253329170868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.8803284170571715,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.538766041980125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_assertion_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030516660772264004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_assertion_provenance.py::test_external_assertion_context_cannot_declare_a_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004622919950634241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001460830681025982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011795805767178535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_modes_on_each_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011845794506371021,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_explicit_primer_resolves",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011308398097753525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_local_overrides_architecture",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012070906814187765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015258300118148327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_ninputdim_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013099994976073503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001289169304072857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001438749022781849,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005764000001363456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.032232208061032,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006365792010910809,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_nonrecurring_row_decays_and_is_recycled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012418917031027377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_interpretation_replaces_the_word_row_without_inventing_a_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033213329734280705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002916625002399087,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025435839779675007,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006869709002785385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008722833008505404,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

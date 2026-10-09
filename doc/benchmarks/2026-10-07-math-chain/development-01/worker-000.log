@@ -1,0 +1,25 @@
+......F                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations _
+test/test_math_chain.py:107: in test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+    model = build_model()
+            ^^^^^^^^^^^^^
+test/test_math_chain.py:99: in build_model
+    init_config(path=str(config), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /Users/arogers/github/WikiOracle/basicmodel/data/MM_math_chain.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /Users/arogers/github/WikiOracle/basicmodel/data/MM_math_chain.xml:21: element outputInLoop: Schemas validity error : Element 'outputInLoop': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/MM_math_chain.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=========================== short test summary info ============================
+FAILED test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations
+1 failed, 6 passed in 2.04s

@@ -1,0 +1,19 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

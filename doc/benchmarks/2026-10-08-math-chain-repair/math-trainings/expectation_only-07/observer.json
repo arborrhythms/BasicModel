@@ -1,0 +1,70 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 1,
+    "sentences": 24,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 7
+  },
+  "operations": {
+    "query": 11,
+    "conclude": 7
+  },
+  "credit": {
+    "answer_expectation_and_work": 4,
+    "nonzero_graph": 4,
+    "ties": 0,
+    "nonzero_chooser_gradients": 4
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.2535282731056214,
+        1.2835282731056212
+      ],
+      "graph": true,
+      "surrogate": 0.052655041217803955,
+      "raw_chooser_gradient_l2": 0.03295699579965471
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3318141031265258,
+        1.3918141031265259
+      ],
+      "graph": true,
+      "surrogate": 0.16331571340560913,
+      "raw_chooser_gradient_l2": 0.28101522128124834
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.253148078918457,
+        1.2831480789184568
+      ],
+      "graph": true,
+      "surrogate": 0.05162129923701286,
+      "raw_chooser_gradient_l2": 0.033378502147291066
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3274264025688172,
+        1.3574264025688172
+      ],
+      "graph": true,
+      "surrogate": 0.0789022371172905,
+      "raw_chooser_gradient_l2": 0.04271417939621734
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.39006489862441146,
+  "raw_chooser_gradient_l2_max": 0.28101522128124834
+}

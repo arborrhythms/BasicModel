@@ -1,0 +1,46 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 1,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 3,
+    "sentences": 16
+  },
+  "operations": {
+    "part": 41,
+    "not": 25
+  },
+  "credit": {
+    "answer_expectation_and_work": 2,
+    "nonzero_graph": 0,
+    "ties": 2,
+    "nonzero_chooser_gradients": 0
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.8001421356201173,
+        0.8001421356201173
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7983913326263428,
+        0.7983913326263428
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

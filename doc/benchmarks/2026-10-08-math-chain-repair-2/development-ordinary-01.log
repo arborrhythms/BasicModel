@@ -1,0 +1,16 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"epoch": 1, "text": "y is five.", "source": 0, "field": {"mask": [true, true, true], "refs": [["ltm", "address-v1", -3665890969728376113], ["sym", 4010033338316264258], null], "kind": "relation", "opened": [["referent", 2]], "bindings": {"_equality": true, "_evidence_pair": [1.0, 0.0], "_forward_references": [[2, 20]], "_open_references": [["referent", 2]], "_pending": true}}, "query": {"mask": [true, true, true], "refs": [["ltm", "address-v1", -3665890969728376113], ["sym", 4010033338316264258], null], "kind": "relation", "opened": [["referent", 2]], "bindings": {"_equality": true, "_evidence_pair": [1.0, 0.0], "_forward_references": [[2, 20]], "_open_references": [["referent", 2]], "_pending": true}}, "row_id": 6100403541259968097, "episode": true, "work": 32}
+{"epoch": 1, "text": "x is three.", "source": 3, "field": {"mask": [true, true, true], "refs": [["ltm", "address-v1", -4890658719383129308], ["sym", 4010033338316264258], null], "kind": "relation", "opened": [["referent", 2]], "bindings": {"_equality": true, "_evidence_pair": [1.0, 0.0], "_forward_references": [[2, 20]], "_open_references": [["referent", 2]], "_pending": true}}, "query": {"mask": [true, true, true], "refs": [["ltm", "address-v1", -4890658719383129308], ["sym", 4010033338316264258], null], "kind": "relation", "opened": [["referent", 2]], "bindings": {"_equality": true, "_evidence_pair": [1.0, 0.0], "_forward_references": [[2, 20]], "_open_references": [["referent", 2]], "_pending": true}}, "row_id": 2294228763293554856, "episode": true, "work": 32}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_ordinary.py", line 58, in <module>
+    print(present(model,split='train',optimizer=optimizer,after_batch=after),flush=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 52, in present
+    after_batch(model, split, rows, result)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_ordinary.py", line 50, in after
+    print(json.dumps(dict(stored=row,kind=store.KINDS[int(store.record_kind[index])],
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: dict() got multiple values for keyword argument 'refs'

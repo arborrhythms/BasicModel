@@ -1,0 +1,14 @@
+{
+  "source_files": 732,
+  "source_matches": true,
+  "original_helpers_match": true,
+  "supplemental_helpers_match": true,
+  "protected_gate_files_unchanged": {
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "data/XOR_grammar.xml": true,
+    "data/MM_xor.xml": true
+  },
+  "original_receipts_unchanged": true,
+  "live_spec_sha256": "e378624c27cd1208e2df68f0b549204a6765d6e763cb8890dac921958452d508"
+}

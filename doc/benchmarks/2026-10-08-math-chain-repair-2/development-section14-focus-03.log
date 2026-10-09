@@ -1,0 +1,249 @@
+........................................................................ [ 80%]
+......F...........                                                       [100%]
+=================================== FAILURES ===================================
+________ test_runbatch_credits_each_controller_row_from_its_own_answer _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x144b2e930>
+eager_reading = None
+
+    def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, eager_reading):
+        from dataclasses import replace
+        from test_output_walk import _model, _capture_program_probe
+        from What import What
+        import ThoughtCredit
+        import ThoughtClosing
+        # The explicit questions below own this fixture. A random surface
+        # reading must not introduce a third, unrelated controller episode.
+        monkeypatch.setattr(ThoughtClosing, 'closing_question', lambda *_args: None)
+        model = _model()
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        try:
+            with torch.no_grad():
+>               _capture_program_probe(model, ['12 plus 1', '3 plus 4'])
+
+test/test_unified_thought_controller.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_output_walk.py:716: in _capture_program_probe
+    out = m(m.inputSpace.prepInput(texts))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8310: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23604: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17293: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22138: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21691: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20817: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=16, out_features=1, bias=True)
+    )
+  )
+  (comparison_reader): AnswerComparison(
+    (weights): ParameterDict()
+  )
+)
+state = ((tensor([[[-0.8454,  0.0570,  0.7198,  ...,  0.0000,  0.0000,  0.0000],
+         [ 0.0000,  0.0000,  0.0000,  ...,  0...., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0., 0.]]), tensor([[False],
+        [False]])))
+sid = 0, active = tensor([True, True])
+observations = [{'payloads': [tensor([[-8.4540e-01,  5.6976e-02,  7.1982e-01,  1.0755e+00, -5.8431e-02,
+          1.2638e-01, -7.1428... 0.2000]), leaf_orders=tensor([0, 0, 0]), leaf_evidence=tensor([[1., 0.],
+        [1., 0.],
+        [1., 0.]]))), ...}]
+predictions = [([None, None], [None, None])], wins = tensor([False, False])
+
+    def _commit_sentence(self, state, sid, active, observations, predictions, wins):
+        """Publish only the chosen rows before the next sentence's perception."""
+        self._publish_sentence_scratch(state)
+        rows = wins.detach().cpu().tolist()
+        view = self._sentence_observation(state, sid, active, admit=True)
+        # Optimizer updates have already happened. Admission may allocate
+        # native addresses, but it must not re-read their updated dictionary
+        # values or change the discrete identity choice that was scored.
+        chosen = [observations[-1 if win else 0] for win in rows]
+        admitted = view['entries']
+        entries = []
+        for b, source in enumerate(chosen):
+            program, native = source['entries'][b], admitted[b]
+            if program is None:
+                entries.append(None)
+                continue
+            references = program.reference_ids
+            if references is not None and native.reference_ids is not None:
+                references = torch.where(references == program.concept_ids,
+                                         native.reference_ids, references)
+            entries.append(replace(program,
+                reference_ids=references, reference_orders=native.reference_orders,
+                reference_values=(program.leaves if program.reference_values is None
+                                  and references is not None else program.reference_values)).detached())
+        view['entries'] = tuple(entries)
+        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths'):
+            view[key] = [source[key][b] for b, source in enumerate(chosen)]
+        if any(source['roles'] is not None for source in chosen):
+            view['roles'] = [None if source['roles'] is None else source['roles'][b]
+                             for b, source in enumerate(chosen)]
+        from ClauseJournal import finish_clause
+        def frozen_values(admitted, scored):
+            if (len(admitted.children) != len(scored.children)
+                    or len(admitted.companions) != len(scored.companions)):
+                raise RuntimeError('admission changed the selected clause structure')
+            return replace(admitted, point=scored.point,
+                meaning=replace(admitted.meaning, roles=scored.meaning.roles,
+                                role_mask=scored.meaning.role_mask),
+                children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
+                companions=tuple(frozen_values(a, s) for a, s in zip(admitted.companions, scored.companions)))
+        view['clauses'] = [None if entry is None else frozen_values(
+            finish_clause(self.languageSpace, entry, meaning=view['meanings'][b],
+                                registry=_boundary_registry(self)), chosen[b]['clauses'][b])
+            for b, entry in enumerate(entries)]
+        disc = getattr(self.symbolSpace, 'expectation', None)
+        # The preview owns each trial's estimate. Commit its comparison and
+        # prior-query policy outcome without training prediction twice.
+        if disc is not None:
+            pending_a, pending_b = predictions[0], predictions[-1]
+            disc._inter_last_meaning = [pending_b[0][b] if win else pending_a[0][b]
+                                       for b, win in enumerate(rows)]
+            disc._inter_last_pred_root = [pending_b[1][b] if win else pending_a[1][b]
+                                         for b, win in enumerate(rows)]
+            disc.observe_stm_end_state(view['observed_depths'], view['observed'],
+                mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
+                layout=view['layout'], role_masks=view['roles'], train_prediction=False,
+                sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
+            disc.detach_prediction_context()
+        from Meaning import ClosingImage
+        images = {}
+        for b, meaning in enumerate(view['meanings']):
+            if meaning is None or not bool(active[b]):
+                continue
+            comparison = None if disc is None else disc.last_expectation_comparison(b)
+            estimate = None if comparison is None else comparison.estimate
+            mask = meaning.roles.new_zeros(3)
+            registry = _boundary_registry(self)
+            if registry is not None and meaning.mode == 'interrogative':
+                # An observed question need not yet name an executable thought.
+                # Only a resolved grammatical attention object spares a role.
+                try:
+                    signature = registry.signature_for(meaning)
+                except (TypeError,ValueError):
+                    signature = None
+                if signature is not None:
+                    for role in signature.open_roles:
+                        mask[registry._slot_for_operand(role)] = 1
+            content_width = meaning.roles.shape[-1]
+            form_width = getattr(self, '_image_form_width', None)
+            form_width = content_width if form_width is None else min(content_width,int(form_width))
+            images[b] = ClosingImage.form(meaning.roles,
+                None if estimate is None else estimate.roles.to(meaning.roles),
+                meaning.roles.new_zeros(3) if estimate is None else estimate.presence_logits.sigmoid(),
+                gain=getattr(self,'expectation_gain',1.), object_mask=mask,
+                form_width=form_width, content_width=content_width)
+        self._last_closing_image_audit = dict(
+            concept_widths={b:v.concept_width for b,v in images.items()},
+            image_max={b:float(v.image.abs().max()) for b,v in images.items()})
+        store = getattr(self.symbolSpace, 'ltm_store', None)
+        row_ids = [-1] * len(rows)
+        written_clauses = [{} for _ in rows]
+        if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
+            retain = _is_external_expectation_observation(disc)
+            for b, payload in enumerate(view['payloads']):
+                if payload is None:
+                    continue
+                comparison = (disc.last_expectation_comparison(b) if retain else None)
+                from Occurrence import source_at, sentence_key, native_content_key
+                document, position = source_at(self, b, sid)
+                # The scored reading owns the resolved word identities. The
+                # legacy WORD lane may be empty on the mixing grammar path;
+                # hashing it would give every sentence the empty content key.
+                record = chosen[b].get('record')
+                word_rows = getattr(record, 'word_rows', None)
+                word_valid = getattr(record, 'word_valid', None)
+                identified_codes = []
+                if torch.is_tensor(word_rows) and torch.is_tensor(word_valid):
+                    owner = self._concept_owner()
+                    # Unresolved or clipped slots are not identified words.
+                    # Do not substitute target text or composed coordinates.
+                    identified_codes = [int(code) for code in word_rows[b][word_valid[b]].tolist()
+                                        if code >= 0 and isinstance(owner.word_surface_for_row(int(code)), bytes)]
+                    words = [owner.word_surface_for_row(code) for code in identified_codes]
+                    content = sentence_key(words)
+                else:
+                    content = native_content_key(view['clauses'][b].meaning)
+                clause = view['clauses'][b]
+                encoding = getattr(self, 'when_encoding', None)
+                if encoding is not None:
+                    clause = replace(clause, eternal=False,
+                                     when=encoding.encode(position).to(clause.meaning.roles))
+                    view['clauses'][b] = clause
+                with store.at_address(document, position, content,
+                                      timestamp=float(getattr(self, 'when_time', store._next_ts))):
+                    row = _append_observed_meaning(store, clause,
+                        trust=self.conceptualSpace._incoming_trust_multiplier(),
+                        expectation=comparison, stream=b, written_rows=written_clauses[b])
+                if row >= 0:
+                    row_ids[b] = int(store.row_ids[row])
+                    store.witness_adjacency(row, identified_codes)
+                    if getattr(self, '_component_reading', False):
+                        from ReferenceContext import selected_individual_references
+                        self._concept_owner().components.commit(row, view['meanings'][b],
+                            None if comparison is None else comparison.estimate,
+                            individual_references=selected_individual_references(
+                                self.languageSpace, entries[b]))
+                if row >= 0 and retain:
+                    disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
+        fields = []
+        registry = _boundary_registry(self)
+        from ThoughtClosing import closing_question
+        for b, clause in enumerate(view['clauses']):
+            if clause is None:
+                fields.append(None)
+                continue
+            index = None if store is None or row_ids[b] in (-1, 0) else store.index_of_row(row_ids[b])
+            if index is not None:
+                meaning = store.meaning_of(index)
+                refs = tuple(store.refs[index].tolist())
+            else:
+                meaning = (clause.meaning if clause.relation is not None else
+                           replace(ConceptualMeaning.from_description(clause.point),
+                                   mode=clause.meaning.mode, polarity=clause.meaning.polarity,
+                                   sentence_kind='idea'))
+                refs = tuple(ref if type(ref) is int and ref not in (-1, 0) else -1 for ref in clause.refs)
+            parsed = (self.languageSpace.program_meaning(entries[b], registry)
+                      if registry is not None else None)
+>           query = closing_question(meaning, clause, parsed, entries[b],
+                                     store=store, written_rows=written_clauses[b])
+E           TypeError: test_runbatch_credits_each_controller_row_from_its_own_answer.<locals>.<lambda>() got an unexpected keyword argument 'store'
+
+bin/Models.py:20367: TypeError
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+1 failed, 89 passed, 1 warning in 13.10s

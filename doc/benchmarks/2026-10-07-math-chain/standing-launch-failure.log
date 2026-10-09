@@ -1,0 +1,23 @@
+{"name": "sum-01", "exit_code": 1, "reason": "exit"}
+{"name": "sum-02", "exit_code": 1, "reason": "exit"}
+{"name": "sum-03", "exit_code": 1, "reason": "exit"}
+{"name": "sum-04", "exit_code": 1, "reason": "exit"}
+{"name": "sum-05", "exit_code": 1, "reason": "exit"}
+{"name": "sum-06", "exit_code": 1, "reason": "exit"}
+{"name": "sum-07", "exit_code": 1, "reason": "exit"}
+{"name": "sum-08", "exit_code": 1, "reason": "exit"}
+{"name": "sum-09", "exit_code": 1, "reason": "exit"}
+{"name": "sum-10", "exit_code": 1, "reason": "exit"}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/campaign.py", line 165, in <module>
+    campaign()
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/campaign.py", line 119, in campaign
+    observations = [json.loads((OUT/f'sum-{run:02}'/'measurement.json').read_text())
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/measurements/sum-01/measurement.json'

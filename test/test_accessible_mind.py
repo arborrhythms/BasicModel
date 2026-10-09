@@ -125,7 +125,7 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     assert 'work_budget' in result['incomplete']
 
 
-def test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches():
+def test_priming_adds_code_disjoint_rows_without_write_position_contiguity():
     store = TernaryTruthStore(8, capacity=8)
     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
     first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
@@ -136,7 +136,8 @@ def test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches():
     found = store.cued_rows(cue, primed=(90, 94))['value']
     assert [row['index'] for row in found] == [first, third]
     found = store.cued_rows(cue, primed=(90, 94), retrieved=(store.occurrence_of(second),))['value']
-    assert [row['index'] for row in found] == [third, first]
+    assert [row['index'] for row in found] == [first, third]
+    assert not any(row['contiguous'] for row in found)
 
 
 def test_subsystem_permissions_and_structural_capability_refusal():
@@ -212,7 +213,7 @@ def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
 
 
 
-def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
+def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatch):
     from dataclasses import replace
     from QueryWork import QueryWorkBudget
     from test_normal_thought_controller import _catalog_world
@@ -244,18 +245,19 @@ def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
     with model._query_boundary_scope((0,)):
         meter = QueryWorkBudget(256)
         context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)
-        question = registry.form('ask', store.occurrence_of(cue_row), context=context)
+        question = registry.form('query', store.occurrence_of(cue_row), context=context)
     def choose(root, active, actions, **kw):
         if kw.get('evidence') is not None:
             return None
-        return next(action for action in actions if action and action.semantic_id == 'ask')
+        return next(action for action in actions if action and action.semantic_id == 'query')
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    prior_knowing = getattr(model.conceptualSpace.subspace, '_concept_activations', None)
     with model._query_boundary_scope((0,)):
         before = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
         result = model.run_selected_thought(question, work_budget=256)
         after = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
     assert not bool(before[1].any()) and bool(after[1].any())
-    assert result.result.semantic_id == 'ask' and result.result.result_kind == 'set'
+    assert result.result.semantic_id == 'query' and result.result.result_kind == 'set'
     frame, = memory.retrieved_frames()
     assert frame['occurrence'] == store.occurrence_of(oldest)
     assert frame['occurrence'] in memory.retained_ltm_occurrences(frame['occurrence'][1])
@@ -265,8 +267,9 @@ def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
     # Mutating an LTM row never changes the retained, owned frame.
     store.slots[oldest].fill_(100.)
     torch.testing.assert_close(frame['meaning'].roles, fact.roles)
-    field = model.conceptualSpace.subspace._concept_activations
-    assert field is not None and not field.requires_grad
+    # The checked frames remain in the credit/history trail; the episode's
+    # transient conceptual activation is not another lasting effect (§4.4).
+    assert getattr(model.conceptualSpace.subspace, '_concept_activations', None) is prior_knowing
 
 
 def test_higher_order_retrieval_seeds_discontinuous_members_only():
@@ -375,7 +378,7 @@ def test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant():
     assert context.primed_symbols is None
 
 
-def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkeypatch):
+def test_legacy_index_rebuild_uses_real_rows_and_shares_truth(monkeypatch):
     import copy
     from dataclasses import replace
     from MemoryIndex import configure_model_index
@@ -387,7 +390,8 @@ def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkey
     original.append_meaning(meaning, kind='observation', order=2, sentence_index=len(original))
     state = copy.deepcopy(original.state_dict())
     for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
-        del state[key]
+        state.pop(key, None)
+    state['index_stream'] = torch.tensor([-1, 7, -1, -1])
     store = TernaryTruthStore(8, capacity=4)
     store.load_state_dict(state)
     store.load_semantic_extras(original.semantic_extras())
@@ -397,9 +401,9 @@ def test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams(monkey
                                          grammatical_thoughts=registry), store)
     from Queries import _existing_row
     assert store.leaf_terms(0, 0) == (_existing_row(cs, a),)
-    assert store.index_stream[:2].tolist() == [-1, -2]
+    assert not hasattr(store, 'index_stream')
     found = store.cued_rows(replace(meaning, mode='interrogative'), stream=0)
-    assert [row['index'] for row in found['value']] == [0]
+    assert [row['index'] for row in found['value']] == [0, 1]
 
 
 def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch):
@@ -423,7 +427,7 @@ def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch
     assert store.leaf_terms(1, 2) == (_existing_row(cs, b),)
 
 
-def test_nested_writes_inherit_stream_isolation():
+def test_nested_writes_are_shared_across_batch_positions():
     from dataclasses import replace
     child = _meaning()
     parent = replace(child, role_mask=torch.tensor([True, False, False]),
@@ -431,9 +435,10 @@ def test_nested_writes_inherit_stream_isolation():
     store = TernaryTruthStore(8, capacity=4)
     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
     store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
-    assert store.index_stream[:2].tolist() == [2, 2]
-    assert not store.cued_rows(child, stream=0)['value']
-    assert store.cued_rows(child, stream=2)['value']
+    assert not hasattr(store, 'index_stream')
+    first = store.cued_rows(child, stream=0)['value']
+    moved = store.cued_rows(child, stream=2)['value']
+    assert first and [row['occurrence'] for row in first] == [row['occurrence'] for row in moved]
 
 
 def test_executor_cannot_emit_outside_its_declared_write_scope():

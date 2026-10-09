@@ -10,6 +10,9 @@ def bound_view(state, observation, sentence, row, meaning):
     for index in (9, 13, 14):
         language[index] = language[index].clone()
     count = int(meaning.role_mask.sum())
+    from ThoughtReferences import open_slots
+    if count not in (1, 3) or open_slots(meaning):
+        raise ValueError('the answer reader requires a completed one- or three-role meaning')
     slots = meaning.roles[meaning.role_mask]
     # Sentence physical order is NP2, NP1, VP for a ternary row.
     if count == 3:
@@ -40,7 +43,8 @@ def scorer(model, state, observation, sentence):
     trials = []
     def score(row, result):
         from ThoughtReferences import open_slots
-        bound, view = ((state, observation) if open_slots(result.meaning) else
+        bound, view = ((state, observation) if (open_slots(result.meaning)
+                         or int(result.meaning.role_mask.sum()) not in (1, 3)) else
                       bound_view(state, observation, sentence, row, result.meaning))
         active = torch.zeros(len(observation['meanings']),device=result.meaning.roles.device,dtype=torch.bool)
         active[row] = True
@@ -53,6 +57,13 @@ def scorer(model, state, observation, sentence):
             if reader is not None and value is not None:
                 value = reader(model,bound,sentence,active,view,registry=comparison)
         trials.append((presented,comparison,getattr(model,'_thought_walk',None)))
+        data = model.inputSpace.data
+        if getattr(data, 'answer_mode', None) == 'binding':
+            questions = model._sentence_answer_questions
+            answer = data.what(questions[row]) if row < len(questions) else None
+            if answer is not None and answer.available:
+                from BindingAnswers import cost
+                return cost(model, result.meaning, answer.what)
         return 0. if value is None else value[row] if value.ndim else value
     return score,trials
 

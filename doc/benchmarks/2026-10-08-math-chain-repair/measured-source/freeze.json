@@ -1,0 +1,12 @@
+{
+  "source_files": 733,
+  "protected_matches": {
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "data/XOR_grammar.xml": true,
+    "data/MM_xor.xml": true
+  },
+  "source_sha256": "f944bef3dc2aef40f59d0e2dda35f4b2d14f9f2609ce1f6632abd5d2d35cf36e",
+  "helpers": 192,
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1"
+}

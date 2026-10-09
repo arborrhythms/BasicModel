@@ -1,0 +1,58 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_ordinary_initial_binding_distribution_includes_every_retained_candidate _
+
+tmp_path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-distribution14-02/test_ordinary_initial_binding_0')
+
+    def test_ordinary_initial_binding_distribution_includes_every_retained_candidate(tmp_path):
+        """Certificate b: unforced distribution, with empirical openings reported."""
+        import json
+        from binding_distribution_probe import binding_distributions
+        from math_chain_ordinary import ordinary_model, train_documents, stage, observer_class
+        from math_chain_corpus import ChainDocument
+        from MathChainTraining import present
+        model = ordinary_model(tmp_path)
+        try:
+            # Existing candidates require an existing situation. Read real
+            # documents without an optimizer, then prove the chooser is still
+            # at initialization before the training certificate starts.
+            chooser = model._selected_thought_chooser(None)
+            initial = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+            provision = tmp_path/'provision'
+            provision.mkdir()
+            stage(model, [ChainDocument('prior'+str(i), ('y is three.',)) for i in range(8)])
+            with observer_class()(provision) as observer:
+                observer.context = dict(epoch=0, phase='initialization_read')
+                present(model, split='train', after_batch=observer.after_batch)
+            assert all(torch.equal(value, initial[name]) for name, value in chooser.named_parameters())
+            documents = [ChainDocument(str(i), ('what is y ?',), question=0) for i in range(8)]
+            with binding_distributions() as records:
+                rows = train_documents(model, documents, tmp_path)
+            assert records
+            ratios = [p*len(item['alternatives']) for item in records for p in item['probabilities']]
+            retained = sum(sum(value not in (0,-2) for value in item['alternatives']) for item in records)
+            report = dict(forced=False, conditional_band=[.9,1.1], alternatives_relative_to_uniform=[min(ratios),max(ratios)],
+                retained_candidates=retained, menus=len(records), questions=len(rows),
+                observed_committed_open=sum(bool(row['open']) for row in rows),
+                observed_episodes=sum(row['episode'] for row in rows),
+                departures=[row['departure'] for row in rows])
+            (tmp_path/'distribution.json').write_text(json.dumps(report, indent=2)+'\n')
+            (tmp_path/'menus.json').write_text(json.dumps(records)+'\n')
+>           assert retained, 'the full-candidate band must exercise retained candidates'
+E           AssertionError: the full-candidate band must exercise retained candidates
+E           assert 0
+
+test/test_math_chain_section14.py:136: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=3.263s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+1 failed, 1 warning in 8.33s

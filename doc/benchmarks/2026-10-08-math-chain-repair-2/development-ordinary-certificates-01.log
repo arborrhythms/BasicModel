@@ -1,0 +1,26 @@
+......F.............................                                     [100%]
+=================================== FAILURES ===================================
+______ test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation ______
+
+    def test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation():
+        from Interpret import InterpretLayer
+        from ClauseScope import ClauseScope
+        value = torch.randn(2, 1, 4)
+>       options = InterpretLayer.bind(None, value, identity=torch.tensor([[19], [19]]),
+            scope=torch.full((2, 1), ClauseScope.DETERMINED, dtype=torch.long),
+            candidate_ids=torch.tensor([[[31]], [[31]]]), candidate_values=value[:, :, None],
+            candidate_relations=torch.zeros(2, 1, 1, dtype=torch.bool),
+            available=torch.ones(2, 1, 1, dtype=torch.bool), mode=None,
+            active=torch.ones(2, 1, dtype=torch.bool))
+E       TypeError: InterpretLayer.bind() missing 1 required keyword-only argument: 'associations'
+
+test/test_math_chain_repair2.py:113: TypeError
+=============================== warnings summary ===============================
+test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation
+1 failed, 35 passed, 1 warning in 9.59s

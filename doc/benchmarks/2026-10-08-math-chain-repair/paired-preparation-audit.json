@@ -1,0 +1,588 @@
+{
+  "paired_starts": 10,
+  "distinct_rng_archives": 10,
+  "first_epoch_questions_expected_per_condition": 1170,
+  "note": "Read-only audit of preparations made before any declared training. No models were constructed or run by this audit.",
+  "runs": [
+    {
+      "run": 1,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "5fa889ab321226adf672c15b5cb71f8e6f8d6d8c6f70a4ca522c3b11540e35e7",
+      "presentations_sha256": "f58f4558b4bc80b1ba268d81c5f8485e5cc77a89533589e84815fa66cd59212a",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 2,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "68b39540bafd307f55cf8e70b402f0aad60bc7cc6230653b6a441b571dccff47",
+      "presentations_sha256": "b221d76d351781382e9b34bd62e443fa25034c19f43272aa8d7f3e3481c16654",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 3,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "71434a2c2bc07bf99747f3b88302baa13ae596a5777d01a57f32eba6e74e4ea8",
+      "presentations_sha256": "04565603f13f9ef659c11e6669c2bcb21228debfe2976ca6f3737eed7da42e81",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 4,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "99e0766c6085e3847c3bdd5092a0688601a03e0fb5716bfd2d512e957e326010",
+      "presentations_sha256": "e65cfd6c3bf88c60cbcda0a46b57b8681aa82dc98139822afef04e9d9aef35ed",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 5,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "8971708ce304aac13bba7477e5578a84717afeeed4622485ec8504f3c22999d0",
+      "presentations_sha256": "4a4254212c27b37c4f118b4752ed84d170567dd83a4fbb8da99e1583215903cd",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 6,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "49ce000d02ec1dfb582f0258cf8a95a87eb0e67362f6c61f70d41bad4fc53dfe",
+      "presentations_sha256": "784e68868cfa50012540d10eecd4cb4ca8b25ce63e67c1fa7c61eab805c7f2f9",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 7,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "5601355b865d96c4f56d35b50d812bb36742fd7892c26e28569442842d1ed7ae",
+      "presentations_sha256": "d79b0cdb1c4d54087c25ff7223918c30f4ab72cc7a1b0ebb61a6e29ce1697816",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 8,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "6a8ac6d09cf661a010127026b094410903bbb66f8c01ee2c86814c3d23a90c3f",
+      "presentations_sha256": "4a123cb4fb73356f1926d70dec5df91ded9ce3945a3d2a9b14c2d3a062bd182e",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 9,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "c691fba9cef5396d0b338f14f189ee727e1cede01fd3cab6aae3bd28ebb0b2d6",
+      "presentations_sha256": "387cc91fc8eb3a8e9899c08aac989dfa14160d0e4bf51c51f0b4aef54f19ab08",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    },
+    {
+      "run": 10,
+      "origin": {
+        "seed": null,
+        "source": "fresh process entropy",
+        "paired_conditions": 3,
+        "epochs": 50,
+        "retries": 0
+      },
+      "initial_rng_sha256": "d3bf9908a195a1954cebea2c043a3b0d82fef1e6fe04dbb3161b780c44d63458",
+      "presentations_sha256": "8c9aa499508ddbe8f3131eaf184948d1858c3b50bd088be33efcc3e468ef0fda",
+      "presentations": 50,
+      "train_documents": [
+        157
+      ],
+      "train_questions_per_epoch": [
+        117
+      ],
+      "train_sentences_per_epoch": [
+        1449
+      ],
+      "held_out_pairs": [
+        [
+          2,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "beyond_range_pairs": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          2,
+          11
+        ],
+        [
+          3,
+          12
+        ]
+      ]
+    }
+  ]
+}

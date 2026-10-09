@@ -213,7 +213,9 @@ def test_identity_candidates_share_the_operation_softmax_and_live_credit():
     layer = OperationSelectionLayer(d_model=4, ops=(), unary_ops=(Identity(),), chooser='mlp')
     for identity in (11, 12, -1):
         action = ((refs == identity) & legal).nonzero()[0, 0].reshape(1)
-        _, _, route = layer(word, reference_data=candidates, replay_action=action)
+        from operation_fixtures import selected_action
+        with selected_action(layer, action):
+            _, _, route = layer(word, reference_data=candidates)
         assert route['refs'][0, 0] == identity and route['op'][0] == 0
         torch.testing.assert_close(route['probabilities'], route['logits'].softmax(-1))
         credit = route['logits'].log_softmax(-1).gather(1, action[:, None]).sum()

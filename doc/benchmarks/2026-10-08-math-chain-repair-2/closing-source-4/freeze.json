@@ -1,0 +1,24 @@
+{
+  "retained_files": 59,
+  "retained_unchanged": true,
+  "frozen_contracts_unchanged": true,
+  "source_files": 744,
+  "changed": [
+    "bin/ClauseJournal.py",
+    "bin/Models.py",
+    "bin/Queries.py",
+    "bin/ThoughtBinding.py",
+    "bin/ThoughtFaces.py",
+    "bin/ThoughtStream.py",
+    "bin/WalkTrials.py",
+    "test/test_accessible_mind.py",
+    "test/test_math_chain_decomposition.py",
+    "test/test_thought_binding.py"
+  ],
+  "seed": null,
+  "retries": 0,
+  "source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+  "authority": "User authorized minimal general binding/return repair; \u00a714.11 forced demonstration only.",
+  "learning_claim": false,
+  "standing_thirty": "Retained as already measured, not rerun."
+}

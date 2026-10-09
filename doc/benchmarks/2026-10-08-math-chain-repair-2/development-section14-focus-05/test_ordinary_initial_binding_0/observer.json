@@ -1,0 +1,106 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 1,
+    "equality_trials_with_verb_shift_gradient": 0,
+    "episodes": 7,
+    "sentences": 8
+  },
+  "operations": {
+    "query": 7,
+    "conclude": 7
+  },
+  "credit": {
+    "reconstruction_and_answer": 7,
+    "nonzero_graph": 7,
+    "ties": 0,
+    "nonzero_chooser_gradients": 7
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.12
+      ],
+      "graph": true,
+      "surrogate": 0.05256925895810127,
+      "raw_chooser_gradient_l2": 0.01767428928063226
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.27
+      ],
+      "graph": true,
+      "surrogate": 0.3154970705509186,
+      "raw_chooser_gradient_l2": 0.10271008632624637
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.12
+      ],
+      "graph": true,
+      "surrogate": 0.05256925895810127,
+      "raw_chooser_gradient_l2": 0.01767428928063226
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.12
+      ],
+      "graph": true,
+      "surrogate": 0.052440203726291656,
+      "raw_chooser_gradient_l2": 0.017994256605371052
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.19
+      ],
+      "graph": true,
+      "surrogate": 0.1871003657579422,
+      "raw_chooser_gradient_l2": 0.14573596852822912
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.19
+      ],
+      "graph": true,
+      "surrogate": 0.18870587646961212,
+      "raw_chooser_gradient_l2": 0.14519276494053346
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        0.09,
+        0.19
+      ],
+      "graph": true,
+      "surrogate": 0.1871003657579422,
+      "raw_chooser_gradient_l2": 0.14573596852822912
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.5927176234898737,
+  "raw_chooser_gradient_l2_max": 0.14573596852822912
+}

@@ -1,0 +1,17 @@
+{
+  "reason": "Seven stale assertions in four fixture files after \u00a714; corrected fixtures preserve their semantic assertions under the amended contracts. No learner or measurement-helper changes.",
+  "previous_source": "validation-source-01/source.json",
+  "previous_validation": "validation-sweep-01/result.json",
+  "previous_outcomes": {
+    "passed": 5344,
+    "skipped": 284,
+    "failed": 7,
+    "xpassed": 1
+  },
+  "previous_seconds": 642.9424041660968,
+  "focused_passed": 9,
+  "patch": "validation-fixture-corrections.patch",
+  "declared_math_attempts": 0,
+  "protocol_unchanged": true,
+  "count_basis": "One outcome per node; setup/call repeats deduplicated."
+}

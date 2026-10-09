@@ -1,0 +1,362 @@
+[
+  {
+    "epoch": 1,
+    "source": 0,
+    "row_id": -4702211949289148045,
+    "address": [
+      "ltm",
+      "address-v1",
+      -4702211949289148045
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": 6,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 2,
+    "row_id": 3288527728130823141,
+    "address": [
+      "ltm",
+      "address-v1",
+      3288527728130823141
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": 20,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 4,
+    "row_id": -8244254143821582421,
+    "address": [
+      "ltm",
+      "address-v1",
+      -8244254143821582421
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": 6,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 6,
+    "row_id": -6905039475143790517,
+    "address": [
+      "ltm",
+      "address-v1",
+      -6905039475143790517
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": 18,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 8,
+    "row_id": 839669536571009504,
+    "address": [
+      "ltm",
+      "address-v1",
+      839669536571009504
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": -1,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 10,
+    "row_id": 2906786521551009308,
+    "address": [
+      "ltm",
+      "address-v1",
+      2906786521551009308
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": 19,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 12,
+    "row_id": -5949703146351484514,
+    "address": [
+      "ltm",
+      "address-v1",
+      -5949703146351484514
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": 12,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 14,
+    "row_id": -7578179542658647182,
+    "address": [
+      "ltm",
+      "address-v1",
+      -7578179542658647182
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "episode": true,
+    "departure": -1,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  },
+  {
+    "epoch": 1,
+    "source": 1,
+    "row_id": 1683821209141011410,
+    "address": [
+      "ltm",
+      "address-v1",
+      1683821209141011410
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 22,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 3,
+    "row_id": 1858859111911997076,
+    "address": [
+      "ltm",
+      "address-v1",
+      1858859111911997076
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 23,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 5,
+    "row_id": 6178763533832150642,
+    "address": [
+      "ltm",
+      "address-v1",
+      6178763533832150642
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 21,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 7,
+    "row_id": 622015985192844271,
+    "address": [
+      "ltm",
+      "address-v1",
+      622015985192844271
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": -1,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 9,
+    "row_id": -8222569858026745817,
+    "address": [
+      "ltm",
+      "address-v1",
+      -8222569858026745817
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 18,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 11,
+    "row_id": -798110648160839837,
+    "address": [
+      "ltm",
+      "address-v1",
+      -798110648160839837
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": -1,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 13,
+    "row_id": -9011955082850149117,
+    "address": [
+      "ltm",
+      "address-v1",
+      -9011955082850149117
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 22,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 15,
+    "row_id": -7346426723326655803,
+    "address": [
+      "ltm",
+      "address-v1",
+      -7346426723326655803
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": -1,
+    "query_open": []
+  }
+]

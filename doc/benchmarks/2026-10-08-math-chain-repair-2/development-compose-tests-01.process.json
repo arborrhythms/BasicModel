@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compose_operations.py",
+    "test/test_compose_review.py",
+    "test/test_compose_pair_driver.py",
+    "test/test_math_chain_repair.py",
+    "-k",
+    "not ordinary_driver"
+  ],
+  "pid": 67261,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 771541056,
+  "elapsed_seconds": 8.534083417034708,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-compose-tests-01.log"
+}

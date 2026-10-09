@@ -1,0 +1,148 @@
+{
+  "status": "accepted_for_landing",
+  "date": "2026-10-09",
+  "recorded_utc": "2026-10-09T08:24:54.941884+00:00",
+  "authority": "Alec's explicit conditional landing authorization; Claude's thinking spec section 14.13 review",
+  "condition_satisfied": true,
+  "mechanism_complete": true,
+  "decomposition_demonstrated": true,
+  "learning_claim": false,
+  "source": {
+    "files": 744,
+    "sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+    "manifest": "measured-source/source.json"
+  },
+  "standing_thirty": {
+    "attempts": 30,
+    "completed": 30,
+    "raw_bars": {
+      "sum": 10,
+      "sum_floor": 10,
+      "xor_class": 10,
+      "xor_reconstruction": 10,
+      "mm": 9
+    },
+    "seed": null,
+    "retries": 0,
+    "replacements": 0,
+    "all_thought_calls_and_episodes_zero": true,
+    "report": "standing-summary.json",
+    "mm_exception": {
+      "rule": "operators plan section 20",
+      "baseline_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+      "case": "mm-03",
+      "raw_pass": false,
+      "mse": 0.2279723882675171,
+      "epochs": 200,
+      "original_reproduced": true,
+      "entire_numerical_and_rng_path_identical": true,
+      "report": "mm-bisection/result.json"
+    }
+  },
+  "sweep": {
+    "selected": 5646,
+    "completed": 5646,
+    "outcomes": {
+      "passed": 5359,
+      "skipped": 286,
+      "xpassed": 1
+    },
+    "seconds": 639.9761618749471,
+    "peak_aggregate_memory_bytes": 5257828448,
+    "result": "closing-sweep-3/result.json"
+  },
+  "thinking": {
+    "selected": 57,
+    "completed": 57,
+    "outcomes": {
+      "passed": 57
+    },
+    "seconds": 27.67891908402089,
+    "peak_aggregate_memory_bytes": 2326612800,
+    "result": "closing-thinking-4/result.json"
+  },
+  "prior_gates_base": "../2026-10-08-math-chain-repair-2/",
+  "forced_demonstration": {
+    "one_successor": {
+      "correct": 2,
+      "rows": 2
+    },
+    "two_successors": {
+      "correct": 1,
+      "rows": 2
+    },
+    "companion_failure_retained": true,
+    "question_budgets": [
+      512,
+      768
+    ],
+    "campaign_budget_unchanged": 32,
+    "real_driver": true,
+    "frozen_observer_and_verifier": true,
+    "live_explore_suffix": true,
+    "state_diff_only": [
+      "filled reference",
+      "new inference rows with provenance",
+      "credit and history trail"
+    ],
+    "receipt": "../2026-10-08-math-chain-repair-2/closing-review.md"
+  },
+  "stopped_campaign": {
+    "stopped_by_decision": true,
+    "started": 2,
+    "declared": 30,
+    "completed_trainings": 0,
+    "completed_epochs": {
+      "answer": 8,
+      "expectation": 9
+    },
+    "partial_next_epochs_retained": true,
+    "unstarted": 28,
+    "held_out_evaluation": null,
+    "retries": 0,
+    "replacements": 0,
+    "receipt": "../2026-10-08-math-chain-repair-2/stopped-by-decision/README.md"
+  },
+  "learning_deferred": {
+    "checkpoint": "item 0, after item 1 optimization",
+    "corrections": [
+      "One-step problems first",
+      "Worked steps scored as intermediate answers",
+      "An episode able to bind a found candidate",
+      "Budget in steps with each query record charge bounded separately"
+    ],
+    "record": "../2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json",
+    "corrected_measurement_declared": false
+  },
+  "item6_5_learning": {
+    "status": "pending million-sentence checkpoint",
+    "claimed": false,
+    "gates": [
+      "held-out anaphora",
+      "verb reuse",
+      "prediction control",
+      "shuffled order",
+      "renamed vocabulary",
+      "determiner control"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ]
+  },
+  "publication": {
+    "authorized": true,
+    "actions": [
+      "BasicModel commit and push",
+      "WikiOracle submodule bump and push"
+    ],
+    "co_author": "Codex <noreply@openai.com>"
+  },
+  "landing_validation": {
+    "integrity": "landing-integrity.json",
+    "staged_source": "staged-source-verification.json",
+    "document_links_passed": 348,
+    "large_evidence_working_bytes_match_lfs": true
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 22,
+    "equality_trials_with_verb_shift_gradient": 6,
+    "sentences": 8,
+    "episodes": 2
+  },
+  "operations": {
+    "query": 6,
+    "ask": 2,
+    "conclude": 4
+  },
+  "credit": {
+    "reconstruction_and_answer": 2,
+    "nonzero_graph": 2,
+    "ties": 0,
+    "nonzero_chooser_gradients": 2
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        2.864873540401459,
+        2.2048735404014588
+      ],
+      "graph": true,
+      "surrogate": -4.9059459236011846e-42,
+      "raw_chooser_gradient_l2": 3.24158530502007e-42
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "costs": [
+        2.2,
+        2.23
+      ],
+      "graph": true,
+      "surrogate": 1.4656040013435138e-21,
+      "raw_chooser_gradient_l2": 8.055004605962795e-22
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 8.055004605962795e-22,
+  "raw_chooser_gradient_l2_max": 8.055004605962795e-22
+}

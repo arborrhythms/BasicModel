@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/diagnose_clause14.py", line 118, in <module>
+    development_epoch.main(output, 'answer_and_expectation')
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development_epoch.py", line 91, in main
+    model = build_model(config)
+            ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain.py", line 102, in build_model
+    TheData.load('math_chain')
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/data.py", line 794, in load
+    self.loadMathChain(dat or {})
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/data.py", line 1391, in loadMathChain
+    self.refresh_math_chain(answer_line=True)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/data.py", line 1401, in refresh_math_chain
+    presentations = self.math_chain_corpus.presentation(answer_line=answer_line)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: <lambda>() got an unexpected keyword argument 'answer_line'

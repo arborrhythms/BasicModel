@@ -1,0 +1,247 @@
+"""Pipeline-carried SubSpace context: symbolSpace, errors, serial_cache.
+
+Covers Tasks 2, 3, 5, 8, 11 of the Pipeline Feed-Forward Architecture Plan
+(2026-04-22-pipeline-ff-architecture.md).
+"""
+import sys
+from pathlib import Path
+
+_project = Path(__file__).resolve().parent.parent           # basicmodel/
+_wo_root = _project.parent                                   # WikiOracle/
+sys.path.insert(0, str(_wo_root / "bin"))
+sys.path.insert(0, str(_project / "bin"))
+
+import pytest
+import torch
+
+from Layers import Error
+from Spaces import SubSpace
+
+
+_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+
+
+@pytest.fixture
+def model():
+    """A BasicModel built from MM_xor.xml (has SymbolSpace + discourse)."""
+    from data import TheData
+    from Models import BaseModel
+    TheData.load("xor")
+
+    m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
+    return m
+
+
+# ---------- Task 2: Error class ----------
+
+def test_error_total_returns_none_when_empty():
+    e = Error()
+    assert e.total() is None
+
+
+def test_error_add_none_is_noop():
+    e = Error()
+    e.add("foo", None)
+    assert e.total() is None
+    assert e.terms() == []
+
+
+def test_error_add_accumulates_and_total_sums_weighted():
+    e = Error()
+    e.add("foo", torch.tensor(2.0), weight=1.0, space="A", category="symbol")
+    e.add("bar", torch.tensor(3.0), weight=0.5, space="B", category="other")
+    total = e.total()
+    # 1.0*2.0 + 0.5*3.0 = 3.5
+    assert float(total.detach()) == pytest.approx(3.5)
+
+
+def test_error_add_same_name_sums_at_add_time():
+    e = Error()
+    e.add("foo", torch.tensor(2.0), weight=1.0)
+    e.add("foo", torch.tensor(3.0), weight=1.0)
+    terms = e.terms()
+    assert len(terms) == 1, f"same-name adds collapse to one term, got {terms}"
+    name, tensor, weight, space, category = terms[0]
+    assert name == "foo"
+    assert float(tensor) == pytest.approx(5.0)
+
+
+def test_error_clear_empties_terms():
+    e = Error()
+    e.add("foo", torch.tensor(1.0))
+    assert e.total() is not None
+    e.clear()
+    assert e.total() is None
+    assert e.terms() == []
+
+
+def test_error_count_not_bumped_while_compiling(monkeypatch):
+    """The telemetry ``count`` int must NOT be mutated inside a torch.compile
+    trace: dynamo would bake a ``count == N`` python-constant guard from
+    ``rec['count'] += 1`` and recompile every forward. Bumping is eager-only."""
+    e = Error()
+    e.add("symbol_l1", torch.tensor(1.0))            # first add: count == 1
+    monkeypatch.setattr(torch.compiler, "is_compiling", lambda: True)
+    e.add("symbol_l1", torch.tensor(1.0))            # in-trace: value sums, count frozen
+    rec = e._terms["symbol_l1"]
+    assert rec["count"] == 1, "count must stay frozen under is_compiling()"
+    assert float(e._value(rec).detach()) == pytest.approx(2.0), \
+        "the loss VALUE must still accumulate in-trace (only count is skipped)"
+    monkeypatch.setattr(torch.compiler, "is_compiling", lambda: False)
+    e.add("symbol_l1", torch.tensor(1.0))            # eager: count resumes
+    assert rec["count"] == 2
+
+
+def test_error_count_does_not_grow_across_forward_cycles():
+    """Pipeline invariant: per-forward the shared registry is ``clear()``'d
+    after harvest, so a repeated (N-emit, clear) cycle leaves ``symbol_l1``'s
+    count EQUAL each forward, not monotonically 9, 18, 27, ... (the leak)."""
+    e = Error()
+    counts = []
+    for _ in range(3):                               # three forwards
+        for _ in range(9):                           # nine stage emissions
+            e.add("symbol_l1", torch.tensor(0.1))
+        counts.append(e._terms["symbol_l1"]["count"])
+        e.clear()                                    # runBatch's per-forward harvest reset
+    assert counts == [9, 9, 9], \
+        f"count must reset per forward (not accumulate), got {counts}"
+
+
+def test_error_terms_shape_is_five_tuples():
+    e = Error()
+    e.add("foo", torch.tensor(1.5), weight=2.0,
+          space="WholeSpace", category="symbol")
+    terms = e.terms()
+    assert len(terms) == 1
+    name, tensor, weight, space, category = terms[0]
+    assert name == "foo"
+    assert isinstance(tensor, torch.Tensor)
+    assert weight == 2.0
+    assert space == "WholeSpace"
+    assert category == "symbol"
+
+
+# ---------- Task 3: SubSpace context fields + copy_context ----------
+
+def _mk_subspace(n=8, d=10):
+    return SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
+
+
+def test_subspace_has_context_fields():
+    # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
+    # retired the per-SubSpace ``symbolSpace`` back-pointer; only the
+    # ``errors`` and ``serial_cache`` pipeline carriers remain on SubSpace.
+    ws = _mk_subspace()
+    assert isinstance(ws.errors, Error)
+    # serial_cache is a dict keyed by owner-Space id so cross-space caches
+    # don't collide.
+    assert ws.serial_cache == {}
+
+
+def test_subspace_copy_context_copies_errors_and_serial_cache():
+    src = _mk_subspace()
+    src.errors.add("foo", torch.tensor(1.0))
+    src.serial_cache[42] = torch.zeros(2, 4)
+
+    dst = _mk_subspace()
+    dst.copy_context(src)
+
+    # errors carry by reference: both subspaces see the same Error instance
+    # so downstream .add() calls continue to accumulate.
+    assert dst.errors is src.errors
+    assert dst.serial_cache is src.serial_cache
+
+
+def test_subspace_copy_context_none_is_noop():
+    ws = _mk_subspace()
+    original_errors = ws.errors
+    ws.copy_context(None)
+    assert ws.errors is original_errors
+    assert ws.serial_cache == {}
+
+
+def test_subspace_copy_context_preserves_downstream_writes():
+    src = _mk_subspace()
+    dst = _mk_subspace()
+    dst.copy_context(src)
+
+    # Writes through dst.errors are visible via src.errors (same instance).
+    dst.errors.add("downstream", torch.tensor(7.0))
+    terms = src.errors.terms()
+    names = [t[0] for t in terms]
+    assert "downstream" in names
+
+
+# ---------- Task 4: SymbolSubSpace.last_svo and STM-residual ----------
+
+def test_wordspace_last_svo_default_invalid(model):
+    ss = model.symbolSpace
+    # Microbatch refactor (Task 2): SymbolSubSpace.last_svo is per-row.
+    # Default state has the valid-mask cleared on every row.
+    assert not ss.svo_valid(0)
+
+
+
+
+
+
+def test_wordspace_reset_clears_last_svo(model):
+    ss = model.symbolSpace
+    D = ss.svo_dim
+    ss.set_last_svo(0, torch.zeros(D), torch.zeros(D), torch.zeros(D))
+    assert ss.svo_valid(0)
+    ss.Reset()
+    assert not ss.svo_valid(0)
+
+
+def test_last_svo_lives_on_wordspace_not_conceptualspace(model):
+    """last_svo moved to symbolSpace; ConceptualSpace no longer owns it."""
+    # Microbatch refactor (Task 2): per-row API is the contract.
+    assert hasattr(model.symbolSpace, "set_last_svo")
+    assert hasattr(model.symbolSpace, "svo_valid")
+    assert not hasattr(model.conceptualSpace, "_last_svo")
+    assert not hasattr(model.conceptualSpace, "last_svo")
+
+
+# ---------- Task 9: Codebook as immutable property ----------
+
+def test_codebook_reference_is_immutable(model):
+    with pytest.raises(AttributeError):
+        model.wholeSpace.codebook = None
+
+
+# ---------- Tasks 5 & 6: end-to-end symbolSpace carry through pipeline ----------
+
+def _run_one_forward(m):
+    """Drive a single forward with a real XOR batch."""
+    import warnings
+    m.eval()
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
+        inp_items, _ = next(iter(loader))
+        inp = m.inputSpace.prepInput(inp_items)
+        with torch.no_grad():
+            m.forward(inp)
+
+
+def test_input_space_has_symbolSpace_after_set(model):
+    # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
+    # retired the per-SubSpace ``symbolSpace`` back-pointer; the
+    # SymbolSubSpace reference now lives on the owning Space.
+    assert model.inputSpace.symbolSpace is model.symbolSpace
+
+
+def test_output_space_carries_symbolSpace(model):
+    _run_one_forward(model)
+    assert model.outputSpace.symbolSpace is model.symbolSpace
+
+
+def test_pipeline_spaces_carry_symbolSpace(model):
+    """Grammar participants route to SS; the property basis owns no grammar."""
+    _run_one_forward(model)
+    assert model.perceptualSpace.symbolSpace is model.symbolSpace
+    assert model.conceptualSpace.symbolSpace is model.symbolSpace
+    assert model.languageSpace._symbol_space is model.symbolSpace
+    assert not hasattr(model.wholeSpace, 'symbolSpace')
+    assert model.outputSpace.symbolSpace is model.symbolSpace

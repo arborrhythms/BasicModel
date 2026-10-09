@@ -100,7 +100,8 @@ def test_unary_query_keeps_full_description_through_an_existing_occurrence():
     cs, registry, a, b, _ = _world()
     store = TernaryTruthStore(8)
     description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
-                                   scope={'place': 'workshop'})
+                                   scope={'place': 'workshop'},
+                                   role_refs=registry.form('isPart', a, b).role_refs)
     store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
     index = store.append_meaning(description, trust=0.75)
     context = _context(cs, store=store)

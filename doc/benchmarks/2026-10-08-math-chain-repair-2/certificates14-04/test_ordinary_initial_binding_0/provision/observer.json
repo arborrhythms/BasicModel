@@ -1,0 +1,14 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 0,
+    "episodes": 8,
+    "sentences": 16
+  },
+  "operations": {
+    "implies": 88
+  },
+  "credit": {},
+  "credit_sample": [],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

@@ -1,0 +1,12 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 8,
+    "equality_trials_with_verb_shift_gradient": 4,
+    "sentences": 4
+  },
+  "operations": {},
+  "credit": {},
+  "credit_sample": [],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

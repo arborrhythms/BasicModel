@@ -1,0 +1,1298 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+    "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+    "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+    "test/test_concept_code_ownership.py::test_known_concept_read_preserves_the_parameter_magnitude",
+    "test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code",
+    "test/test_concept_code_ownership.py::test_admitting_a_phrase_does_not_compose_or_normalize_its_code",
+    "test/test_concept_code_ownership.py::test_concept_quantization_cannot_refresh_the_reconstruction_dictionary",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+    "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+    "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+    "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+    "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+    "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+    "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+    "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+    "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+    "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+    "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+    "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+    "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+    "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+    "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence",
+    "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+    "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+    "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+    "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+    "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+    "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+    "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+    "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+    "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+    "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "test/test_concept_memberships.py::test_definition_boundary_preserves_gradient_owned_codes",
+    "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange",
+    "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+    "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+    "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+    "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+    "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+    "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+    "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+    "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+    "test/test_concept_readout_l1.py::test_missing_gradient_and_zero_grad_cannot_replay_stale_l1_policy",
+    "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
+    "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
+    "test/test_concept_readout_l1.py::test_proximal_checkpoint_resume_keeps_moments_but_not_old_observation_policy",
+    "test/test_concept_readout_l1.py::test_row_local_prox_on_mps",
+    "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
+    "test/test_concept_readout_l1.py::test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately",
+    "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+    "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+    "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+    "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+    "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+    "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
+    "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+    "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+    "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
+    "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
+    "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field",
+    "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
+    "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+    "test/test_concepts_from_percepts.py::test_neutral_and_broadcast_context",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_proximal_step_zeros_edges_per_output_with_correct_lr_normalization",
+    "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[-1.0]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[inf]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_mps_forward_backward_and_prox[GatedConceptsFromPercepts]"
+  ],
+  "completed": [
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+    "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+    "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+    "test/test_concept_code_ownership.py::test_known_concept_read_preserves_the_parameter_magnitude",
+    "test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code",
+    "test/test_concept_code_ownership.py::test_admitting_a_phrase_does_not_compose_or_normalize_its_code",
+    "test/test_concept_code_ownership.py::test_concept_quantization_cannot_refresh_the_reconstruction_dictionary",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+    "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+    "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+    "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+    "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+    "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+    "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+    "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+    "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+    "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+    "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+    "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+    "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+    "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+    "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence",
+    "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+    "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+    "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+    "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+    "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+    "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+    "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+    "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+    "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+    "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+    "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "test/test_concept_memberships.py::test_definition_boundary_preserves_gradient_owned_codes",
+    "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange",
+    "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+    "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+    "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+    "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+    "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+    "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+    "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+    "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+    "test/test_concept_readout_l1.py::test_missing_gradient_and_zero_grad_cannot_replay_stale_l1_policy",
+    "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
+    "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
+    "test/test_concept_readout_l1.py::test_proximal_checkpoint_resume_keeps_moments_but_not_old_observation_policy",
+    "test/test_concept_readout_l1.py::test_row_local_prox_on_mps",
+    "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
+    "test/test_concept_readout_l1.py::test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately",
+    "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+    "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+    "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+    "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+    "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+    "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
+    "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+    "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+    "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
+    "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
+    "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field",
+    "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
+    "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+    "test/test_concepts_from_percepts.py::test_neutral_and_broadcast_context",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_proximal_step_zeros_edges_per_output_with_correct_lr_normalization",
+    "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[-1.0]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[inf]",
+    "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[GatedConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]",
+    "test/test_concepts_from_percepts.py::test_mps_forward_backward_and_prox[GatedConceptsFromPercepts]"
+  ],
+  "slow_selected": [
+    "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003937792032957077,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017809169366955757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013491669669747353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012834580847993493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003043330507352948,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002507501048967242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.270147709059529,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004687090404331684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006846250034868717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002688584034331143,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003317041089758277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031464999774470925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2340710419230163,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2375059580663219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024579999735578895,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_code_ownership.py::test_known_concept_read_preserves_the_parameter_magnitude",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005192919634282589,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007378999958746135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_code_ownership.py::test_admitting_a_phrase_does_not_compose_or_normalize_its_code",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002742042066529393,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_code_ownership.py::test_concept_quantization_cannot_refresh_the_reconstruction_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038350958027876914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.022957957931794226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011756415944546461,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01992912497371435,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01151199999731034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019847291987389326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011453083017840981,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007353249937295914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010999292018823326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006132249953225255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010522666038013995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006320375017821789,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010841875104233623,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028704159194603562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002908417023718357,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0053102499805390835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0048226669896394014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02987133397255093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04999937489628792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004774250090122223,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025982080260291696,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024203750072047114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0051015829667449,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003924124990589917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003197459038347006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018228832981549203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.024485375033691525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025372919626533985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025354999932460487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013675958034582436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01796616706997156,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004417090676724911,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006639166036620736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004702709033153951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0032161250710487366,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_pruning_a_feature_preserves_the_other_tower_at_the_same_address",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022757910192012787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037068875040858984,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_memberships.py::test_definition_boundary_preserves_gradient_owned_codes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13559770805295557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039829208981245756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002443329431116581,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007508329581469297,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06929416605271399,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.058118916931562126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.057504417025484145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012033293023705482,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_concept_output.py', 90, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.524370624916628,
+      "message": "",
+      "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.563164875027724,
+      "message": "",
+      "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.721968416008167,
+      "message": "",
+      "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07629320793785155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006823749281466007,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017775001469999552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010549998842179775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001016249880194664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018124999478459358,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001453957986086607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010009160032495856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005214579869061708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048200006131082773,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_missing_gradient_and_zero_grad_cannot_replay_stale_l1_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002829579170793295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021870795171707869,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008331250865012407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_proximal_checkpoint_resume_keeps_moments_but_not_old_observation_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010762079618871212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_row_local_prox_on_mps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0719544580206275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012812919449061155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_weak_l1_fits_two_reference_concepts_with_exact_sparse_support",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.15537637495435774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.92499990388751e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_concept_readout_l1.py', 243, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008155792020261288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_sigma_reads_same_order_conjunction_and_lower_order_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011498542036861181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029381660278886557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003655332955531776,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003688208991661668,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010655708028934896,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008014580234885216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029975001234561205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005755166988819838,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006924916990101337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002428125008009374,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000557459075935185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002917499514296651,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031933397985994816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002781250514090061,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002857920480892062,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape1-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002579999854788184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002834169426932931,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape2-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025645794812589884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002834589686244726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape3-SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002533330116420984,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004539589863270521,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035087496507912874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003139160107821226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002633749973028898,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024791702162474394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021854194346815348,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029179104603827,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020970799960196018,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004365000640973449,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_neutral_and_broadcast_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042604096233844757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026433297898620367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003785829758271575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_proximal_step_zeros_edges_per_output_with_correct_lr_normalization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005734170554205775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029508292209357023,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002180000301450491,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016629102174192667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001687080366536975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002731661079451442,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024437508545815945,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005944579606875777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20646429189946502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03902112494688481,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concepts_from_percepts.py::test_mps_forward_backward_and_prox[GatedConceptsFromPercepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01123504200950265,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

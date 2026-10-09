@@ -1,0 +1,86 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 5,
+    "episodes": 5,
+    "sentences": 40,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "ask": 18,
+    "query": 1,
+    "not": 1,
+    "conclude": 1,
+    "implies": 1,
+    "part": 21
+  },
+  "credit": {
+    "answer_expectation_and_work": 5,
+    "nonzero_graph": 4,
+    "ties": 1,
+    "nonzero_chooser_gradients": 4
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.791289987564087,
+        1.6788381183147432
+      ],
+      "graph": true,
+      "surrogate": -0.5468658804893494,
+      "raw_chooser_gradient_l2": 0.44144553734062864
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7933170700073244,
+        1.7891535425186158
+      ],
+      "graph": true,
+      "surrogate": -0.020250624045729637,
+      "raw_chooser_gradient_l2": 0.016362907421006736
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7936458730697633,
+        1.7894505047798157
+      ],
+      "graph": true,
+      "surrogate": -0.020405493676662445,
+      "raw_chooser_gradient_l2": 0.016488039036830555
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7961921358108521,
+        1.266192135810852
+      ],
+      "graph": true,
+      "surrogate": -2.406855344772339,
+      "raw_chooser_gradient_l2": 8.26083041056036
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7748734617233277,
+        1.7748734617233277
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 8.735126894358825,
+  "raw_chooser_gradient_l2_max": 8.26083041056036
+}

@@ -1,0 +1,280 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+    "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+    "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+    "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+    "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+    "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+    "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+    "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+    "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+    "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+    "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]"
+  ],
+  "completed": [
+    "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+    "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+    "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+    "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+    "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+    "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+    "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+    "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+    "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+    "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+    "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11/worker-000.json"
+      ],
+      "pid": 23326,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1043744520,
+      "elapsed_seconds": 5.903590500005521,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+        "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+        "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+        "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+        "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+        "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+        "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+        "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+        "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+        "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+        "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+        "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+        "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]"
+      ],
+      "completed": [
+        "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+        "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+        "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+        "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+        "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+        "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+        "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+        "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+        "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+        "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+        "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+        "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+        "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5624147080816329,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008557499386370182,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.3454080830560997,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06433583295438439,
+          "message": "",
+          "stdout": "batch = 0 (\u0394=0.066s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06496225006412715,
+          "message": "",
+          "stdout": "batch = 0 (\u0394=0.066s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06393025000579655,
+          "message": "",
+          "stdout": "batch = 0 (\u0394=0.065s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06324037502054125,
+          "message": "",
+          "stdout": "batch = 0 (\u0394=0.065s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.060684709111228585,
+          "message": "",
+          "stdout": "batch = 0 (\u0394=0.064s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06323945801705122,
+          "message": "",
+          "stdout": "batch = 0 (\u0394=0.063s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00013375002890825272,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 220, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2586946670198813,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.069s)\r\nbatch = 0 (\u0394=0.066s)\r\nbatch = 0 (\u0394=0.063s)\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4199541669804603,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 8.33%)\r\nbatch = 2 (\u0394=0.072s, 16.67%)\r\nTraining throughput: 2 batches in 0.137s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.069s, 8.33%)\r\nbatch = 2 (\u0394=0.072s, 16.67%)\r\nTraining throughput: 2 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.069s, 8.33%)\r\nbatch = 2 (\u0394=0.071s, 16.67%)\r\nTraining throughput: 2 batches in 0.139s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00012762495316565037,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 394, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.00011175009422004223,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 433, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "duration": 0.0001081250375136733,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 433, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11",
+  "elapsed_seconds": 8.352877791039646,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1043744520,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11/collect.json"
+    ],
+    "pid": 23308,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182846280,
+    "elapsed_seconds": 1.8510127919726074,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-math-chain/development-11/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+        "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+        "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+        "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+        "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+        "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+        "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+        "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+        "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+        "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+        "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+        "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+        "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+        "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+        "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

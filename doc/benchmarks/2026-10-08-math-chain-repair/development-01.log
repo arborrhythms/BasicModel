@@ -1,0 +1,60 @@
+...............................ssssss................................... [ 94%]
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1235a3800>
+
+    def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):
+        model,registry,store,(a,b,c)=world()
+        model.conceptualSpace.add_whole(a[1],b)
+        goal=registry.form('isPart',a,open_roles=('I2',))
+        def choose(root,active,actions,**kwargs):
+            return None if None in actions else next(action for action in actions
+                if action.semantic_id=='isPart' and action.open_roles==('I2',))
+        monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
+>       result=run(model,goal,work_budget=32)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item6_2_thinking.py:423: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6026: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6394: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6355: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6215: in execute
+    action = self._choose_selected_thought_action(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 11), ('sym', 6), None), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', (('referent', 2),))), scope=(), sentence_kind=None)
+active = ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 11), ('sym', 6), None), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', (('referent', 2),))), scope=(), sentence_kind=None)
+actions = (ThoughtOperationCandidate(operation=Grammar.ThoughtOperationSpec(semantic_id='not', operand_roles=('I1',), result_rol...evidence_pair', (0.0, 0.0)), ('_open_references', (('evidence', -1),))), scope=(), sentence_kind=None), open_roles=()))
+kwargs = {'row': 0, 'level': 0, 'pressure': 0.0, 'evidence': None, ...}
+
+    def choose(root,active,actions,**kwargs):
+>       return None if None in actions else next(action for action in actions
+            if action.semantic_id=='isPart' and action.open_roles==('I2',))
+E       StopIteration
+
+test/test_item6_2_thinking.py:420: StopIteration
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read
+1 failed, 69 passed, 6 skipped, 2 warnings in 3.90s

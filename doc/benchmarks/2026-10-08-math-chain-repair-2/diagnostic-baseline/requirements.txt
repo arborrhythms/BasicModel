@@ -1,0 +1,15 @@
+flask
+numpy
+torch
+typing-extensions
+torchviz
+matplotlib
+Pillow
+datasets
+scikit-learn
+pandas
+torchvision
+pytest
+pytest-xdist
+executorch
+lxml

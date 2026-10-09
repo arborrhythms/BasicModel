@@ -1,0 +1,17 @@
+{
+  "math_train.py": "bd8bd649070f3cc723468495f62cffe059c63c932ce80d2eb2866e9a79d6fac9",
+  "math_observer.py": "97dcda087b28e480560a85417ea7dbb0ca745d11bce5cdc0e769bf585e01793c",
+  "math_campaign.py": "513cee0b60ea21939dc1f7bc4db7b20daed305a0dab4958aa0dffcd0aed5fbd2",
+  "campaign.py": "4585d3d51ea5be83109cc17977a552e0d36a660bc0102b8daca49e7c11e48277",
+  "thinking_observer.py": "0a6f6758e5a4c4aca5c925c6ec3d287bb6beb707ef0e85376a8e775e73fad78b",
+  "thinking_gate.py": "a0ae7b647402e0372a90464037dc12ad5ddae7f0829ecf6f0cb91ca888597747",
+  "thinking_gate_observer.py": "c2bbd45641a5a203d30ab2de01dfe565a8108acf17b1991c9f4ce0bea4b01422",
+  "operators_gate_observer.py": "84dcf2a5ba93ce6b7abaa6bdd560d54100d63b98fadb4b6e819c1071ae2634fd",
+  "operators_run_audit.py": "4a1a6c39ca41413e72c61bccf499bd45dcf6ab7d838844382e9b5700c0e2cc8d",
+  "round2_score_probe.py": "4cddb781779b45e93aa36870760607ebfb45b178cd261b2689a34c9fd7a3a547",
+  "handoff_probe.py": "ad33e6e6fdbfaf6a415748c199095e79980ebf0a70da55ef6e02585850418607",
+  "rng_replay.py": "f31991fdec696821c0d1a1a92d7e9d6c5304219e3624f7700f20903e2e9e7fb0",
+  "verification.py": "3c976f6cd4c345f23db9b55dc3f986b094a01783ac30cec6d9dcf7ec0ddd55e3",
+  "freeze.py": "6c5cf32919e5d421f6540f4d44abad47455583afa0849e5ef7f73d22dd3b617a",
+  "test-retirements.json": "5ba29755a56d38bc0ac265016683e442c4ca0e49dcd115ed95c7dacd2e8d095c"
+}

@@ -1,0 +1,78 @@
+         4368014 function calls (4062009 primitive calls) in 0.952 seconds
+
+   Ordered by: cumulative time
+   List reduced from 801 to 70 due to restriction <70>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.953    0.953 math_observer.py:60(observed)
+        1    0.000    0.000    0.952    0.952 Models.py:6024(run_selected_thought)
+  1208/91    0.004    0.000    0.862    0.009 _contextlib.py:120(decorate_context)
+        7    0.000    0.000    0.860    0.123 MemoryIndex.py:53(_meaning_leaf_terms)
+     28/7    0.000    0.000    0.860    0.123 MemoryIndex.py:57(visit)
+       46    0.000    0.000    0.857    0.019 MemoryIndex.py:483(unfold)
+       46    0.000    0.000    0.836    0.018 Queries.py:511(_basis)
+       46    0.000    0.000    0.836    0.018 Spaces.py:2644(active_prototypes)
+  1840/46    0.005    0.000    0.836    0.018 Spaces.py:2420(lookup_rows)
+       91    0.054    0.001    0.830    0.009 MereologicalCodes.py:208(derive)
+   188461    0.050    0.000    0.524    0.000 Spaces.py:17215(word_surface_for_row)
+        1    0.000    0.000    0.514    0.514 ThoughtStream.py:248(commit)
+        4    0.000    0.000    0.512    0.128 Layers.py:9411(append_meaning)
+        1    0.000    0.000    0.436    0.436 WalkTrials.py:196(thought_pair)
+        2    0.000    0.000    0.435    0.217 WalkTrials.py:204(run)
+        2    0.000    0.000    0.434    0.217 Models.py:6050(_run_selected_thought_once)
+        2    0.000    0.000    0.430    0.215 Models.py:6399(run_context)
+        3    0.000    0.000    0.387    0.129 ThoughtStream.py:171(write)
+   188461    0.031    0.000    0.374    0.000 Spaces.py:17346(_definition_index)
+        6    0.000    0.000    0.367    0.061 Models.py:6247(execute)
+        6    0.000    0.000    0.359    0.060 Queries.py:2288(execute)
+        4    0.000    0.000    0.357    0.089 Queries.py:1492(_invoke_permitted)
+        3    0.000    0.000    0.356    0.119 ThoughtFaces.py:101(ask)
+965466/776865    0.092    0.000    0.356    0.000 {built-in method builtins.getattr}
+        3    0.000    0.000    0.353    0.118 Queries.py:907(best_match)
+        3    0.000    0.000    0.353    0.118 Queries.py:849(_cued)
+        3    0.000    0.000    0.353    0.118 MemoryIndex.py:287(cued_rows)
+   188511    0.082    0.000    0.253    0.000 Language.py:14460(__getattr__)
+   607075    0.137    0.000    0.137    0.000 module.py:1959(__getattr__)
+        1    0.000    0.000    0.126    0.126 ClauseRow.py:709(upsert_resolved)
+   127307    0.067    0.000    0.122    0.000 _device.py:118(__torch_function__)
+       91    0.058    0.001    0.105    0.001 MereologicalCodes.py:130(_definitions)
+   188734    0.068    0.000    0.099    0.000 Spaces.py:15980(concept_id_at_row)
+      920    0.011    0.000    0.074    0.000 MereologicalCodes.py:148(_interval)
+   188503    0.030    0.000    0.064    0.000 Spaces.py:5839(__getattr__)
+      920    0.003    0.000    0.047    0.000 WordIdentity.py:139(form)
+     9706    0.010    0.000    0.038    0.000 WordIdentity.py:109(atom_code)
+      390    0.002    0.000    0.037    0.000 Meaning.py:166(__post_init__)
+   597278    0.033    0.000    0.033    0.000 {method 'get' of 'dict' objects}
+        6    0.000    0.000    0.031    0.005 Models.py:5978(_choose_selected_thought_action)
+        6    0.000    0.000    0.023    0.004 Language.py:7354(thought_logits)
+  212/205    0.000    0.000    0.022    0.000 Meaning.py:226(detached)
+24919/1230    0.008    0.000    0.021    0.000 Meaning.py:133(_freeze_metadata)
+       46    0.002    0.000    0.020    0.000 MemoryIndex.py:357(unfold_idea)
+        6    0.000    0.000    0.019    0.003 ThoughtFeatures.py:21(semantic_metadata)
+       63    0.000    0.000    0.019    0.000 ThoughtFeatures.py:60(<genexpr>)
+      114    0.005    0.000    0.019    0.000 ThoughtFeatures.py:51(field)
+33725/5625    0.003    0.000    0.019    0.000 Meaning.py:140(<genexpr>)
+     2574    0.003    0.000    0.017    0.000 overrides.py:1722(handle_torch_function)
+        6    0.000    0.000    0.016    0.003 Models.py:6212(candidates)
+        6    0.000    0.000    0.016    0.003 ThoughtStream.py:64(candidates)
+   189086    0.015    0.000    0.015    0.000 {built-in method builtins.sorted}
+31448/15731    0.011    0.000    0.014    0.000 {method 'detach' of 'torch._C.TensorBase' objects}
+       15    0.000    0.000    0.014    0.001 Models.py:6146(event)
+        6    0.000    0.000    0.013    0.002 Queries.py:2123(controller_candidates)
+       15    0.000    0.000    0.013    0.001 Thoughts.py:531(_thought_event)
+      391    0.003    0.000    0.013    0.000 Meaning.py:97(canonical_role_payload)
+3574/1787    0.001    0.000    0.012    0.000 _tensor.py:32(wrapped)
+        4    0.000    0.000    0.012    0.003 Models.py:6365(return_child)
+     1794    0.004    0.000    0.012    0.000 embed.py:101(_unorm_ste)
+   190070    0.012    0.000    0.012    0.000 {method 'values' of 'dict' objects}
+19428/9714    0.008    0.000    0.012    0.000 {built-in method torch.zeros}
+1186/1184    0.002    0.000    0.012    0.000 dataclasses.py:1540(replace)
+102751/102695    0.007    0.000    0.011    0.000 {built-in method builtins.isinstance}
+  1123/58    0.001    0.000    0.010    0.000 Queries.py:556(_freeze_boundary_value)
+3964/1982    0.009    0.000    0.010    0.000 {built-in method torch.tensor}
+   189017    0.010    0.000    0.010    0.000 {method 'items' of 'dict' objects}
+       45    0.000    0.000    0.009    0.000 Queries.py:2076(_form_candidate)
+10918/5459    0.008    0.000    0.009    0.000 {method 'new_tensor' of 'torch._C.TensorBase' objects}
+       84    0.000    0.000    0.009    0.000 Queries.py:2148(append_form)
+
+

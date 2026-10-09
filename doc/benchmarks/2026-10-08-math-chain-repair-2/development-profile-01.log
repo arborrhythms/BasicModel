@@ -1,0 +1,66 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"text": "v is zero.", "source": 0, "episode": true, "spent": 14, "slots": [], "refs": [["constituent", 0], ["sym", 4010033338316264258], ["ltm", "address-v1", -3887113008996700694]], "forward": [[0, 20]], "row_id": -2729089800272493846, "query": null}
+{"text": "v is seventeen.", "source": 6, "episode": true, "spent": 32, "slots": [["referent", 0], ["referent", 2]], "refs": [null, ["sym", 4010033338316264258], null], "forward": [[0, 20], [2, 12]], "row_id": 9184559506780584485, "query": [["referent", 0], ["referent", 2]]}
+{"text": "v is thirteen.", "source": 12, "episode": true, "spent": 32, "slots": [["referent", 0], ["referent", 2]], "refs": [null, ["sym", 4010033338316264258], null], "forward": [[0, 20], [2, 12]], "row_id": 7194248392558858295, "query": [["referent", 0], ["referent", 2]]}
+{"text": "u is nineteen.", "source": 18, "episode": true, "spent": 32, "slots": [["referent", 0], ["referent", 2]], "refs": [null, ["sym", 4010033338316264258], null], "forward": [[0, 20], [2, 26]], "row_id": 7438174853481775041, "query": [["referent", 0], ["referent", 2]]}
+{"text": "x is four.", "source": 24, "episode": true, "spent": 14, "slots": [], "refs": [["constituent", 0], ["sym", 4010033338316264258], ["ltm", "address-v1", 1503378037692571157]], "forward": [[0, 20]], "row_id": -12280067456231578, "query": null}
+{"text": "u is sixteen.", "source": 30, "episode": true, "spent": 32, "slots": [["referent", 0], ["referent", 2]], "refs": [null, ["sym", 4010033338316264258], null], "forward": [[0, 20], [2, 34]], "row_id": 2877132399174499964, "query": [["referent", 0], ["referent", 2]]}
+{"text": "u is one.", "source": 36, "episode": true, "spent": 14, "slots": [], "refs": [["constituent", 0], ["sym", 4010033338316264258], ["ltm", "address-v1", 4438830807079376443]], "forward": [[0, 20]], "row_id": 8572165097403882686, "query": null}
+{"text": "y is x plus zero.", "source": 42, "episode": true, "spent": 32, "slots": [["referent", 2]], "refs": [["ltm", "address-v1", 8373260763554270988], ["sym", 4010033338316264258], null], "forward": [[2, 20]], "row_id": -250399531779687682, "query": [["referent", 2]]}
+batch_seconds_total 38.44159158307593 store 68
+         169913844 function calls (159851639 primitive calls) in 40.988 seconds
+
+   Ordered by: cumulative time
+   List reduced from 17777 to 45 due to restriction <45>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000   37.884   37.884 Models.py:8797(_what_or_think)
+        1    0.000    0.000   37.884   37.884 Models.py:10165(ask)
+      6/3    0.000    0.000   37.881   12.627 Models.py:146(masked)
+        1    0.000    0.000   37.823   37.823 Models.py:8481(_execute_input_sentence)
+        1    0.000    0.000   37.823   37.823 Models.py:8245(forward)
+        1    0.000    0.000   37.823   37.823 Models.py:23326(_forward_per_stage)
+        1    0.000    0.000   37.226   37.226 Models.py:17190(_forward_body)
+        1    0.000    0.000   37.226   37.226 Models.py:21815(_forward_body_per_word)
+        1    0.009    0.009   37.226   37.226 Models.py:20770(_run_tensor_peer_word_pipeline)
+        1    0.006    0.006   37.213   37.213 Models.py:20467(_run_sentence_word_bricks)
+        1    0.001    0.001   31.830   31.830 Models.py:20157(_commit_sentence)
+32539/2031    0.146    0.000   31.259    0.015 _contextlib.py:120(decorate_context)
+54891/1850    0.158    0.000   31.145    0.017 Spaces.py:2420(lookup_rows)
+     1836    1.308    0.001   30.854    0.017 MereologicalCodes.py:208(derive)
+     1730    0.003    0.000   29.516    0.017 Queries.py:511(_basis)
+     1730    0.002    0.000   29.511    0.017 Spaces.py:2644(active_prototypes)
+        1    0.000    0.000   28.636   28.636 ThoughtClosing.py:85(close)
+        8    0.000    0.000   28.633    3.579 math_observer.py:60(observed)
+        8    0.001    0.000   28.632    3.579 Models.py:6013(run_selected_thought)
+        8    0.000    0.000   26.947    3.368 WalkTrials.py:194(thought_pair)
+       16    0.000    0.000   26.928    1.683 WalkTrials.py:202(run)
+       16    0.000    0.000   26.924    1.683 Models.py:6039(_run_selected_thought_once)
+       16    0.002    0.000   26.905    1.682 Models.py:6363(run_context)
+       81    0.000    0.000   23.787    0.294 Models.py:6200(candidates)
+       81    0.001    0.000   23.786    0.294 ThoughtStream.py:61(candidates)
+     1398    0.009    0.000   23.498    0.017 Queries.py:1856(_payload)
+       81    0.009    0.000   22.362    0.276 Queries.py:2099(controller_candidates)
+     1317    0.012    0.000   22.242    0.017 Queries.py:2052(_form_candidate)
+  7475794    2.117    0.000   21.000    0.000 Spaces.py:17215(word_surface_for_row)
+  7476722    1.211    0.000   14.970    0.000 Spaces.py:17346(_definition_index)
+      225    0.002    0.000   14.532    0.065 single_dim_strategy.py:627(_resolve_foreach_elementwise_overload)
+38526338/31045546    3.341    0.000   14.276    0.000 {built-in method builtins.getattr}
+  7477911    3.458    0.000   10.370    0.000 Language.py:14338(__getattr__)
+  3757658    1.961    0.000    7.685    0.000 _device.py:118(__torch_function__)
+     1134    0.002    0.000    7.637    0.007 Queries.py:2124(append_form)
+      116    0.000    0.000    7.592    0.065 MemoryIndex.py:53(_meaning_leaf_terms)
+  242/116    0.004    0.000    7.592    0.065 MemoryIndex.py:56(visit)
+      409    0.001    0.000    7.574    0.019 MemoryIndex.py:475(unfold)
+      395    0.004    0.000    6.331    0.016 __init__.py:1(<module>)
+ 23568428    5.470    0.000    5.470    0.000 module.py:1959(__getattr__)
+        1    0.000    0.000    4.988    4.988 SentenceCompose.py:129(sentence_pair)
+       81    0.003    0.000    4.551    0.056 Layers.py:9411(append_meaning)
+      901    0.001    0.000    4.346    0.005 autogen.py:337(_find_foreach_variants)
+     1836    2.759    0.002    4.305    0.002 MereologicalCodes.py:130(_definitions)
+  7477630    2.667    0.000    3.892    0.000 Spaces.py:15980(concept_id_at_row)
+
+

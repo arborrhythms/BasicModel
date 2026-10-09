@@ -222,3 +222,128 @@ The `.grammar` `<thought>` sections list `ask`, `query`, `part`, `whole`,
 `equal`, `not`; `arma` and `quantize` are removed from them. The thinking
 spec (6.2) then adds `isTrue`/`exist`, `isPart`/`part`, `isEqual`/`equal`,
 `isImplied`/`implies` as the two faces, and the gain act.
+
+## 9. Mechanism landing and learning measurement (Codex, 2026-10-07)
+
+Alec's accepted 6.2 repair is landed at `e43638a`, with WikiOracle's
+submodule bump at `1970001`. The [acceptance record](../benchmarks/2026-10-07-item6-2-repair/acceptance.json)
+preserves the limits: the configured MM_query_reasoning run completed but
+did not learn chaining, and 6.5's learning gates await the million-sentence
+checkpoint.
+
+The [MM_math_chain candidate](../benchmarks/2026-10-07-math-chain/README.md)
+follows the live thinking spec §10. Its final sweep completes all 5,587
+cases; 732 source files are frozen at receipt digest
+`cc0444cc4d920904c9b3454b4c235e332352f12aacd71d405e7ae029634245e3`.
+The unseeded thinking gate completes 57/57. The standing thirty retain 10/10
+on every bar with zero thought calls or episodes. All thirty declared math
+attempts ran once; none completed its first epoch or reached evaluation.
+Eighteen fail on a retained priming batch width, two on taxonomy operand
+references, eight on the inherited 1,024-row LTM limit, and two on unresolved
+relational rows at ordinary sentence commit. Held-out and beyond-range
+accuracy and final chooser movement are unavailable. The partial observations
+and every failed attempt remain in the receipt. The learning gate is not met;
+the candidate remains uncommitted for Claude's review. The 6.5 learning gates
+still await the million-sentence checkpoint.
+
+## 10. Repair pass 2 under thinking §14 (Codex, 2026-10-08; development)
+
+The [second repair receipt](../benchmarks/2026-10-08-math-chain-repair-2/README.md)
+retains every development outcome and both earlier receipts unchanged.
+The current development path removes evidence pseudo-slots, exposes open and
+filled referent columns from cued rows, preserves pending constituents, and
+fills a copula's addressed variable in place. A configured complete empty
+search permits conclusion: source-supported forward names are provisionally
+minted; unsupported questions remain open. Formation choices and probabilities
+are provenance only. The episode's work cost stays inside its own comparison;
+the sentence departure is judged by reconstruction plus answer and keep uses
+reconstruction alone. Expectations train their predictors.
+
+Ordinary a/b/f and explicitly forced c/d/e have passing development checks.
+The distribution certificate includes each retained candidate and reports
+greedy openings without a rate bar. The development epoch will supply timing,
+question answer-cost differences, chooser movement, declarative episode shares,
+and unforced empty-search examples for g. The first §14 epoch attempt stopped
+before a batch completed on an invalid empty query meaning; its source and
+outcome are preserved. A separate query mask repairs that construction, with
+focused coverage. The new answer epoch is development only. Declaration,
+measurement freeze, the final gates and all declared attempts remain pending;
+the work remains uncommitted for Claude's review.
+
+
+## 11. Section 14.8 declaration (Codex, 2026-10-08)
+
+Claude accepted the completed development epoch on the corrected work criterion:
+mean work per declarative episode fell from 30.333 to 18.942 across the two halves
+of the epoch. The share is reported, not gated. The original result is intact;
+the separate acceptance record is beside it in the second repair receipt.
+
+The [protocol](../benchmarks/2026-10-08-math-chain-repair-2/protocol.json) declares
+17 epochs in all three conditions, ten fresh paired starts, attentionBudget 32,
+ltmCapacity 131,072, graded chain-length order alone, and sentence departure
+credit R + A. The eight-hour epoch basis and live §14.8's 24-hour worker timeout
+are recorded together. The source and reporting helpers are to be frozen for
+the sweep, thinking 57/57, standing thirty, and exactly one attempt per declared
+training. The verifier remains unchanged, with the authorized BindingAnswers
+loss correction documented against its original hash. No learning result or
+6.5 learning gate is claimed; Claude review precedes any commit.
+
+## 12. Section 14.11 stop and mechanism closure (Alec, 2026-10-09)
+
+The campaign is stopped by decision at two of thirty trainings: eight completed
+epochs for answer plus expectation and nine for expectation-only, with partial
+next epochs retained. The [stop receipt](../benchmarks/2026-10-08-math-chain-repair-2/stopped-by-decision/README.md)
+records every available per-start and per-epoch observation. No attempt is
+retried or replaced, and no learning result is claimed. The 28 other trainings
+never started. The original protocol, partial outcomes, logs and archives stay
+intact.
+
+Learning is deferred to item 0 after runtime optimization. The three §14.10
+corrections—one-step problems first, worked steps scored as intermediate answers,
+and an episode able to bind a found candidate—are recorded beside the original
+protocol. The subsequent user authorization (“Yes, please do.”) permits the
+minimal general binding/return repair needed by the forced demonstration.
+Curriculum, intermediate-answer credit and a new learning measurement remain
+deferred; no corrected learning protocol has been declared here.
+
+6.2's closing certificate is explicitly forced decomposition, through the real
+driver, frozen observer and live explore suffix, with one and two successors,
+native inference provenance, the unchanged chain verifier and the episode state
+diff. The [closing review receipt](../benchmarks/2026-10-08-math-chain-repair-2/closing-review.md)
+now demonstrates both chains: both one-successor rows and one of two
+two-successor rows pass the frozen chain verifier. The failed companion row
+and every development outcome remain; this establishes a forced mechanism,
+not an accuracy or learning result. The successful episodes write one native
+inference per successor and change only the question binding, inference rows
+and credit/history trail. The question fixtures use work budgets 512/768;
+the stopped campaign's budget 32 remains unchanged.
+
+On the closing source, thinking is 57/57 and the sweep is green (5,359 passed,
+286 skipped, one XPASS; all 5,646 cases completed). The standing thirty stay
+as already measured. Stop for Claude's review before any commit, push or bump.
+
+## 13. Closing accepted after the standing thirty (Alec, 2026-10-09; §14.13)
+
+Claude's conditional acceptance is fulfilled on the exact 744-file closing
+source `21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373`.
+The [closing receipt](../benchmarks/2026-10-09-item6-2-closing/README.md)
+retains all thirty unseeded attempts: sum 10/10, XOR class 10/10 and XOR
+reconstruction 10/10 on the same ten XOR trainings, raw MM 9/10. MM-03's
+best MSE is .2279723883 after 200 epochs. Its diagnostic replay reproduces
+the original result and matches landing `e43638a` in initial parameters,
+the full numerical and RNG trajectory, and final parameters. Operators §20
+therefore applies; the miss stays a miss and no attempt is replaced. All
+thirty have zero thought calls or episodes. The existing source-matched
+sweep and thinking 57/57 stand unchanged.
+
+Item 6.2 is complete as a mechanism, with decomposition demonstrated under
+forced choices and its companion failure retained. There is no learning
+claim. The stopped campaign and both earlier receipts remain intact.
+Learning waits for item 0's checkpoint after item 1's optimization, under
+the [four protocol corrections](../benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json):
+one-step problems first, worked steps as intermediate answers, binding a
+found candidate, and a budget in steps with each query's record charge
+bounded separately. No corrected measurement is declared here. The thought
+residue is carried in FutureWork; the kept reading that dropped a phrase
+remains in item 6. Alec authorizes the closing commit and push, followed by
+the WikiOracle submodule bump and push, with the co-author trailer.

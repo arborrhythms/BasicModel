@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_ltm_consolidation_serial_fixture: SERIAL test
+       fixture for the LTM-consolidation FOLLOW-UPS (Change 2 / FU3 and the
+       real-parse provisioning of Change 3; Alec 2026-06-18).
+
+       Unlike MM_ltm_consolidation_fixture (parallel, which exercises the
+       store API + observe-write contract directly, no parsing forward)
+       this fixture turns ON BOTH:
+         * a DISCOURSE via training/sentenceExpectation=true (builds
+           symbolSpace.discourse, the InterSentenceLayer AR predictor), and
+         * ltmConsolidation=true (the unified TernaryTruthStore).
+       With legacy serial derivation from symbolicOrder=1, the per-word forward
+       (_forward_body_per_word) runs, so the observe-site conversation push
+       (the SINGLE store-append, Change 1) fires per sentence. That is what
+       provision_ltm now uses to land REAL parsed end-state rows (no mean-pool
+       placeholder), and what FU3's store-backed AR predictor reads. A small
+       truthSet exercises the real-parse provisioning at first runEpoch.
+       Do not consume from production code. -->
+  <architecture>
+    <bindingDepth>3</bindingDepth>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <conceptLayers>2</conceptLayers>
+    <!-- sentenceProtocol defaults ON in serial mode, but its prelude +
+         top-k priming gate has a pre-existing shape mismatch with
+         default.grammar at the small space widths used here; FU3 only needs
+         the discourse predict->observe cycle, so turn it OFF explicitly to
+         get a clean serial discourse forward. -->
+    <sentenceProtocol>false</sentenceProtocol>
+    <ltmConsolidation>true</ltmConsolidation>
+    <truthSet>
+      <truth text="cat" trust="0.9"/>
+      <truth text="fire causes smoke" trust="0.8"/>
+      <truth text="a paw is part of a cat" trust="0.7"/>
+    </truthSet>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <sentenceExpectation>true</sentenceExpectation>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>256</nVectors>
+    <invertible>true</invertible>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <!-- Rows 0..7 are reserved well-known atoms; serial provisioning and
+         conversation ingestion both bind additional symbols. -->
+    <nVectors>64</nVectors>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <ltmCapacity>64</ltmCapacity>
+    <language>
+      <grammar>default.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

@@ -6697,7 +6697,7 @@ class MLPTransformChooser(TransformChooser):
     WHAT_CONTEXT_DIM = 29
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
-                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False):
+                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False, binding_choices=False):
         super().__init__()
         self.d_model = int(d_model)
         self.n_copy = int(n_copy)
@@ -6719,6 +6719,14 @@ class MLPTransformChooser(TransformChooser):
         in_dim = (2 * self.d_model + self.embed_dim
                   + self.n_role_cats + self.pos_dim)
         self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
+        # The two operand choices are features of this same scorer. Small
+        # weights start mint/open close to equiprobable; cloning existing
+        # initialization preserves the RNG stream of grammars without bind.
+        if binding_choices:
+            self.reference_choice = nn.Linear(2 * self.d_model + 2, self.hidden,
+                                              bias=False, device='meta')
+            self.reference_choice.weight = nn.Parameter(
+                F.pad(.01 * self.mlp[0].weight[:, :2 * self.d_model].detach().clone(), (0, 2)))
         # The mean alone identifies (left, right) with (right, left).
         # Feed their signed difference into THIS MLP's first hidden layer;
         # together mean and difference retain both full-width operands and
@@ -6763,6 +6771,12 @@ class MLPTransformChooser(TransformChooser):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        if hasattr(self, 'reference_choice') and prefix + 'reference_choice.weight' not in state_dict:
+            state_dict[prefix + 'reference_choice.weight'] = self.reference_choice.weight.detach().clone()
+        if hasattr(self, 'reference_choice'):
+            key = prefix + 'reference_choice.weight'
+            if state_dict[key].shape[-1] == 2 * self.d_model:
+                state_dict[key] = F.pad(state_dict[key], (0, 2))
         if self.copy_order is not None:
             marker, weight = prefix + "_copy_order_version", prefix + "copy_order.weight"
             if marker not in state_dict and weight not in state_dict:
@@ -6801,7 +6815,7 @@ class MLPTransformChooser(TransformChooser):
         return pe[:, :self.pos_dim]
 
     def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None,
-               order_projection=None):
+               order_projection=None, reference_ctx=None):
         """Score ``R`` candidates at each of ``Npos`` locations.
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
@@ -6839,9 +6853,14 @@ class MLPTransformChooser(TransformChooser):
         # zero fallbacks agree even under autocast (the MLP may emit
         # bf16/fp16; the fallbacks keep the input dtype).
         projection = self.operand_order if order_projection is None else order_projection
-        if projection is not None and order_ctx is not None:
+        if (projection is not None and order_ctx is not None) or reference_ctx is not None:
             hidden = self.mlp[0](feat)
-            hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
+            if projection is not None and order_ctx is not None:
+                hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
+            if reference_ctx is not None:
+                if reference_ctx.shape[-1] == 2 * self.d_model:
+                    reference_ctx = F.pad(reference_ctx, (0, 2))
+                hidden = hidden + self.reference_choice(reference_ctx).to(hidden.dtype)
             for index, block in enumerate(self.mlp):
                 if index:
                     hidden = block(hidden)
@@ -6866,7 +6885,7 @@ class MLPTransformChooser(TransformChooser):
         return self.what_projection(ctx).to(dtype)
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
+                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None, reference_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -6878,7 +6897,7 @@ class MLPTransformChooser(TransformChooser):
             indices = indices + self.n_copy + op_offset
             apply_rows = self.tool_embedding.index_select(0, indices)
             apply_score = self._score(x_score, applied_score, apply_rows, pos,
-                                      cat_ctx=cat_ctx)
+                                      cat_ctx=cat_ctx, reference_ctx=reference_ctx)
         else:
             apply_score = x_score.new_zeros(B, N, 0)
         what_bias = self._what_bias(
@@ -6890,7 +6909,7 @@ class MLPTransformChooser(TransformChooser):
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None, op_indices=None):
+                     cat_ctx=None, what_ctx=None, op_indices=None, reference_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -6930,7 +6949,7 @@ class MLPTransformChooser(TransformChooser):
             reduce_rows = self.tool_embedding.index_select(0, indices)
             reduce_score = self._score(
                 pair_slot, reduced_score, reduce_rows, pos_pair,
-                cat_ctx=pair_cat, order_ctx=order_ctx)
+                cat_ctx=pair_cat, order_ctx=order_ctx, reference_ctx=reference_ctx)
         else:
             reduce_score = x_score.new_zeros(B, max(N - 1, 0), int(reduced_score.shape[2]) if reduced_score.dim() == 4 else self.n_op)
         what_bias = self._what_bias(
@@ -6966,7 +6985,11 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
             "transformChooserDepth")
         return MLPTransformChooser(
             d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats,
-            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary)
+            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary,
+            binding_choices=ordered_binary and any(
+                getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
+                any(order == 1 for _, order in getattr(rule, 'reference_orders', ()))
+                for rule in (getattr(TheGrammar, 'rules_upward', None) or ())))
     # Accept exactly the values the <transformChooser> XSD enum allows, so
     # the factory and schema validation agree on the legal set.
     if k != "anchordot":
@@ -7178,6 +7201,44 @@ class OperationSelectionLayer(nn.Module):
         return action,probabilities,legal
 
     @staticmethod
+    def _compact_departure_groups(x, depth, candidates, binary, unary, position):
+        """Exact state keys without expanding every candidate to a full STM.
+
+        A binary result differing from both operands can equal another result
+        only at the same position. If it equals either operand, it is a
+        deletion; deletions are equivalent only within a run of equal inputs.
+        An unchanged unary and STOP share the original truncated state.
+        These keys compare values exactly and never hash floating content.
+        """
+        B, N, D = x.shape
+        A = candidates.shape[1]
+        columns = torch.arange(N, device=x.device)
+        starts = torch.cat((torch.ones(B, 1, device=x.device, dtype=torch.bool),
+                            (x[:, 1:] != x[:, :-1]).any(-1)), -1)
+        run_start = torch.where(starts, columns[None], 0).cummax(-1).values
+        left = x[:, position]
+        right = x[:, (position+1).clamp_max(N-1)]
+        same_left = (candidates == left).all(-1)
+        same_right = (candidates == right).all(-1)
+        counts = depth[:, None]-binary.long()[None]
+        occupied = position[None] < counts
+        deletion = binary[None] & (same_left | same_right | ~occupied)
+        removed = torch.where(occupied, position[None]+same_left.long(),
+                              (depth-1)[:, None]).clamp(0, N-1)
+        deletion_position = run_start.gather(1, removed)
+        unchanged = ~binary[None] & (~unary[None] | same_left | ~occupied)
+        category = torch.where(binary[None], 0, 2).expand(B, A)
+        category = torch.where(deletion, 1, category)
+        category = torch.where(unchanged, 3, category)
+        category = torch.where(counts <= 0, 4, category)
+        positions = torch.where(deletion, deletion_position, position[None])
+        positions = torch.where(category >= 3, 0, positions)
+        payload = torch.where(((category == 0) | (category == 2))[..., None], candidates, 0.)
+        padding_is_zero = ((x == 0).all(-1) | (columns[None] < depth[:, None])).all(-1)
+        unchanged = unchanged & padding_is_zero[:, None]
+        return counts, category, positions, payload, unchanged
+
+    @staticmethod
     def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
                              r_reduce, r_apply, stop_exact=None, reference_ids=None):
         """One representative of each distinct numerical next state.
@@ -7195,6 +7256,27 @@ class OperationSelectionLayer(nn.Module):
         unary = (ids >= n_binary) & (ids < n_binary + n_unary)
         position = torch.where(binary, ids // max(1, r_reduce),
             (ids - n_binary) // max(1, r_apply)).clamp(0, N - 1)
+        if A > 128 and not torch.compiler.is_compiling() and not bool(torch.isnan(x).any()):
+            counts, category, positions, payload, unchanged = OperationSelectionLayer._compact_departure_groups(
+                x, depth, candidates, binary, unary, position)
+            if reference_ids is not None:
+                unchanged = unchanged & (reference_ids == -1).all(-1)
+            allowed = torch.isfinite(logits) & ~(unary[None] & unchanged)
+            if stop_exact is not None:
+                allowed &= ~((ids == A-1)[None] & stop_exact[:, None])
+            representatives = []
+            for row in range(B):
+                _, content_group = torch.unique(payload[row], dim=0, return_inverse=True)
+                keys = (counts[row, :, None], category[row, :, None],
+                        positions[row, :, None], content_group[:, None])
+                if reference_ids is not None:
+                    keys += (reference_ids[row],)
+                _, group = torch.unique(torch.cat(keys, -1), dim=0, return_inverse=True)
+                permitted = allowed[row] & (group != group[reference[row].clamp(0, A-1)])
+                first = torch.full_like(ids, A).scatter_reduce(0, group,
+                    torch.where(permitted, ids, A), reduce='amin', include_self=True)
+                representatives.append(permitted & (ids == first[group]))
+            return torch.stack(representatives)
         columns = torch.arange(N, device=x.device)
         source = columns[None] + (binary[:, None] & (columns[None] > position[:, None])).long()
         states = x[:, None].expand(B, A, N, D).gather(2,
@@ -7220,6 +7302,22 @@ class OperationSelectionLayer(nn.Module):
             ref_ids = reference_ids.gather(1, reference[:, None, None].expand(B, 1, 2))
             same_reference = same_reference & (reference_ids == ref_ids).all(-1)
         allowed = allowed & ~same_reference
+        if A > 128 and not torch.compiler.is_compiling():
+            # Group exact numerical states once, instead of comparing every
+            # pair of reference variants. Integer addresses remain integer:
+            # converting them to the content dtype would merge distinct IDs.
+            representatives = []
+            for row in range(B):
+                _, content_group = torch.unique(states[row].flatten(1), dim=0,
+                                                 return_inverse=True)
+                keys = (content_group[:, None], counts[row, :, None])
+                if reference_ids is not None:
+                    keys += (reference_ids[row],)
+                _, group = torch.unique(torch.cat(keys, -1), dim=0, return_inverse=True)
+                first = torch.full_like(ids, A).scatter_reduce(0, group,
+                    torch.where(allowed[row], ids, A), reduce='amin', include_self=True)
+                representatives.append(allowed[row] & (ids == first[group]))
+            return torch.stack(representatives)
         representatives = []
         for first in range(0, A, 16):
             same = (states[:, first:first + 16, None] == states[:, None]).all(-1).all(-1)
@@ -7309,9 +7407,9 @@ class OperationSelectionLayer(nn.Module):
 
     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
-                grammar_context=None, replay_action=None, allowance=None,
+                grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
-                previous_unary=None, stop_exact=None, operand_activations=None):
+                previous_unary=None, stop_exact=None, operand_activations=None, policy_grad=True):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -7339,22 +7437,39 @@ class OperationSelectionLayer(nn.Module):
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
         score_cats = None if cat_ctx is None else cat_ctx.detach()
         score_context = None if what_ctx is None else what_ctx.detach()
-        stop_scores, binary_scores = self.chooser.score_binary(
-            content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
-            self.reduce_anchor.index_select(0, bi), cat_ctx=score_cats, what_ctx=score_context,
-            op_indices=bi)
-        _, unary_scores = self.chooser.score_unary(
-            content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
-            self.apply_anchor.index_select(0, ui), cat_ctx=score_cats, what_ctx=score_context,
-            op_offset=self.r_reduce, op_indices=ui)
-        prior = self._category_reduce_prior(cat_ctx)
-        if prior is not None:
-            binary_scores = binary_scores + prior.index_select(-1, bi).detach().to(binary_scores)
-        prior = self._category_apply_prior(cat_ctx)
-        if prior is not None:
-            unary_scores = unary_scores + prior.index_select(-1, ui).detach().to(unary_scores)
-        if op_prior is not None:
-            binary_scores = binary_scores + op_prior.index_select(-1, bi).detach().to(binary_scores)
+        # Only a sampled departure owns a policy graph. Other chooser
+        # probabilities are observations; their selected operators still train.
+        with torch.set_grad_enabled(torch.is_grad_enabled() and policy_grad):
+            reference_contexts = ({}, {})
+            if (reference_data is not None and reference_data.get('binding_choices')
+                    and hasattr(self.chooser, 'reference_choice')):
+                contexts = []
+                for label, operands in (
+                        ('binary', (reference_data['left'], reference_data['right'])),
+                        ('unary', (reference_data['unary'], torch.zeros_like(reference_data['unary'])))):
+                    choices = reference_data[label + '_choices']
+                    signs = (choices == -2).to(x.dtype) - (choices == 0).to(x.dtype)
+                    contexts.append(dict(reference_ctx=torch.cat((*tuple(
+                        value[..., :self.d_model].detach() * signs[..., i, None]
+                        for i, value in enumerate(operands)),
+                        reference_data[label + '_found'].to(x.dtype)), -1)))
+                reference_contexts = tuple(contexts)
+            stop_scores, binary_scores = self.chooser.score_binary(
+                content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
+                self.reduce_anchor.index_select(0, bi), cat_ctx=score_cats, what_ctx=score_context,
+                op_indices=bi, **reference_contexts[0])
+            _, unary_scores = self.chooser.score_unary(
+                content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
+                self.apply_anchor.index_select(0, ui), cat_ctx=score_cats, what_ctx=score_context,
+                op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
+            prior = self._category_reduce_prior(cat_ctx)
+            if prior is not None:
+                binary_scores = binary_scores + prior.index_select(-1, bi).detach().to(binary_scores)
+            prior = self._category_apply_prior(cat_ctx)
+            if prior is not None:
+                unary_scores = unary_scores + prior.index_select(-1, ui).detach().to(unary_scores)
+            if op_prior is not None:
+                binary_scores = binary_scores + op_prior.index_select(-1, bi).detach().to(binary_scores)
         deadline = torch.zeros_like(depth, dtype=torch.bool)
         needs_reduction = torch.zeros_like(depth, dtype=torch.bool)
         if rounds_left is not None:
@@ -7410,7 +7525,7 @@ class OperationSelectionLayer(nn.Module):
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
             nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids)
         action, probabilities, has_choice = self.select_logits(logits, structural=flags,
-            masked_action=masked_action,replay_action=replay_action,sample=sample,
+            masked_action=masked_action,sample=sample,
             departure_eligible=departure_eligible)
         torch._assert_async((~active | has_choice).all(),
                             "compose has no legal alternative at the selected exploration round")
@@ -7466,43 +7581,55 @@ class OperationSelectionLayer(nn.Module):
 
     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
                cat_ctx=None, what_ctx=None, grammar_context=None, allow_identical=False):
+        from types import SimpleNamespace
+        from SentenceFork import SentenceFork, detached
+        from SentenceCompose import select_rows
         B, N, _ = x.shape
         depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
                  if depth is None else depth)
         active = depth > 0
         used = torch.zeros_like(depth)
-        actions, traces = [], []
         history = torch.full((B, N), -1, device=x.device, dtype=torch.long)
+        actions = torch.full((B, int(rounds)), -1, device=x.device, dtype=torch.long)
+        traces = []
+        fork = SentenceFork(active) if exploit is None else exploit['fork']
         if exploit is not None:
-            eligible = exploit['alternatives']
             if not allow_identical:
-                torch._assert_async(eligible.any(-1).all(),
+                torch._assert_async((fork.count > 0).all(),
                     'compose has no legal alternative to this derivation')
-            rank = (torch.rand(B, device=x.device) * eligible.sum(-1)).long()
-            selected = eligible & (eligible.long().cumsum(-1) == rank[:, None] + 1)
-            forced = torch.where(eligible.any(-1), selected.long().argmax(-1), -1)
-        else:
-            forced = torch.full_like(depth, -1)
+            fork.start(dict(compose_round=fork.slot, narrowing=torch.zeros_like(active)))
+            x, depth, used, actions = detached((exploit['value'], exploit['depth'],
+                                               exploit['used'], exploit['actions']))
+            active = torch.zeros_like(active)
         for i in range(int(rounds)):
-            mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
-                    if exploit is not None else None)
-            replay = (torch.where(i < forced, exploit['actions'][:, i], -1)
-                      if exploit is not None and self.temperature == 0 else None)
-            _, x, route = self(
+            slot = depth.new_tensor(i)
+            x, depth, active, history, used = fork.resume(slot, (x, depth, active, history, used))
+            before = x, depth, active, history, used
+            _, next_x, route = self(
                 x, depth=depth, slots=slots, active=active,
-                sample=not greedy, masked_action=mask, replay_action=replay,
+                sample=not greedy if exploit is None else False, masked_action=fork.mask(slot),
                 cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
                 grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i,
                 previous_unary=history)
-            actions.append(torch.where(active & route['valid'], route['action'], -1))
+            if self.training:
+                fork.record(SimpleNamespace(valid=route['valid'], action=route['action'],
+                    alternative_count=route['departure_eligible'].sum(-1)), slot, before,
+                    word=slot, latches=())
+            if exploit is not None:
+                route = select_rows(detached(exploit['traces'][i]), route, fork.joined)
+            actions = actions.scatter(1, torch.full((B, 1), i, device=x.device, dtype=torch.long),
+                                      torch.where(active, route['action'],
+                                          torch.where(fork.joined, -1, actions[:, i]))[:, None])
             used = used + (active & route['valid']).long()
-            depth = route['depth']
-            history = route['previous_unary']
+            x = torch.where(active[:, None, None], next_x, x)
+            depth = torch.where(active, route['depth'], depth)
+            history = torch.where(active[:, None], route['previous_unary'], history)
             active = active & route['valid'] & ~route['stopped']
             traces.append(route)
-        return dict(value=x, depth=depth, actions=torch.stack(actions, 1), used=used,
+        return dict(value=x, depth=depth, actions=actions, used=used,
                     complete=depth <= torch.as_tensor(slots, device=x.device),
-                    forced_round=forced, traces=traces,
+                    forced_round=fork.slot if exploit is not None else torch.full_like(depth, -1),
+                    traces=traces, fork=fork,
                     alternatives=torch.stack([route['alternatives'] for route in traces], 1))
 
     def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
@@ -7552,6 +7679,37 @@ class OperationSelectionLayer(nn.Module):
                       else reference_data.get('binary_ops', tuple(range(self.r_reduce))))
         if x.shape[1] < 2 or not operations:
             return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), len(operations), x.shape[-1])
+        if reference_data is not None and len(set(operations)) < len(operations):
+            B, P, R, D = reference_data['left'].shape
+            result = x.new_zeros(B, P, R, D)
+            for local in dict.fromkeys(operations):
+                columns = torch.tensor([i for i, op in enumerate(operations) if op == local],
+                                       device=x.device, dtype=torch.long)
+                count = len(columns)
+                implementation = getattr(self.ops[local], 'gl', self.ops[local])
+                if callable(getattr(implementation, 'compose_with_context', None)):
+                    # Contextual operators index the original live slab by
+                    # pair position. Keep that axis separate from variants.
+                    for column in columns.unbind():
+                        one = column.reshape(1)
+                        selected = dict(reference_data, binary_ops=(local,))
+                        for key in ('left', 'right', 'binary_refs', 'binary_valid', 'case_weights'):
+                            if key in reference_data:
+                                selected[key] = reference_data[key].index_select(2, one)
+                        value = self._stacked_reduced(x, grammar_context, selected, activations)
+                        result = result.index_copy(2, one, value)
+                    continue
+                grouped = dict(reference_data, binary_ops=(local,))
+                for key in ('left', 'right', 'binary_refs', 'binary_valid', 'case_weights'):
+                    if key in reference_data:
+                        value = reference_data[key].index_select(2, columns)
+                        grouped[key] = value.reshape(B, P * count, 1, *value.shape[3:])
+                if activations is not None:
+                    grouped['_left_activation'] = activations[:, :-1, None].expand(B,P,count).reshape(B,P*count)
+                    grouped['_right_activation'] = activations[:, 1:, None].expand(B,P,count).reshape(B,P*count)
+                values = self._stacked_reduced(x, grammar_context, grouped, activations)
+                result = result.index_copy(2, columns, values.reshape(B,P,count,D))
+            return result
         result = []
         for i, local in enumerate(operations):
             op = self.ops[local]
@@ -7574,8 +7732,10 @@ class OperationSelectionLayer(nn.Module):
                 if selected_context is not None:
                     _structural_face_phase(implementation, (left, right), context=selected_context, phase='compose')
                 value = implementation.compose(left, right,
-                    left_activation=None if activations is None else activations[:, :-1],
-                    right_activation=None if activations is None else activations[:, 1:])
+                    left_activation=(reference_data['_left_activation'] if reference_data is not None and
+                        '_left_activation' in reference_data else None if activations is None else activations[:, :-1]),
+                    right_activation=(reference_data['_right_activation'] if reference_data is not None and
+                        '_right_activation' in reference_data else None if activations is None else activations[:, 1:]))
             else:
                 value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
                           if grammar_context is not None and hasattr(op, 'forward_with_grammar_context')
@@ -7589,7 +7749,7 @@ class OperationSelectionLayer(nn.Module):
                 layout = getattr(implementation, 'meaning_layout', None)
                 width = layout[0] if layout is not None and layout[1] == left.shape[-1] else None
                 repeated = repeated_symbol(left, width,
-                    None if activations is None else activations[:, :-1])
+                    reference_data.get('_left_activation', None if activations is None else activations[:, :-1]))
                 value = torch.where(same[..., None], repeated, value)
             result.append(value)
         return torch.stack(result, 2)
@@ -7623,6 +7783,16 @@ class OperationSelectionLayer(nn.Module):
         if not operations:
             B, N, D = x.shape
             return x.new_zeros(B, N, 0, D)
+        if reference_data is not None and len(set(operations)) < len(operations):
+            B, N, R, D = reference_data['unary'].shape
+            result = x.new_zeros(B,N,R,D)
+            for local in dict.fromkeys(operations):
+                columns = torch.tensor([i for i, op in enumerate(operations) if op == local],
+                                       device=x.device, dtype=torch.long)
+                values = reference_data['unary'].index_select(2,columns).reshape(B,N*len(columns),D)
+                values = self._apply_op(self.unary_ops[local],values,grammar_context=grammar_context)
+                result = result.index_copy(2,columns,values.reshape(B,N,len(columns),D))
+            return result
         per_op = [self._apply_op(self.unary_ops[local], x if reference_data is None else reference_data['unary'][:, :, i],
                                  grammar_context=grammar_context)
                   for i, local in enumerate(operations)]
@@ -12823,9 +12993,9 @@ class LanguageSpace(nn.Module):
         return self.language_layer.operation_layer
 
     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
-                         sample=True, masked_action=None, replay_action=None,
+                         sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
-                         previous_unary=None):
+                         previous_unary=None, policy_grad=True):
         """The shared compose layer with the two newest occupied STM slots."""
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -12880,10 +13050,10 @@ class LanguageSpace(nn.Module):
         _, _, route = self.language_layer.operation_layer(
             window, depth=window_depth, slots=stop_slots,
             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
-            replay_action=replay_action, allowance=slots if allowance is None else allowance,
+            allowance=slots if allowance is None else allowance,
             rounds_left=rounds_left, load_depth=depth,
             stop_exact=stop_exact,
-            operand_activations=window_activations,
+            operand_activations=window_activations, policy_grad=policy_grad,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=self._structural_context(
                 phase='compose', input_stream=buffer), reference_data=references)
@@ -13330,7 +13500,7 @@ class LanguageSpace(nn.Module):
                             constituents=child.constituents)
                         if result.mode == 'interrogative':
                             from ThoughtReferences import question, open_slots
-                            result = question(result, open_slots(result) or (('evidence', -1),))
+                            result = question(result, open_slots(result))
                             try:
                                 registry.signature_for(result)
                             except (RuntimeError, ValueError):
@@ -13385,7 +13555,7 @@ class LanguageSpace(nn.Module):
                 role_refs=tuple(refs), constituents=tuple(children))
             if result.mode == 'interrogative':
                 from ThoughtReferences import question
-                result = question(result, (('evidence', -1),))
+                result = question(result)
             return result
 
         return recover(semantic_tree(stack[0]))

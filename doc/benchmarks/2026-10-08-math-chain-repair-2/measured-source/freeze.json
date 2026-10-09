@@ -1,0 +1,13 @@
+{
+  "source_files": 741,
+  "helpers": 222,
+  "protected_matches": {
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "data/XOR_grammar.xml": true,
+    "data/MM_xor.xml": true
+  },
+  "source_sha256": "4d9ee05ea8558fc99507bc8ebb1e2fa7aebffd722d579c9ff5f4083d0ab617ea",
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "authorized_contract_change": "BindingAnswers.cost, thinking \u00a714.7.2; other contracts unchanged."
+}

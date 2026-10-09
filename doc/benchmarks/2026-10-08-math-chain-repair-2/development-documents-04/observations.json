@@ -1,0 +1,790 @@
+[
+  {
+    "text": "x is zero.",
+    "source": 0,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "row_id": 4965714248826760469,
+    "query": null
+  },
+  {
+    "text": "v is four.",
+    "source": 6,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": -1901278352427378192,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 12,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        26
+      ]
+    ],
+    "row_id": -8411736564296511850,
+    "query": null
+  },
+  {
+    "text": "x is three.",
+    "source": 18,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "row_id": -9137476062681952985,
+    "query": null
+  },
+  {
+    "text": "x is four.",
+    "source": 24,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": null,
+    "row_id": 5104864599149240312,
+    "query": null
+  },
+  {
+    "text": "x is five.",
+    "source": 30,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        12
+      ]
+    ],
+    "row_id": -1671947417047905779,
+    "query": null
+  },
+  {
+    "text": "v is twenty.",
+    "source": 36,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        34
+      ]
+    ],
+    "row_id": -3754339546184232062,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 42,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        26
+      ]
+    ],
+    "row_id": 6012915626146427037,
+    "query": null
+  },
+  {
+    "text": "v is eighteen.",
+    "source": 1,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        36
+      ]
+    ],
+    "row_id": -1304947452788680392,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 7,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        28
+      ]
+    ],
+    "row_id": -2420825366148739926,
+    "query": null
+  },
+  {
+    "text": "x is two.",
+    "source": 13,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        2165852431095714020
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": 4107437801823508998,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 19,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        -3241740184901584199
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -9137476062681952985
+      ]
+    ],
+    "forward": null,
+    "row_id": -4926105773545362200,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 25,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        28
+      ]
+    ],
+    "row_id": 4184222745017089981,
+    "query": null
+  },
+  {
+    "text": "v is fourteen.",
+    "source": 31,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        8053032795332530495
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": 4755450113288337393,
+    "query": null
+  },
+  {
+    "text": "u is twelve.",
+    "source": 37,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        2238189657232591858
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": -1397399846019827040,
+    "query": null
+  },
+  {
+    "text": "u is twelve.",
+    "source": 43,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        1059026302430065479
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": -463593365663395294,
+    "query": null
+  },
+  {
+    "text": "u is one.",
+    "source": 2,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        4827290117132093472
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": 1489186731453441552,
+    "query": null
+  },
+  {
+    "text": "u is sixteen.",
+    "source": 8,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        48
+      ]
+    ],
+    "row_id": 2693773805039302663,
+    "query": null
+  },
+  {
+    "text": "v is sixteen.",
+    "source": 14,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        9094264972041016402
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": 5145876872821516735,
+    "query": null
+  },
+  {
+    "text": "v is three.",
+    "source": 20,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        3592539089715719650
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -9137476062681952985
+      ]
+    ],
+    "forward": null,
+    "row_id": -2338680091255372122,
+    "query": null
+  },
+  {
+    "text": "u is one.",
+    "source": 26,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        46
+      ]
+    ],
+    "row_id": -9186563201346494161,
+    "query": null
+  },
+  {
+    "text": "u is nine.",
+    "source": 32,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        6580077070481090793
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": 3064412529572243577,
+    "query": null
+  },
+  {
+    "text": "x is six.",
+    "source": 38,
+    "episode": true,
+    "spent": 32,
+    "slots": [
+      [
+        "relation",
+        1
+      ]
+    ],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": [],
+    "row_id": -8404741842191359772,
+    "query": [
+      [
+        "relation",
+        1
+      ]
+    ]
+  },
+  {
+    "text": "x is seven.",
+    "source": 44,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -3647654229373202877
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": 9216037725079630043,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 3,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        -4842069241604531320
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": 1591010860005125546,
+    "query": null
+  },
+  {
+    "text": "x is one.",
+    "source": 9,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      null,
+      null,
+      null
+    ],
+    "forward": null,
+    "row_id": 3984331914472105653,
+    "query": null
+  },
+  {
+    "text": "u is seven.",
+    "source": 15,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        2295431881070548931
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": -1069183746307483430,
+    "query": null
+  },
+  {
+    "text": "u is five.",
+    "source": 21,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        -2548630617041177405
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -9137476062681952985
+      ]
+    ],
+    "forward": null,
+    "row_id": 2098632569604408984,
+    "query": null
+  },
+  {
+    "text": "v is nineteen.",
+    "source": 27,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -4697265538739114139
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        20
+      ]
+    ],
+    "row_id": -1010827537732055063,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 33,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        -2840049366404349802
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": -4794191952038374363,
+    "query": null
+  },
+  {
+    "text": "y is x plus zero.",
+    "source": 39,
+    "episode": true,
+    "spent": 32,
+    "slots": [],
+    "refs": [
+      [
+        "constituent",
+        0
+      ],
+      null,
+      null
+    ],
+    "forward": [
+      [
+        0,
+        28
+      ]
+    ],
+    "row_id": 2093526440821688887,
+    "query": null
+  },
+  {
+    "text": "v is two.",
+    "source": 45,
+    "episode": false,
+    "spent": 0,
+    "slots": [],
+    "refs": [
+      [
+        "ltm",
+        "address-v1",
+        7805019433307533979
+      ],
+      [
+        "sym",
+        3448196359107856985
+      ],
+      [
+        "sym",
+        20
+      ]
+    ],
+    "forward": null,
+    "row_id": -1238291205714896266,
+    "query": null
+  }
+]

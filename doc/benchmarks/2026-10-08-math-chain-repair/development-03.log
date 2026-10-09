@@ -1,0 +1,29 @@
+..............................F.............................             [100%]
+=================================== FAILURES ===================================
+_____ test_nested_clause_retains_its_own_field_without_program_or_targets ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10933f5f0>
+
+    def test_nested_clause_retains_its_own_field_without_program_or_targets(monkeypatch):
+        _, registry, language, entry, _ = _nested(monkeypatch)
+        clause = finish_reading(language, entry,
+            meaning=language.program_meaning(entry, registry), registry=registry)
+        child, = clause.children
+        assert not hasattr(child, 'derivation')
+>       torch.testing.assert_close(child.meaning.roles[0], entry.leaves[0])
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 8 / 8 (100.0%)
+E       Greatest absolute difference: 0.6589389443397522 at index (2,) (up to 1e-05 allowed)
+E       Greatest relative difference: 25.600868225097656 at index (7,) (up to 1.3e-06 allowed)
+
+test/test_clause_closing.py:18: AssertionError
+=============================== warnings summary ===============================
+test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_clause_closing.py::test_nested_clause_retains_its_own_field_without_program_or_targets
+1 failed, 59 passed, 1 warning in 3.20s

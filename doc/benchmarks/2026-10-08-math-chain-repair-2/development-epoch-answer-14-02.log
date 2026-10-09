@@ -1,0 +1,129 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "total_sentences": 8, "seconds": 5.828394790994935, "occupancy": 31}
+batch = 8 (Δ=5.694s)
+{"batch": 2, "total_sentences": 16, "seconds": 5.611065667006187, "occupancy": 55}
+batch = 16 (Δ=3.797s)
+{"batch": 3, "total_sentences": 20, "seconds": 3.71406654198654, "occupancy": 73}
+batch = 20 (Δ=5.097s)
+{"batch": 4, "total_sentences": 28, "seconds": 5.053377917036414, "occupancy": 105}
+batch = 28 (Δ=11.557s)
+{"batch": 5, "total_sentences": 36, "seconds": 11.552710582967848, "occupancy": 176}
+batch = 36 (Δ=5.232s)
+{"batch": 6, "total_sentences": 44, "seconds": 5.161056832992472, "occupancy": 208}
+batch = 44 (Δ=11.196s)
+{"batch": 7, "total_sentences": 52, "seconds": 11.192621457972564, "occupancy": 265}
+batch = 52 (Δ=3.157s)
+{"batch": 8, "total_sentences": 56, "seconds": 3.087350958958268, "occupancy": 278}
+batch = 56 (Δ=5.129s)
+{"batch": 9, "total_sentences": 60, "seconds": 5.125886791967787, "occupancy": 309}
+batch = 60 (Δ=6.028s)
+{"batch": 10, "total_sentences": 68, "seconds": 5.992172875092365, "occupancy": 342}
+batch = 68 (Δ=8.344s)
+{"batch": 11, "total_sentences": 76, "seconds": 8.339983541984111, "occupancy": 387}
+batch = 76 (Δ=8.672s)
+{"batch": 12, "total_sentences": 84, "seconds": 8.667967916000634, "occupancy": 434}
+batch = 84 (Δ=9.607s)
+{"batch": 13, "total_sentences": 92, "seconds": 9.602456792024896, "occupancy": 484}
+batch = 92 (Δ=9.961s)
+{"batch": 14, "total_sentences": 100, "seconds": 10.119949500076473, "occupancy": 527}
+batch = 100 (Δ=9.569s)
+{"batch": 15, "total_sentences": 108, "seconds": 9.400116499979049, "occupancy": 584}
+batch = 108 (Δ=2.787s)
+{"batch": 16, "total_sentences": 111, "seconds": 2.714972957968712, "occupancy": 598}
+batch = 111 (Δ=3.720s)
+{"batch": 17, "total_sentences": 114, "seconds": 3.716596959042363, "occupancy": 616}
+batch = 114 (Δ=4.560s)
+{"batch": 18, "total_sentences": 117, "seconds": 4.556024708086625, "occupancy": 635}
+batch = 117 (Δ=4.470s)
+{"batch": 19, "total_sentences": 120, "seconds": 4.466742499964312, "occupancy": 654}
+batch = 120 (Δ=5.027s)
+{"batch": 20, "total_sentences": 123, "seconds": 5.105211791000329, "occupancy": 672}
+batch = 123 (Δ=3.553s)
+{"batch": 21, "total_sentences": 126, "seconds": 3.464624041924253, "occupancy": 691}
+batch = 126 (Δ=6.705s)
+{"batch": 22, "total_sentences": 134, "seconds": 6.676351458067074, "occupancy": 723}
+batch = 134 (Δ=7.974s)
+{"batch": 23, "total_sentences": 142, "seconds": 7.9684127499349415, "occupancy": 765}
+batch = 142 (Δ=8.784s)
+{"batch": 24, "total_sentences": 150, "seconds": 8.77780887496192, "occupancy": 811}
+batch = 150 (Δ=7.833s)
+{"batch": 25, "total_sentences": 158, "seconds": 7.827380749979056, "occupancy": 854}
+batch = 158 (Δ=6.578s)
+{"batch": 26, "total_sentences": 166, "seconds": 6.5728229999076575, "occupancy": 891}
+batch = 166 (Δ=9.773s)
+{"batch": 27, "total_sentences": 174, "seconds": 9.76746624999214, "occupancy": 947}
+batch = 174 (Δ=8.033s)
+{"batch": 28, "total_sentences": 182, "seconds": 8.031716292025521, "occupancy": 991}
+batch = 182 (Δ=7.444s)
+{"batch": 29, "total_sentences": 190, "seconds": 7.437323624966666, "occupancy": 1039}
+batch = 190 (Δ=3.205s)
+{"batch": 30, "total_sentences": 193, "seconds": 3.1356084999861196, "occupancy": 1053}
+batch = 193 (Δ=2.818s)
+{"batch": 31, "total_sentences": 196, "seconds": 2.8119362499564886, "occupancy": 1070}
+batch = 196 (Δ=2.770s)
+{"batch": 32, "total_sentences": 199, "seconds": 2.7665047079790384, "occupancy": 1087}
+batch = 199 (Δ=4.418s)
+{"batch": 33, "total_sentences": 202, "seconds": 4.412294791894965, "occupancy": 1106}
+batch = 202 (Δ=3.165s)
+{"batch": 34, "total_sentences": 205, "seconds": 3.1612774579552934, "occupancy": 1121}
+batch = 205 (Δ=4.373s)
+{"batch": 35, "total_sentences": 208, "seconds": 4.3687641670694575, "occupancy": 1142}
+batch = 208 (Δ=3.881s)
+{"batch": 36, "total_sentences": 211, "seconds": 3.8789736250182614, "occupancy": 1160}
+batch = 211 (Δ=3.440s)
+{"batch": 37, "total_sentences": 214, "seconds": 3.4338217499898747, "occupancy": 1178}
+batch = 214 (Δ=8.458s)
+{"batch": 38, "total_sentences": 222, "seconds": 8.432222542003728, "occupancy": 1219}
+batch = 222 (Δ=9.514s)
+{"batch": 39, "total_sentences": 230, "seconds": 9.509105750010349, "occupancy": 1269}
+batch = 230 (Δ=9.407s)
+{"batch": 40, "total_sentences": 238, "seconds": 9.402308499906212, "occupancy": 1309}
+batch = 238 (Δ=11.720s)
+{"batch": 41, "total_sentences": 246, "seconds": 11.715548458043486, "occupancy": 1360}
+batch = 246 (Δ=12.142s)
+{"batch": 42, "total_sentences": 254, "seconds": 12.218750500003807, "occupancy": 1406}
+batch = 254 (Δ=10.526s)
+{"batch": 43, "total_sentences": 262, "seconds": 10.437022374942899, "occupancy": 1466}
+batch = 262 (Δ=9.165s)
+{"batch": 44, "total_sentences": 270, "seconds": 9.161020084051415, "occupancy": 1518}
+batch = 270 (Δ=9.749s)
+{"batch": 45, "total_sentences": 278, "seconds": 9.7444218340097, "occupancy": 1574}
+batch = 278 (Δ=8.853s)
+{"batch": 46, "total_sentences": 286, "seconds": 8.847919624997303, "occupancy": 1624}
+batch = 286 (Δ=2.816s)
+{"batch": 47, "total_sentences": 289, "seconds": 2.7442544160876423, "occupancy": 1638}
+batch = 289 (Δ=5.317s)
+{"batch": 48, "total_sentences": 292, "seconds": 5.311966708046384, "occupancy": 1659}
+batch = 292 (Δ=4.537s)
+{"batch": 49, "total_sentences": 295, "seconds": 4.532931250054389, "occupancy": 1676}
+batch = 295 (Δ=6.199s)
+{"batch": 50, "total_sentences": 298, "seconds": 6.195461457944475, "occupancy": 1695}
+batch = 298 (Δ=6.036s)
+{"batch": 51, "total_sentences": 301, "seconds": 6.059829292003997, "occupancy": 1713}
+batch = 301 (Δ=5.055s)
+{"batch": 52, "total_sentences": 304, "seconds": 5.020937000052072, "occupancy": 1737}
+batch = 304 (Δ=4.849s)
+{"batch": 53, "total_sentences": 307, "seconds": 4.844589332933538, "occupancy": 1760}
+batch = 307 (Δ=4.952s)
+{"batch": 54, "total_sentences": 310, "seconds": 4.9479434579843655, "occupancy": 1783}
+batch = 310 (Δ=5.116s)
+{"batch": 55, "total_sentences": 313, "seconds": 5.112251957994886, "occupancy": 1803}
+batch = 313 (Δ=7.883s)
+{"batch": 56, "total_sentences": 321, "seconds": 7.855157750076614, "occupancy": 1839}
+batch = 321 (Δ=9.631s)
+{"batch": 57, "total_sentences": 329, "seconds": 9.625444040982984, "occupancy": 1885}
+batch = 329 (Δ=9.502s)
+{"batch": 58, "total_sentences": 337, "seconds": 9.495807166909799, "occupancy": 1929}
+batch = 337 (Δ=11.382s)
+{"batch": 59, "total_sentences": 345, "seconds": 11.377588792005554, "occupancy": 1980}
+batch = 345 (Δ=10.946s)
+{"batch": 60, "total_sentences": 353, "seconds": 11.026208374998532, "occupancy": 2025}
+batch = 353 (Δ=9.073s)
+{"batch": 61, "total_sentences": 361, "seconds": 8.98042133403942, "occupancy": 2076}
+batch = 361 (Δ=10.083s)
+{"batch": 62, "total_sentences": 369, "seconds": 10.078160042059608, "occupancy": 2134}
+batch = 369 (Δ=9.599s)
+{"batch": 63, "total_sentences": 377, "seconds": 9.59485020802822, "occupancy": 2188}

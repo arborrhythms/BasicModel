@@ -1,0 +1,93 @@
+..F.F.........................                                           [100%]
+=================================== FAILURES ===================================
+___ test_one_empty_region_query_permits_conclude_and_only_source_mints[True] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11ed1df10>
+supported = True
+
+    @pytest.mark.parametrize('supported', [True, False])
+    def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypatch, supported):
+        from test_item6_2_thinking import world, run
+        model, registry, store, (a,b,c) = world()
+        root = registry.form('isPart', a, open_roles=('I2',))
+        root = with_slots(replace(root, mode='assertive' if supported else 'interrogative',
+            bindings={'_formation_records': ({'role':2, 'choice':'open', 'probability':.25},),
+                      '_source_evidence':(1.,0.) if supported else (0.,0.)}),
+            (('referent',2),), pair=(1.,0.) if supported else (0.,0.))
+        chosen=[]
+        def choose(_root,_active,actions,**_kwargs):
+            if None in actions:
+                chosen.append('conclude')
+                return None
+            action = next(action for action in actions if action.semantic_id == 'query')
+            chosen.append('query')
+            return action
+        monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+        model.thought_search_exhaustion = 1
+>       result = run(model, root, work_budget=32)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain_section14.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6038: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6459: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6437: in run_context
+    value = conclude_exhausted(value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtReferences.py:78: in conclude_exhausted
+    return with_slots(replace(meaning, role_refs=tuple(refs),
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:12: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 11), ('sym', 6), ('constituent', 0)), bindings=(...le', 2)),)), ('_open_references', (('referent', 2),)), ('_source_evidence', (1.0, 0.0))), scope=(), sentence_kind=None)
+
+    def __post_init__(self):
+        if not torch.is_tensor(self.roles) or self.roles.ndim != 2 or self.roles.shape[0] != 3:
+            raise ValueError("canonical meaning roles must have shape [3, concept_dim]")
+        roles, mask = canonical_role_payload(
+            self.roles, 3, "infix", self.role_mask)
+        if not bool(mask.any()):
+            raise ValueError("a conceptual meaning requires an occupied role")
+        if self.mode not in ("assertive", "interrogative", "unspecified"):
+            raise ValueError(f"unknown grammatical mode {self.mode!r}")
+        if self.sentence_kind not in (None, 'idea', 'relation'):
+            raise ValueError('sentence kind must be idea, relation or unspecified')
+        refs = _freeze_metadata(self.role_refs)
+        if not isinstance(refs, tuple) or len(refs) != 3:
+            raise ValueError("role references must contain three canonical entries")
+        for present, ref in zip(mask.tolist(), refs):
+            if ref is not None and not present:
+>               raise ValueError("an absent role cannot carry a semantic reference")
+E               ValueError: an absent role cannot carry a semantic reference
+
+bin/Meaning.py:182: ValueError
+____ test_binding_answer_cost_scores_filled_referent_while_relation_is_open ____
+
+    def test_binding_answer_cost_scores_filled_referent_while_relation_is_open():
+        from BindingAnswers import cost, matches
+        value = question(ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
+            role_refs=(None,None,('sym',7)), sentence_kind='relation'))
+        value = fill(value, dict(reference=('sym',5), value=torch.ones(4)), slots=(('referent',0),))
+        model = SimpleNamespace(_concept_owner=lambda:SimpleNamespace(word_concepts=lambda _: (5,)),
+                                symbolSpace=SimpleNamespace(ltm_store=None))
+>       assert open_slots(value) == (('relation',1),)
+E       AssertionError: assert () == (('relation', 1),)
+E         
+E         Right contains one more item: ('relation', 1)
+E         Use -v to get more diff
+
+test/test_math_chain_section14.py:97: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+FAILED test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open
+2 failed, 28 passed, 1 warning in 3.10s

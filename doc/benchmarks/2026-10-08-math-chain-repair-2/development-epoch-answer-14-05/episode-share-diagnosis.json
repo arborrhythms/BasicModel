@@ -1,0 +1,107 @@
+{
+  "kind": "development diagnosis; not a replacement certificate",
+  "fixed_halves": [
+    {
+      "sentences": 607,
+      "episodes": 116,
+      "share": 0.19110378912685339
+    },
+    {
+      "sentences": 608,
+      "episodes": 119,
+      "share": 0.19572368421052633
+    }
+  ],
+  "by_sentence_kind": {
+    "counting_or_worked_successor": [
+      {
+        "sentences": 213,
+        "episodes": 34,
+        "share": 0.1596244131455399
+      },
+      {
+        "sentences": 388,
+        "episodes": 93,
+        "share": 0.23969072164948454
+      }
+    ],
+    "decomposition": [
+      {
+        "sentences": 62,
+        "episodes": 8,
+        "share": 0.12903225806451613
+      },
+      {
+        "sentences": 44,
+        "episodes": 5,
+        "share": 0.11363636363636363
+      }
+    ],
+    "dependent_premise": [
+      {
+        "sentences": 73,
+        "episodes": 12,
+        "share": 0.1643835616438356
+      },
+      {
+        "sentences": 44,
+        "episodes": 5,
+        "share": 0.11363636363636363
+      }
+    ],
+    "statement_reference": [
+      {
+        "sentences": 20,
+        "episodes": 15,
+        "share": 0.75
+      },
+      {
+        "sentences": 0,
+        "episodes": 0,
+        "share": null
+      }
+    ],
+    "variable_value": [
+      {
+        "sentences": 219,
+        "episodes": 32,
+        "share": 0.1461187214611872
+      },
+      {
+        "sentences": 132,
+        "episodes": 16,
+        "share": 0.12121212121212122
+      }
+    ],
+    "vp_statement": [
+      {
+        "sentences": 20,
+        "episodes": 15,
+        "share": 0.75
+      },
+      {
+        "sentences": 0,
+        "episodes": 0,
+        "share": null
+      }
+    ]
+  },
+  "quarters": [
+    {
+      "sentences": 303,
+      "episodes": 104
+    },
+    {
+      "sentences": 304,
+      "episodes": 12
+    },
+    {
+      "sentences": 304,
+      "episodes": 68
+    },
+    {
+      "sentences": 304,
+      "episodes": 51
+    }
+  ]
+}

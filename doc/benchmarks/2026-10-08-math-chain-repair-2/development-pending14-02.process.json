@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders",
+    "--basetemp=doc/benchmarks/2026-10-08-math-chain-repair-2/pending14-02"
+  ],
+  "pid": 86669,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3170192720,
+  "elapsed_seconds": 25.636454374995083,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-pending14-02.log"
+}

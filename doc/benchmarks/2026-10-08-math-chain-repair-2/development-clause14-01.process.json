@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_live_references.py",
+    "test/test_clause_closing.py",
+    "test/test_clause_storage.py",
+    "test/test_sentence_references.py"
+  ],
+  "pid": 88375,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 788694552,
+  "elapsed_seconds": 6.454665333032608,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-clause14-01.log"
+}

@@ -156,20 +156,25 @@ def _sentence_query_mask(method):
     return masked
 
 
-def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1):
+def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1,
+                             written_rows=None):
     """Write the completed field with caller-owned provenance."""
-    from ThoughtReferences import from_closing, open_slots, question
-    meaning = from_closing(clause.meaning, evidence=clause.evidence)
-    # The clause writer installs native references after this boundary. A
-    # well-defined relative row with no evidence already has an open pair.
-    if (clause.relation is not None and clause.evidence == (0., 0.)
-            and all(ref not in (-1, 0) for ref in clause.refs)
-            and store.__dict__.get('_clause_assertion') is None):
-        meaning = question(meaning, (*open_slots(meaning), ('evidence', -1)))
+    from ThoughtReferences import bindings, with_slots
+    # Native/child addresses are installed by write_clause. Before then the
+    # journal's canonical role_refs are not a test of whether binding failed.
+    meaning = with_slots(clause.meaning,
+        bindings(clause.meaning).get('_open_references', ()), pair=clause.evidence)
+    source_clause = clause
     clause = replace(clause, meaning=meaning)
-    kind = 'question' if open_slots(meaning) else 'observation'
-    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
-        evidence=clause.evidence, expectation=expectation)
+    opened = (bool(bindings(meaning).get('_open_references')) or
+              (clause.relation is not None and any(ref in (-1, 0) for ref in clause.refs)))
+    kind = ('question' if opened or (meaning.mode == 'interrogative'
+                                    and clause.evidence == (0., 0.)) else 'observation')
+    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+        evidence=clause.evidence, expectation=expectation, written_rows=written_rows)
+    if written_rows is not None:
+        written_rows[id(source_clause)] = result
+    return result
 
 
 def _is_external_expectation_observation(discourse):
@@ -2214,6 +2219,10 @@ class BaseModel(Mereology, nn.Module):
         # Zero disables this API; it never attaches a second result to an answer.
         self.attention_budget = max(0, int(TheXMLConfig.get(
             "architecture.attentionBudget", default=32) or 0))
+        self.thought_search_exhaustion = int(TheXMLConfig.get(
+            'architecture.thoughtSearchExhaustion', default=1))
+        if self.thought_search_exhaustion < 1:
+            raise ValueError('thoughtSearchExhaustion must be positive')
 
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
@@ -5724,7 +5733,7 @@ class BasicModel(BaseModel):
         stream = meaning.roles
         symbol_space = getattr(self, 'symbolSpace', None)
         concept_owner = self._concept_owner()
-        primed = concept_owner.priming_weights()
+        primed = concept_owner.priming_weights(batch=self._priming_batch_size())
         primed = None if primed is None else primed[row]
 
         from reasoning import TruthGroundedReasoner
@@ -5860,7 +5869,7 @@ class BasicModel(BaseModel):
         observed = active.roles.detach() if comparison is None else comparison.observed.to(active.roles)
         presence = (active.roles.new_zeros(3) if comparison is None
                     else comparison.estimate.presence_logits.sigmoid().to(active.roles))
-        closing = getattr(self, '_closing_images', {}).get(row)
+        closing = getattr(self, '_thought_image', None)
         conceived = observed if closing is None else closing.conceived.to(active.roles)
         return torch.cat((conceived.reshape(-1), presence, mask,
                           active.roles.new_tensor([comparison is not None]))).detach()
@@ -5977,21 +5986,26 @@ class BasicModel(BaseModel):
         chooser = self._selected_thought_chooser(active)
         # The next sentence may arrive after other owners update. Preserve
         # this decision's forward values while retaining its parameter credit.
-        image = getattr(self, '_closing_images', {}).get(row)
+        image = getattr(self, '_thought_image', None)
         viewed = (replace(active, roles=active.roles+image.image.to(active.roles))
                   if image is not None and image.image.shape == active.roles.shape else active)
-        with torch.autograd.graph.saved_tensors_hooks(lambda tensor: tensor.clone(), lambda tensor: tensor):
-            logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
         walk = getattr(self, '_thought_walk', None)
+        policy_grad = walk is None or len(walk['actions']) == walk.get('departure', -1)
+        with torch.set_grad_enabled(torch.is_grad_enabled() and policy_grad), \
+                torch.autograd.graph.saved_tensors_hooks(lambda tensor: tensor.clone(), lambda tensor: tensor):
+            logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
         replay = masked = None
         if walk is not None:
             step = len(walk['actions'])
-            exploit = walk['exploit']
-            if exploit is not None and step < len(exploit):
+            if step == walk.get('departure', -1) and walk.get('excluded') is not None:
+                masked = torch.tensor([walk['excluded']], device=logits.device)
+            # Anticipatory predictor comparisons have their own held forecast
+            # protocol. Ordinary thought episodes use only the fork above.
+            elif walk.get('exploit') is not None and step < len(walk['exploit']):
                 if step < walk['departure']:
-                    replay = torch.tensor([exploit[step]], device=logits.device)
+                    replay = torch.tensor([walk['exploit'][step]], device=logits.device)
                 elif step == walk['departure']:
-                    masked = torch.tensor([exploit[step]], device=logits.device)
+                    masked = torch.tensor([walk['exploit'][step]], device=logits.device)
         chosen, probability, valid = chooser.select_logits(logits,
             structural=(True,)*len(actions), masked_action=masked, replay_action=replay,
             departure_eligible=torch.isfinite(logits))
@@ -6010,11 +6024,11 @@ class BasicModel(BaseModel):
     def run_selected_thought(self, meaning, *, row=0, work_budget=32,
                              registry=None, work=None, score=None):
         """One open row, one grammar chooser, one shared budget and paired credit."""
-        from ThoughtReferences import open_slots
+        from ThoughtReferences import needs_episode
         from ThoughtStream import commit
         self._last_thought_comparison = None
         self._assert_query_boundary(row)
-        if not open_slots(meaning):
+        if not needs_episode(meaning):
             meter = QueryWorkBudget(work_budget) if work is None else work
             return SelectedThoughtResult(meaning, dict(support_true=0., support_false=0.,
                 evidence_kind='bound', incomplete=()), meter, (), None)
@@ -6023,13 +6037,18 @@ class BasicModel(BaseModel):
             result = thought_pair(self, meaning, row=row, work_budget=work_budget,
                 registry=registry, work=work, score=score)
         else:
-            result = self._run_selected_thought_once(meaning, row=row,
-                work_budget=work_budget, registry=registry, work=work)
+            from WalkTrials import ThoughtTrialState
+            before = ThoughtTrialState(self)
+            try:
+                result = self._run_selected_thought_once(meaning, row=row,
+                    work_budget=work_budget, registry=registry, work=work)
+            finally:
+                before.restore(effects_only=True)
         commit(self, result, row=row)
         return result
 
     def _run_selected_thought_once(self, meaning, *, row=0, work_budget=32,
-                                  registry=None, work=None):
+                                  registry=None, work=None, fork=None):
         """Execute one completed grammatical question as an ordinary episode.
 
         Composition only supplies ``meaning``.  This method is deliberately
@@ -6047,7 +6066,7 @@ class BasicModel(BaseModel):
         """
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("selected thought requires a complete ConceptualMeaning")
-        from ThoughtReferences import open_slots, evidence_pair
+        from ThoughtReferences import open_slots, evidence_pair, needs_episode, conclude_exhausted
         from ThoughtStream import candidates as stream_candidates, integrate
         if type(row) is not int or row < 0:
             raise ValueError("selected thought row must be a non-negative integer")
@@ -6066,12 +6085,21 @@ class BasicModel(BaseModel):
             raise RuntimeError("selected thought requires the interaction memory owner")
 
         meter = QueryWorkBudget(work_budget) if work is None else work
-        initial_spend = meter.spent
-        root = memory.begin_thought_episode(meaning, b=row, work_budget=meter.remaining)
-        episode = root.episode
-        recorded_spend = initial_spend
+        if fork is None:
+            initial_spend = meter.spent
+            root = memory.begin_thought_episode(meaning, b=row, work_budget=meter.remaining)
+            episode = root.episode
+            recorded_spend = initial_spend
+        else:
+            initial_spend, episode, recorded_spend = fork['clock']
 
         def reference(record):
+            if fork is not None:
+                # The continuation and the restored history are detached
+                # values of the same owned occurrence, not the same Python
+                # object. Resolve its address in that restored owner.
+                record = next((owned for owned in memory.thought_history(b=row)
+                    if owned.id == record.id and owned.episode == record.episode), record)
             return memory.thought_reference(record, b=row)
 
         def support(value):
@@ -6157,7 +6185,7 @@ class BasicModel(BaseModel):
             recorded_spend = meter.spent
             return record
 
-        def exhausted(current):
+        def exhausted(current, reason="work_budget"):
             positive, negative = evidence_pair(current)
             outcome = {
                 "meaning": current,
@@ -6166,13 +6194,14 @@ class BasicModel(BaseModel):
                     "support_false": negative,
                     "evidence_kind": "subgoal",
                     "query_signature": None,
-                    "incomplete": ("work_budget",),
+                    "incomplete": (reason,),
                 },
                 "result": None,
                 "record": None,
             }
             state = memory.thought_state(b=row)
-            if state is not None and not state.forced and meter.spent > recorded_spend:
+            if (reason == "work_budget" and state is not None and not state.forced
+                    and meter.spent > recorded_spend):
                 # Context reads can spend the last unit before any executor
                 # runs. Record that already-paid work, inducing the ordinary
                 # cutoff; the subsequent return/finish drain costs nothing.
@@ -6193,6 +6222,28 @@ class BasicModel(BaseModel):
 
         unselected = object()
 
+        def search_exhausted():
+            # The episode's owned serial query results are the search record;
+            # no second pending-question cache or lasting search state exists.
+            state = memory.thought_state(b=row)
+            misses = 0
+            for record in reversed(memory.thought_history(b=row)):
+                if record.episode != episode or record.level != state.level:
+                    continue
+                result = record.result
+                if record.kind != 'thought' or result is None or result.semantic_id != 'query':
+                    continue
+                evidence = result.evidence
+                if evidence.get('frames') or evidence.get('incomplete'):
+                    break
+                misses += 1
+                if misses >= getattr(self, 'thought_search_exhaustion', 1):
+                    return True
+            return False
+
+        def can_conclude(current):
+            return not needs_episode(current) or not meter.remaining or search_exhausted()
+
         def execute(current, *, actions=None, evidence_context=None,
                     action=unselected):
             """Run one selected VP; nested ``what`` uses this same closure.
@@ -6208,7 +6259,7 @@ class BasicModel(BaseModel):
             if state is None or state.forced:
                 return exhausted(current)
             if actions is None:
-                actions = tuple(candidates(current, state)) + (() if open_slots(current) else (None,))
+                actions = tuple(candidates(current, state)) + ((None,) if can_conclude(current) else ())
             else:
                 actions = tuple(actions)
             if action is unselected:
@@ -6217,12 +6268,16 @@ class BasicModel(BaseModel):
                     level=state.level, pressure=state.pressure,
                     evidence=evidence_context, work=meter)
             elif action not in actions:
+                if action is None and not can_conclude(current):
+                    raise ValueError('cannot conclude with open references and work remaining')
                 raise ValueError("selected thought chose an unavailable action")
             if action is None:
-                if open_slots(current) and meter.remaining:
+                if not can_conclude(current):
                     raise ValueError("cannot conclude with open references and work remaining")
                 if not meter.consume("controller"):
                     return exhausted(current)
+                if search_exhausted():
+                    current = conclude_exhausted(current)
                 evidence = {
                     "support_true": 0.0,
                     "support_false": 0.0,
@@ -6242,49 +6297,27 @@ class BasicModel(BaseModel):
             # before the executor can inspect a native reference or evidence.
             if not meter.consume("controller"):
                 return exhausted(goal)
-            child_result = None
+            child_pending = None
             parent_record = None
-            child_return = None
 
             def schedule_subgoal(child):
-                """The checked ``what(Q)`` callback: descend/return in order."""
-                nonlocal child_result, parent_record, child_return
+                """Suspend this checked ask after its paid descent."""
+                nonlocal child_pending, parent_record
                 if not isinstance(child, ConceptualMeaning):
-                    raise TypeError("ask(row) supplied no complete open-reference row")
-                # ``what`` has already paid for its own VP/read/operation.
-                parent_record = event(
-                    "thought", current,
-                    {"support_true": 0.0, "support_false": 0.0,
-                     "evidence_kind": "subgoal", "query_signature": "ask",
-                     "incomplete": ()},
+                    raise TypeError('ask(row) supplied no complete open-reference row')
+                parent_record = event('thought', current,
+                    dict(support_true=0., support_false=0., evidence_kind='subgoal',
+                         query_signature='ask', incomplete=()),
                     operation=selected.semantic_id, sources=refs(current))
-                if memory.thought_state(b=row).forced:
+                if memory.thought_state(b=row).forced or not meter.consume('controller'):
                     return None
-                if not meter.consume("controller"):
-                    return None
-                descent = event(
-                    "descend", child,
-                    {"support_true": 0.0, "support_false": 0.0,
-                     "evidence_kind": "subgoal", "query_signature": "ask",
-                     "incomplete": ()},
-                    operation="descend",
-                    sources=refs(child, reference(parent_record)))
-                child_result = run_context(child)
-                child_record = child_result.get("record")
-                state_after_child = memory.thought_state(b=row)
-                if state_after_child is None:
-                    raise RuntimeError("selected child lost its thought history")
-                if not state_after_child.forced:
-                    if not meter.consume("controller"):
-                        return child_result.get("result")
-                child_return = event(
-                    "return", child_result["meaning"], child_result["evidence"],
-                    operation="return",
-                    sources=refs(current, reference(descent),
-                                 (reference(child_record)
-                                  if child_record is not None else None)),
-                    result=child_result.get("result"))
-                return child_result.get("result")
+                descent = event('descend', child,
+                    dict(support_true=0., support_false=0., evidence_kind='subgoal',
+                         query_signature='ask', incomplete=()),
+                    operation='descend', sources=refs(child, reference(parent_record)))
+                child_pending = dict(child=child, goal=goal, request=current,
+                                     parent=parent_record, descent=descent)
+                return None
 
             try:
                 # Each selected request is a completed thought boundary;
@@ -6296,7 +6329,8 @@ class BasicModel(BaseModel):
                     from ThoughtStream import materialize
                     raw = materialize(raw)
                     from AccessibleMind import apply_thought_effect
-                    apply_thought_effect(self, raw, row=row, work=meter)
+                    if child_pending is None:
+                        apply_thought_effect(self, raw, row=row, work=meter)
             except Exception:
                 # Do not leave an active live episode behind if a checked
                 # executor rejects malformed runtime evidence.  The original
@@ -6310,35 +6344,13 @@ class BasicModel(BaseModel):
                         memory.return_thought(current, b=row)
                     memory.finish_thought(current, b=row)
                 raise
+            if child_pending is not None:
+                return dict(child_pending, template=raw)
             evidence, checked = normalized(raw)
-            if (parent_record is not None and child_result is None
-                    and memory.thought_state(b=row).forced):
-                # what already recorded its parent and exhausted the meter
-                # before a child could begin. Only the existing finish drain
-                # is legal; never append another ordinary thought at cutoff.
+            if parent_record is not None and memory.thought_state(b=row).forced:
                 evidence = dict(evidence, incomplete=tuple(dict.fromkeys(
                     (*evidence['incomplete'], 'work_budget'))))
-                return {'meaning': goal, 'evidence': evidence,
-                        'result': checked, 'record': parent_record}
-            if child_result is not None:
-                # A ``what`` result is the child result, not a new proposition
-                # established by the outer question.  The parent return and
-                # root finish retain this causal evidence explicitly.
-                evidence = dict(child_result["evidence"])
-                evidence["query_signature"] = "ask"
-                if parent_record is None:  # pragma: no cover - callback invariant
-                    raise RuntimeError("selected what query omitted its parent record")
-                from ThoughtReferences import fill
-                child_evidence = dict(child_result['evidence'], meaning=child_result['meaning'])
-                child_evidence['witnesses'] = tuple(dict(child_result['meaning'].bindings).get('_thought_witnesses', ()))
-                try:
-                    asking = registry.signature_for(goal, verify_reference=False).operation.semantic_id == 'ask'
-                except (ValueError, TypeError):
-                    asking = False
-                resolved = (child_result['meaning'] if asking else
-                    fill(goal, child_evidence, witnesses=child_evidence['witnesses'], operation='ask'))
-                return {"meaning": resolved, "evidence": evidence,
-                        "result": checked, "record": child_return or parent_record}
+                return dict(meaning=goal, evidence=evidence, result=checked, record=parent_record)
             record = event("thought", current, evidence,
                            operation=selected.semantic_id,
                            sources=refs(current), result=checked)
@@ -6350,45 +6362,104 @@ class BasicModel(BaseModel):
             return {"meaning": resolved, "evidence": evidence,
                     "result": checked, "record": record}
 
+        def return_child(parent, child):
+            """Resume the already checked ask; no prefix read or operation repeats."""
+            current, goal = parent['request'], parent['goal']
+            state = memory.thought_state(b=row)
+            if state is None:
+                raise RuntimeError('selected child lost its thought history')
+            if not state.forced:
+                meter.consume('controller')
+            child_record = child.get('record')
+            from Queries import _freeze_boundary_value
+            from ThoughtFaces import returned_subgoal
+            template = parent['template']
+            child_data = dict(returned_subgoal(child.get('result')))
+            child_data.update(meaning=child['meaning'], returned_meaning=child['meaning'])
+            from ThoughtReferences import bindings
+            if bindings(child['meaning']).get('_derived_binding') and child_record is not None:
+                child_data['derivation_witness'] = reference(child_record)
+            raw = replace(template, evidence=_freeze_boundary_value(dict(template.evidence, **child_data)))
+            from ThoughtStream import materialize
+            raw = materialize(raw)
+            returned = event('return', child['meaning'], child['evidence'], operation='return',
+                sources=refs(current, reference(parent['descent']),
+                    reference(child_record) if child_record is not None else None), result=raw)
+            from AccessibleMind import apply_thought_effect
+            apply_thought_effect(self, raw, row=row, work=meter)
+            evidence = dict(child['evidence'], query_signature='ask')
+            try:
+                asking = registry.signature_for(goal, verify_reference=False).operation.semantic_id == 'ask'
+            except (ValueError, TypeError):
+                asking = False
+            history = tuple(item for item in memory.thought_history(b=row)
+                if item.episode == episode and item.level == memory.thought_state(b=row).level)
+            resolved = child['meaning'] if asking else integrate(registry, goal, raw, history)
+            return dict(meaning=resolved, evidence=evidence, result=raw, record=returned)
+
         def run_context(current):
-            """Use the same recurrent choice loop at every execution level."""
-            outcome = execute(current)
-            # A completed result is available to a second hard choice at the
-            # same root level.  The safe zero-initialised ordering puts the
-            # non-semantic conclusion first after actual evidence exists;
-            # exploratory policy sampling may select any newly compatible
-            # grammar operation, each charged and recorded on this one owner.
-            while outcome["record"] is not None:
+            """An explicit continuation stack makes every nested departure forkable."""
+            outcome, parents = None, []
+            if fork is not None:
+                current, outcome, parents = fork['continuation']
+                parents = list(parents)
+            while True:
                 state = memory.thought_state(b=row)
-                if state is None or state.forced:
-                    break
-                actions = (() if open_slots(outcome["meaning"]) else (None,)) + tuple(candidates(outcome["meaning"], state))
-                action = self._choose_selected_thought_action(
-                    meaning, state.contexts[-1].meaning, actions,
-                    row=row, level=state.level, pressure=state.pressure,
-                    evidence=outcome["evidence"], work=meter)
-                if action is None:
-                    if open_slots(outcome["meaning"]) and meter.remaining:
-                        raise ValueError("cannot conclude with open references and work remaining")
-                    # This is the required concluding ordinary thought before
-                    # the separate root-finish transition.  At cutoff only
-                    # the bounded finish drain is legal, so do not invent a
-                    # same-level event when the charge cannot be reserved.
-                    if meter.consume("controller"):
-                        conclusion = event(
-                            "thought", outcome["meaning"], outcome["evidence"],
-                            operation="conclude",
-                            sources=refs(
-                                outcome["meaning"],
-                                reference(outcome["record"])))
-                        outcome = dict(outcome, record=conclusion)
+                complete = state is None or state.forced or (outcome is not None and outcome['record'] is None)
+                if complete:
+                    outcome = exhausted(current) if outcome is None else outcome
+                else:
+                    value = current if outcome is None else outcome['meaning']
+                    if outcome is None:
+                        actions = tuple(candidates(value, state)) + ((None,) if can_conclude(value) else ())
+                        evidence_context = None
                     else:
-                        outcome = exhausted(outcome["meaning"])
-                    break
-                outcome = execute(outcome["meaning"], actions=(action,),
-                                  evidence_context=outcome["evidence"],
-                                  action=action)
-            return outcome
+                        actions = ((None,) if can_conclude(value) else ()) + tuple(candidates(value, state))
+                        evidence_context = outcome['evidence']
+                    if not actions:
+                        # With no legal operation there is no further work.
+                        # Finish with the reference open, without concluding it.
+                        outcome = exhausted(value, reason='no_legal_operation')
+                        if not parents:
+                            return outcome
+                        outcome = return_child(parents.pop(), outcome)
+                        current = outcome['meaning']
+                        continue
+                    action = self._choose_selected_thought_action(
+                        meaning, state.contexts[-1].meaning, actions, row=row,
+                        level=state.level, pressure=state.pressure,
+                        evidence=evidence_context, work=meter)
+                    walk = getattr(self, '_thought_walk', None)
+                    if walk is not None and walk.get('collect_fork') and walk.get('eligible', ()):
+                        from WalkTrials import capture_thought_fork
+                        capture_thought_fork(self, walk, meter,
+                            continuation=(current, outcome, tuple(parents)),
+                            clock=(initial_spend, episode, recorded_spend))
+                    if action is None and outcome is not None:
+                        if not can_conclude(value):
+                            raise ValueError('cannot conclude with open references and work remaining')
+                        if meter.consume('controller'):
+                            if search_exhausted():
+                                value = conclude_exhausted(value)
+                                outcome = dict(outcome, meaning=value)
+                            conclusion = event('thought', value, outcome['evidence'], operation='conclude',
+                                sources=refs(value, reference(outcome['record'])))
+                            outcome = dict(outcome, record=conclusion)
+                        else:
+                            outcome = exhausted(value)
+                        complete = True
+                    else:
+                        outcome = execute(value, actions=actions, evidence_context=evidence_context, action=action)
+                        if 'child' in outcome:
+                            parents.append(outcome)
+                            current, outcome = outcome['child'], None
+                            continue
+                        current = outcome['meaning']
+                if complete:
+                    if not parents:
+                        return outcome
+                    outcome = return_child(parents.pop(), outcome)
+                    current = outcome['meaning']
 
         try:
             outcome = run_context(meaning)
@@ -6426,17 +6497,17 @@ class BasicModel(BaseModel):
 
     def _run_selected_sentence_thoughts(self, fields, *, work_budget=None, score=None):
         """Every closing with an open reference can enter the ordinary episode."""
-        from ThoughtReferences import open_slots
+        from ThoughtReferences import needs_episode
         registry = _boundary_registry(self)
         if registry is None:
             return ()
         budget = self.attention_budget if work_budget is None else work_budget
         results = []
         for row, field in enumerate(fields):
-            if field is None:
+            if field is None or getattr(field, 'thought_completed', False):
                 continue
             question = field.query if field.query is not None else field.meaning
-            if open_slots(question):
+            if needs_episode(question):
                 results.append((row, self.run_selected_thought(question, row=row,
                     work_budget=budget, registry=registry,
                     score=None if score is None else lambda result,row=row:score(row,result))))
@@ -6629,6 +6700,15 @@ class BasicModel(BaseModel):
         return cid
 
     @torch.no_grad()
+    def _priming_batch_size(self):
+        """The loader's current forward size, without a stream-state registry."""
+        active = getattr(getattr(self, 'inputSpace', None), '_word_active_mask', None)
+        if torch.is_tensor(active):
+            return int(active.shape[0])
+        staged = getattr(self, '_staged_concepts_in', None)
+        return int(staged.shape[0]) if torch.is_tensor(staged) else None
+
+    @torch.no_grad()
     def _assemble_relevance_priority(self, cut_cs, stage, last_cs, settled):
         """The simplified relevance law (Architecture sec C): ONE quadratic
         priming surface per space -- SEEN rows primed by being perceived,
@@ -6637,7 +6717,7 @@ class BasicModel(BaseModel):
         (boost - 1: neutral 0, desire positive, hate negative). Pure READ:
         the SEEN/DESIRE writes live in ``_prime_seen_step`` (unconditional,
         both paths, once per batch)."""
-        b = cut_cs.priming_weights()
+        b = cut_cs.priming_weights(batch=self._priming_batch_size())
         if b is None:
             return None
         return (b - 1.0).transpose(0, 1)               # [N, 1] signed score
@@ -6682,7 +6762,7 @@ class BasicModel(BaseModel):
                 getattr(self, "perceptualSpace", None),
                 (self.wholeSpaces[-1]
                  if getattr(self, "wholeSpaces", None) else None),
-                gain=self.priming_spread)
+                gain=self.priming_spread, batch=self._priming_batch_size())
 
     def _prime_sentence_symbols(self, sid):
         """Snapshot per-stream seen symbols before either trial is composed."""
@@ -9729,6 +9809,9 @@ class BasicModel(BaseModel):
                  self.__dict__.get("_ws_universe"))
         try:
             with self._synthesis_guard():
+                # A target's local stem shape cannot resize or clear the
+                # live source streams (attention, thought and discourse).
+                object.__setattr__(self.inputSpace, '_model_symbolSpace', None)
                 for space in (getattr(self, "inputSpace", None),
                               getattr(self, "perceptualSpace", None),
                               getattr(self, "conceptualSpace", None),
@@ -9736,7 +9819,7 @@ class BasicModel(BaseModel):
                     if space is not None:
                         object.__setattr__(space, "_online_learning_frozen", True)
                 prepared = self.inputSpace.prepInput(list(texts))
-                in_sub = self._lex_embed_stem(prepared)
+                in_sub = self._lex_embed_stem(prepared, target_only=True)
                 event = (in_sub.materialize()
                          if hasattr(in_sub, "materialize") else in_sub)
                 if not torch.is_tensor(event):
@@ -12771,6 +12854,9 @@ class BasicModel(BaseModel):
         the answer record never stores the source text that supplied it.
         """
         positions, actions, targets, columns = program
+        log_probabilities = getattr(self._reconstruction_stack(), '_choice_log_probabilities', None)
+        probabilities = (None if log_probabilities is None else
+                         log_probabilities.gather(1, columns.clamp_min(0)).detach().exp())
         journal = getattr(self._reconstruction_stack(), "_choice_values", None)
         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
         relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
@@ -12826,6 +12912,8 @@ class BasicModel(BaseModel):
                     addresses[b, columns[b, :L].clamp_min(0)]),
                 operation_relations=(None if relations is None else
                                      relations[b, columns[b, :L].clamp_min(0)]),
+                binding_choices=bool(getattr(self, '_component_reading', False)),
+                operation_probabilities=None if probabilities is None else probabilities[b, :L],
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),
@@ -13007,7 +13095,7 @@ class BasicModel(BaseModel):
                 ws._predicate_masks()     # prime the host masks (main thread)
         isp._unit_span_fn = fn
 
-    def _lex_embed_stem(self, x):
+    def _lex_embed_stem(self, x, *, target_only=False):
         """Eager stem: lex (InputSpace) -> embed (PartSpace) -> finalize
         bookkeeping (InputSpace), model-orchestrated (2026-06-07).
 
@@ -13027,7 +13115,9 @@ class BasicModel(BaseModel):
         ``_staged_concepts_in`` for the symbolic branch (Phase 1: staged,
         UNUSED; Phase 2 consumes it at WS stage 0). This unpack is the
         orchestration-side shim the plan allows -- downstream contracts are
-        unchanged.
+        unchanged. ``target_only`` stops after percept embedding: a loss-side
+        text target must not open attention, stage expectations or bind the
+        teacher's live source addresses.
         """
         # Keep the gated word-major radix mode in sync with the model flag on
         # every forward.  Tests/ablations may toggle ``serialObjectMeta`` on a
@@ -13137,15 +13227,20 @@ class BasicModel(BaseModel):
                 _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
                               for row in _spans_full.detach().to("cpu")]
             object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
-            self._observe_word_units(concepts_in, _unit_rows)
+            if not target_only:
+                self._observe_word_units(concepts_in, _unit_rows)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+            if target_only:
+                return in_sub
             self._record_unit_pulls(_ws_list[0] if _ws_list else None)
             self._pad_staged_unit_maps(_ws_list[0] if _ws_list else None)
             self._ensure_pid_byte_table()
+        if target_only:
+            return in_sub
         self._ensure_chunk_machinery()
         # Resolve sparse concept identities only after the word-major PS stem
         # has exposed its exact residual parts and WS has staged the matching
@@ -13240,9 +13335,6 @@ class BasicModel(BaseModel):
         A head first enabled after optimizer construction joins the next
         training step through the existing fresh-parameter adoption boundary.
         """
-        if not enabled:
-            from ThoughtCredit import finish_documents
-            finish_documents(self, tuple(getattr(self, '_pending_thought_credit', {})))
         symbol_space = self.symbolSpace
         if symbol_space is None:
             raise RuntimeError("sentence expectation requires SymbolSpace")
@@ -13695,8 +13787,7 @@ class BasicModel(BaseModel):
         self._sentence_reconstructions = []
         self._objective_gradient_writers = {}
         # Keep the initial and later compiled entries structurally identical.
-        self._compose_exploit_actions = self._compose_forced_slots = None
-        self._compose_prefix_slots = None
+        self._compose_fork = self._compose_forced_slots = None
         self._compose_sampling_scale = None
         # Perception is shared by two backward/step pairs. Saved values must
         # remain those of its one forward even when the first update mutates
@@ -13713,8 +13804,7 @@ class BasicModel(BaseModel):
             self._sentence_optimizer = None
             self._sentence_amp_scaler = None
             self._sentence_pullback = None
-            self._compose_exploit_actions = self._compose_forced_slots = None
-            self._compose_prefix_slots = None
+            self._compose_fork = self._compose_forced_slots = None
             self._compose_sampling_scale = None
 
             self._sentence_training = False
@@ -15882,7 +15972,7 @@ class BasicModel(BaseModel):
 
         self.bindingDepth = bindingDepth
         self.attention_budget = int(TheXMLConfig.get('architecture.attentionBudget',default=32))
-        if self.attention_budget < 1:raise ValueError('attentionBudget must be positive')
+        if self.attention_budget < 0:raise ValueError('attentionBudget must be nonnegative')
         self.concept_order_limit = max(0,int(TheXMLConfig.get('architecture.conceptLayers',default=2))-1)
 
         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
@@ -15933,6 +16023,7 @@ class BasicModel(BaseModel):
         self.allow_contradiction = int(
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
+        self.equality_loss_weight = float(TheXMLConfig.training("equalityLossWeight", default=0.0) or 0.0)
         if float(TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0):
             raise ValueError("answerLossWeight is retired; use the paired grammar cost")
         if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
@@ -17944,7 +18035,6 @@ class BasicModel(BaseModel):
             state, gate, slots=slots, allowance=allowance, rounds_left=rounds_left,
             previous_unary=history, sample=False,
             masked_action=self._compose_masked_action(trace_slot, state[1]),
-            replay_action=self._compose_replayed_action(trace_slot, state[1]),
             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
         next_state = self.conceptualSpace.apply_language_choice(state, choice)
         stm._last_unary = self.languageSpace.update_unary_history(history, choice)
@@ -17991,44 +18081,8 @@ class BasicModel(BaseModel):
             active = active & applied
 
     def _compose_masked_action(self, slot, like):
-        return self._compose_action_constraint(slot, like, '_compose_forced_slots')
-
-    def _compose_replayed_action(self, slot, like):
-        return self._compose_action_constraint(slot, like, '_compose_prefix_slots')
-
-    def _compose_action_constraint(self, slot, like, constraint):
-        actions = getattr(self, '_compose_exploit_actions', None)
-        forced = getattr(self, constraint, None)
-        if slot is None or actions is None or forced is None:
-            return None
-        index = torch.as_tensor(slot, device=like.device, dtype=torch.long).reshape(-1, 1).expand(actions.shape[0], 1)
-        chosen = actions.gather(1, index.clamp(0, actions.shape[1] - 1)).reshape(-1)
-        mask = forced.gather(1, index.clamp(0, forced.shape[1] - 1)).reshape(-1)
-        return torch.where(mask, chosen, -1)
-
-    def _exploration_prefix_slots(self, actions, forced, owners):
-        """Chronological prefix per sentence, including interleaved closing slots.
-
-        Neither trial has updated the parameters yet. Replaying the hard
-        choices preserves the zero-temperature counterfactual's prefix,
-        while recomputing candidates and their live credit for its own graph.
-        """
-        words = self.inputSpace._word_active_mask.shape[1]
-        closing = max(1, 2 * int(self.conceptualSpace.stm.capacity))
-        order = []
-        for word in range(words):
-            order.extend(range(3 * word, 3 * word + 3))
-            if word + 1 < words:
-                begin = 3 * words + (word + 1) * closing
-                order.extend(range(begin, begin + closing))
-        order.extend(range(3 * words, 3 * words + closing))
-        order = [slot for slot in order if slot < actions.shape[1]]
-        ranks = torch.tensor(order, device=actions.device).argsort()[None, :]
-        prefix = torch.zeros_like(forced)
-        for sid in range(int(owners.max().detach()) + 1):
-            chosen = torch.where(forced & (owners == sid), ranks, actions.shape[1]).amin(1)
-            prefix |= (owners == sid) & (ranks < chosen[:, None]) & (actions >= 0)
-        return prefix
+        fork = getattr(self, '_compose_fork', None)
+        return None if slot is None or fork is None else fork.mask(slot)
 
     def _record_operation_choice(self, slot, choice, state):
         trace = self._reconstruction_stack()
@@ -19686,6 +19740,7 @@ class BasicModel(BaseModel):
         trace._choice_ref_relations = lang[24]
         trace._choice_alternative_counts = lang[26]
         trace._choice_explorable = lang[26] > 0
+        trace._choice_log_probabilities = lang[27]
         self._packed_sentence_roots = lang[9]
         self._tensor_sentence_roots_live = lang[13]
         self._tensor_sentence_roots_depth = lang[14]
@@ -19901,6 +19956,13 @@ class BasicModel(BaseModel):
                               torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
         observation = self._sentence_observation(state, sid, active)
         observation['record'] = record
+        if getattr(self, 'equality_loss_weight', 0.) > 0:
+            from EqualityLearning import cost as equality_cost
+            equal_cost, equal_counts = equality_cost(self.languageSpace,
+                observation['entries'], active, root)
+            self._last_equality_learning = dict(cost=equal_cost.detach(), counts=equal_counts)
+            errors.add('expectation.equal', equal_cost, weight=self.equality_loss_weight,
+                       category='expectation')
         observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
             if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
         observation['walk_loss'] = (self._decomposition_walk_teacher_loss(observation, record)
@@ -20177,15 +20239,20 @@ class BasicModel(BaseModel):
             view['roles'] = [None if source['roles'] is None else source['roles'][b]
                              for b, source in enumerate(chosen)]
         from ClauseJournal import finish_clause
-        def frozen_values(admitted, scored):
+        def frozen_values(admitted, scored, retained=None):
+            retained = {} if retained is None else retained
+            if id(admitted) in retained:
+                return retained[id(admitted)]
             if (len(admitted.children) != len(scored.children)
                     or len(admitted.companions) != len(scored.companions)):
                 raise RuntimeError('admission changed the selected clause structure')
-            return replace(admitted, point=scored.point,
+            value = replace(admitted, point=scored.point,
                 meaning=replace(admitted.meaning, roles=scored.meaning.roles,
                                 role_mask=scored.meaning.role_mask),
-                children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
-                companions=tuple(frozen_values(a, s) for a, s in zip(admitted.companions, scored.companions)))
+                children=tuple(frozen_values(a, s, retained) for a, s in zip(admitted.children, scored.children)),
+                companions=tuple(frozen_values(a, s, retained) for a, s in zip(admitted.companions, scored.companions)))
+            retained[id(admitted)] = value
+            return value
         view['clauses'] = [None if entry is None else frozen_values(
             finish_clause(self.languageSpace, entry, meaning=view['meanings'][b],
                                 registry=_boundary_registry(self)), chosen[b]['clauses'][b])
@@ -20205,7 +20272,7 @@ class BasicModel(BaseModel):
                 sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
             disc.detach_prediction_context()
         from Meaning import ClosingImage
-        images = self.__dict__.setdefault('_closing_images', {})
+        images = {}
         for b, meaning in enumerate(view['meanings']):
             if meaning is None or not bool(active[b]):
                 continue
@@ -20236,6 +20303,7 @@ class BasicModel(BaseModel):
             image_max={b:float(v.image.abs().max()) for b,v in images.items()})
         store = getattr(self.symbolSpace, 'ltm_store', None)
         row_ids = [-1] * len(rows)
+        written_clauses = [{} for _ in rows]
         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
             retain = _is_external_expectation_observation(disc)
             for b, payload in enumerate(view['payloads']):
@@ -20271,7 +20339,7 @@ class BasicModel(BaseModel):
                                       timestamp=float(getattr(self, 'when_time', store._next_ts))):
                     row = _append_observed_meaning(store, clause,
                         trust=self.conceptualSpace._incoming_trust_multiplier(),
-                        expectation=comparison, stream=b)
+                        expectation=comparison, stream=b, written_rows=written_clauses[b])
                 if row >= 0:
                     row_ids[b] = int(store.row_ids[row])
                     store.witness_adjacency(row, identified_codes)
@@ -20302,7 +20370,8 @@ class BasicModel(BaseModel):
                 refs = tuple(ref if type(ref) is int and ref not in (-1, 0) else -1 for ref in clause.refs)
             parsed = (self.languageSpace.program_meaning(entries[b], registry)
                       if registry is not None else None)
-            query = closing_question(meaning, clause, parsed, entries[b])
+            query = closing_question(meaning, clause, parsed, entries[b],
+                                     store=store, written_rows=written_clauses[b])
             fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query,
                 clause.order if index is None else int(store.order[index]),
                 clause.evidence if index is None else (float(store.c_plus[index]), float(store.c_minus[index])),
@@ -20314,11 +20383,11 @@ class BasicModel(BaseModel):
         score_thought, thought_readers = scorer(self, state, view, sid)
         ready = tuple(b for b, field in enumerate(fields) if field is not None and bool(active[b]))
         with self._committed_thought_scope(sid, ready):
-            closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+            closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)
         train_readers(self, thought_readers)
         for row, result in closed_thoughts:
             from ThoughtReferences import open_slots
-            if not open_slots(result.meaning):
+            if not open_slots(result.meaning) and int(result.meaning.role_mask.sum()) in (1, 3):
                 _bound, view = bound_view(state, view, sid, row, result.meaning)
                 self._last_sentence_understanding = view['record']
                 self._sentence_understandings[sid] = view['record']
@@ -20382,11 +20451,14 @@ class BasicModel(BaseModel):
         return ReferenceTypes(sources, sources.new_tensor(orders), identities, values)
 
     def _sentence_reference_bank(self, active, like):
-        """Read only the predictor's bounded situation, with a fresh trial graph."""
+        """Rebuild the predictor's bounded situation before the greedy walk."""
         from ReferenceContext import ReferenceBank
         disc = getattr(self.symbolSpace, 'expectation', None)
         B, D = active.shape[0], like.shape[-1]
-        C = max(1, int(getattr(disc, '_inter_chain_window', 1)))
+        window = max(1, int(getattr(disc, '_inter_chain_window', 1)))
+        # A sentence occurrence is a referent in its own right. Keep the
+        # bounded situation's rows beside its identified noun columns.
+        C = 2 * window
         ids = torch.full((B, C), -1, device=like.device, dtype=torch.long)
         values = like.new_zeros(B, C, D)
         valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
@@ -20406,13 +20478,55 @@ class BasicModel(BaseModel):
                     estimates, _, _ = disc._inter_predictor(*disc._prediction_inputs(inputs, replay=True))
                     query = estimates[0, 0].detach().to(like)
                 predicted[b] = True
-            if components is not None and disc is not None and bool(active[b]):
-                for i, (identity, frame) in enumerate(components.candidate_frames(disc.situation_references(b))[-C:]):
+            frames = (() if disc is None or not bool(active[b]) else
+                      tuple(disc.situation_references(b))[-window:])
+            if components is not None and frames:
+                for i, (identity, frame) in enumerate(components.candidate_frames(frames)[-window:]):
                     point = components.situated_point(identity, frame)
                     if point is not None:
                         ids[b, i] = identity
                         valid[b, i] = True
                         values[b, i] = point.detach().to(like)
+            for i, frame in enumerate(frames, start=window):
+                # This bank supplies numerical NP operands. A relational
+                # row has no fusible point; its typed description remains
+                # available to the boundary query/ask capabilities.
+                if frame.row_id in (-1, 0):
+                    continue
+                ids[b, i] = frame.row_id
+                valid[b, i] = True
+                values[b, i] = (frame.roles[0] if frame.point is None else frame.point).detach().to(like)
+                relations[b, i] = frame.point is None
+            # A cued frame's referent columns are candidates too. An open
+            # column uses (row, role); a filled column uses its actual native
+            # referent. Both share the existing bounded recency bank.
+            store = getattr(self.symbolSpace, 'ltm_store', None)
+            if store is not None:
+                from Occurrence import slot_key
+                from ThoughtReferences import open_slots
+                entries = [(int(ids[b, i]), values[b, i].clone(), bool(relations[b, i]))
+                           for i in range(C) if bool(valid[b, i])]
+                for frame in frames:
+                    index = store.index_of_row(frame.row_id)
+                    if index is None:
+                        continue
+                    current = store.meaning_of(index)
+                    opened = open_slots(current)
+                    for role in (0, 2):
+                        if ('referent', role) in opened:
+                            identity = slot_key(int(store.address_keys[index]), role)
+                            entries.append((identity, current.roles[role].detach().to(like), False))
+                        elif current.role_refs[role] is not None and bool(current.role_mask[role]):
+                            identity = int(store.refs[index, role])
+                            if identity not in (-1, 0):
+                                target = store.index_of_row(identity)
+                                relative = target is not None and int(store.rel_type[target]) != store.REL_NONE
+                                entries.append((identity, current.roles[role].detach().to(like), relative))
+                ids[b].fill_(-1)
+                valid[b].zero_()
+                relations[b].zero_()
+                for i, (identity, point, relative) in enumerate(entries[-C:]):
+                    ids[b, i], values[b, i], valid[b, i], relations[b, i] = identity, point, True, relative
             queries.append(query)
         types = self._sentence_reference_types(like)
         cases = None
@@ -20424,7 +20538,22 @@ class BasicModel(BaseModel):
             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
         inventory = torch.tensor(() if components is None else components.nouns.ids,
                                  dtype=torch.long, device=like.device)
-        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases, inventory)
+        inventory = torch.unique(torch.cat((inventory, ids[valid])))
+        interpreter, associations = None, None
+        if getattr(self, '_component_reading', False):
+            owner = self._concept_owner()
+            interpreter = owner.interpret
+            pairs = set()
+            # Existing lexical associations identify candidate occurrences;
+            # the situation still bounds which of those can be read here.
+            from Spaces import _concept_alloc_of
+            for identities in _concept_alloc_of(owner).word_forms.values():
+                sources = [identity for identity in identities if identity > 0]
+                targets = set(identities).intersection(ids[valid].tolist())
+                pairs.update((source, target) for source in sources for target in targets)
+            associations = ids.new_tensor(sorted(pairs)).reshape(-1, 2)
+        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
+                             types, cases, inventory, interpreter, associations)
 
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, compose_word):
@@ -20479,6 +20608,11 @@ class BasicModel(BaseModel):
             if greedy_attention is not None:
                 greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
             self._sentence_departure = None
+            from SentenceFork import SentenceFork, detached
+            fork = (SentenceFork(present) if self._sentence_training and torch.is_grad_enabled()
+                    else None)
+            self._compose_fork = fork
+            reference_bank = self._sentence_reference_bank(present, before[0][0])
             def compose(cached, exploit):
                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
                 self._sentence_pullback = None
@@ -20494,16 +20628,12 @@ class BasicModel(BaseModel):
                     eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
                     from SentenceCredit import departure
                     draw = departure(greedy_attention, eligible, active=present,
-                        sentence_ids=sentence_ids, sentence=sid)
+                        sentence_ids=sentence_ids, sentence=sid, compose_round=fork.slot)
                     self._sentence_departure = draw
                     forced = (torch.arange(actions.shape[1],device=words.device)[None]
                               == draw['compose_round'][:,None])
-                    self._compose_exploit_actions = actions
                     self._compose_forced_slots = forced
-                    self._compose_prefix_slots = self._exploration_prefix_slots(actions, forced, owners)
-                    # A narrowing departure changes its full continuation. Only
-                    # rows departing in compose replay the old compose prefix.
-                    self._compose_prefix_slots &= ~draw['narrowing'][:,None]
+                    fork.start(draw)
                     self._compose_sampling_scale = trace._choice_alternative_counts * (
                         draw['walk_count'] * draw['walk_rounds'])[:,None]
                     if greedy_attention is not None and bool(draw['narrowing'].any()):
@@ -20520,15 +20650,21 @@ class BasicModel(BaseModel):
                 # word the same grad contract as subsequent word carries,
                 # without connecting it to a previous optimizer version.
                 restored = tuple(_carries_with_grad(bank) for bank in before)
+                if exploit is not None:
+                    from SentenceCompose import select_rows
+                    restored = select_rows(detached(exploit), restored, draw['narrowing'])
                 self._restore_sentence_state(restored)
-                self.languageSpace._reference_bank = self._sentence_reference_bank(
-                    present, before[0][0])
+                self.languageSpace._reference_bank = (reference_bank if exploit is None else
+                                                      reference_bank.detached())
                 current_stm, current_lang, current_feedback = restored
                 latches = [empty_feedback, empty_feedback]
                 for index, payload in cached:
                     # Grammar feedback changes with this derivation, while
                     # the cached pre-compose word representation stays fixed.
                     payload = self._attention_sentence_payload(payload,index)
+                    if fork is not None:
+                        latches = fork.begin_word(index, latches)
+                        fork.current_latches = latches
                     payload = (*payload[:9], *latches[0], payload[11])
                     current_lang, current_stm, current_feedback = compose_word(
                         payload, index, None, current_lang, current_stm)
@@ -20540,12 +20676,8 @@ class BasicModel(BaseModel):
             def score(path, alternative):
                 paths.append(path[1][18].detach().clone())
                 if alternative:
-                    owners, _, _ = self._compose_round_owners(path[1][18])
-                    rounds = (owners == sid) & (self._compose_exploit_actions >= 0)
-                    different = ((self._compose_exploit_actions != path[1][18]) & rounds).any(-1)
-                    branchable = self._compose_forced_slots.any(-1)
-                    if not bool((different | ~present | ~branchable).all()):
-                        raise RuntimeError('exploration repeated an exploit sentence derivation')
+                    if not bool((fork.taken | ~fork.selected | ~present).all()):
+                        raise RuntimeError('compose fork did not take its saved departure')
                 cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
                 if self._sentence_training and self.legacy_prediction_enabled:
                     numerator = path[1][1] - before[1][1]
@@ -20569,7 +20701,7 @@ class BasicModel(BaseModel):
                     self._sentence_expectation_comparison, path[1][9][:,sid].sum(-1)*0,
                     answer=self._sentence_answer_cost)
                 cost_parts.append(parts)
-                cost = parts.sum(-1)
+                cost = parts[:, 0] + parts[:, 2]
                 observations.append(observation)
                 predictions.append(pending)
                 paired_costs.append(cost.detach().clone())
@@ -20626,8 +20758,7 @@ class BasicModel(BaseModel):
                 self._sentence_pullback = None
                 self._sentence_reader_rows = None
                 self._sentence_reader_costs = None
-                self._compose_exploit_actions = self._compose_forced_slots = None
-                self._compose_prefix_slots = None
+                self._compose_fork = self._compose_forced_slots = None
             if len(paths)==2:
                 from WalkTrials import observe_comparison
                 owners,_,_=self._compose_round_owners(paths[0])
@@ -20635,6 +20766,12 @@ class BasicModel(BaseModel):
                 different=(paths[0]!=paths[1])&here
                 departure=torch.where(different,torch.arange(paths[0].shape[1],device=words.device)[None],paths[0].shape[1]).amin(-1)
                 departure=torch.where(different.any(-1),departure,-1)
+                # Journal columns are not chronological across packed
+                # closings. Report the sampled fork itself for a compose
+                # departure; narrowing retains its first changed compose slot.
+                if self._sentence_departure is not None:
+                    sampled = self._sentence_departure['compose_round']
+                    departure = torch.where(sampled >= 0, sampled, departure)
                 observe_comparison(self,'compose',dict(costs=costs,wins=wins,
                     departure=departure,
                     greedy=torch.where(here,paths[0],-1),explore=torch.where(here,paths[1],-1)),sentence=sid,active=present)
@@ -21171,6 +21308,10 @@ class BasicModel(BaseModel):
              object_row, object_order, object_atom, row_gate, commit,
              routing, routing_valid, leaf_evidence) = cs_sym_payload
             word_idea = symbolic_event[:, 0, :]
+            fork = getattr(self, '_compose_fork', None) if sentence_transactions else None
+            if fork is not None and fork.explore:
+                row_gate = row_gate & fork.joined[:, None]
+                commit = commit & fork.joined[:, None]
             if torch.is_tensor(grammar_leaf_mask) and not sentence_transactions:
                 commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
 
@@ -21273,22 +21414,74 @@ class BasicModel(BaseModel):
             round_active = commit.reshape(B)
             post_op = unary_op = torch.full_like(current_stm[1], -1)
             post_valid = unary_valid = torch.zeros_like(round_active)
+            # The full resolved concept remains only in ``final_stm`` above.
+            # SymbolSpace receives the concept's quantized 0-D reference
+            # activation; identity is the staged object row.  Do not retain a
+            # second word-wide copy of the continuous concept dictionary.
+            symbol_activation = torch.where(
+                row_gate,
+                activation.reshape(B, 1),
+                torch.zeros(B, 1, dtype=activation.dtype,
+                            device=activation.device))
+            next_symbol_activations = self._tensor_write_word_column(
+                current_cs_lang[0], index, symbol_activation)
+            next_symbol_activations = torch.where(
+                row_gate.reshape(B, 1, 1), next_symbol_activations, current_cs_lang[0])
+            next_loss_sum = (
+                current_cs_lang[1] + loss_sum
+                if capture_intra else current_cs_lang[1])
+            next_loss_weight = (
+                current_cs_lang[2] + torch.stack((loss_weight, loss_baseline), -1)
+                if capture_intra else current_cs_lang[2])
+            # Every non-final packed sentence receives the same bounded NULL
+            # closing as the ordinary post-loop sentence boundary. The root is
+            # stored at that sentence's end-word column, then only those rows
+            # receive the CS-owned soft reset before the next word arrives.
+            intermediate_end = _gather_word(
+                sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B) & row_gate.reshape(B)
+            def fork_state(working_stm, working_active):
+                return (current_cs_lang, working_stm, working_active, wholes,
+                    chunk_slab, chunk_count, trace_state, left_rows, right_rows,
+                    position_slab, action_slab, attempted_slab, clause_state,
+                    closing_events, operation_values, operation_refs,
+                    reference_relations, unary_history, explorable_slab,
+                    log_probability_slab, post_op, unary_op, post_valid,
+                    unary_valid, prediction, next_symbol_activations,
+                    next_loss_sum, next_loss_weight, row_gate, commit, intermediate_end)
             for round_index in range(3):
-                if not torch.compiler.is_compiling() and not bool(round_active.any()):
+                if (not torch.compiler.is_compiling() and not bool(round_active.any())
+                        and (fork is None or not fork.pending(index, closing=False, width=width))):
                     break
-                before = final_stm
                 slot = 3 * index + round_index
+                if fork is not None:
+                    (current_cs_lang, final_stm, round_active, wholes, chunk_slab,
+                     chunk_count, trace_state, left_rows, right_rows, position_slab,
+                     action_slab, attempted_slab, clause_state, closing_events,
+                     operation_values, operation_refs, reference_relations,
+                     unary_history, explorable_slab, log_probability_slab, post_op,
+                     unary_op, post_valid, unary_valid, prediction,
+                     next_symbol_activations, next_loss_sum, next_loss_weight,
+                     row_gate, commit, intermediate_end
+                    ) = fork.resume(slot, fork_state(final_stm, round_active))
+                before = final_stm
                 journal_slot = index.new_tensor(round_index)
                 proposal = language.choose_operation(
-                    before, round_active, slots=scope.slots(clause_state, before[1]),
+                    # Waiting within the STM allowance is legal before the
+                    # closing. Enforcing a final field here forces an early
+                    # left fold (e.g. `what is` before its object arrives).
+                    before, round_active, slots=capacity - 1,
                     sample=False,
                     allowance=capacity - 1, rounds_left=3 - round_index,
                     masked_action=self._compose_masked_action(slot, before[1]),
-                    replay_action=self._compose_replayed_action(slot, before[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history)
+                    previous_unary=unary_history,
+                    policy_grad=(fork is None or (fork.explore and bool(
+                        (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
+                if fork is not None:
+                    fork.record(choice, slot, fork_state(final_stm, round_active),
+                                word=index, latches=fork.current_latches)
                 unary_history = language.update_unary_history(unary_history, choice)
                 eligible = (choice.alternative_count if choice.alternative_count is not None else
                             (choice.valid if choice.alternatives is None else choice.alternatives).long())
@@ -21330,49 +21523,39 @@ class BasicModel(BaseModel):
                     left_rows, right_rows, slot, before, binary)
                 round_active = round_active & choice.applied
 
-            # The full resolved concept remains only in ``final_stm`` above.
-            # SymbolSpace receives the concept's quantized 0-D reference
-            # activation; identity is the staged object row.  Do not retain a
-            # second word-wide copy of the continuous concept dictionary.
-            symbol_activation = torch.where(
-                row_gate,
-                activation.reshape(B, 1),
-                torch.zeros(B, 1, dtype=activation.dtype,
-                            device=activation.device))
-            next_symbol_activations = self._tensor_write_word_column(
-                current_cs_lang[0], index, symbol_activation)
-            next_symbol_activations = torch.where(
-                row_gate.reshape(B, 1, 1), next_symbol_activations, current_cs_lang[0])
-            next_loss_sum = (
-                current_cs_lang[1] + loss_sum
-                if capture_intra else current_cs_lang[1])
-            next_loss_weight = (
-                current_cs_lang[2] + torch.stack((loss_weight, loss_baseline), -1)
-                if capture_intra else current_cs_lang[2])
-            # Every non-final packed sentence receives the same bounded NULL
-            # closing as the ordinary post-loop sentence boundary. The root is
-            # stored at that sentence's end-word column, then only those rows
-            # receive the CS-owned soft reset before the next word arrives.
-            intermediate_end = _gather_word(
-                sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B) & row_gate.reshape(B)
             end_stm = final_stm
             closing_active = intermediate_end
             for closing_index in range(closing_budget):
-                if not torch.compiler.is_compiling() and not bool(closing_active.any()):
+                if (not torch.compiler.is_compiling() and not bool(closing_active.any())
+                        and (fork is None or not fork.pending(index, closing=True, width=width))):
                     break
-                pre_closing = end_stm
                 slot = 3 * width + group * closing_width + closing_index
+                if fork is not None:
+                    (current_cs_lang, end_stm, closing_active, wholes, chunk_slab,
+                     chunk_count, trace_state, left_rows, right_rows, position_slab,
+                     action_slab, attempted_slab, clause_state, closing_events,
+                     operation_values, operation_refs, reference_relations,
+                     unary_history, explorable_slab, log_probability_slab, post_op,
+                     unary_op, post_valid, unary_valid, prediction,
+                     next_symbol_activations, next_loss_sum, next_loss_weight,
+                     row_gate, commit, intermediate_end
+                    ) = fork.resume(slot, fork_state(end_stm, closing_active))
+                pre_closing = end_stm
                 journal_slot = index.new_tensor(3 + closing_index)
                 proposal = language.choose_operation(
                     pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
                     sample=False,
                     allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=closing_budget - closing_index,
                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
-                    replay_action=self._compose_replayed_action(slot, pre_closing[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history)
+                    previous_unary=unary_history,
+                    policy_grad=(fork is None or (fork.explore and bool(
+                        (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
+                if fork is not None:
+                    fork.record(choice, slot, fork_state(end_stm, closing_active),
+                                word=index, latches=fork.current_latches)
                 unary_history = language.update_unary_history(unary_history, choice)
                 eligible = (choice.alternative_count if choice.alternative_count is not None else
                             (choice.valid if choice.alternatives is None else choice.alternatives).long())
@@ -21485,7 +21668,10 @@ class BasicModel(BaseModel):
             from SentenceCompose import compile_word_brick
             stage_cs_sub = compile_word_brick(stage_cs_sub)
             stage_cs_sym = compile_word_brick(stage_cs_sym)
-            stage_cs_lang = compile_word_brick(stage_cs_lang)
+            # Reservoir snapshots and row joins belong to the eager walk
+            # controller. Inference retains the fixed-shape compiled brick.
+            if not self._sentence_training:
+                stage_cs_lang = compile_word_brick(stage_cs_lang)
         if sentence_transactions and not canonical:
             def stage_cs_sub(word, gate, index, live, current_sub):
                 p = int(index)
@@ -22662,8 +22848,8 @@ class BasicModel(BaseModel):
             return None
         if not isinstance(meaning, ConceptualMeaning):
             meaning = self._public_query_meaning(meaning, row=row)
-        from ThoughtReferences import open_slots
-        if meaning is None or not open_slots(meaning):
+        from ThoughtReferences import needs_episode
+        if meaning is None or not needs_episode(meaning):
             return None
         with self._query_boundary_scope((row,)):
             try:

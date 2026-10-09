@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand"
+  ],
+  "pid": 88583,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 458868032,
+  "elapsed_seconds": 3.872826667036861,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-08-math-chain-repair-2/development-clause14-regression-green.log"
+}

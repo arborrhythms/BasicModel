@@ -1,0 +1,11 @@
+{
+  "kind": "diagnostic bisection only; no declared run is retried or replaced",
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "saved_starts": [
+    "mm-01",
+    "mm-09"
+  ],
+  "seed": null,
+  "purpose": "Compare identical saved unseeded entries on the mechanism landing and delivered source; identify any numerical or RNG path difference before applying operators plan \u00a720.",
+  "source_archive_sha256": "fec78a3aed2d60d153737c416b8b3ebd4aab6a4c6bae596614ed904f5710e803"
+}

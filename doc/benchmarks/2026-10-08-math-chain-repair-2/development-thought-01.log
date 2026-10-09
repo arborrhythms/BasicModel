@@ -1,0 +1,197 @@
+......F..............F.......FFF.....F..F.....F.....                     [100%]
+=================================== FAILURES ===================================
+______ test_policy_charges_shared_episode_work_not_the_number_of_choices _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1266d6600>
+
+    def test_policy_charges_shared_episode_work_not_the_number_of_choices(monkeypatch):
+        from test_item6_2_thinking import credit_chain_world, run
+        model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+        result = run(model, goal, work_budget=64)
+        audit = model._last_thought_comparison
+>       assert audit['costs'][1] == pytest.approx(model.WHAT_STEP_COST * result.work.spent)
+E       assert 0.0 == 0.64 ± 6.4e-07
+E         
+E         comparison failed
+E         Obtained: 0.0
+E         Expected: 0.64 ± 6.4e-07
+
+test/test_unified_thought_controller.py:134: AssertionError
+__________________ test_conclude_gate_and_exhaustion_question __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12c6dc7a0>
+
+    def test_conclude_gate_and_exhaustion_question(monkeypatch):
+        model,registry,store,(a,b,c)=world()
+        def illegal(*args,**kwargs):return None
+        monkeypatch.setattr(model,'_choose_selected_thought_action',illegal)
+>       with pytest.raises(ValueError,match='conclude'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'conclude'
+E         Actual message: 'selected thought chose an unavailable action'
+
+test/test_item6_2_thinking.py:97: AssertionError
+__________ test_expectation_only_credit_uses_held_next_sentence_cost ___________
+
+    def test_expectation_only_credit_uses_held_next_sentence_cost():
+>       from ThoughtCredit import PendingCredit, observe
+E       ImportError: cannot import name 'PendingCredit' from 'ThoughtCredit' (/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtCredit.py)
+
+test/test_item6_2_thinking.py:225: ImportError
+______ test_answer_credit_moves_shared_chooser_toward_the_completed_chain ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12d412d50>
+
+    def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch):
+        model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+        chooser=model.shared_grammar
+        before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
+        result=run(model,goal,work_budget=64,
+            score=lambda result:float(bool(open_slots(result.meaning))))
+>       assert model._last_thought_comparison['explore_kept']
+E       assert False
+
+test/test_item6_2_thinking.py:281: AssertionError
+___ test_expectation_credit_moves_shared_chooser_toward_the_completed_chain ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12d396ff0>
+
+    def test_expectation_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch):
+        from Layers import BracketExpectation
+        from ThoughtCredit import observe, forecast
+        from test_sentence_expectation import observe as expose
+        model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+        # Equal work prices leave only the following observation as policy credit.
+        model.WHAT_STEP_COST=0.
+        discourse=BracketExpectation(4,8,8,concept_dim=8,expectation_scope='structured')
+        model.symbolSpace.expectation=discourse
+        with torch.no_grad():
+            head=discourse._inter_predictor.network[-1]
+            head.weight[8::9].zero_();head.bias[8::9].zero_()
+        expose(discourse,goal.roles*.25)
+        before=model.shared_grammar.thought_logits(goal,menu).softmax(-1)[0,1].detach()
+        run(model,goal,work_budget=64)
+>       held=model._pending_thought_credit[0]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item6_2_thinking.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (shared_grammar): OperationSelectionLayer(
+    (ops): ModuleList()
+    (unary_ops): ModuleList()
+    (ch...=8, out_features=8, bias=False)
+      (what_projection): Linear(in_features=29, out_features=7, bias=False)
+    )
+  )
+)
+name = '_pending_thought_credit'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_pending_thought_credit'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_document_end_flushes_answer_work_credit_without_a_future_target _____
+
+    def test_document_end_flushes_answer_work_credit_without_a_future_target():
+>       from ThoughtCredit import PendingCredit, finish_documents
+E       ImportError: cannot import name 'PendingCredit' from 'ThoughtCredit' (/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtCredit.py)
+
+test/test_item6_2_thinking.py:379: ImportError
+_ test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12d506270>
+
+    def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):
+        model,registry,store,(a,b,c)=world()
+        model.conceptualSpace.add_whole(a[1],b)
+        goal=registry.form('isPart',a,open_roles=('I2',))
+        def choose(root,active,actions,**kwargs):
+            return None if None in actions else next(action for action in actions
+                if action.semantic_id=='isPart' and action.open_roles==('I2',))
+        monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
+>       result=run(model,goal,work_budget=32)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_item6_2_thinking.py:423: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6029: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6403: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6369: in run_context
+    action = self._choose_selected_thought_action(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 11), ('sym', 6), None), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', (('referent', 2),))), scope=(), sentence_kind=None)
+active = ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 11), ('sym', 6), None), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', (('referent', 2),))), scope=(), sentence_kind=None)
+actions = (ThoughtOperationCandidate(operation=Grammar.ThoughtOperationSpec(semantic_id='not', operand_roles=('I1',), result_rol...evidence_pair', (0.0, 0.0)), ('_open_references', (('evidence', -1),))), scope=(), sentence_kind=None), open_roles=()))
+kwargs = {'row': 0, 'level': 0, 'pressure': 0.0, 'evidence': None, ...}
+
+    def choose(root,active,actions,**kwargs):
+>       return None if None in actions else next(action for action in actions
+            if action.semantic_id=='isPart' and action.open_roles==('I2',))
+E       StopIteration
+
+test/test_item6_2_thinking.py:420: StopIteration
+_____ test_thought_pair_keeps_one_episode_and_costs_before_policy_backward _____
+
+    def test_thought_pair_keeps_one_episode_and_costs_before_policy_backward():
+        from test_normal_thought_controller import _catalog_world
+        model,registry,memory,part,whole=_catalog_world()
+        model.train()
+        question=registry.form('part',part,whole)
+        calls=[]
+        def score(result):
+            assert all(p.grad is None for p in model.parameters())
+            calls.append(tuple(record.operation for record in result.records))
+            return torch.tensor(float(len(calls)==1)*10.)
+        with model._query_boundary_scope((0,)):
+            result=model.run_selected_thought(question,work_budget=16,score=score)
+        assert len(calls)==2
+        audit=model._last_thought_comparison
+>       assert audit['explore_kept']
+E       assert False
+
+test/test_walk_trials.py:58: AssertionError
+=============================== warnings summary ===============================
+test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7074: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5120xbv8/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices
+FAILED test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question
+FAILED test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost
+FAILED test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain
+FAILED test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
+FAILED test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target
+FAILED test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read
+FAILED test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+8 failed, 44 passed, 2 warnings in 12.36s

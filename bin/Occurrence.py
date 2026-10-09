@@ -63,6 +63,18 @@ def definition_key(word, obj):
     return address_key(document_digest(('DEF', int(word), int(obj))), 0, sentence_key(()))
 
 
+def slot_key(address, role):
+    """The int64 carrier of a row-address/role reference, never an allocation."""
+    if type(address) is not int or address in (-1, 0) or role not in (0, 1, 2):
+        raise ValueError('a slot requires an occurrence address and canonical role')
+    payload = b'occurrence-slot-v1\0' + address.to_bytes(8, 'little', signed=True) + bytes((role,))
+    value = int.from_bytes(hashlib.sha256(payload).digest()[:8], 'little') | (1 << 63)
+    value -= 1 << 64
+    if value == -1:
+        raise ValueError('slot hash collides with a reserved null')
+    return value
+
+
 class AddressIndex(dict):
     """Address key -> row; accept the typed reference envelope at read seams."""
     @staticmethod

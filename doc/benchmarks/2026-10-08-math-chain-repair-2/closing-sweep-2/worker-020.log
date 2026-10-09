@@ -1,0 +1,20 @@
+.......................sss.............................................. [ 56%]
+.............................................s........s.                 [100%]
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+123 passed, 5 skipped, 5 warnings in 72.02s (0:01:12)

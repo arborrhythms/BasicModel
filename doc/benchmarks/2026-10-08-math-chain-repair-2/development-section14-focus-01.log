@@ -1,0 +1,198 @@
+.............................................................F.......... [ 70%]
+.........FFFFF
+=================================== FAILURES ===================================
+_ test_completed_compose_program_enters_normal_controller_before_legacy_thinking _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c2bd4c0>
+
+    def test_completed_compose_program_enters_normal_controller_before_legacy_thinking(
+            monkeypatch):
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+        model.attention_budget = 64
+    
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+        with torch.no_grad():
+            model.shared_grammar.chooser.mlp[-1].weight.zero_()
+            model.shared_grammar.chooser.mlp[-1].bias.zero_()
+        model.eval()
+    
+        with model._query_boundary_scope((0,)):
+            selected = model._run_selected_sentence_thoughts(
+                (sentence_state(language, program(), registry),), work_budget=16)
+    
+        assert len(selected) == 1
+        row, result = selected[0]
+        assert row == 0
+        from ThoughtReferences import open_slots
+        operations = [r.operation for r in result.records if r.kind == 'thought']
+        assert operations[0] == 'part'
+        if open_slots(result.meaning):
+            assert result.work.remaining == 0 and 'conclude' not in operations
+        else:
+>           assert operations[-1] == 'conclude'
+E           AssertionError: assert 'part' == 'conclude'
+E             
+E             - conclude
+E             + part
+
+test/test_normal_thought_controller.py:295: AssertionError
+__ test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1] __
+
+depth = 1, monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1312d5580>
+
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(depth, monkeypatch):
+        """A real grammar softmax completes a departure inside nested asks."""
+        from test_item6_2_thinking import credit_chain_world, run
+        from Queries import ThoughtOperationCandidate
+        from ThoughtReferences import open_slots
+        import ThoughtStream
+        model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+        base_menu = ThoughtStream.candidates
+        outer = goal
+        for _ in range(depth): outer = registry.form('ask', outer)
+        def nested(registry, root, active, current, records, descriptions=()):
+            if not open_slots(current): return ()
+            name = registry.signature_for(root, verify_reference=False).operation.semantic_id
+            if name == 'ask':
+                return (ThoughtOperationCandidate(registry.operation_spec('ask'), root, ()),)
+            return base_menu(registry, root, active, current, records, descriptions)
+        monkeypatch.setattr(ThoughtStream, 'candidates', nested)
+        selected = run(model, outer, work_budget=128,
+            score=lambda result: dict(reconstruction=float(bool(open_slots(result.meaning))), answer=0.))
+        assert not open_slots(selected.meaning)
+        assert max(record.level for record in selected.records) == depth
+        assert sum(record.kind == 'descend' for record in selected.records) == depth
+>       assert selected.support_true == 1.
+E       AssertionError: assert 0.0 == 1.0
+E        +  where 0.0 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 11), ('sym', 6...), ('sym', 1)), reason='', semantic_delta=0.36219412088394165, result=None, address=-282472300942164434)), result=None).support_true
+
+test/test_thought_review.py:131: AssertionError
+__ test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2] __
+
+depth = 2, monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1322e07a0>
+
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(depth, monkeypatch):
+        """A real grammar softmax completes a departure inside nested asks."""
+        from test_item6_2_thinking import credit_chain_world, run
+        from Queries import ThoughtOperationCandidate
+        from ThoughtReferences import open_slots
+        import ThoughtStream
+        model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+        base_menu = ThoughtStream.candidates
+        outer = goal
+        for _ in range(depth): outer = registry.form('ask', outer)
+        def nested(registry, root, active, current, records, descriptions=()):
+            if not open_slots(current): return ()
+            name = registry.signature_for(root, verify_reference=False).operation.semantic_id
+            if name == 'ask':
+                return (ThoughtOperationCandidate(registry.operation_spec('ask'), root, ()),)
+            return base_menu(registry, root, active, current, records, descriptions)
+        monkeypatch.setattr(ThoughtStream, 'candidates', nested)
+        selected = run(model, outer, work_budget=128,
+            score=lambda result: dict(reconstruction=float(bool(open_slots(result.meaning))), answer=0.))
+        assert not open_slots(selected.meaning)
+        assert max(record.level for record in selected.records) == depth
+        assert sum(record.kind == 'descend' for record in selected.records) == depth
+>       assert selected.support_true == 1.
+E       AssertionError: assert 0.0 == 1.0
+E        +  where 0.0 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 11), ('sym', 6...0), ('sym', 1)), reason='', semantic_delta=0.4391942620277405, result=None, address=7494898610803698883)), result=None).support_true
+
+test/test_thought_review.py:131: AssertionError
+_ test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about] __
+
+entry = 'reason_about'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1319728a0>
+
+    @pytest.mark.parametrize("entry", ["reason_about", "think_about"])
+    def test_public_reasoning_uses_one_completed_boundary_and_episode(entry, monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = model.attention_budget = 64
+        question = registry.form("isPart", part, whole)
+        calls = []
+        run = model.run_selected_thought
+    
+        def checked(meaning, **kwargs):
+            model._assert_query_boundary(kwargs.get("row", 0))
+            calls.append(meaning)
+            return run(meaning, **kwargs)
+    
+        monkeypatch.setattr(model, "run_selected_thought", checked)
+        result = getattr(model, entry)(question)
+    
+>       assert isinstance(result, SelectedThoughtResult)
+E       assert False
+E        +  where False = isinstance(None, SelectedThoughtResult)
+
+test/test_unified_thought_controller.py:26: AssertionError
+__ test_public_reasoning_uses_one_completed_boundary_and_episode[think_about] __
+
+entry = 'think_about'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131465f40>
+
+    @pytest.mark.parametrize("entry", ["reason_about", "think_about"])
+    def test_public_reasoning_uses_one_completed_boundary_and_episode(entry, monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = model.attention_budget = 64
+        question = registry.form("isPart", part, whole)
+        calls = []
+        run = model.run_selected_thought
+    
+        def checked(meaning, **kwargs):
+            model._assert_query_boundary(kwargs.get("row", 0))
+            calls.append(meaning)
+            return run(meaning, **kwargs)
+    
+        monkeypatch.setattr(model, "run_selected_thought", checked)
+        result = getattr(model, entry)(question)
+    
+>       assert isinstance(result, SelectedThoughtResult)
+E       assert False
+E        +  where False = isinstance(None, SelectedThoughtResult)
+
+test/test_unified_thought_controller.py:26: AssertionError
+__ test_public_answer_accepts_the_completed_meaning_without_surface_dispatch ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1312ada60>
+
+    def test_public_answer_accepts_the_completed_meaning_without_surface_dispatch(monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = 64
+        question = registry.form("isPart", part, whole)
+        monkeypatch.setattr(model, "_detect_query", lambda *_args: pytest.fail(
+            "a surface dispatcher selected the thought"), raising=False)
+    
+        payload = model.answer_query(question)
+    
+>       assert payload["support_true"] == 1.0
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+test/test_unified_thought_controller.py:45: TypeError
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+FAILED test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]
+FAILED test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]
+FAILED test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 6 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+6 failed, 80 passed, 1 warning in 13.03s

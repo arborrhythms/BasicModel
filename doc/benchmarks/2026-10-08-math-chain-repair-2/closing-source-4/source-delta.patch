@@ -1,0 +1,525 @@
+--- campaign/bin/ClauseJournal.py
++++ closing/bin/ClauseJournal.py
+@@ -172,7 +172,13 @@
+     def head(node, *, clause=False):
+         while node['children']:
+             if clause and getattr(node['rule'], 'clause_form', None) == 'VP':
+-                break
++                # A headed modifier of an already completed sentence keeps
++                # that sentence's region. Only a lexical VP is the boundary
++                # at which its verb and object must be recovered separately.
++                content = head(node['children'][0])
++                if (getattr(content['rule'], 'clause_form', None) != 'S'
++                        and getattr(content['rule'], 'relation_kind', None) is None):
++                    break
+             role = getattr(node['rule'], 'head_role', 0)
+             if not role:
+                 break
+@@ -226,7 +232,7 @@
+                 (len(node['children']) == 2 and not node['has_point']
+                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
+ 
+-    def recover(root, *, top=False):
++    def recover(root, *, top=False, cache_operands=False):
+         # Syntactic assertion polarity is a grammar property. Identification
+         # evidence remains a pair, including both and neither, through storage.
+         polarity = True
+@@ -286,7 +292,7 @@
+                 # A composed statement owns its constituent bindings. A
+                 # later mint of the enclosing operand cannot flatten away
+                 # a pending variable (or its already completed children).
+-                child = recover(item)
++                child = recover(item, cache_operands=relation is not None or cache_operands)
+                 ref = ('clause', len(children))
+                 children.append(child)
+                 owned.add(id(item))
+@@ -360,6 +366,16 @@
+             described = ConceptualMeaning(roles, mask, polarity=polarity, mode=mode)
+             references = ((left_ref, predicate_ref, right_ref) if relation is not None else
+                           (left_ref, concept(operands[1]), -1))
++            if cache_operands and relation is None and operands[1]['children']:
++                # The second cached address of an absolute S names its
++                # completed operand, not an absent lexical head. Keep the
++                # operand as its own ordinary point row; no factored target
++                # or derivation journal is stored beside either point.
++                child = recover(operands[1], cache_operands=True)
++                right_address = ('clause', len(children))
++                children.append(child)
++                owned.add(id(operands[1]))
++                references = left_ref, right_address, -1
+             factored_refs = left_ref, predicate_ref, right_ref
+             if relation is None and node.get('operand_refs') is not None:
+                 # Unknown composite addresses stay unknown. The temporary
+@@ -459,6 +475,11 @@
+         if excluded:
+             support = evidence['evidence']
+             evidence['evidence'] = (0., support[1])
++        if cache_operands and relation is None:
++            from ThoughtReferences import bindings
++            constructor = getattr(node['rule'], 'predicate_identity', None) or 'reference'
++            described = replace(described, bindings=dict(bindings(described),
++                _point_constructor=(constructor, polarity)))
+         field = Clause(described, point=None if relation else (
+             program.end_state[0] if top else value(root)), relation=relation,
+             refs=references, children=tuple(children),
+--- campaign/bin/Models.py
++++ closing/bin/Models.py
+@@ -6371,29 +6371,30 @@
+             if not state.forced:
+                 meter.consume('controller')
+             child_record = child.get('record')
+-            returned = event('return', child['meaning'], child['evidence'], operation='return',
+-                sources=refs(current, reference(parent['descent']),
+-                    reference(child_record) if child_record is not None else None),
+-                result=child.get('result'))
+             from Queries import _freeze_boundary_value
+             from ThoughtFaces import returned_subgoal
+             template = parent['template']
+-            raw = replace(template, evidence=_freeze_boundary_value(dict(template.evidence,
+-                **returned_subgoal(child.get('result')))))
++            child_data = dict(returned_subgoal(child.get('result')))
++            child_data.update(meaning=child['meaning'], returned_meaning=child['meaning'])
++            from ThoughtReferences import bindings
++            if bindings(child['meaning']).get('_derived_binding') and child_record is not None:
++                child_data['derivation_witness'] = reference(child_record)
++            raw = replace(template, evidence=_freeze_boundary_value(dict(template.evidence, **child_data)))
+             from ThoughtStream import materialize
+             raw = materialize(raw)
++            returned = event('return', child['meaning'], child['evidence'], operation='return',
++                sources=refs(current, reference(parent['descent']),
++                    reference(child_record) if child_record is not None else None), result=raw)
+             from AccessibleMind import apply_thought_effect
+             apply_thought_effect(self, raw, row=row, work=meter)
+             evidence = dict(child['evidence'], query_signature='ask')
+-            from ThoughtReferences import fill, bindings
+-            child_evidence = dict(child['evidence'], meaning=child['meaning'])
+-            child_evidence['witnesses'] = bindings(child['meaning']).get('_thought_witnesses', ())
+             try:
+                 asking = registry.signature_for(goal, verify_reference=False).operation.semantic_id == 'ask'
+             except (ValueError, TypeError):
+                 asking = False
+-            resolved = (child['meaning'] if asking else fill(goal, child_evidence,
+-                        witnesses=child_evidence['witnesses'], operation='ask'))
++            history = tuple(item for item in memory.thought_history(b=row)
++                if item.episode == episode and item.level == memory.thought_state(b=row).level)
++            resolved = child['meaning'] if asking else integrate(registry, goal, raw, history)
+             return dict(meaning=resolved, evidence=evidence, result=raw, record=returned)
+ 
+         def run_context(current):
+--- campaign/bin/Queries.py
++++ closing/bin/Queries.py
+@@ -914,6 +914,8 @@
+         if relation is not None:
+             result = self.relation_evidence(relation, pattern.role_refs[0],
+                 pattern.role_refs[2], max_records=max_records, work=work, excluded=data.get('_query_exclude', ()))
++            if data.get('_query_components'):
++                result = self._with_components(result, max_records=max_records, work=work)
+             return result
+         mask = pattern.role_mask.clone()
+         for _kind, role in open_slots(pattern):
+@@ -939,6 +941,41 @@
+                     support_true=positive, support_false=negative,
+                     witnesses=() if best is None else (best['occurrence'],),
+                     records_scanned=found['records_scanned'], incomplete=found['incomplete'])
++
++    def _with_components(self, result, *, max_records, work):
++        """Read an ended row's native operand addresses on the same meter.
++
++        Absolute ideas retain only their permitted two-address cache. A
++        missing cached operand cannot be reconstructed from a former AST.
++        """
++        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
++        components, pending = {}, [frame['occurrence'] for frame in result.get('frames', ())]
++        scanned = result.get('records_scanned', 0)
++        incomplete = tuple(result.get('incomplete', ()))
++        while pending:
++            reference = pending.pop()
++            if reference in components or reference not in store._index_occurrences:
++                continue
++            if scanned >= max_records or not work.consume('record'):
++                incomplete = (*incomplete, 'component_read_limit')
++                break
++            scanned += 1
++            index = store._index_occurrences[reference]
++            kind = int(store.rel_type[index])
++            raw = tuple(int(value) for value in store.refs[index].tolist())
++            operands = raw[:2] if kind == store.REL_NONE else raw
++            if kind == store.REL_NONE and raw[0] not in (-1, 0) and raw[1] in (-1, 0):
++                operands = raw[:1]
++            operands = (() if any(value in (-1, 0) for value in operands) else
++                        tuple(store.semantic_reference(value) for value in operands))
++            meaning = store.meaning_of(index)
++            from ThoughtReferences import bindings
++            constructor = bindings(meaning).get('_point_constructor')
++            components[reference] = dict(kind=kind, operands=operands, meaning=meaning,
++                                         constructor=constructor)
++            pending.extend(value for value in operands if value and value[0] == 'ltm')
++        return dict(result, components=components, records_scanned=scanned,
++                    incomplete=tuple(dict.fromkeys(incomplete)))
+ 
+     def truth_evidence(self, description, *, max_records, work):
+         result = self.best_match(description, max_records=max_records, work=work)
+@@ -992,10 +1029,15 @@
+                 incomplete.append('work_budget' if work.remaining == 0 else 'capture_limit')
+                 break
+             scanned += 1
+-            if int(store.rel_type[index]) != kinds[relation]:
++            tag = int(store.rel_type[index])
++            if tag != kinds[relation] and not (relation == 'equal' and tag == store.REL_PARTOF):
+                 continue
+             row = store.row(index)
+             meaning = row['meaning']
++            from ThoughtReferences import bindings
++            equality_row = meaning is not None and bindings(meaning).get('_equality', False)
++            if tag != kinds[relation] and not equality_row:
++                continue
+             if row['occurrence'] in excluded:
+                 continue
+             if meaning is None or row['kind'] in ('question', 'estimate', 'unverified'):
+--- campaign/bin/ThoughtBinding.py
++++ closing/bin/ThoughtBinding.py
+@@ -0,0 +1,119 @@
++"""Equality substitution over the rows already read by an episode.
++
++There is no store, vocabulary or operation evaluator here. A proof uses
++native identities, the two cached operands of an ended point, or the three
++roles of a relative row, and positive equalities in checked serial results.
++"""
++from dataclasses import replace
++
++from ThoughtReferences import bindings, evidence_pair, fill, open_slots, with_slots
++
++
++def equality(meaning):
++    return bool(bindings(meaning).get('_equality'))
++
++
++def integrate(goal, result, previous):
++    if not equality(goal):
++        return None
++    frames = result.evidence.get('frames', ())
++    if not frames:
++        return goal
++    terms, edges = {}, {}
++    for item in (*previous, result):
++        terms.update(item.evidence.get('components', {}))
++    for item in previous:
++        values = item.evidence.get('frames', ())
++        returned = item.evidence.get('returned_meaning')
++        if returned is not None and equality(returned):
++            values = (*values, dict(meaning=returned, evidence=evidence_pair(returned),
++                occurrence=item.evidence.get('derivation_witness'),
++                witnesses=bindings(returned).get('_thought_witnesses', ())))
++        for frame in values:
++            meaning = frame['meaning']
++            if not equality(meaning) or frame['evidence'][0] <= 0:
++                continue
++            a, b = meaning.role_refs[0], meaning.role_refs[2]
++            witness = frame.get('occurrence')
++            proof = (witness,) if witness is not None else tuple(frame.get('witnesses', ()))
++            for left, right in ((a, b), (b, a)):
++                if left is not None and right is not None:
++                    edges.setdefault(left, []).append((right, proof, frame['evidence'][0]))
++
++    def equivalent(left, right, visiting=frozenset()):
++        if left is None or right is None:
++            return None
++        if left == right:
++            return (), 1.
++        key = left, right
++        if key in visiting or len(visiting) >= 64:
++            return None
++        visiting = visiting | {key}
++        for source, other, reverse in ((left, right, False), (right, left, True)):
++            term = terms.get(source)
++            if (term is not None and term['kind'] == 0 and len(term['operands']) == 1
++                    and term.get('constructor') == ('reference', True)):
++                alias = term['operands'][0]
++                found = equivalent(other, alias, visiting) if reverse else equivalent(alias, other, visiting)
++                if found is not None:
++                    return found
++        for other, witnesses, support in edges.get(left, ()):
++            found = equivalent(other, right, visiting)
++            if found is not None:
++                return (*witnesses, *found[0]), min(support, found[1])
++        a, b = terms.get(left), terms.get(right)
++        if a is None or b is None or a['kind'] != b['kind']:
++            return None
++        if a['kind'] == 0 and (a.get('constructor') is None or a.get('constructor') != b.get('constructor')):
++            return None
++        operands_a, operands_b = a['operands'], b['operands']
++        if not operands_a or len(operands_a) != len(operands_b):
++            return None
++        proof, strength = (), 1.
++        for first, second in zip(operands_a, operands_b):
++            found = equivalent(first, second, visiting)
++            if found is None:
++                return None
++            proof, strength = (*proof, *found[0]), min(strength, found[1])
++        return proof, strength
++
++    free = [role for kind, role in open_slots(goal) if kind == 'referent']
++    bound = [role for kind, role in bindings(goal).get('_bound_roles', ()) if kind == 'referent']
++    roles = free or bound
++    if len(roles) != 1 or roles[0] not in (0, 2):
++        return goal
++    target = roles[0]
++    # An initial match supplies the free variable opposite the fixed
++    # operand. Subsequent selected matches rewrite that variable's region.
++    region = goal.role_refs[2-target] if free else goal.role_refs[target]
++    for frame in frames:
++        meaning = frame['meaning']
++        if not equality(meaning) or frame['evidence'][0] <= 0:
++            continue
++        for source, answer in ((0, 2), (2, 0)):
++            found = equivalent(region, meaning.role_refs[source])
++            if found is None or meaning.role_refs[answer] is None:
++                continue
++            if not free and meaning.role_refs[answer] == goal.role_refs[2-target]:
++                continue  # The defining premise read backwards makes no progress.
++            proof, support = found
++            witnesses = tuple(dict.fromkeys((*bindings(goal).get('_thought_witnesses', ()),
++                                             *proof, frame['occurrence'])))
++            refs = list(goal.role_refs)
++            refs[target] = None
++            opened = with_slots(replace(goal, role_refs=tuple(refs)), (('referent', target),))
++            value = fill(opened, dict(reference=meaning.role_refs[answer],
++                binding_value=meaning.roles[answer], support_true=min(support, frame['evidence'][0]),
++                support_false=min(support, frame['evidence'][1])), witnesses=witnesses, operation='query')
++            data = bindings(value)
++            data['_derived_binding'] = not bool(free)
++            data['_direct_binding'] = bool(free)
++            # A derived chain's support is its weakest link, never the max
++            # accumulated by independent direct witnesses of one region.
++            if not free:
++                support = min(evidence_pair(goal)[0], support)
++                value = with_slots(value, (), pair=(min(support, frame['evidence'][0]),
++                                                    min(support, frame['evidence'][1])))
++            return replace(value, bindings=dict(bindings(value), **{
++                key: data[key] for key in ('_derived_binding', '_direct_binding')}))
++    return goal
+--- campaign/bin/ThoughtFaces.py
++++ closing/bin/ThoughtFaces.py
+@@ -101,12 +101,12 @@
+ def ask(context, arguments):
+     from ThoughtReferences import needs_episode
+     requested = arguments['I1']
++    if needs_episode(requested) and callable(context.continuation):
++        return returned_subgoal(context.continuation(requested))
+     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
+     found = context.ltm.best_match(requested, max_records=context.max_records,
+                                     work=context.work, references=references)
+-    if found['frames'] or not needs_episode(requested) or not callable(context.continuation):
+-        return found
+-    return returned_subgoal(context.continuation(requested))
++    return found
+ 
+ 
+ def returned_subgoal(result):
+--- campaign/bin/ThoughtStream.py
++++ closing/bin/ThoughtStream.py
+@@ -9,7 +9,7 @@
+ def slots(records):
+     """A result slot is its content, two poles, witnesses and producing action."""
+     return tuple(record.result for record in records
+-                 if record.kind == 'thought' and record.result is not None)
++                 if record.kind in ('thought', 'return') and record.result is not None)
+ 
+ 
+ def materialize(result):
+@@ -79,6 +79,15 @@
+         data = bindings(current)
+         data['_query_exclude'] = tuple(dict.fromkeys((*data.get('_query_exclude', ()), *excluded)))
+         patterns = [replace(current, bindings=data)]
++        if data.get('_equality'):
++            free = [role for tag, role in open_slots(current) if tag == 'referent']
++            bound = [role for tag, role in data.get('_bound_roles', ()) if tag == 'referent']
++            roles = free or bound
++            if len(roles) == 1 and roles[0] in (0, 2):
++                role = 2-roles[0] if free else roles[0]
++                pattern = query_pattern(current, 'equal', current.role_refs[role], None,
++                                        current.roles[role], excluded)
++                patterns.append(replace(pattern, bindings=dict(bindings(pattern), _query_components=True)))
+     if kind is not None:
+         left, right = root.role_refs[0], root.role_refs[2]
+         patterns = [query_pattern(root, kind, left, right),
+@@ -125,6 +134,10 @@
+     kind = relation(registry, goal)
+     if kind is None:
+         if result.semantic_id in ('query', 'ask'):
++            from ThoughtBinding import integrate as bind_region
++            aligned = bind_region(goal, result, tuple(item for item in slots(records) if item is not result))
++            if aligned is not None:
++                return aligned
+             return fill(goal, result, witnesses=witnesses, operation=result.semantic_id)
+         return goal
+     results = (*slots(records), result)
+@@ -247,9 +260,24 @@
+ 
+ def commit(model, result, *, row):
+     """Publish only the kept walk, after both complete trials were compared."""
++    derived = {}
++    def resolved_witnesses(meaning):
++        data = bindings(meaning)
++        data['_thought_witnesses'] = tuple(derived.get(ref, ref)
++            for ref in data.get('_thought_witnesses', ()))
++        return replace(meaning, bindings=data)
+     for record in result.records:
+         if record.kind == 'return' and record.meaning is not None and not open_slots(record.meaning):
+-            write(model, record.meaning, row=row)
++            # A direct child lookup supplies evidence to its caller; it is
++            # not a newly derived proposition. Derived returns are published
++            # first so the parent's proof can cite their native occurrences.
++            if bindings(record.meaning).get('_direct_binding'):
++                continue
++            index = write(model, resolved_witnesses(record.meaning), row=row)
++            witness = None if record.result is None else record.result.evidence.get('derivation_witness')
++            if index is not None and witness is not None:
++                derived[witness] = model.symbolSpace.ltm_store.occurrence_of(index)
++    result = replace(result, meaning=resolved_witnesses(result.meaning))
+     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
+     occurrence = bindings(result.meaning).get('_query_occurrence')
+     prior = None if store is None else store._index_occurrences.get(occurrence)
+--- campaign/bin/WalkTrials.py
++++ closing/bin/WalkTrials.py
+@@ -100,7 +100,10 @@
+     def __init__(self,model, *, detach=False):
+         memory=model._what_memory()
+         owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
+-                (model,('expectation_gain',))]
++                (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
++                        '_last_output_comparison', '_last_output_walk_trace',
++                        '_sentence_answer_cost', '_sentence_answer_predictions',
++                        '_sentence_answer_raw_cost'))]
+         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
+         if carrier is not None:
+             owners.append((carrier,tuple(name for name in vars(carrier)
+--- campaign/test/test_accessible_mind.py
++++ closing/test/test_accessible_mind.py
+@@ -245,11 +245,11 @@
+     with model._query_boundary_scope((0,)):
+         meter = QueryWorkBudget(256)
+         context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)
+-        question = registry.form('ask', store.occurrence_of(cue_row), context=context)
++        question = registry.form('query', store.occurrence_of(cue_row), context=context)
+     def choose(root, active, actions, **kw):
+         if kw.get('evidence') is not None:
+             return None
+-        return next(action for action in actions if action and action.semantic_id == 'ask')
++        return next(action for action in actions if action and action.semantic_id == 'query')
+     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+     prior_knowing = getattr(model.conceptualSpace.subspace, '_concept_activations', None)
+     with model._query_boundary_scope((0,)):
+@@ -257,7 +257,7 @@
+         result = model.run_selected_thought(question, work_budget=256)
+         after = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
+     assert not bool(before[1].any()) and bool(after[1].any())
+-    assert result.result.semantic_id == 'ask' and result.result.result_kind == 'set'
++    assert result.result.semantic_id == 'query' and result.result.result_kind == 'set'
+     frame, = memory.retrieved_frames()
+     assert frame['occurrence'] == store.occurrence_of(oldest)
+     assert frame['occurrence'] in memory.retained_ltm_occurrences(frame['occurrence'][1])
+--- campaign/test/test_math_chain_decomposition.py
++++ closing/test/test_math_chain_decomposition.py
+@@ -0,0 +1,33 @@
++"""Forced architecture demonstrations, with every companion-row outcome kept."""
++import importlib.util
++import json
++from pathlib import Path
++
++import pytest
++
++
++@pytest.mark.slow
++@pytest.mark.parametrize('successors', (1, 2))
++def test_forced_native_decomposition_through_training_driver(tmp_path, successors):
++    path = Path(__file__).resolve().parents[1]/'doc/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py'
++    spec = importlib.util.spec_from_file_location('forced_decomposition_certificate', path)
++    fixture = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(fixture)
++    folder = tmp_path/f'decomposition-{successors}'
++    report = fixture.run(folder, successors)
++    questions = [json.loads(line) for line in (folder/'questions.jsonl').read_text().splitlines()]
++    # This is an existence demonstration of the architecture, not an
++    # accuracy bar. A live compose departure may keep a different reading;
++    # every companion row is reported, including those without this proof.
++    proved = [question for question in questions if question['chain_correct']]
++    assert proved, questions
++    assert len(questions) >= 2
++    assert len({row['departure'] for row in report['rows'] if row['departure'] >= 0}) > 1
++    for question in proved:
++        episode = report['episodes'][int(question['document'])]
++        assert question['bound_correct'] and question['inference_count'] == successors
++        assert sum(record['kind'] == 'descend' for record in episode['trace']) == successors
++        assert sum(record['kind'] == 'return' for record in episode['trace']) == successors
++        assert episode['trace'][-2]['operation'] == 'conclude'
++        assert episode['state_diff']['unexpected'] == []
++        assert episode['state_diff']['added_row_kinds'] == ['inference'] * successors
+--- campaign/test/test_thought_binding.py
++++ closing/test/test_thought_binding.py
+@@ -0,0 +1,65 @@
++"""Region alignment and proof-carrying equality substitution, without math."""
++from types import SimpleNamespace
++import torch
++
++from Meaning import ConceptualMeaning
++from ThoughtReferences import bindings, evidence_pair, question, with_slots
++from ThoughtBinding import integrate
++
++
++def equality(left, right, pair=(.8, 0.)):
++    value = ConceptualMeaning(torch.eye(3), torch.ones(3, dtype=torch.bool),
++        role_refs=(left, ('sym', 99), right), bindings={'_equality': True})
++    return with_slots(value, (), pair=pair)
++
++
++def read(left, right, occurrence, *, components=None, pair=(.8, 0.)):
++    frame = dict(meaning=equality(left, right, pair), occurrence=occurrence, evidence=pair)
++    return SimpleNamespace(evidence=dict(frames=(frame,), components=components or {}))
++
++
++def test_reverse_equality_binds_the_other_operand_not_the_subject():
++    subject, description = ('sym', 1), ('ltm', 'test', 2)
++    goal = question(equality(None, subject), (('referent', 0),))
++    result = integrate(goal, read(subject, description, ('ltm', 'test', 3)), ())
++    assert result.role_refs == (description, ('sym', 99), subject)
++    assert bindings(result)['_bound_roles'] == (('referent', 0),)
++    assert bindings(result)['_direct_binding']
++
++
++def test_an_unrelated_positive_row_does_not_fill_the_question():
++    goal = question(equality(None, ('sym', 1)), (('referent', 0),))
++    result = integrate(goal, read(('sym', 7), ('sym', 8), ('ltm', 'test', 3)), ())
++    assert result is goal
++
++
++def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
++    name, operand, value, answer, modifier = [('sym', n) for n in range(1, 6)]
++    compound, rewritten = ('ltm', 'test', 6), ('ltm', 'test', 7)
++    premise, binding, license = [('ltm', 'test', n) for n in (8, 9, 10)]
++    components = {compound: dict(kind=0, operands=(operand, modifier), constructor=('lift', True)),
++                  rewritten: dict(kind=0, operands=(value, modifier), constructor=('lift', True))}
++    first = read(name, compound, premise, components=components)
++    goal = integrate(question(equality(None, name), (('referent', 0),)), first, ())
++    step = read(rewritten, answer, license, components=components, pair=(.6, .1))
++    assert integrate(goal, step, (first,)) is goal
++    bound = integrate(goal, step, (first, read(operand, value, binding, pair=(.7, 0.))))
++    assert bound.role_refs[0] == answer
++    assert bindings(bound)['_derived_binding']
++    assert bindings(bound)['_thought_witnesses'] == (premise, binding, license)
++    assert evidence_pair(bound) == (.6, .1)
++    weak = integrate(goal, read(rewritten, answer, license, components=components, pair=(.9, .9)),
++                     (first, read(operand, value, binding, pair=(.4, 0.))))
++    assert evidence_pair(weak) == (.4, .4)
++    wrong_operation = {**components, rewritten: dict(components[rewritten], constructor=('other', True))}
++    wrong = read(rewritten, answer, license, components=wrong_operation)
++    assert integrate(goal, wrong, (first, read(operand, value, binding))) is goal
++
++
++def test_missing_cached_operand_is_not_a_structural_proof():
++    name, a, b, answer = [('sym', n) for n in range(1, 5)]
++    first = read(name, a, ('ltm', 'test', 8))
++    goal = integrate(question(equality(None, name), (('referent', 0),)), first, ())
++    step = read(b, answer, ('ltm', 'test', 9), components={
++        a: dict(kind=0, operands=()), b: dict(kind=0, operands=())})
++    assert integrate(goal, step, (first,)) is goal

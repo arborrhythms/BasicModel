@@ -1,0 +1,33 @@
+{
+  "phase": "stopped_by_decision",
+  "authority": "thinking sections 14.10\u201314.11",
+  "trainings_started": 2,
+  "declared_trainings": 30,
+  "completed_epochs": {
+    "answer_and_expectation-01": 8,
+    "expectation_only-01": 9
+  },
+  "completed_trainings": 0,
+  "retries": 0,
+  "replacements": 0,
+  "learning_claim": false,
+  "committed": false,
+  "report": "stopped-by-decision/README.md",
+  "closing_certificate": "forced one- and two-successor proofs demonstrated; 3 of 4 document rows pass; every outcome retained",
+  "diagnostic": "decomposition-first-query-diagnostic/README.md",
+  "source_unchanged": false,
+  "prior_sweep": "green on archived campaign source",
+  "thinking_gate": "57/57 on closing source",
+  "standing_thirty": "as measured; not rerun",
+  "repair_authority": "User: Yes, please do. (minimal general binding/return repair)",
+  "closing_status": "stopped_for_Claude_review",
+  "closing_report": "closing-review.md",
+  "closing_summary": "closing-summary.json",
+  "closing_sweep": {
+    "passed": 5359,
+    "skipped": 286,
+    "xpassed": 1,
+    "completed": 5646
+  },
+  "closing_source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373"
+}

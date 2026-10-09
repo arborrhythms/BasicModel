@@ -1,0 +1,38 @@
+{
+  "kind": "diagnostic path comparison; no replacement or retry of a declared attempt",
+  "base_commit": "e43638a747e373b3b10343c642f76cd1d0757ec1",
+  "seed": null,
+  "source_path_identical": true,
+  "rng_consumption_identical": true,
+  "starts": [
+    {
+      "start": "mm-01",
+      "best": 0.22415423393249512,
+      "steps": 200,
+      "measured_trajectory_reproduced": true,
+      "identical": {
+        "construction_rng": true,
+        "initial_parameters": true,
+        "trajectory": true,
+        "final_parameters": true,
+        "final_rng": true
+      }
+    },
+    {
+      "start": "mm-09",
+      "best": 0.2413320243358612,
+      "steps": 200,
+      "measured_trajectory_reproduced": true,
+      "identical": {
+        "construction_rng": true,
+        "initial_parameters": true,
+        "trajectory": true,
+        "final_parameters": true,
+        "final_rng": true
+      }
+    }
+  ],
+  "interpretation": "Both original misses reproduce bit-for-bit on the 6.2 landing. There is no changed MM numerical or RNG path to bisect on either complete 200-step trajectory. The 8/10 count is retained; the changed sample of fresh starts, rather than this repair, accounts for the comparison with the prior 10/10 campaign. This is stronger than the RNG-only exception allowed by operators plan \u00a720.",
+  "script_sha256": "ff919e455701ff915d0af12afb2417a7ed6064857c11f89db4a5431106f49d6b",
+  "delivered_source_digest": "4d9ee05ea8558fc99507bc8ebb1e2fa7aebffd722d579c9ff5f4083d0ab617ea"
+}

@@ -1,0 +1,23 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "total_sentences": 8, "seconds": 10.705255834036507, "occupancy": 65}
+batch = 8 (Δ=8.206s)
+{"batch": 2, "total_sentences": 16, "seconds": 8.124185917084105, "occupancy": 113}
+batch = 16 (Δ=4.871s)
+{"batch": 3, "total_sentences": 20, "seconds": 4.785759542020969, "occupancy": 136}
+batch = 20 (Δ=5.290s)
+{"batch": 4, "total_sentences": 28, "seconds": 5.247892042039894, "occupancy": 165}
+batch = 28 (Δ=9.536s)
+{"batch": 5, "total_sentences": 36, "seconds": 9.531430041999556, "occupancy": 194}
+batch = 36 (Δ=5.719s)
+{"batch": 6, "total_sentences": 44, "seconds": 5.650668749934994, "occupancy": 226}
+batch = 44 (Δ=13.045s)
+{"batch": 7, "total_sentences": 52, "seconds": 13.044666292029433, "occupancy": 283}
+batch = 52 (Δ=2.958s)
+{"batch": 8, "total_sentences": 56, "seconds": 2.886712249950506, "occupancy": 298}
+batch = 56 (Δ=6.111s)
+{"batch": 9, "total_sentences": 60, "seconds": 6.107343707932159, "occupancy": 322}
+batch = 60 (Δ=5.576s)
+{"batch": 10, "total_sentences": 68, "seconds": 5.537523417035118, "occupancy": 339}

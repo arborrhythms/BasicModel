@@ -1,0 +1,13 @@
+{
+  "purpose": "Offline postprocessing of saved outcomes only; no training, verifier calls, retry or replacement.",
+  "source_sha256": "eb7e508b13d7dea3126235261d39684dd189cd1bd195a75066b81e6ea9a9522b",
+  "campaign_pid": 4026,
+  "validation": {
+    "syntax": "passed",
+    "live_saved_records_read": true,
+    "attempt_slots": 30,
+    "held_out_only_completed": true,
+    "source_and_training_helpers_unchanged": true
+  },
+  "created_utc": "2026-10-08T22:18:15.007963+00:00"
+}

@@ -284,6 +284,7 @@
       <!-- Bounded work for one normal selected grammatical-thought episode.
            Zero permits only the defined cutoff/finish drain. -->
       <xs:element name="attentionBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="thoughtSearchExhaustion" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
            do not enable episodes, memory, or policy training. -->
       <xs:element name="whatThinkingHidden" type="xs:positiveInteger" minOccurs="0"/>
@@ -709,6 +710,7 @@
       <!-- exact dependency-arithmetic / linear-constraint problems
            (bin/exact.py MathProblemGenerator; mathematical thinking spec 4). -->
       <xs:enumeration value="math"/>
+      <xs:enumeration value="math_chain"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -873,6 +875,7 @@
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="equalityLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Retired separate soft bridge policy. Zero remains loadable for
            old configurations; nonzero values are rejected by model setup. -->
       <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>

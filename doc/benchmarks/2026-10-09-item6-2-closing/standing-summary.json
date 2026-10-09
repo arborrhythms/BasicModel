@@ -1,0 +1,749 @@
+{
+  "authority": "Alec; thinking section 14.13",
+  "attempts": 30,
+  "completed": 30,
+  "source_files": 744,
+  "source_sha256": "21320d471189ff2e5668cbd95394c8a50da4224338befde3ef8829f590924373",
+  "raw_bars": {
+    "sum": 10,
+    "sum_floor": 10,
+    "xor_class": 10,
+    "xor_reconstruction": 10,
+    "mm": 9
+  },
+  "outcomes": [
+    {
+      "name": "sum-01",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 137.07451183302328,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": 0.0
+    },
+    {
+      "name": "sum-02",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 138.08553004194982,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": -2.9802322387695312e-08
+    },
+    {
+      "name": "sum-03",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 136.57980475004297,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.2499999850988388,
+      "contrast": -2.9802322387695312e-08
+    },
+    {
+      "name": "sum-04",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 137.589183999924,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": 0.0
+    },
+    {
+      "name": "sum-05",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 138.1116086669499,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": 2.9802322387695312e-08
+    },
+    {
+      "name": "sum-06",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 136.5410100420704,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": 0.0
+    },
+    {
+      "name": "sum-07",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 138.13810316601302,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.2499999850988388,
+      "contrast": 0.0
+    },
+    {
+      "name": "sum-08",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 137.5855798330158,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": 2.9802322387695312e-08
+    },
+    {
+      "name": "sum-09",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 137.05196425004397,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.2499999850988388,
+      "contrast": -5.960464477539063e-08
+    },
+    {
+      "name": "sum-10",
+      "kind": "sum",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 135.47097920801025,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "sum_bar": true,
+      "floor_bar": true,
+      "mse": 0.25,
+      "contrast": 2.9802322387695312e-08
+    },
+    {
+      "name": "xor-01",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 149.73834475001786,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 7.993605777301127e-15,
+      "shared_training": true,
+      "predictions": [
+        1.1920928955078125e-07,
+        1.0,
+        0.9999999403953552,
+        1.1920928955078125e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-02",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 150.74739891593345,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 2.220446049250313e-14,
+      "shared_training": true,
+      "predictions": [
+        -1.7881393432617188e-07,
+        1.0,
+        1.0,
+        -2.384185791015625e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-03",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 151.28180095902644,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 3.019806626980426e-14,
+      "shared_training": true,
+      "predictions": [
+        -5.960464477539063e-08,
+        1.000000238418579,
+        1.000000238418579,
+        -5.960464477539063e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-04",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 149.7203260830138,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 1.7985612998927536e-14,
+      "shared_training": true,
+      "predictions": [
+        0.0,
+        1.000000238418579,
+        1.0000001192092896,
+        2.9802322387695312e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-05",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 149.199459125055,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 7.105427357601002e-15,
+      "shared_training": true,
+      "predictions": [
+        0.0,
+        1.0000001192092896,
+        1.0000001192092896,
+        0.0
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-06",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 149.7555583330104,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 1.4210854715202004e-13,
+      "shared_training": true,
+      "predictions": [
+        -4.76837158203125e-07,
+        1.000000238418579,
+        1.000000238418579,
+        -4.76837158203125e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-07",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 150.41902699996717,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 6.394884621840902e-14,
+      "shared_training": true,
+      "predictions": [
+        -2.384185791015625e-07,
+        1.0000001192092896,
+        1.000000238418579,
+        -3.5762786865234375e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-08",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 151.52088212501258,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 3.2862601528904634e-14,
+      "shared_training": true,
+      "predictions": [
+        -1.1920928955078125e-07,
+        1.000000238418579,
+        1.000000238418579,
+        -5.960464477539063e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-09",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 150.180259958026,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 0.0,
+      "shared_training": true,
+      "predictions": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "xor-10",
+      "kind": "xor",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 158.35558629094157,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "class_bar": true,
+      "reconstruction_bar": true,
+      "mse": 2.842170943040401e-14,
+      "shared_training": true,
+      "predictions": [
+        0.0,
+        1.000000238418579,
+        1.000000238418579,
+        0.0
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "reconstructions": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ]
+    },
+    {
+      "name": "mm-01",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 7.604090749984607,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.1970270276069641,
+      "steps": 34,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-02",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 8.603114165947773,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.1937386393547058,
+      "steps": 40,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-03",
+      "kind": "mm",
+      "process_exit": 1,
+      "process_reason": "exit",
+      "seconds": 21.730403249966912,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": false,
+      "best": 0.2279723882675171,
+      "steps": 200,
+      "diagnostic_landing_identical": true
+    },
+    {
+      "name": "mm-04",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 7.073445374961011,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.1794789880514145,
+      "steps": 31,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-05",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 10.344299957971089,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.17536208033561707,
+      "steps": 68,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-06",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 6.420796166989021,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.17548152804374695,
+      "steps": 22,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-07",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 7.533176458091475,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.19398534297943115,
+      "steps": 34,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-08",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 7.526289750006981,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.1566462516784668,
+      "steps": 26,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-09",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 12.379857457941398,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.17661765217781067,
+      "steps": 77,
+      "diagnostic_landing_identical": false
+    },
+    {
+      "name": "mm-10",
+      "kind": "mm",
+      "process_exit": 0,
+      "process_reason": "exit",
+      "seconds": 8.68476458301302,
+      "thought": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "bar": true,
+      "best": 0.19879348576068878,
+      "steps": 49,
+      "diagnostic_landing_identical": false
+    }
+  ],
+  "seconds": 1500.9822003330337,
+  "seed": null,
+  "retries": 0,
+  "replacements": 0,
+  "all_expected_process_outcomes": true,
+  "all_thought_calls_and_episodes_zero": true,
+  "condition_satisfied": true,
+  "bisection": "mm-bisection/result.json",
+  "diagnostic_cases": [
+    "mm-03"
+  ],
+  "learning_claim": false,
+  "interpretation": "Raw MM misses stay misses. Only exact diagnostic evidence can satisfy the operators section 20 exception."
+}

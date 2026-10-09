@@ -1,0 +1,22 @@
+FsFs......                                                               [100%]
+=================================== FAILURES ===================================
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+test/test_output_path_supervised.py:196: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    native_rows = m.inputSpace._ar_grammar_object_rows[:, 0]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development] _
+test/test_output_path_supervised.py:196: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    native_rows = m.inputSpace._ar_grammar_object_rows[:, 0]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]
+2 failed, 6 passed, 2 skipped, 9 deselected, 1 warning in 9.15s

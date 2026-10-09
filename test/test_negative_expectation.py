@@ -152,10 +152,10 @@ def _anticipating_model():
     return model, discourse, meaning
 
 
-def test_residual_credit_replays_current_chooser_and_has_its_own_baseline(monkeypatch):
-    """Held forecasts credit the shared chooser without an EMA or replay."""
-    from test_item6_2_thinking import test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
-    test_expectation_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch)
+def test_expectation_updates_predictors_outside_the_departure_comparison(monkeypatch):
+    """Expectation trains its predictor; R + A judges the departure."""
+    from test_item6_2_thinking import test_expectation_trains_predictor_without_moving_departure_chooser
+    test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch)
 
 
 def test_metadata_comes_from_the_preceding_occurrence_not_the_target():

@@ -1,0 +1,908 @@
+# Item 6.2: thinking (Claude, 2026-10-07; decisions Alec's of 2026-10-07)
+
+Status: specification for Codex, one step; it includes the renames (§2.1);
+reviewed by Claude. Audit and decisions: [thought-loop plan](../plans/2026-10-07-thought-loop.md).
+Fixed point: [thinking toy](../benchmarks/2026-10-07-thinking-toy/README.md).
+Inherits: two-truths §1.1 (the pair; the two lanes), accessible-mind §2.6
+(expectation as a negative image), the operators update (addresses, lanes,
+magnitude), 6.5 (columns, binding as a chooser candidate).
+
+## 0. What thinking is
+
+A sentence closes to one row. If every reference in it is bound, the row is
+an assertion and the closing is complete. If a reference is open — the
+binder found nothing existing to bind it to — the row is a question, and
+thinking is what fills the reference: by lookup, by inference over other
+rows, or by waiting for later text. The answer is the binding. Nested
+questions are references opened on the way; they fill in dependency order,
+which is all the stack ever was. Thinking runs at every closing that
+leaves a reference open, declarative or interrogative, within a work
+budget; it is credited by what follows, exactly as composition is.
+
+## 1. The open reference
+
+1.1 A reference is open when `interpret`'s binding choice (6.5 §3.2; bind
+can be implicit, Alec 2026-10-07) binds it to nothing: no existing
+occurrence, column or row matches. The row keeps the open slot (null
+reference, open role). Wh-words, `?` and the interrogative mode are surface
+evidence for an open reference, not its definition; a row with every
+reference bound is not a question whatever its surface. *How the evidence
+opens one (Alec, 2026-10-08, replacing a declared class — words cannot be
+created from birth; they are learned):* `bind()` is a method `interpret()`
+calls: it looks backward for a referent among the situation's candidates
+(the recency buffer, cued frames, earlier constituents; 6.5's enumeration).
+Found, the reference is bound. Not found, **the reference is forward** —
+open — and the chooser chooses, credited by what follows, between minting
+a new individual and leaving it open to be filled; a determiner forces the
+choice (`a` mints, `the` binds), a bare word leaves it to the chooser. A
+wh-word is a word whose backward referent is never found: minting for it
+never earns credit, leaving it open and having `the answer is X` fill it
+does, so the chooser learns that `what` is a question word — by the same
+mechanism that leaves `x` open in a premise until `x is three` arrives. `?`
+is a learned whole in whole-space, evidence the chooser may read. The
+chooser starts near uniform between mint and open, so questions open about
+half the time from the first epoch. *Precision (Alec, 2026-10-08, §13.2:
+"open references at your leisure, bind them when possible"):* "found" is
+the chooser's judgement — the backward candidates, mint and open are
+always alternatives of the one softmax; a same-identity column is a
+candidate, never a binding by itself. Binding is two-stage, as in the
+reading literature (§13.2): a bond at the word when a candidate is there,
+and resolution at the closing or when the referent arrives (§1.3's upsert,
+§4's episode). No separate binding pass is added.
+
+1.2 Kinds of open slot: an open *referent* (who, what, which — a role's
+reference), an open *evidence pair* (is it so? — the row's `(c⁺, c⁻)`
+unknown: `(0, 0)` on a well-defined row), an open *relation* (how are they
+related — the operator reference). All three are references in the row's
+terms.
+
+1.3 A forward reference is an expectation of a referent (Philosophy,
+"identity is an expectation"). Later text may fill it (cataphora); thought
+may fill it; at document end an unfilled reference stays stored as a
+question row (record kind `question`). *Amended 2026-10-08 (§12):* a
+relational row with an unresolved reference is not rejected at commit; it
+is stored pending with the reference open, and the address upsert fills it
+when the referent's occurrence arrives.
+
+## 2. The operations
+
+Two faces for every relation, by Alec's rule (`isX : X :: conjunction :
+intersection`): the symbolic face reads LTM and the taxonomy by reference
+and leaves the evidence pair with its witnessing rows; the conceptual face
+computes over the concepts' codes and leaves conceptual content with a
+pair. Every operation leaves a pair or content, never a scalar (catalogue
+rule 6).
+
+| operation | symbolic face | conceptual face |
+| --- | --- | --- |
+| lookup | `query(pattern)`: the best-matching row for a pattern with open slots, by content key and references (Alec: the best match) | — |
+| asking | `ask(row)`: the attempt to fill a row's open references — enumerate fillings (query, the chains below, the situation's candidates), choose one; nested questions are new open references | — |
+| existence / truth | `isTrue(P)`: P's row by reference; its pair and trust | `exist(P)`: P's presence in conceptual space — the extent's pair at its magnitude |
+| parthood | `isPart(a, b)`: part-of rows and taxonomy by reference, with transitive chains | `part(a, b)`: containment and residual of `a` in `b` over codes |
+| equality | `isEqual(a, b)`: DEF rows and bound references; with open variables, substitution of equals — an equation applied as a rewrite rule | `equal(a, b)`: identity of codes |
+| implication | `isImplied(P, Q)`: implies rows with chains (modus ponens; temporal chains by `.when` order) | `implies(P, Q)`: containment of P's region in Q's |
+| negation | `not`: exchanges the lanes of a pair or of a meaning (also of the expectation image: concluding `not X` from an uncancelled image, §2.6.5) | the same |
+| the gain act | sets the expectation gain `g` for the next sentence (§2.6.6) | — |
+
+### 2.1 The renames (Alec, 2026-10-07: "sooner rather than later")
+
+Part of this item, done first. Each rename keeps the old name for one
+release as an alias that raises with the new name; grammars, tests,
+documents and the catalogue follow.
+
+| old | new | note |
+| --- | --- | --- |
+| `what(Q)` (thought) | `ask(Q)` | the attempt to fill a row's open references (§1, §2); no push, no stack manipulation — the `descend`/`return` history records remain as the trace |
+| `what`/`lookup` (LTM) | `query` | returns the best match (Alec) |
+| `chunk` | `synthesize`, reverse `analyze` | catalogue §3.1, decided |
+| `quantize` | removed | future work: all concepts are symbolized |
+| `arma`/`expect` (thought) | removed | a global setting (`<sentenceExpectation>`, gain `g`); the image reaches the chooser as context |
+| `true`, `exist` as scalars | `isTrue(P)`, `exist(P)` | the pair, never a scalar; the two faces above |
+| `selectedThoughtBudget`, `thinkingBudget` | `attentionBudget` | one budget name; the others rejected at load |
+
+The `<thought>` sections of the `.grammar` files list `ask`, `query`,
+`part`, `whole`, `equal`, `not`, and this item adds the faces of §2
+(`isTrue`/`exist`, `isPart`/`part`, `isEqual`/`equal`, `isImplied`/`implies`)
+and the gain act; `arma` and `quantize` leave them.
+
+## 3. Chaining
+
+3.1 Every result enters the serial stream as a slot the next operation can
+bind — working memory — with its evidence pair, its witnessing rows and the
+operation that produced it. Chains are therefore ordinary: `isPart(a, c)`
+with no row proceeds through `isPart(a, x)` and `isPart(x, c)`; `isImplied`
+through its antecedents; `ask` through nested open references.
+
+A bound meaning carries its constituent graph. Filling imports its children
+into the goal's local table and rebases the transferred local references;
+each nested child retains its own local table. Validate local references at
+fill, including nested meanings. A dangling local reference is a construction
+error raised there, never deferred to indexing or writing (§9 repair).
+
+3.2 A conclusion drawn by thought is written to LTM as a row of kind
+`inference`, addressed by the occurrence rule (the document/turn it was
+drawn in, its ordinal among that turn's thought rows, its content), with
+its evidence pair and references to the rows it was drawn from, so that
+forgetting can judge deducibility (item 5). Thought's write permission is
+exactly this kind.
+
+## 4. The episode, its end, and its budget
+
+4.1 At a closing with an open reference, one episode opens on that row,
+with the configured work budget (`attentionBudget`; `selectedThoughtBudget`
+and `thinkingBudget` are retired names, rejected at load). Every operation
+charges it; nested questions share it.
+
+4.2 **Concluding is not a choice while a reference is open and work
+remains.** The chooser chooses among the operations that could fill the
+reference; `conclude` becomes legal when the row's references are all bound
+or the budget is exhausted. (The toy: with conclude free the chooser learns
+to stop at once in a third of seeds and no departure can rescue it; with
+conclude gated by the open reference it learns the chain in 20/20 seeds by
+the answer and 17/20 by expectation alone.)
+
+4.3 At exhaustion the row is stored with its references still open, as a
+question row; later text or a later episode may fill it.
+
+4.4 **Where the episode sits, and what it may leave behind (Alec,
+2026-10-08).** `ask()` happens only between `compose()` and `generate()`:
+once per sentence, at the closing, after the sentence's two compose trials
+have chosen and before the readers and generation. (In the code:
+`_commit_sentence → ThoughtClosing.close → run_selected_thought →
+thought_pair`.) It is a longer computation of the same form — the thought
+steps are chooser steps and their credit is a longer trail through the
+same chooser — not a different one. It leaves the state identical except
+for: (i) the row's open reference filled, or still open (4.3); (ii) new
+LTM rows — the inference rows with their provenance (§3) and the pending
+rows of §1.3; (iii) the credit trail (the episode's choices and the
+`descend`/`return` records, §2.1). Nothing else: no row-keyed state held
+beside the LTM, no result of a form the closing cannot store. A result
+that is not a complete row or a point does not fill the slot and is not
+scored as if it did (§13.3). *Certificate:* a state diff across one
+episode on the real driver shows exactly (i)–(iii).
+
+## 5. Credit
+
+5.1 The compose rule, unchanged: the greedy episode against one departure
+(uniform over the episode's rounds, uniform over the eligible alternatives
+at that round), both completed, credited by `K·R·p(a_dep)·ΔC` with `C` the
+owner-step cost of what follows: the answer where one is supplied; the
+expectation's error on the next sentence everywhere; the budget spent. A
+conclusion that makes the next sentence more predictable is credited —
+thinking trained by expectation and surprise. The REINFORCE/EMA path and
+`selectedThoughtPolicyWeight` retire into this.
+
+5.2 One chooser: the thought operations are candidates in the same softmax
+as the grammar's (6.5 §3.2 made identity a candidate there; thought's
+operations join it), so one policy credit trains all choices.
+
+5.3 Readers: the presented answer is the binding; the comparison reader's
+role from 2e carries over for the answer term.
+
+## 6. Entry on declaratives, and the image
+
+6.1 A declarative closing whose references are all bound opens no episode
+unless the expectation's image is uncancelled: an expected row that did
+not arrive leaves `−g·κ·ê` at the closing (§2.6.1); `not` over the image
+concludes an absence (`not X`), written as an inference row with the
+image's confidence as its against-pole evidence. This is the one thought
+act a fully bound declarative can prompt.
+
+6.2 Heterogeneity (both) that persists at the narrowest extent is the
+other prompt — refinement of the concept (plan §43) — and stays FutureWork's
+"four corners as prompts" for its policy.
+
+## 7. Certificates and tests
+
+- The open reference: a row with a bound reference is not a question
+  whatever its surface; wh-words and `?` open one; a bare noun nothing
+  matches opens one (cataphora filled by later text; stored as a question
+  at document end).
+- The gate: `conclude` illegal while a reference is open and work remains;
+  legal at exhaustion.
+- Chaining: `isPart(a, c)` from `a<b`, `b<c` stored (two queries, one
+  conclusion, an inference row with both references); `isImplied` through
+  modus ponens; a nested `ask`.
+- The faces: `isX` reads rows, `X` computes codes; both leave pairs; no
+  scalar anywhere (an AST audit as for the lanes).
+- Credit: a focused episode in which the departure's chain is cheaper by
+  the answer, and one in which it is cheaper by expectation only, both
+  move the chooser toward the chain; ties move nothing.
+- The image: an uncancelled expectation at a declarative closing yields a
+  `not X` inference row with the right pair.
+- Documents: QueryContracts, AccessibleMind.md, Reasoning.md,
+  ThoughtHistory.md, the 09-18 thought spec's status line, the catalogue
+  (§3.5–§3.7, §6 corrected; retired operators removed), the budget names.
+
+## 8. Measurement
+
+One sweep on the delivered source, green; the standing thirty trainings
+unchanged (thinking opens no episode in the XOR gates: every reference
+binds). The thinking gate is `MM_query_reasoning` and the 11c mechanism
+tests, with the chaining fixture above, run with the credit on; no seed, no
+retry. Receipt in `doc/benchmarks/<date>-item6-2/`; stop for Claude's review
+before any commit.
+
+## 9. Review of the October 7 candidate (Claude, 2026-10-07): held; two repairs
+
+Receipt `doc/benchmarks/2026-10-07-item6-2/` (measured source 725 files,
+matching the working tree). The default sweep is green (5,557 cases) and the
+standing thirty trainings are unchanged at 10/10 on every gate, with zero
+thought episodes opened in them, as specified. The renames (§2.1), the open
+reference, the conclude gate, chaining into working memory, inference rows
+with provenance, both faces, the credit by answer and by expectation, and
+the absence inference are all delivered, and the 25 new certificates pass.
+Not landed, for two reasons, one of them a specification gap of mine:
+
+1. **The configured `MM_query_reasoning` run fails at epoch 2.** When a
+   binding transfers a child of the supplied meaning into a goal that has no
+   constituents, `ThoughtReferences.fill` copies the local reference
+   `('constituent', 0)` without the constituent itself, and
+   `ThoughtStream.write` indexes the missing child. Codex reproduced it
+   construction-only. §3.1 says a result enters the serial stream "with its
+   pair, its witnesses and its producing operation" and did not say that a
+   bound meaning carries its constituent graph. **Repair:** when a filling
+   binds a meaning with constituents, the constituents are carried and
+   rebased into the goal's local table, and local references are validated
+   before any index or write (a dangling local reference is a construction
+   error, raised at fill, never at write).
+2. **Five historical 11c tests fail** (`test_dual_towers` ×3,
+   `test_frozen_concepts`, `test_priming_energy`). Claude ran the same five
+   on the accepted 6.5 landing with `RUN_SLOW=1`: **all five fail there
+   too.** They are slow tests, excluded from every standing sweep, byte-
+   identical since the operators landing, and stale against the 3a/4a
+   widths (one asserts a 1,024-wide view where the width is now 104). They
+   predate 6.2 and are not its regression; the receipt was right not to
+   claim either way. **Repair:** port the five to the current widths and
+   contracts, or retire the ones whose contract no longer exists, with the
+   old texts saved — the 11c mechanism gate then reads 19/19 or fewer by
+   retirement, never by exclusion.
+
+Also: the MM optimizer smoke's routing-dimension mismatch
+(`6x58 and 11x104` in `BracketExpectation._apply_routing_bias`) is the same
+width staleness in a reader; it is repaired with item 2. The thinking
+launcher's post-report formatting error is cosmetic. §5.1's "every seed" for
+the expectation-only credit was my overstatement: the toy's 17/20 is the
+record and §5.1 is corrected to say so.
+
+**Then:** the configured `MM_query_reasoning` run to its 300 epochs
+(unforced, no seed), the explicit thinking gate green, the standing thirty
+once more, the receipt as before; stop for review. Landing follows if the
+run completes and the chaining credit moves the chooser as the certificates
+show.
+
+## 10. The thinking corpus: arithmetic with intermediate steps (Alec, 2026-10-07)
+
+Alec: zero thought episodes in the standing gates is expected ("maybe one
+with a zero gradient"); thought shows itself on a question that needs
+intermediary steps, and math problems are the training corpus for it.
+
+The assets exist (math spec of 2026-09-09; `data/MM_math.xml`, `MM_add.xml`,
+`MM_add_verb.xml`; `exact.MathProblemGenerator`; `bin/eval_math_thinking.py`):
+dependency-arithmetic problems over `[0, R)` with depth and distractors as
+dials, premises as clauses (`x = 3 ; y = x + 2 ; … ; what is y ?`),
+one-hot answers, held-out operand pairs and a held-out depth band (4–6),
+unique solutions, no arithmetic in the runtime (`plus` is a learned verb;
+the successor was learned 100% on single digits on 2026-09-09).
+
+**Not direct (Alec, 2026-10-07).** The September fixture gave numerals a
+one-hot or binary code inside the root and read the answer as a one-hot
+over `[0, R)`, so the reader computed on the code's structure. That is the
+direct path and it goes: numerals are opaque identities like any word, and
+the answer is a binding. Nothing numeric remains in the model; exact
+arithmetic lives only in the generator and the verifier.
+
+**The sequence (Alec, 2026-10-07: no `plus` operation; existing operators
+only — the VP, a reference to a statement, and `equal` — and a corpus with
+enough examples).** (1) Numerals are number *words* (`zero` … `twenty`),
+identities by construction (3a), no structure. (2) The corpus states facts
+in two forms: the copula form `one plus one is two.` and the two-sentence
+form `One plus one.` / `Ref(1) is two.` — a VP phrase composed as a row,
+a reference to that statement (object permanence by reference to a
+sentence, two-truths §3.5), and `equal`. The `equal`'s conceptual face is
+the training signal for the verb's change column (6.5): `one` under `plus
+one` must land on `two`. (3) The verb `plus` learns its action with the
+object `one` — the successor — as a generalization over VP from the
+counting facts, every successor being stated; with other objects it learns
+only the pairs it has seen. Measured (`thinking-toy/sim_plus_vp.py`): a verb
+map over opaque numerals generalizes to no held-out pair; with a smooth
+number line in meaning, to .13–.27 — the gradient that generalizes `plus`
+cannot be the VP's alone. (4) Addition that generalizes is thinking:
+`three plus two ?` is a row with an open referent, and the worked solution's
+sentences — `two is one plus one`, `three plus one is four`, `four plus one
+is five`, `the answer is five` — are the next sentences for the thought that
+would produce them. Thinking learns the chain from them by expectation
+credit; the answer line credits the binding. **No definition rows are
+written**: the recursion `a + S(b) = S(a + b)` is learned as the chooser's
+policy from the examples, which is what "a gradient generalizing" means
+here.
+
+**The gate, `MM_math_chain`.** The 09-09 generator rendering number words
+(including `zero`), the counting facts in both forms, and worked solutions
+with their successor steps; addends up to ten in training with
+held-out *pairs*; `attentionBudget` at least the largest addend plus two.
+Bars (ten unseeded trainings, no retry): (1) held-out pairs at the trained
+range bound correctly in ≥ 9/10 runs (four of four held-out rows on the
+committed binding) — derivable from the successor facts alone, so this is
+thinking generalizing, not a verb; (2) addends beyond the trained range
+reported, not required; (3) every question opens an episode, the chain
+length equals the second addend, one inference row per step with the
+right provenance; (4) the same ten with the answer line withheld
+(expectation credit only), reporting how many runs still form the chain;
+(5) the same ten with `attentionBudget` at zero — the VP alone, no thinking
+— reporting held-out accuracy, so thinking's contribution to
+generalization is isolated.
+Distractor premises present; premise order shuffled per presentation; no
+one-hot or binary numeral code and no numeric output anywhere (a test
+asserts the model has no `mathRange`-sized output).
+
+This gate replaces `MM_query_reasoning` as 6.2's learning certificate; the
+11c mechanism tests stay as mechanism. It is added to the repair pass of §9.
+
+## 11. Review of the repair pass (Claude, 2026-10-07): accepted as the mechanism landing; the math gate is the learning step
+
+Receipt `doc/benchmarks/2026-10-07-item6-2-repair/` (measured source 726
+files, matching the working tree; the first receipt intact). The two
+repairs of §9 are in and certified: fill carries and rebases a supplied
+meaning's constituent graph, validates local references at fill, and the
+saved construction fails before and passes after (twelve ownership cases);
+the five stale 11c tests are ported (three) or retired with their texts
+and reasons (two), and the MM routing width is fixed by loading the grammar
+before its predictors. The default sweep is green (5,568 cases); the
+standing thirty unchanged at 10/10 on every gate with zero thought episodes
+in them; the thinking gate 56/57 — the one failure is a fixture's nested
+`torch.manual_seed(0)` rejected by the unseeded guard before the model was
+built, not a failed assertion; its seeded form passes in the default sweep.
+The configured `MM_query_reasoning` run completes its 300 epochs; it opened
+one episode (six `not` acts against a departure to the gain act, an exact
+cost tie, no gradient) — completion, not learning, as the receipt says.
+
+**Verdict.** Accept as the 6.2 *mechanism* landing: the renames, the open
+reference, the conclude gate, chaining, inference rows, both faces, the
+credit path and the absence inference are built and certified. What is not
+yet shown is a learned chain, and `MM_query_reasoning` cannot show it — its
+questions bind at once. That is what §10's `MM_math_chain` is for, and it is
+the next step, with the one fixture given an unseeded construction path so
+the thinking gate reads 57/57.
+
+## 12. Review of the first `MM_math_chain` measurement (Claude, 2026-10-08): no result; five repairs
+
+Receipt `doc/benchmarks/2026-10-07-math-chain/` (measured source 732 files).
+All thirty attempts failed inside their first epoch, before any held-out
+evaluation; the receipt correctly reports accuracy as unavailable, not
+zero. The corpus (`bin/math_chain_corpus.py`), driver, verifier and observer
+are as specified and verified by reading the rendered documents. The
+default sweep is green (5,587), the standing thirty unchanged at 10/10, the
+thinking gate 57/57.
+
+Findings, in order of importance: (1) **every `what is y ?` closed with no
+open reference** (`open: []`, no episode, all conditions) — on the ordinary
+path `what` is a known word and binds to its own concept; §1.1 called
+wh-words evidence for an open reference and did not say how the evidence
+opens one. *Amendment to §1.1 (Alec's rule, replacing Claude's declared
+class):* `bind()` looks backward; a reference whose backward referent
+cannot be identified is forward and open; the chooser chooses mint or
+open; question words are learned. (2) **forward
+references in premises are rejected at commit** (`a relation requires three
+resolved row references`) against §1.3. *Amendment to §1.3:* a relational
+row with an unresolved reference is stored pending with the reference
+open and filled by the address upsert when the referent arrives.
+(3) Plumbing: the priming surface read at the previous batch size when the
+document-preserving driver changes the stream count (18 attempts);
+`ltmCapacity=1024` inherited over the config's `truthMaxEntries` (8);
+`isPart` offered with an operand the taxonomy rejects (2); an unresolved
+relational row (2, finding 2). Repair pass given in chat on 2026-10-08;
+the measurement then as declared.
+
+## 13. Review of the repair candidate (Claude, 2026-10-08): no result again; the menu layout, the missing open alternative, and the size of the measurement
+
+Receipt `doc/benchmarks/2026-10-08-math-chain-repair/` (measured source 733
+files, canonical map `f944bef3…`; integrity, helper and first-receipt
+checks all match). The default sweep is green (5,319 passed, 284 skipped,
+one XPASS), the thinking gate 57/57, the standing thirty 10/10 throughout
+with zero thought entry, and the ten paired starts have distinct fresh RNG
+archives and bit-identical initial choosers across their three conditions;
+no seed, no retry. **All thirty declared attempts failed inside epoch
+one** — after 0 to 162 of the epoch's 1,449 sentences, nine of the ten
+zero-budget attempts within 25 seconds — so, as in §12, held-out binding,
+chain success and chooser displacement are unavailable, not zero. The
+receipt says so correctly and claims nothing. Not accepted; no learning
+claim; both receipts are retained as they are.
+
+Of the five repairs: the shared LTM with batch-sized priming reads, the
+retired position filter, `ltmCapacity` over `truthMaxEntries` with a
+fail-loud full store, and the pending relational row are delivered with
+mechanism tests. `bind()` is delivered as a method `interpret` calls, with
+mint and open scored by the shared chooser (a `reference_choice` feature,
+near-uniform at start). The `isPart` filter validates occupied operands
+only and keeps grammar-open forms; the stated contract (both operands
+accepted concepts) was not delivered and no reason is given — deliver it
+or the reason.
+
+### 13.1 Why all thirty failed: the compose menu's layout is no longer a stable identifier
+
+Twenty-seven attempts raised `compose has no legal alternative at the
+selected exploration round`, two raised an out-of-range gather (`index 54
+… size 47`; `index 36 … size 35`), all on the same path: `sentence_pair →
+compose(cache, exploit) → choose_operation → operation_layer.forward →
+select_logits`. The explore trial replays the exploit trial's **flat action
+indices** over the compose prefix (`_exploration_prefix_slots`;
+`replay_action` in `select_logits`), departing at one round and running
+free after it. A flat index identifies a candidate only while the menu —
+`(N−1)·r_reduce` binary variants, `N·r_apply` unary variants, STOP, with
+`r_reduce = len(binary_ops)` from `prepare_operands` — has the same layout
+in both trials.
+
+The new `Interpret.bind` lays the menu out from **batch-wide, data-dependent
+conditions**: it keeps the columns `available.any(dim=(0, 1))` selects
+across every row and position of the batch, and appends the mint, open and
+unchanged alternatives only when `forward.any()` or `(active & ~eligible).any()`
+holds somewhere in the batch (`Interpret.py`, `bind`; the compiled branch
+enumerates every column and appends all three unconditionally, so eager
+and compiled already differ). In a batch whose rows depart at different
+rounds, a row past its departure has a different state, so the batch's
+column set and the appended alternatives change, `len(options)` changes
+for every operation, and the still-replaying rows' indices land on a
+different candidate (illegal → the assertion) or beyond the menu (the
+gather error). The old `propose` path kept the layout stable: a global
+`count` of columns and a per-row recency `topk`, with one alternative
+always appended under a validity mask. The repair returned to the
+interpreter *before* that retention and replaced masks with presence.
+Codex's static audit names this cause; the two gather errors are its
+direct signature. This is a defect the repair introduced, not a learning
+observation.
+
+*Rule.* The menu's layout — the number of variants per operation and
+which candidate each slot denotes — is a function of the row's own state
+and of global sizes only; validity is a mask, never presence. *Repair.*
+`prepare_operands` applies its per-row recency retention (`count`) before
+delegating to the interpreter; `bind` enumerates every column it is given
+and always appends mint, open and unchanged, each under its validity mask;
+the eager and compiled branches become one. *Certificate.* (a) A unit test:
+`bind`'s option count and slot order are unchanged when another row's
+`available` changes and when `forward` is false everywhere. (b) The
+ordinary training path: one `present()` training step on a batch of eight
+corpus sentences whose rows depart at different compose rounds completes,
+with `has_choice` true on every active row of the explore trial. The
+zero-budget attempts that failed within three seconds are this test.
+
+### 13.2 The open alternative is withheld once a backward candidate exists
+
+Of the 59 (answer) and 61 (expectation-only) questions observed in the
+partial epochs, 6 and 18 opened an episode; the evaluation-only
+construction of eight corpus documents opened none (`forward: []` on all
+eight `what is y ?`). Per start the outcome is all-or-nothing (0 of 8, 0 of
+18, or 6 of 8), which is the zero-temperature argmax of a near-uniform
+chooser: a start's initial weights decide, once, between mint and open for
+the first `what`. After that the mechanism closes the door: `bind` sets
+`forward = eligible & ~found`, and appends the mint and open alternatives
+only where `forward` holds — so as soon as an earlier `what` (an
+occurrence, or the individual a mint created, reached through the
+word-form `associations`) is a candidate, `found` is true and the chooser
+can only choose *which* earlier `what` this one is. §1.1's own forecast
+("questions open about half the time from the first epoch") fails from
+the second question on, and the same rule binds `x` in one document to
+`x` in another — the opposite of stage 2 (batch differentiation).
+
+*Precision of §1.1 (Alec, 2026-10-08: "Sure, open references at your
+leisure, bind them when possible").* "Identified" is the
+chooser's judgement, not the existence of a same-identity column.
+`bind()` offers, for every eligible operand, the retained backward
+candidates **and** mint **and** open as alternatives of the one softmax;
+credit decides which. A determiner still forces its choice. Nothing in
+the mechanism binds a word to an earlier occurrence by surface identity
+alone; "found" informs the chooser's features (`reference_choice`), not
+the option set. *Certificate.* The eight-document construction at
+initialization opens questions at the near-uniform rate — about
+`1/(k+2)` for `k` retained candidates, not 0 of 8 — and the ordinary-path
+`the answer is five.` certificate fills an opened reference on the real
+driver (§13.4).
+
+Alec raised an alternative — a separate binding pass that looks for
+identity across unbound pronouns and possible references — and deferred
+to the psychological literature. The literature has both stages, and so
+does this spec. Reading is incremental: referents are resolved as words
+arrive when a candidate is available (Tanenhaus et al. 1995; Altmann &
+Kamide 1999), with recency, first mention and subjecthood as the cues
+(Gernsbacher 1989; Gordon, Grosz & Gilliom 1993) — the chooser's features.
+And it is two-stage: Garrod & Sanford's (1994) *bonding* (an immediate,
+shallow link from the anaphor to a salient candidate) followed by
+*resolution* (integration at the clause end, which can undo the bond);
+Kintsch's (1988) construction–integration says the same of the whole text.
+Forward references are not held until a pass runs over them: a cataphoric
+pronoun starts an active search and binds the first licensed noun phrase
+that arrives (Kazanina et al. 2007), and antecedents are reactivated at
+the gap (Nicol & Swinney 1989). In this spec the bond is `bind()`'s choice
+at the word, the resolution is the closing — the episode's `ask` and the
+address upsert that fills a pending reference when its referent arrives
+(§1.3) — so the second stage already exists and needs no pass of its own.
+What the literature adds is a measurement, not a mechanism: a bond that
+resolution later undoes should be rare and should cost (the garden-path
+reading), which the credit already charges.
+
+### 13.3 A two-slot thought result reached the sentence reader
+
+One attempt (answer, start 2) raised `a sentence end state occupies one or
+three slots` from `ThoughtClosing.close → thought_pair → ThoughtAnswer.score
+→ bound_view → SentenceEndState`. `score` sends a result to `bound_view`
+when `open_slots(result.meaning)` is empty; `open_slots` reads only the
+`_open_references` metadata, so a relational meaning with an unfilled
+operand and no metadata is treated as bound and packed with two roles. The
+receipt does not name the producing operation (the log has no role mask;
+the four inference rows observed were all `query` results, and a pending
+row retrieved by `query` is the obvious candidate).
+
+*Rule.* A relational meaning with an unfilled operand role is an open row:
+`open_slots` derives openness from the row's shape (relation filled,
+operand `role_refs` None) as well as from metadata; a pending row keeps
+its open reference when `query` returns it; a two-slot meaning never
+reaches `bound_view` or the readers. *Diagnosis first:* replay the saved
+next batch of start 2 (`failed-batches.json`) in a diagnostic run and name
+the operation that produced the two-slot result; fix that cause and keep
+the rule as the guard.
+
+### 13.4 The certificates must run on the ordinary path, through the real driver
+
+The receipt's own coverage table says the `the answer is five.` filling,
+the fully bound copula and the pending two-sentence case in both orders are
+certified only on constructed rows, and the delivered mechanism tests did
+not touch the path that failed in three seconds. The certificates asked
+for in §12 are repeated with the path fixed: each runs `present(model,
+split='train', optimizer=…)` on a tiny corpus of real documents with a
+batch of at least two rows and distinct departure rounds, through
+`MathChainTraining.present` and the frozen observer, asserting on the
+committed LTM rows. Constructed-row tests remain as unit tests; they are
+not the certificate. Added (Alec, 2026-10-08; §4.4): the **episode state
+diff** — on the real driver, the model's state before and after one
+`ask()` episode differs only in the filled reference, the new LTM rows and
+the credit trail; `_open_thought_rows`, `_pending_thought_credit`,
+`_closing_images`, `what_memory` and any other row-keyed holder either
+appear in that diff as LTM rows or go.
+
+### 13.5 Process: diagnose by replay; dry-run one epoch before freezing
+
+Codex did not replay any failed learner "to investigate it". Diagnosis is
+not a retry: the round-2c bisection established the practice (operators
+plan §19–§20), and the protocol's "no retries" governs the declared
+measurement's outcomes, not development. Both receipts failed within the
+first batches of the real driver on paths the sweep does not exercise, so
+before the next freeze: one **development dry run** of one full epoch per
+condition on a throwaway start, recorded as development (as the first-run
+sample was), with the epoch's wall time, the per-sentence time by sentence
+kind, and a profile of one thought episode.
+
+### 13.6 The declared measurement does not fit: size it from the dry run (for Alec)
+
+From the partial epochs: sentences without an episode take about 1.2–1.7 s
+each; an episode of the full budget (64 thought steps; all 24 observed
+spent it) takes roughly 75–360 s, i.e. 1–6 s per thought step. An epoch
+has 1,449 sentences of which 117 are questions. If questions open as the
+spec intends, an epoch is about 1,332 × 1.5 s + 117 × ~150 s ≈ 5 h; the
+declared 50 epochs are ~250 h per training, against the protocol's 24 h
+timeout, for thirty trainings on two workers. Even at today's 6-of-59 open
+rate an epoch is ~1 h and a training ~50 h. The 50-epoch basis was the
+MM_math pilot's far smaller corpus. Nothing has been measured, so
+re-declaring is not outcome-dependent; it must be declared before the
+freeze. The levers, in the order I would pull them: (1) the thought step's
+cost — one episode scores every result with the sentence reader; profile
+and remove what is per-step and need not be (item 1 otherwise); (2) the
+budget, 64 → the chain's need (ten successors at two or three operations
+each: 32); (3) epochs fixed by a time budget — say ≤ 8 h per training,
+from the dry run's measured epoch time; (4) the controls at five trainings
+each if thirty do not fit; the ten answer trainings stay. Alec's call on
+(2)–(4); (1) is Codex's measurement.
+
+### 13.7 What is next
+
+Not accepted; §12's repair pass is superseded by repair pass 2, handed off
+in §13.10: the fork (§13.8), the alternatives (§13.2, decided), open rows
+by shape (§13.3, diagnosed by replay), the `isPart` contract or its reason,
+the ordinary-path certificates and the episode state diff (§13.4, §4.4),
+the dry run with timing and a profile (§13.5), then the protocol declared
+under §13.9 and the measurement exactly as declared.
+
+### 13.8 Explore per rule: fork at the departure, no replay (Alec, 2026-10-08; the form of the 4.5 draft's §5.3, taken here)
+
+Alec, on §13.1: "compose runs every sentence twice — this is exactly what
+we were talking about; it can explore on a per-rule or per-level basis."
+The twin derivation with a replayed prefix is the fragile part, and it is
+not needed. Today (`compose(cached, exploit)`, `_exploration_prefix_slots`,
+`replay_action`; the same in `thought_pair`, "two complete ordinary
+episodes") the explore trial recomputes the whole prefix from scratch,
+reproducing the greedy's choices by their flat menu index so that it has a
+graph of its own; the departure is drawn after the greedy trial from its
+trace. Per-rule exploration is: the departure is one rule application; the
+explore trial **forks the greedy trial's state at that round** — the STM,
+language carries and scope as they stood — takes the alternative there,
+and completes greedily; nothing before the fork is recomputed or replayed.
+
+What changes and what does not:
+
+* *Draw.* Uniform over eligible rounds, walk first, as now (§5.1, operators
+  round 2d). Drawn during the greedy walk by reservoir sampling — at the
+  k-th eligible round of a walk, with probability 1/k take this round and
+  snapshot the state (one snapshot per walk, replaced) — so the fork point
+  is known without a second pass; the walk is chosen uniformly at the end.
+  The estimator's correction `K·R_walk·W` is unchanged.
+* *Credit.* Unchanged in form: the two trials costed at identical
+  parameters by the owner-step total, keep by reconstruction, SCG at the
+  departure round from the cost difference, the departure's probability
+  from the chooser's own distribution at the fork. The explore trial's
+  graph begins at the fork (detached there): its restricted backward
+  trains the suffix — the departure round and the rules after it; the
+  prefix is trained once, by the greedy trial, instead of twice on the
+  same actions. Per-*level* credit — the departure judged by that level's
+  surprise rather than the row's cost — is item 4.5's and is not taken
+  here; row-level cost stays.
+* *Cost.* The explore trial computes only its suffix; a thought episode's
+  explore likewise runs only from its departure. This is the largest
+  single reduction available for §13.6.
+* *What it retires.* `_exploration_prefix_slots`, `_compose_prefix_slots`,
+  `replay_action` for compose and the `exploit`/`actions` replay in
+  `thought_pair`; the menu's layout no longer has to be trial-invariant
+  for correctness (13.1's rule becomes hygiene: a candidate's identity is
+  still the row's own business).
+* *Regression.* With an exact replay the forked derivation is the same
+  derivation, so the standing thirty are the regression check; the RNG
+  stream changes (one draw during the walk instead of after it), so a
+  miss on a path that differs only in RNG consumption falls under the
+  operators plan §20 rule, shown by bisection as before.
+
+§13.8 replaces §13.1's patch as the repair for this failure class, with
+§13.1's certificate (b) kept as the regression test that failed in three
+seconds. It is the implementation form of the 4.5 draft's §5.1–§5.3 (one
+departure at one level, greedy completion, the cost read at the end), for
+compose and for the thought walk alike; per-level *credit* stays with 4.5.
+
+### 13.9 Runtime under the Viterbi principle, and the order of the problems (Alec, 2026-10-08)
+
+Alec: "I'm hoping that the runtime for the separate thinking or compose
+step is limited by the fact that we can do an explore/exploit per level,
+and rely on Viterbi's principle to maximize over the entire derivation"
+(the 4.5 draft, §5.3: one departure, greedy completion, `R + A` read at
+the end measures `Q(s, a)` exactly once the completion is optimal, so one
+die per derivation suffices and no chained random derivation is needed).
+
+What that bounds, and what it does not. It bounds the *trial* overhead:
+one departure per sentence and per episode, and with the fork (§13.8) the
+explore trial is a suffix only, so a sentence or an episode costs on
+average about 1.5 greedy passes instead of 2. It does not touch the greedy
+pass itself, which is where the measured time is: 1.2–1.7 s per plain
+sentence (the open read's 2.6×, item 1) and 1–6 s per thought step — the
+episode scores every result with the sentence reader and the comparison
+reader, and queries the store each step. So after the fork the levers of
+§13.6 remain, in this order: profile one episode in the dry run and take
+out what is per-step and need not be; the budget at the chain's need
+(ten successors at two or three operations each: **32**); epochs from the
+measured epoch time under a time budget; the controls at five each if ten
+do not fit.
+
+**The order of the problems.** §5.3's toy says the one-departure credit
+reaches deep derivations only when the problems arrive graded — the last
+step alone, then the last two — and not when the depths are mixed
+(optimal derivation reached in 0.96 of instances graded, 0.32–0.43
+unordered, 0.04 root-only). The declared protocol mixes chain lengths 0–10
+from the first presentation (`training_addends [0, 10]`,
+`per_presentation_premises_shuffled`). For the thinking corpus the graded
+order is by chain length — questions whose answer is the premise itself
+(`y is x plus zero`), then one successor, then two — which is also the
+age-appropriate order (counting before adding). *Decision for Alec, at
+the protocol's declaration:* present the corpus graded by chain length,
+with the shuffled order as the comparison if the time budget allows (the
+gate is then the difference, as in the 4.5 draft's §5.4), or graded alone.
+Nothing has been measured, so this is a declaration, not a redraw.
+
+#### 13.9.1 What the expense is made of (Claude, 2026-10-08, from the receipt's own timings)
+
+Alec: "if I'm wrong about this, then what is responsible for the
+computational expense? Perhaps we need to train expectation without
+waiting for the final answer, and we are not doing that?"
+
+Measured, not profiled (the profile is step 7 of §13.10). The receipt's
+evaluation-only read of eight documents (`ordinary-construction.log`,
+batch of one, no optimizer, store at 8,192 rows): a plain sentence takes
+**0.5–0.6 s**; a sentence that opens an episode takes **6–9 s** — the full
+budget of 64 steps at about 0.1 s per thought step, since nothing can fill
+the reference at initialization and `conclude` is illegal while it is
+open (§4.2). Which sentences open one: every `the answer is X.` (the
+determiner forces a backward bind, no earlier `answer` is found, the
+reference opens — it should instead be binding the question's open slot;
+certificate (c) of §13.10), and the first occurrences of `x`, `u`, `v`
+where the chooser left them open; one `what is y ?` in eight. About a
+quarter of the sentences, each at twelve times the plain cost. In the
+declared trainings (batch of eight, two compose trials, backward, both
+readers): a plain sentence **1.2–1.7 s**, an episode **75–360 s** — ten to
+fifty times its evaluation cost, from the two complete episodes of
+`thought_pair` (§13.8 halves this), the graph and backward over 64 steps,
+the readers, and whatever else the profile names (the one-second native
+sample taken during a training shows `where`/`eq` masking kernels at
+~55% of the main thread and BLAS at ~5%: masking and comparison over
+large tensors, not the maps' matmuls; the store is preallocated at
+`ltmCapacity` = 1,048,576 rows because the driver keys every epoch's
+documents afresh, and whether any per-step path scans that capacity is
+being checked).
+
+So the expense is, in order: (1) the episode on every open reference,
+spending the whole budget, run twice in training; (2) the training
+multiplier per episode; (3) the plain sentence's base cost (the open
+read's 2.6×, item 1). The trial structure that Viterbi bounds (§13.9) is
+not where the time goes.
+
+On "train expectation without waiting for the final answer": waiting costs
+no compute — it costs learning. Expectation *is* trained without waiting
+today: the word-level and sentence-level predictors train teacher-forced
+at every word and every closing, never on the answer. What waits for the
+end is the chooser's credit (`R + A` at the closing, by the 4.5 draft's
+§5.3), which is latency of credit, not wall time. Where Alec's instinct
+is right is the episode's *length*: the chooser searches 64 steps because
+nothing tells it the next step. The worked steps in the corpus (`two is
+one plus one.`) are the next-step targets of the chain predictor (4.5's
+level C3, declared and off), teacher-forced, no waiting; with that
+prediction in the chooser's context the episode would take the predicted
+step and end at the chain's length rather than the budget. That is 4.5's
+mechanism, and it is why the worked steps are in this corpus; in 6.2 the
+chain must still be found by the chooser, which is the measurement.
+
+#### 13.9.2 Alec's reading of the form, and the conditions under which it is safe (2026-10-08)
+
+Alec: "one explore on each level, trained by the output, but there is no
+full (deep derivational) tree for the explore: the exploit branch is what
+carries the signal forward. Is this correct, and safe given Viterbi and a
+good training corpus?"
+
+Correct, with three precisions. (1) *One die per walk, not per level:* one
+departure per sentence over the narrowing and compose walks (walk first),
+and one per thought episode; at the departure the explore takes one
+alternative and completes greedily — no second tree, a fork and a suffix
+(§13.8). (2) *Trained by the output:* the departure is credited by the
+cost difference read at the end — reconstruction and the answer. Today's
+trial cost is still the owner-step total `R + E + A` (operators round 2);
+the 4.5 draft's §5.2 ruling (judge trials by `R + A`, expectation trains
+only the predictors — the dark-room guard) supersedes it for the
+departure's judgement and is applied at the re-declaration (§13.10 step
+8), since nothing has been measured under the old rule. (3) *What carries
+forward:* the kept trial, by reconstruction (round 2b) — the exploit
+unless the explore reconstructs strictly better. That is Viterbi's own
+rule, keep the best partial path; the chooser is trained toward the kept
+choice either way, so the greedy path converges on what is carried.
+
+Safe under four conditions, which are the price of one die:
+
+* **The completion must be near-optimal after the departure** (Bellman:
+  one departure plus a greedy finish measures `Q(s, a)` exactly when the
+  finish is optimal). The graded corpus supplies this one round at a time
+  — the last step first — and the toy says it is not optional: optimal
+  derivations reached in 0.96 of instances graded, 0.32–0.43 unordered.
+  "A good training corpus" is the condition, not a convenience; the
+  per-level stall diagnostic (explore-win rate at zero with surprise
+  high) says when a step is too steep.
+* **First-order credit only.** A better derivation that differs from the
+  greedy one at two rounds at once shows no gain to a single departure, so
+  it is never found by exploration; grading keeps each stage to one new
+  decision, which is what makes this harmless. No softmax temperature or
+  uniform floor repairs a two-step dependency; only the corpus does.
+* **Coverage is 1/rounds.** The die lands uniformly over eligible rounds,
+  so only about one departure in `d` (the derivation's depth) lands on the
+  round still to be learned; the rest are credited at no gain. Bounded,
+  not exponential; it is the cost of not rolling for all sixes.
+* **The signal is the outcome, not predictability** — `R + A`, with `E`
+  kept out of the trial's judgement; and the departure's alternative can
+  be any eligible one (the uniform floor `φ > 0`), so no alternative is
+  unreachable whatever the policy has learned.
+
+What the form gives up, knowingly: no distribution over derivations is
+carried (one path, no beam, no superposition — the forward stays a tree,
+invertible and writable), and the chooser's distribution is trained by
+the score-function term rather than by a mixed forward. The thought walk
+is the same case one level up: one departure per episode, the exploit
+chain carried unless the explore's row is kept, the corpus graded by chain
+length.
+
+### 13.10 Repair pass 2 (Claude, for Codex, 2026-10-08; final text, after Alec's rulings of §13.2, §13.8, §13.9)
+
+**Review verdict.** The repair candidate (`doc/benchmarks/2026-10-08-math-chain-repair/`)
+is **not accepted**: all thirty declared attempts failed inside epoch one
+(27 compose-legality assertions, 2 out-of-range replays, 1 two-slot
+reader state), so there is still no learning measurement; the receipt
+reports this correctly and claims nothing. Integrity, sweep, thinking gate
+and standing thirty are verified. Both receipts stay as they are; nothing
+is retried or replaced. The causes and rules are in §13.1–§13.9 of this
+spec; this section is the work.
+
+Not a measurement until step 9. The frozen corpus, driver, verifier and
+observer (`frozen-contracts.json`) stay unless an item names them.
+Development may replay any failed learner for diagnosis; the declared
+measurement is never retried. New receipt folder beside the existing two.
+
+1. **Fork, not replay (§13.8).** The explore trial of a sentence forks the
+   greedy trial's state at the departure round — STM, language carries,
+   scope, the rebuilt reference bank — detached at the fork, takes the
+   alternative there (`masked_action` with `departure_eligible` as now)
+   and completes greedily. Draw the departure during the greedy walk by
+   reservoir sampling per walk (at the k-th eligible round keep this round
+   with probability 1/k and snapshot the state, replacing the previous
+   snapshot), the walk chosen uniformly at the end; the walk-first draw
+   and the `K·R_walk·W` correction are unchanged. Retire
+   `_exploration_prefix_slots`, `_compose_prefix_slots`,
+   `_compose_exploit_actions` and `replay_action` on the compose path — no
+   legacy path. Keep: both trials costed at identical parameters; keep by
+   reconstruction; the departure's probability from the chooser's own
+   distribution at the fork; the explore trial's restricted backward over
+   its suffix only, the prefix trained by the greedy trial. The same for
+   the thought walk: `thought_pair` forks the episode at its departure
+   step instead of running two complete episodes. A narrowing departure
+   keeps its present form (it already reruns from its departure).
+2. **The departure is judged by `R + A` (§13.9.2, the 4.5 draft's §5.2).**
+   The trial comparison that credits the departure reads reconstruction
+   and the answer only; expectation stays out of that comparison and
+   continues to train the predictors through the owner-step registry as
+   now. The keep rule (reconstruction) is unchanged.
+3. **Alternatives (§13.2, decided).** `Interpret.bind` offers, for every
+   eligible operand, the retained backward candidates, mint (not in the
+   explicit `bind`/`pronoun` modes) and open, as variants of the one
+   softmax, each under its validity mask; `found` is a feature
+   (`reference_choice`), never a filter on the option set. `prepare_operands`
+   applies its per-row recency retention before delegating to the
+   interpreter; `bind`'s eager and compiled branches become one.
+4. **Open rows by shape (§13.3).** First replay the saved next batch of
+   answer start 2 (`failed-batches.json`) as a diagnostic and name the
+   operation that produced the two-slot result. Then: `open_slots` reports
+   an unfilled operand role of a relational meaning as open whether or not
+   `_open_references` lists it; a pending row returned by `query` keeps its
+   open reference; `bound_view` and the readers never receive a two-role
+   meaning.
+5. **`isPart`'s contract:** offered only when both operands are accepted
+   concepts (grammar-open forms excluded), or the receipt states why the
+   narrower filter is right.
+6. **The episode's footprint (§4.4).** `ask()` runs once per sentence at
+   the closing, between the compose pair's commit and the readers. Its
+   lasting effects are the filled (or still open) reference, the new LTM
+   rows with provenance, and the credit trail — nothing else. Whatever
+   `_open_thought_rows`, `_pending_thought_credit`, `_closing_images` and
+   `what_memory` hold that is not one of those three either becomes an LTM
+   row or goes.
+7. **Certificates on the ordinary path (§13.4),** each a `present(model,
+   split='train', optimizer=…)` training on a tiny corpus of real
+   documents, batch of at least two rows with distinct departure rounds,
+   through `MathChainTraining.present` and the frozen observer, asserting
+   on committed LTM rows: (a) a batch of eight corpus sentences trains with
+   no legality assertion or out-of-range action in the explore trial — the
+   test that failed in three seconds; (b) at initialization `what is y ?`
+   opens a reference at the near-uniform rate over its alternatives, not 0
+   of 8; (c) `the answer is five.` binds `the answer` to the question row's
+   open reference and fills it — it does not open a forward reference of
+   its own (today it does, and runs a 64-step episode on every answer line,
+   §13.9.1); (d) a declarative with every reference bound opens no episode;
+   (e) `y is x plus two.` / `x is three.` in both orders leaves a pending
+   row the upsert fills; (f) the episode state diff — before and after one
+   episode the state differs only in the filled reference, the new LTM
+   rows and the credit trail. Constructed-row tests stay as unit tests;
+   they are not the certificates.
+8. **Dry run before the freeze (§13.5, §13.9.1).** One development run of
+   one full epoch in each of the three conditions on a throwaway start,
+   recorded as development: wall time per epoch; seconds per sentence by
+   kind (plain, question with episode, answer line); the open rate on
+   questions and on declaratives; a profile of one thought episode naming
+   the per-step costs (the native sample shows masking/comparison kernels,
+   not matmuls, at the top); store occupancy per epoch and whether any
+   per-step cost scales with `ltmCapacity` — if it does, the declaration
+   sets the capacity to the measured need rather than 1,048,576.
+9. **The protocol, declared after the dry run and before the freeze
+   (§13.6, §13.9).** `attentionBudget` 32. Epochs from the measured epoch
+   time under a time budget of at most eight hours per training (at least
+   five epochs; if five do not fit, the controls drop to five trainings
+   each and the ten answer trainings stay). Presentation **graded by chain
+   length** — questions whose answer is the premise itself first, then one
+   successor, then two — graded alone unless Alec asks at this point for
+   the shuffled order beside it as the comparison. The departure judged by
+   `R + A` (step 2); the expectation-only condition stays as the control it
+   is. Bars, held-out and beyond-range pairs, verifier and zero-budget
+   semantics unchanged. Record the declaration in `protocol.json` with the
+   dry run's numbers beside it.
+10. **Then the measurement exactly as declared:** source and helpers
+    frozen, one green sweep, thinking 57/57, the standing thirty unchanged
+    (a miss on a path that differs from the landing only in RNG
+    consumption is shown by bisection, operators plan §20), every attempt
+    once, every outcome kept, held-out binding reported only where a
+    training completed, and the receipt stopped for Claude's review before
+    any commit.

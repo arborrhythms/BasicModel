@@ -1,0 +1,7 @@
+{
+  "kind": "development reporting smoke only",
+  "passed": false,
+  "learner_completed": true,
+  "reason": "Recorder lacked lexical what attribution when lexical_forms was empty; repaired using native word IDs.",
+  "successor": "development-reporting-smoke-02"
+}

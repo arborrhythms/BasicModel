@@ -1,0 +1,433 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 15,
+    "episodes": 34,
+    "sentences": 138,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "query": 33,
+    "conclude": 14,
+    "equal": 180,
+    "not": 209
+  },
+  "credit": {
+    "answer_expectation_and_work": 32,
+    "nonzero_graph": 15,
+    "ties": 19,
+    "nonzero_chooser_gradients": 15,
+    "document_end_answer_and_work": 2
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.221690423488617,
+        1.251690423488617
+      ],
+      "graph": true,
+      "surrogate": 0.04750978946685791,
+      "raw_chooser_gradient_l2": 0.02998156370541621
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.2237857532501222,
+        1.2537857532501222
+      ],
+      "graph": true,
+      "surrogate": 0.04750978946685791,
+      "raw_chooser_gradient_l2": 0.029981563876063613
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3802083778381347,
+        1.410208377838135
+      ],
+      "graph": true,
+      "surrogate": 0.10829786956310272,
+      "raw_chooser_gradient_l2": 0.07552956588370843
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.345463900566101,
+        1.3754639005661011
+      ],
+      "graph": true,
+      "surrogate": 0.08069893717765808,
+      "raw_chooser_gradient_l2": 0.09531954642695561
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.46439462184906,
+        1.49439462184906
+      ],
+      "graph": true,
+      "surrogate": 0.10647367686033249,
+      "raw_chooser_gradient_l2": 0.12859730998665075
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.353566198348999,
+        1.383566198348999
+      ],
+      "graph": true,
+      "surrogate": 0.08355437219142914,
+      "raw_chooser_gradient_l2": 0.13102048165468563
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.359113690853119,
+        1.719113690853119
+      ],
+      "graph": true,
+      "surrogate": 1.278937816619873,
+      "raw_chooser_gradient_l2": 2.0903608000713563
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3023175144195558,
+        1.809439768791199
+      ],
+      "graph": true,
+      "surrogate": 0.8813403844833374,
+      "raw_chooser_gradient_l2": 0.327928621524953
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        3.500415840148926,
+        3.500415840148926
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.773745837211609,
+        1.773745837211609
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3249009370803835,
+        1.3549009370803833
+      ],
+      "graph": true,
+      "surrogate": 0.052245184779167175,
+      "raw_chooser_gradient_l2": 0.021442595709645258
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7758820199966432,
+        1.7758820199966432
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.74457820892334,
+        1.7624118232727053
+      ],
+      "graph": true,
+      "surrogate": 0.3382851481437683,
+      "raw_chooser_gradient_l2": 0.38291844066305386
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.3530063438415527,
+        1.3830063438415527
+      ],
+      "graph": true,
+      "surrogate": 0.07938873767852783,
+      "raw_chooser_gradient_l2": 0.04036438890419121
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.2575143718719484,
+        1.3175143718719482
+      ],
+      "graph": true,
+      "surrogate": 0.10698182880878448,
+      "raw_chooser_gradient_l2": 0.12275932876313489
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.453722267150879,
+        1.483722267150879
+      ],
+      "graph": true,
+      "surrogate": 0.11106172949075699,
+      "raw_chooser_gradient_l2": 0.18348988324396676
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.2409358167648317,
+        1.3609358167648316
+      ],
+      "graph": true,
+      "surrogate": 0.2131534218788147,
+      "raw_chooser_gradient_l2": 0.2483947364692537
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.239843943119049,
+        1.2698439431190491
+      ],
+      "graph": true,
+      "surrogate": 0.057248666882514954,
+      "raw_chooser_gradient_l2": 0.08699226059758834
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        20.853551330566408,
+        20.853551330566408
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        18.3352392578125,
+        18.3352392578125
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        1.6400000000000001
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8639563941955568,
+        1.8639563941955568
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8639563941955568,
+        1.8639563941955568
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.801417055130005,
+        1.801417055130005
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8011657142639161,
+        1.8011657142639161
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        2.000210227966309,
+        2.000210227966309
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8492180490493775,
+        1.8492180490493775
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.8492180490493775,
+        1.8492180490493775
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.9308705949783327,
+        1.9308705949783327
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        2.050811424255371,
+        2.050811424255371
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.9693524265289308,
+        1.9693524265289308
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7904836559295656,
+        1.7904836559295656
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        1.7888933682441712,
+        1.7888933682441712
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 3.995081087480623,
+  "raw_chooser_gradient_l2_max": 2.0903608000713563
+}

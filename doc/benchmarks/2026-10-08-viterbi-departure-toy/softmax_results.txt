@@ -1,0 +1,12 @@
+D=5 K=3 instances=100 departure episodes=6000 (softmax 12000)
+  departure phi=0.3  root: optimal 0.04 regret 0.081   graded: optimal 0.98 regret 0.000
+  softmax tau=1.0    root: optimal 0.10 regret 0.033   graded: optimal 0.62 regret 0.001
+  softmax tau=0.3    root: optimal 0.12 regret 0.046   graded: optimal 0.53 regret 0.002
+  softmax tau=0.1    root: optimal 0.02 regret 0.127   graded: optimal 0.01 regret 0.131
+  softmax tau=0.03   root: optimal 0.01 regret 0.205   graded: optimal 0.00 regret 0.238
+softmax tau=1.0 lr=0.1: graded optimal 0.28 regret 0.008
+softmax tau=1.0 lr=2.0: graded optimal 0.54 regret 0.002
+softmax tau=0.3 lr=0.05: graded optimal 0.66 regret 0.001
+softmax tau=0.3 lr=0.2: graded optimal 0.56 regret 0.002
+softmax tau=0.1 lr=0.01: graded optimal 0.60 regret 0.001
+softmax tau=0.1 lr=0.05: graded optimal 0.60 regret 0.002

@@ -1,0 +1,97 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 1,
+    "episodes": 9,
+    "sentences": 64,
+    "equality_trials_with_verb_shift_gradient": 0
+  },
+  "operations": {
+    "ask": 18,
+    "query": 10,
+    "not": 28,
+    "conclude": 2,
+    "part": 30
+  },
+  "credit": {
+    "answer_expectation_and_work": 6,
+    "nonzero_graph": 5,
+    "ties": 1,
+    "nonzero_chooser_gradients": 5
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.791289987564087,
+        0.678838118314743
+      ],
+      "graph": true,
+      "surrogate": -0.5468658804893494,
+      "raw_chooser_gradient_l2": 0.44144553734062864
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7933170700073242,
+        0.7891535425186158
+      ],
+      "graph": true,
+      "surrogate": -0.020250624045729637,
+      "raw_chooser_gradient_l2": 0.016362907421006736
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7936458730697632,
+        0.7894505047798157
+      ],
+      "graph": true,
+      "surrogate": -0.020405493676662445,
+      "raw_chooser_gradient_l2": 0.016488039036830555
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7947219753265381,
+        0.2647219753265381
+      ],
+      "graph": true,
+      "surrogate": -2.406855344772339,
+      "raw_chooser_gradient_l2": 8.26083041056036
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.7284745299816132,
+        0.7284745299816132
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "train",
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.706048401594162,
+        0.516048401594162
+      ],
+      "graph": true,
+      "surrogate": -3.3347766399383545,
+      "raw_chooser_gradient_l2": 6.171071242970948
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 14.906198137329772,
+  "raw_chooser_gradient_l2_max": 8.26083041056036
+}

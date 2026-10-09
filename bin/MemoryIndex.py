@@ -19,7 +19,6 @@ class LeafCodeIndex:
 
     def _init_leaf_index(self):
         self.register_buffer('leaf_complete', torch.zeros(self.capacity, 3, dtype=torch.bool))
-        self.register_buffer('index_stream', torch.full((self.capacity,), -1, dtype=torch.long))
         # These columns serialize global postings, never per-row sequences.
         for name in ('posting_codes', 'posting_roles', 'posting_rows'):
             self.register_buffer(name, torch.empty(0, dtype=torch.long))
@@ -51,7 +50,8 @@ class LeafCodeIndex:
             raise ValueError('leaf codes require three sequences of nonnegative code addresses')
         return terms
 
-    def _meaning_leaf_terms(self, meaning, *, order=0, max_nodes=1024, work=None):
+    def _meaning_leaf_terms(self, meaning, *, order=0, max_nodes=1024, work=None, stream=None,
+                            role_mask=None):
         """Unfold the actual occupied values, following only structural refs."""
         remaining, active = [int(max_nodes)], set()
         def visit(value, field_order):
@@ -61,7 +61,8 @@ class LeafCodeIndex:
             active.add(id(value))
             terms, complete = [], []
             for role, reference in enumerate(value.role_refs):
-                codes, known = (), not bool(value.role_mask[role])
+                occupied = role_mask if value is meaning and role_mask is not None else value.role_mask
+                codes, known = (), not bool(occupied[role])
                 child = None
                 child_order = field_order
                 if reference is not None and reference[0] == 'constituent':
@@ -76,7 +77,7 @@ class LeafCodeIndex:
                 elif not known and field_order >= 0 and self._index_unfold is not None and remaining[0] > 0:
                     allowance = min(remaining[0], work.remaining) if work is not None else remaining[0]
                     recovered = self._index_unfold(value.roles[role].detach(), allowance,
-                                                   order=field_order, work=work)
+                        order=field_order, work=work, **({} if stream is None else {'stream': stream}))
                     if recovered is not None:
                         codes, spent, known = recovered
                         if type(spent) is not int or not 0 <= spent <= remaining[0]:
@@ -111,12 +112,12 @@ class LeafCodeIndex:
         records = [(code, role, row) for (code, role), rows in sorted(self._leaf_postings.items())
                    for row in rows]
         for i, name in enumerate(('posting_codes', 'posting_roles', 'posting_rows')):
-            destination[prefix + name] = self.index_stream.new_tensor([record[i] for record in records])
+            destination[prefix + name] = self.address_keys.new_tensor([record[i] for record in records])
         pairs = sorted((left, right, address, position)
                        for (left, right), witnesses in self._adjacent_postings.items()
                        for address, position in witnesses)
         for i, name in enumerate(('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')):
-            destination[prefix + name] = self.index_stream.new_tensor([record[i] for record in pairs])
+            destination[prefix + name] = self.address_keys.new_tensor([record[i] for record in pairs])
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -135,24 +136,25 @@ class LeafCodeIndex:
         self._leaf_index_missing = not all(present) or legacy
         self._leaf_needs_owner_reindex = self._leaf_index_missing
         for name in names:
-            value = state_dict.setdefault(prefix + name, self.index_stream.new_empty(0))
+            value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
             if value.ndim != 1 or value.dtype != torch.long:
                 error_msgs.append(prefix + 'invalid inverted retrieval column ' + name)
                 return
-            setattr(self, name, self.index_stream.new_empty(value.shape))
+            setattr(self, name, self.address_keys.new_empty(value.shape))
         adjacent_names = ('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')
         adjacent_present = [prefix + name in state_dict for name in adjacent_names]
         if any(adjacent_present) and not all(adjacent_present):
             error_msgs.append(prefix + 'incomplete adjacent whole index')
             return
         for name in adjacent_names:
-            value = state_dict.setdefault(prefix + name, self.index_stream.new_empty(0))
+            value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
             if value.ndim != 1 or value.dtype != torch.long:
                 error_msgs.append(prefix + 'invalid adjacent whole column ' + name)
                 return
-            setattr(self, name, self.index_stream.new_empty(value.shape))
+            setattr(self, name, self.address_keys.new_empty(value.shape))
         state_dict.setdefault(prefix + 'leaf_complete', torch.zeros_like(self.leaf_complete))
-        state_dict.setdefault(prefix + 'index_stream', torch.full_like(self.index_stream, -2))
+        # Retired write-position ownership is not part of shared truth.
+        state_dict.pop(prefix + 'index_stream', None)
         if legacy:
             state_dict[prefix + 'leaf_complete'] = torch.zeros_like(self.leaf_complete)
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
@@ -171,7 +173,7 @@ class LeafCodeIndex:
                 return
             rows.append(row)
         for name in names:
-            setattr(self, name, self.index_stream.new_empty(0))
+            setattr(self, name, self.address_keys.new_empty(0))
         self.rebuild_leaf_postings()
         if len({getattr(self, name).numel() for name in adjacent_names}) != 1:
             error_msgs.append(prefix + 'adjacent whole columns have different lengths')
@@ -184,7 +186,7 @@ class LeafCodeIndex:
             self._adjacent_postings.setdefault((left, right), set()).add((address, position))
         self._adjacency_revision += 1
         for name in adjacent_names:
-            setattr(self, name, self.index_stream.new_empty(0))
+            setattr(self, name, self.address_keys.new_empty(0))
 
     @torch.no_grad()
     def witness_adjacency(self, row, codes):
@@ -226,7 +228,6 @@ class LeafCodeIndex:
                 if row not in rows:
                     rows.append(row)
                     rows.sort()
-        self.index_stream[row] = int(stream)
         self._index_occurrences[self.occurrence_of(row)] = row
 
     def rebuild_leaf_postings(self):
@@ -237,14 +238,13 @@ class LeafCodeIndex:
     @torch.no_grad()
     def reindex_meanings(self):
         """Regenerate terms from stored fields with the current grammar owner."""
-        streams = self.index_stream.clone()
         self.leaf_complete.zero_()
         self._leaf_postings = {}
         self.rebuild_leaf_postings()
         for row in range(len(self)):
             meaning = self.meaning_of(row)
             terms, complete = (((), (), ()), (False, False, False)) if meaning is None else self._meaning_leaf_terms(meaning, order=int(self.order[row]))
-            self._append_leaf_terms(row, terms, complete, int(streams[row]))
+            self._append_leaf_terms(row, terms, complete)
         self._leaf_needs_owner_reindex = self._index_unfold is None
 
     @torch.no_grad()
@@ -285,15 +285,18 @@ class LeafCodeIndex:
         return True
 
     def cued_rows(self, cue, *, primed=(), references=(), retrieved=(), max_candidates=32,
-                  work=None, stream=None):
-        """Rank K indexed candidates on bound roles, with hard scope isolation.
+                  work=None, stream=None, role_mask=None):
+        """Rank K indexed candidates over shared truth, keeping explicit query scope.
 
-        Priming widens the cue codes. Contiguity widens only from already
-        retrieved rows, in their own stream. No recent-store slice is read.
+        Priming widens the cue codes. Write-time batch positions neither hide
+        rows nor confer adjacency. No recent-store slice is read.
         Every examined candidate is charged before its payload is accessed.
         """
         if type(max_candidates) is not int or max_candidates < 0:
             raise ValueError('candidate limit must be a nonnegative integer')
+        occupied = cue.role_mask if role_mask is None else role_mask
+        if occupied.shape != cue.role_mask.shape or occupied.dtype != torch.bool:
+            raise ValueError('a region mask must name its three roles')
         # An already structured query carries native references, whose orders
         # are owned by the concept table. Stored rows always use their stamp.
         cue_order = 0
@@ -303,25 +306,16 @@ class LeafCodeIndex:
                     code = self._index_code_row(reference)
                     if code is not None:
                         cue_order = max(cue_order, self._index_order_of(code))
-        terms, _ = self._meaning_leaf_terms(cue, order=cue_order, work=work)
+        terms, _ = self._meaning_leaf_terms(cue, order=cue_order, work=work, stream=stream,
+                                            role_mask=occupied)
         postings = [self._leaf_postings.get((code, role), ())
-                    for role, codes in enumerate(terms) if bool(cue.role_mask[role])
+                    for role, codes in enumerate(terms) if bool(occupied[role])
                     for code in set(codes)]
         postings.extend(self._leaf_postings.get((int(code), role), ())
                         for code in primed for role in range(3))
         explicit = [self._index_occurrences[ref] for ref in references
                     if ref in self._index_occurrences]
-        adjacent = set()
-        for reference in retrieved:
-            row = self._index_occurrences.get(reference)
-            if row is None:
-                continue
-            for neighbor in (row - 1, row + 1):
-                if (0 <= neighbor < len(self)
-                        and int(self.index_stream[row]) >= 0
-                        and int(self.index_stream[neighbor]) == int(self.index_stream[row])):
-                    adjacent.add(neighbor)
-        postings.extend((sorted(explicit), sorted(adjacent)))
+        postings.append(sorted(explicit))
         candidates = heapq.merge(*(iter(rows) for rows in postings))
         found, seen, scanned, incomplete = [], set(), 0, []
         for row in candidates:
@@ -335,9 +329,9 @@ class LeafCodeIndex:
                 incomplete.append('work_budget')
                 break
             scanned += 1
-            if stream is not None and int(self.index_stream[row]) not in (-1, int(stream)):
-                continue
-            if self.KINDS[int(self.record_kind[row])] in ('estimate', 'question'):
+            kind = self.KINDS[int(self.record_kind[row])]
+            if kind == 'estimate' or (kind == 'question' and float(self.c_plus[row]) == 0.
+                                     and float(self.c_minus[row]) == 0.):
                 continue
             meaning = self.meaning_of(row)
             if meaning is None:
@@ -347,22 +341,22 @@ class LeafCodeIndex:
                 continue
             if cue.bindings and not self._scope_contains(cue.bindings, meaning.bindings):
                 continue
-            mask = cue.role_mask.to(device=meaning.roles.device)
+            mask = occupied.to(device=meaning.roles.device)
             if bool((mask & ~meaning.role_mask).any()):
                 continue
             similarities = F.cosine_similarity(cue.roles.detach().to(meaning.roles), meaning.roles, dim=-1)
-            match = float(similarities[mask].clamp(0, 1).mean()) if bool(mask.any()) else 0.
+            match = float(similarities[mask].clamp(0, 1).mean()) if bool(mask.any()) else 1.
             record = self.row(row)
-            found.append(dict(record, index=row, match=match, contiguous=row in adjacent,
+            found.append(dict(record, index=row, match=match, contiguous=False,
                               leaf_codes=tuple(self.leaf_terms(row, role) for role in range(3))))
-        found.sort(key=lambda item: (-item['match'], -int(item['contiguous']), item['index']))
+        found.sort(key=lambda item: (-item['match'], item['index']))
         return {'value': tuple(found), 'records_scanned': scanned,
                 'incomplete': tuple(dict.fromkeys(incomplete))}
 
 
 @torch.no_grad()
 def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
-                order=0, order_of=None, sigma_inverse=None):
+                order=0, order_of=None, sigma_inverse=None, stream=None):
     """Unfold a detached idea with the current generate MLP and tied faces.
 
     Neither recorded actions nor expected leaf codes are inputs. Stops count
@@ -375,7 +369,19 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
     weights = activation() if callable(activation) else activation
     if not torch.is_tensor(weights):
         return dict(codes=(), operations=(), spent=0, complete=False)
-    weights = weights.reshape(-1)[:len(basis)]
+    if weights.ndim == 2:
+        if stream is None:
+            if weights.shape[0] != 1:
+                return dict(codes=(), operations=(), spent=0, complete=False)
+            stream = 0
+        if type(stream) is not int or not 0 <= stream < weights.shape[0]:
+            raise ValueError('unfold priming has no current stream row')
+        weights = weights[stream]
+    if weights.ndim != 1 or weights.numel() < len(basis):
+        raise ValueError('unfold priming differs from its vocabulary')
+    # Priming owns physical rows; unrestricted reads see the active prefix.
+    # These are the same row addresses, with dormant rows excluded.
+    weights = weights[:len(basis)]
     candidates = (weights > 1.).nonzero().flatten()
     if candidates.numel() > 32:
         candidates = candidates[torch.argsort(weights[candidates], descending=True, stable=True)[:32]]
@@ -474,9 +480,11 @@ def configure_model_index(model, store):
         if not chosen or any(space._row_order(row) != order - 1 for row in chosen):
             return ()
         return tuple(basis[row] * signed[row] for row in chosen)
-    def unfold(value, limit, *, order=0, work=None):
+    def unfold(value, limit, *, order=0, work=None, stream=None):
         result = unfold_idea(language, _basis(space), value, limit, work=work,
-                             activation=space.priming_weights, order=order,
+                             activation=lambda: space.priming_weights(batch=(
+                                 model._priming_batch_size() if hasattr(model, '_priming_batch_size') else None)),
+                             order=order, stream=stream,
                              order_of=space._row_order, sigma_inverse=sigma_inverse)
         return result['codes'], result['spent'], result['complete']
     store.configure_leaf_index(code_row=code_row, unfold=unfold if language is not None else None,

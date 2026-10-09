@@ -126,14 +126,17 @@ def test_retired_controllers_cannot_be_constructed_or_restored():
     assert state == {}
 
 
-def test_policy_charges_shared_episode_work_not_the_number_of_choices(monkeypatch):
+def test_policy_records_work_but_departure_uses_reconstruction_and_answer(monkeypatch):
     from test_item6_2_thinking import credit_chain_world, run
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+    # Isolate the R + A terms; §14's nonzero episode work price has separate
+    # coverage, and never enters the compose trial judgement.
+    monkeypatch.setattr(model, 'WHAT_STEP_COST', 0.)
     result = run(model, goal, work_budget=64)
     audit = model._last_thought_comparison
-    assert audit['costs'][1] == pytest.approx(model.WHAT_STEP_COST * result.work.spent)
-    assert audit['costs'][0] > audit['costs'][1]
-    assert model._last_thought_score_function['surrogate'].requires_grad
+    assert result.work.spent > 0
+    assert audit['costs']==(0.,0.)
+    assert model._last_thought_score_function['surrogate'] is None
 
 
 def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, eager_reading):
@@ -141,6 +144,10 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
     from test_output_walk import _model, _capture_program_probe
     from What import What
     import ThoughtCredit
+    import ThoughtClosing
+    # The explicit questions below own this fixture. A random surface
+    # reading must not introduce a third, unrelated controller episode.
+    monkeypatch.setattr(ThoughtClosing, 'closing_question', lambda *_args, **_kwargs: None)
     model = _model()
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None

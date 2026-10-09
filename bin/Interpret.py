@@ -283,8 +283,46 @@ class InterpretLayer(GrammarLayer):
         width = atoms.shape[-1] if derived is None else derived.percept_event_width
         return activate_code(atoms, presence, width, evidence=evidence)
 
+    def bind(self, value, *, identity, scope, candidate_ids, candidate_values,
+             candidate_relations, available, associations, mode, active):
+        """Bind backward, or offer mint and forward to the ordinary chooser.
+
+        Zero is the temporary open-reference marker (never a durable ID).
+        Minus one requests admission at the kept closing. No word class,
+        allocation, local softmax or random draw participates in this read.
+        """
+        from ClauseScope import ClauseScope
+        matches = candidate_ids == identity[..., None]
+        if associations is not None and associations.numel():
+            source = identity[..., None] == associations[:, 0]
+            target = candidate_ids[..., None] == associations[:, 1]
+            matches = matches | (source[..., None, :] & target).any(-1)
+        # A composed phrase, selected individual, or already-open operand
+        # retains the binding its own operation made.
+        explicit = mode in ('bind', 'pronoun')
+        eligible = active & (identity > 0) & (scope.bitwise_and(
+            ClauseScope.LOCAL | ClauseScope.DETERMINED) == 0)
+        if explicit or mode == 'mint':
+            eligible = active
+        available = available & eligible[..., None]
+        found = (available & matches).any(-1)
+        # Identity is evidence for the shared scorer, never a decision to
+        # bind. Slots and masks agree in eager and compiled execution.
+        options = [(candidate_values[:, :, i], candidate_ids[:, :, i],
+                    candidate_relations[:, :, i], available[:, :, i] & (mode != 'mint'), found)
+                   for i in range(candidate_ids.shape[-1])]
+        options.append((value, torch.full_like(identity, -1),
+                        torch.zeros_like(active), eligible & (not explicit), found))
+        options.append((value, torch.zeros_like(identity), torch.zeros_like(active),
+                        eligible & (mode != 'mint') &
+                        (~available.any(-1) if explicit else torch.ones_like(active)), found))
+        options.append((value, identity, scope.bitwise_and(1) != 0, active & ~eligible, found))
+        return options
+
     def forward(self, word, *, order=None, occurrence=None, selected=None,
-                object_atoms=None, presence=None, evidence=None):
+                object_atoms=None, presence=None, evidence=None, binding=None):
+        if binding is not None:
+            return self.bind(word, **binding)
         if torch.is_tensor(word):
             if object_atoms is None or presence is None or evidence is None:
                 raise ValueError('interpret tensor face requires the resolved object bank')

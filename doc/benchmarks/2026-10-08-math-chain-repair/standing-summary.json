@@ -1,0 +1,589 @@
+{
+  "source_matched": true,
+  "attempts": 30,
+  "retries": 0,
+  "sum": 10,
+  "xor_class": 10,
+  "xor_reconstruction": 10,
+  "xor_joint": 10,
+  "mm": 10,
+  "thinking_totals": {
+    "calls": 0,
+    "open_episodes": 0,
+    "bound_calls": 0
+  },
+  "all_processes_passed": true,
+  "shared_xor_trainings": true,
+  "runs": [
+    {
+      "name": "mm-01",
+      "kind": "mm",
+      "run": 1,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 44,
+      "best": 0.1967015415430069,
+      "last": 0.1967015415430069,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-02",
+      "kind": "mm",
+      "run": 2,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 65,
+      "best": 0.1899855136871338,
+      "last": 0.1899855136871338,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-03",
+      "kind": "mm",
+      "run": 3,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 39,
+      "best": 0.16843931376934052,
+      "last": 0.16843931376934052,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-04",
+      "kind": "mm",
+      "run": 4,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 47,
+      "best": 0.1842888593673706,
+      "last": 0.1842888593673706,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-05",
+      "kind": "mm",
+      "run": 5,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 48,
+      "best": 0.17897620797157288,
+      "last": 0.17897620797157288,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-06",
+      "kind": "mm",
+      "run": 6,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 112,
+      "best": 0.17899972200393677,
+      "last": 0.17899972200393677,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-07",
+      "kind": "mm",
+      "run": 7,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 50,
+      "best": 0.1566479504108429,
+      "last": 0.1566479504108429,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-08",
+      "kind": "mm",
+      "run": 8,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 30,
+      "best": 0.19518163800239563,
+      "last": 0.19518163800239563,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-09",
+      "kind": "mm",
+      "run": 9,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 41,
+      "best": 0.19434787333011627,
+      "last": 0.19434787333011627,
+      "mm_bar": true
+    },
+    {
+      "name": "mm-10",
+      "kind": "mm",
+      "run": 10,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": "passed"
+      },
+      "calls": 48,
+      "best": 0.1893554925918579,
+      "last": 0.1893554925918579,
+      "mm_bar": true
+    },
+    {
+      "name": "sum-01",
+      "kind": "sum",
+      "run": 1,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.2499999850988388,
+      "contrast": -5.960464477539063e-08,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-02",
+      "kind": "sum",
+      "run": 2,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 5.960464477539063e-08,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-03",
+      "kind": "sum",
+      "run": 3,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-04",
+      "kind": "sum",
+      "run": 4,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-05",
+      "kind": "sum",
+      "run": 5,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-06",
+      "kind": "sum",
+      "run": 6,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-07",
+      "kind": "sum",
+      "run": 7,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-08",
+      "kind": "sum",
+      "run": 8,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-09",
+      "kind": "sum",
+      "run": 9,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "sum-10",
+      "kind": "sum",
+      "run": 10,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "mse": 0.25,
+      "contrast": 0.0,
+      "sum_bar": true,
+      "floor_bar": true,
+      "class_bar": false,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-01",
+      "kind": "xor",
+      "run": 1,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 5.329070518200751e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-02",
+      "kind": "xor",
+      "run": 2,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 9.237055564881302e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-03",
+      "kind": "xor",
+      "run": 3,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 0.0,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-04",
+      "kind": "xor",
+      "run": 4,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 2.886579864025407e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-05",
+      "kind": "xor",
+      "run": 5,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 7.105427357601002e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-06",
+      "kind": "xor",
+      "run": 6,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 1.4210854715202004e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-07",
+      "kind": "xor",
+      "run": 7,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 2.5979218776228663e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-08",
+      "kind": "xor",
+      "run": 8,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 7.194245199571014e-14,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-09",
+      "kind": "xor",
+      "run": 9,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 6.217248937900877e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    },
+    {
+      "name": "xor-10",
+      "kind": "xor",
+      "run": 10,
+      "exit_code": 0,
+      "thinking": {
+        "calls": 0,
+        "open_episodes": 0,
+        "bound_calls": 0
+      },
+      "gate_reports": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "passed",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "passed"
+      },
+      "mse": 7.327471962526033e-15,
+      "correct": 4,
+      "reconstructed": 4,
+      "available": true,
+      "one_shared_training": true,
+      "class_bar": true,
+      "reconstruction_bar": true
+    }
+  ]
+}

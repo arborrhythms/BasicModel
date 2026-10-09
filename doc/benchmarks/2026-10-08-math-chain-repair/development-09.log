@@ -1,0 +1,140 @@
+.........F...................................................            [100%]
+=================================== FAILURES ===================================
+_____ test_native_worked_document_trains_unforced_without_numeric_oracles ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x125cc1f10>
+
+    def test_native_worked_document_trains_unforced_without_numeric_oracles(monkeypatch):
+        """Construction/optimizer smoke, not a learning-gate attempt."""
+        import exact
+        from MathChainTraining import present
+        model = build_model()
+        data = model.inputSpace.data
+        docs = (*data.math_chain_corpus.counting()[:2],
+                data.math_chain_corpus.problem((3, 2), split='train', training=True))
+        texts, targets, addresses = flatten(docs, supplied=True)
+        data.train_input, data.train_output = texts, [torch.zeros(1) for _ in texts]
+        data.text_answers['train'] = targets
+        data.source_addresses['train'] = [dict(value, split='train') for value in addresses]
+        # Generation is finished. The runtime has only the ordinary source stream.
+        def forbidden(*_args, **_kwargs):
+            pytest.fail('the learner called an exact-arithmetic oracle')
+        monkeypatch.setattr(exact, 'MathProblemGenerator', forbidden)
+        data.math_chain_corpus = data.math_chain_documents = None
+        monkeypatch.setattr(torch, 'manual_seed', forbidden)
+        reference_reads = []
+        reference_bank = model._sentence_reference_bank
+        def read_references(*args, **kwargs):
+            value = reference_bank(*args, **kwargs)
+            reference_reads.append(value)
+            return value
+        monkeypatch.setattr(model, '_sentence_reference_bank', read_references)
+        try:
+>           report = present(model, split='train', optimizer=model.getOptimizer(lr=.001))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain.py:194: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+bin/Models.py:13619: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13758: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14140: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8777: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10208: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8462: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8240: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23490: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22024: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21577: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20752: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20300: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:171: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:363: in write_clause
+    preflight(clause)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_...ence=(0.0, 1.0)),), companions=(), subject_word_id=21, eternal=False, factored_refs=None, order=1, evidence=(0.0, 1.0))
+
+    def preflight(value):
+        nonlocal required
+        if id(value) in visiting:
+            raise ValueError('completed clause references contain a cycle')
+        if id(value) in planned:
+            return planned[id(value)]
+        visiting.add(id(value))
+        relation = self.clause_relation(value)
+        if value.meaning.roles.shape != (3, self.nDim):
+            raise ValueError('clause meaning width differs from its truth store')
+        self._validate_local_references(replace(value.meaning,
+            role_refs=(None, None, None), constituents=()))
+        child_ids = tuple(preflight(child) for child in value.children)
+        refs = tuple(child_ids[r[1]] if isinstance(r, tuple) else
+                     r.identity if isinstance(r, ClausePredicate) else r for r in value.refs)
+        for slot, ref in enumerate(value.refs):
+            if isinstance(ref, ClausePredicate):
+                if ref.point.shape != (self.nDim,):
+                    raise ValueError('predicate point differs from its truth store width')
+            elif isinstance(ref, tuple):
+                child = value.children[ref[1]]
+                if relation is None and child.slots.shape[0] == 3:
+                    raise ValueError('a clause over a relation cannot fuse')
+            elif ref not in (-1, 0):
+                point = (index_plan.points[ref] if index_plan is not None and ref in index_plan.points
+                         else self.point_of_row(ref))
+                if relation is None and point is None:
+>                   raise ValueError('a clause over a relation cannot fuse')
+E                   ValueError: a clause over a relation cannot fuse
+
+bin/ClauseRow.py:331: ValueError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 1 (Δ=24.488s)
+batch = 2 (Δ=1.561s)
+batch = 3 (Δ=1.512s)
+batch = 4 (Δ=30.906s)
+batch = 5 (Δ=1.344s)
+batch = 6 (Δ=13.326s)
+batch = 7 (Δ=1.591s)
+batch = 8 (Δ=1.680s)
+=============================== warnings summary ===============================
+test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles
+1 failed, 60 passed, 1 warning in 99.26s (0:01:39)
