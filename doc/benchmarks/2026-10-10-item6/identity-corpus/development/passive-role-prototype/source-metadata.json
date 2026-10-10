@@ -1,0 +1,7 @@
+{
+  "base_commit": "c1d1ea03c111682168387043bd7c3e4f431c3c54",
+  "source_files": 769,
+  "corpus_files": 12,
+  "sha256": "53cb4a6babc0545a94c5613a28658ae741572deeb44efab1f69b0f9cea8f4589",
+  "status": "uncommitted corpus/measurement candidate; no identity mechanism changes or rule retirement"
+}

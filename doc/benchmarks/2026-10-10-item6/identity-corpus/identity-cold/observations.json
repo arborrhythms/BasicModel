@@ -1,0 +1,4044 @@
+[
+  {
+    "id": "8a292b5afbfe6f658eca",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "afef08eb9116c40da804",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "533b2e85819a6218d9e2",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {},
+      "m3": {}
+    }
+  },
+  {
+    "id": "95e0398ab199e8df46bf",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {},
+      "m3": {}
+    }
+  },
+  {
+    "id": "678646eeb072c0147a46",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "89b9ef43cf50aa1aed0a",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "f12a2d13fa237b46e8d7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "b7b0699b6e59aab3994f",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "6bf1724a619deabacc0a",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "cd830d741dfe0c78e6f8",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "1bd263c2973e7a44c907",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "4ce1d896c63a655458e0",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "3b1df1fdd504b29c34fd",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "3603a4c3e799de55940b",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "b7041f5c999e7b086650",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "581475b382753b574ad6",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "c6fa9e417574a2d8f055",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "eccaeb0f7d06fa8b5772",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "77db8d5541fcccc0daa5",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "ffb9cf3acc3b08b85b9e",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "9e8e3af2a6158f9681df",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "cb72357f5ded667f86a5",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "04986cbac0c0107123bd",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "44034d53dfa2ddad0285",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "cb0a5742b2c73eced019",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "c7de4cf1f9f0e619f15a",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "1f8102fbaf08477ac766",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "889f26b4cd3cbf2a42e8",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "e3317c36c2e860bdabb0",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "ab7722481cd4071b0d38",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "6e139796ab4539284f8d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "927150911364c61bb60b",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "195ba3a4b10c17718334",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "6e23c6b18d5231aa2c53",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "4ff420fe85808626faec",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "3b538aa3dbe9a048441c",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "87d8f4ab6753ec192813",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "68b75a9982aaafb36640",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "f93dd3151350e53feb86",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "ab7b840723f227f537f6",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "aab775c45b80a0bece53",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "7db688b4a47b6b672315",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "1c864a72f1803d91d0cd",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "8781e68daa2d72b2f334",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "e3b5e86a2e3ccbb2bf85",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "693da2c283f7ab62656c",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "40b6ee1e1abd5b31aa4c",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "980df4b315170b7d41bb",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "a72c19be0ddda3e03fd5",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "3f4034f40b66d7d39281",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "ab988109f219d370d145",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "7c68de4edf847d370f8d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "5d49688f0ff268100ac2",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "6f1f51d6be610dc9ee6d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "589f3c13568f150877e0",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "0d8a739151d41c79740d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "03c606f6be6fb3e6e726",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "a518de9f1c36695fb6b1",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "f4aa05a17fc1b7f9f7f9",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "9dc9c2439f92621c0855",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "54a7a68cd8cb61609e4d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "00418998897325ab4f89",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "05d7bf3b3ec2fabe2ab8",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "f83e8a88967f0ed97992",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "f2bafa188aff9e3443a8",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "637ab3d1be0395f82443",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "f446f2a38b9ece01cc72",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "d8dab4ebce2380e48081",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "967740ff3ad75964ada5",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "d26f6d3caf33970e288f",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "21121d77301338da9843",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "1f2a2b200e5fd2065ac7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "a5ecb9650e087136f853",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "f069115162af4e9b95a1",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "6b215c9374293033f109",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "7f62ac8ff40a7db826ef",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "04946b45d216081cd4c0",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "e7ec2b1743f5b29eb9c5",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "90874e5669858b865dfd",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "e396a768f30923205dcf",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "aa3736afc6d7da866587",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "8edbf0585d9749623d36",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "c940e5ba2c5fbf7734ef",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "0e34e6d12c0e58e4e7ba",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "77da31dd8eaf438523db",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "9d83f68f9fc54786d442",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "5726afb5c6dcc1f398b6",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "d521e32fbae39a7efabe",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "c55a2a07cc27750d86f6",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "d75b16f46d3570749eb0",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "7ffb1c1e2d06921b94a7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "7d801dc0a1af8811bc56",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "875e042da7b125da7355",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "6b5c3f7968c0ce9853c6",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "d44b1b7d2058e0e99dbe",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "7fb402b12ae1832b5f6f",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "c55ffed4ed17da136c8b",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "abdd2ca0fbfa1b04d4fc",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "616caead051772e3b3ce",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "3492bd92770a43305a5e",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "7d3821da65f075ee8249",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "0f68329e7ca2ee08a589",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "c7a2e1d6fdcf737153c3",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "329a2ecf10c24902418d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "922a98151e1610ccdeba",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "c123e476b318c0f8f3e5",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "fd7a776011a9241bc3d7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "4b2845656fff880ee9b1",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "4cadaf4fecc35f4d8fb7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "a5b1b5ef32052a4461f6",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "6400a858db8c1e2f324e",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "667f80571f863537a844",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "d2b511a7f2a058f074a7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "5e1c7f77899ac5cc94ac",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "096baa62586a5465ab77",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "59780712a739267f108a",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "0012ce31d76e4db7ca20",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "54f262aa526070c3aece",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {},
+      "m4": {}
+    }
+  },
+  {
+    "id": "b1b1d67a167f7ce4983c",
+    "references": {
+      "m0": null,
+      "m1": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 25,
+        "requested": false,
+        "source": "unresolved"
+      }
+    }
+  },
+  {
+    "id": "5daeb90fc3dc202a6a02",
+    "references": {
+      "m0": -1,
+      "m1": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": -1,
+        "word_id": 33,
+        "requested": true,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 25,
+        "requested": false,
+        "source": "unresolved"
+      }
+    }
+  },
+  {
+    "id": "4f8ab9c59685f600594d",
+    "references": {
+      "m0": null,
+      "m1": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 25,
+        "requested": false,
+        "source": "unresolved"
+      }
+    }
+  },
+  {
+    "id": "149eff6c98ce562ec02c",
+    "references": {
+      "m0": null,
+      "m1": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 25,
+        "requested": false,
+        "source": "unresolved"
+      }
+    }
+  },
+  {
+    "id": "775e9fe5cca0731b2447",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "7b970a7f0dcde2bb0113",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "57f3ea94c0136e6ec4b3",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "ba21a5f98be82213a71d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "c90229493c0e3fa44ace",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "581a893d54c49b8d14d1",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "ab8f92eeb7b59a22e4e1",
+    "references": {
+      "m0": null,
+      "m1": 8853562566741332018,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": 8853562566741332018,
+        "word_id": 17,
+        "requested": true,
+        "source": "selected"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "34a68eef388f6e609292",
+    "references": {
+      "m0": null,
+      "m1": -8147893225847180283,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": -8147893225847180283,
+        "word_id": 17,
+        "requested": true,
+        "source": "selected"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "0c1209b25883e8ec8c0d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "2d372628e41dcb5c4f16",
+    "references": {
+      "m0": null,
+      "m1": -1225462310041604266,
+      "m2": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": -1225462310041604266,
+        "word_id": 35,
+        "requested": true,
+        "source": "selected"
+      },
+      "m2": {}
+    }
+  },
+  {
+    "id": "8812c59f825ba791e0de",
+    "references": {},
+    "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 241, in run\n    model.runBatch(train=training,optimizer=optimizer,batchNum=offset//args.batch_size,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13774, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13920, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14302, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8868, in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10321, in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8553, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8331, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23943, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17393, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22477, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22029, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21018, in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py\", line 143, in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20935, in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20072, in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 124, in observation\n    value=observe(state,sid,active,**kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 19872, in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12909, in _capture_reading_programs\n    program = self._derivation_program(slot if packed else None)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12792, in _derivation_program\n    apply(3 * w + r)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12781, in apply\n    raise ValueError('compose trace binary operation underflows')\nValueError: compose trace binary operation underflows\n"
+  },
+  {
+    "id": "3e2de318c0307e85c6f3",
+    "references": {},
+    "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 241, in run\n    model.runBatch(train=training,optimizer=optimizer,batchNum=offset//args.batch_size,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13774, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13920, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14302, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8868, in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10321, in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8553, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8331, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23943, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17393, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22477, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22029, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21018, in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py\", line 143, in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20935, in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20072, in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 124, in observation\n    value=observe(state,sid,active,**kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 19872, in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12909, in _capture_reading_programs\n    program = self._derivation_program(slot if packed else None)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12792, in _derivation_program\n    apply(3 * w + r)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12781, in apply\n    raise ValueError('compose trace binary operation underflows')\nValueError: compose trace binary operation underflows\n"
+  },
+  {
+    "id": "b1dad71abca50bbe7ec4",
+    "references": {},
+    "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 241, in run\n    model.runBatch(train=training,optimizer=optimizer,batchNum=offset//args.batch_size,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13774, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13920, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14302, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8868, in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10321, in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8553, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8331, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23943, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17393, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22477, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22029, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21018, in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py\", line 143, in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20935, in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20072, in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 124, in observation\n    value=observe(state,sid,active,**kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 19872, in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12909, in _capture_reading_programs\n    program = self._derivation_program(slot if packed else None)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12792, in _derivation_program\n    apply(3 * w + r)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12781, in apply\n    raise ValueError('compose trace binary operation underflows')\nValueError: compose trace binary operation underflows\n"
+  },
+  {
+    "id": "fbb498d247b5217c584d",
+    "references": {},
+    "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 241, in run\n    model.runBatch(train=training,optimizer=optimizer,batchNum=offset//args.batch_size,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13774, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13920, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14302, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8868, in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10321, in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8553, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8331, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23943, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17393, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22477, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22029, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21018, in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py\", line 143, in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20935, in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20072, in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 124, in observation\n    value=observe(state,sid,active,**kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 19872, in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12909, in _capture_reading_programs\n    program = self._derivation_program(slot if packed else None)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12792, in _derivation_program\n    apply(3 * w + r)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12781, in apply\n    raise ValueError('compose trace binary operation underflows')\nValueError: compose trace binary operation underflows\n"
+  },
+  {
+    "id": "22b014c98aa40bb73b89",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "a5da83e76c244b3f2c01",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "de442434b6f3b8f796e2",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "0e9176fc0fcbff3b3d6e",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "282ec32e5a7541fa0735",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "4fc0f8c56570d0a34619",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "161a54d5c08d259188d8",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "ebb60e79b1378db1a13f",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "9bcffdfc2591e5abfba2",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "98373a4ba70c3a244408",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "e50333d606082e2d565e",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "3bc6fae7d52184622617",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "b388499e897f50b3ab45",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "b9e79e2359b0eafe3142",
+    "references": {},
+    "error": "not run after native batch failure"
+  }
+]

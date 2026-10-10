@@ -1,0 +1,22 @@
+[
+  {
+    "id": "db449c759980cecc86a8",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "c4efcef6fed07f20df40",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "7c2f80256536cabc853e",
+    "references": {},
+    "error": "not run after native batch failure"
+  },
+  {
+    "id": "ae3add88735bda6895e6",
+    "references": {},
+    "error": "not run after native batch failure"
+  }
+]

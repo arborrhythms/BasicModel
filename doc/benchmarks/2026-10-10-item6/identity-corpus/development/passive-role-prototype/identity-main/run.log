@@ -1,0 +1,291 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"phase": "train", "epoch": 0, "completed": 4, "selected": 494, "trained": 4, "error": null}
+batch = 1 (Δ=26.019s)
+{"phase": "train", "epoch": 0, "completed": 8, "selected": 494, "trained": 8, "error": null}
+batch = 2 (Δ=24.933s)
+{"phase": "train", "epoch": 0, "completed": 12, "selected": 494, "trained": 12, "error": null}
+batch = 3 (Δ=26.026s)
+{"phase": "train", "epoch": 0, "completed": 16, "selected": 494, "trained": 16, "error": null}
+batch = 4 (Δ=26.301s)
+{"phase": "train", "epoch": 0, "completed": 20, "selected": 494, "trained": 20, "error": null}
+batch = 5 (Δ=26.475s)
+{"phase": "train", "epoch": 0, "completed": 24, "selected": 494, "trained": 24, "error": null}
+batch = 6 (Δ=26.317s)
+{"phase": "train", "epoch": 0, "completed": 28, "selected": 494, "trained": 28, "error": null}
+batch = 7 (Δ=26.135s)
+{"phase": "train", "epoch": 0, "completed": 32, "selected": 494, "trained": 32, "error": null}
+batch = 8 (Δ=26.967s)
+{"phase": "train", "epoch": 0, "completed": 36, "selected": 494, "trained": 36, "error": null}
+batch = 9 (Δ=14.831s)
+{"phase": "train", "epoch": 0, "completed": 40, "selected": 494, "trained": 40, "error": null}
+batch = 10 (Δ=26.768s)
+{"phase": "train", "epoch": 0, "completed": 44, "selected": 494, "trained": 44, "error": null}
+batch = 11 (Δ=26.465s)
+{"phase": "train", "epoch": 0, "completed": 48, "selected": 494, "trained": 48, "error": null}
+batch = 12 (Δ=26.915s)
+{"phase": "train", "epoch": 0, "completed": 52, "selected": 494, "trained": 52, "error": null}
+batch = 13 (Δ=27.314s)
+{"phase": "train", "epoch": 0, "completed": 56, "selected": 494, "trained": 56, "error": null}
+batch = 14 (Δ=14.436s)
+{"phase": "train", "epoch": 0, "completed": 60, "selected": 494, "trained": 60, "error": null}
+batch = 15 (Δ=26.621s)
+{"phase": "train", "epoch": 0, "completed": 64, "selected": 494, "trained": 64, "error": null}
+batch = 16 (Δ=27.559s)
+{"phase": "train", "epoch": 0, "completed": 68, "selected": 494, "trained": 68, "error": null}
+batch = 17 (Δ=27.387s)
+{"phase": "train", "epoch": 0, "completed": 72, "selected": 494, "trained": 72, "error": null}
+batch = 18 (Δ=27.378s)
+{"phase": "train", "epoch": 0, "completed": 76, "selected": 494, "trained": 76, "error": null}
+batch = 19 (Δ=26.861s)
+{"phase": "train", "epoch": 0, "completed": 80, "selected": 494, "trained": 80, "error": null}
+batch = 20 (Δ=27.230s)
+{"phase": "train", "epoch": 0, "completed": 84, "selected": 494, "trained": 84, "error": null}
+batch = 21 (Δ=27.584s)
+{"phase": "train", "epoch": 0, "completed": 88, "selected": 494, "trained": 88, "error": null}
+batch = 22 (Δ=25.899s)
+{"phase": "train", "epoch": 0, "completed": 92, "selected": 494, "trained": 92, "error": null}
+batch = 23 (Δ=23.752s)
+{"phase": "train", "epoch": 0, "completed": 96, "selected": 494, "trained": 96, "error": null}
+batch = 24 (Δ=23.447s)
+{"phase": "train", "epoch": 0, "completed": 100, "selected": 494, "trained": 100, "error": null}
+batch = 25 (Δ=25.241s)
+{"phase": "train", "epoch": 0, "completed": 104, "selected": 494, "trained": 104, "error": null}
+batch = 26 (Δ=24.274s)
+{"phase": "train", "epoch": 0, "completed": 108, "selected": 494, "trained": 108, "error": null}
+batch = 27 (Δ=23.726s)
+{"phase": "train", "epoch": 0, "completed": 112, "selected": 494, "trained": 112, "error": null}
+batch = 28 (Δ=22.390s)
+{"phase": "train", "epoch": 0, "completed": 116, "selected": 494, "trained": 116, "error": null}
+batch = 29 (Δ=24.482s)
+{"phase": "train", "epoch": 0, "completed": 120, "selected": 494, "trained": 120, "error": null}
+batch = 30 (Δ=24.232s)
+{"phase": "train", "epoch": 0, "completed": 124, "selected": 494, "trained": 124, "error": null}
+batch = 31 (Δ=23.171s)
+{"phase": "train", "epoch": 0, "completed": 128, "selected": 494, "trained": 128, "error": null}
+batch = 32 (Δ=22.056s)
+{"phase": "train", "epoch": 0, "completed": 132, "selected": 494, "trained": 132, "error": null}
+batch = 33 (Δ=22.006s)
+{"phase": "train", "epoch": 0, "completed": 136, "selected": 494, "trained": 136, "error": null}
+batch = 34 (Δ=22.108s)
+{"phase": "train", "epoch": 0, "completed": 140, "selected": 494, "trained": 140, "error": null}
+batch = 35 (Δ=24.104s)
+{"phase": "train", "epoch": 0, "completed": 144, "selected": 494, "trained": 144, "error": null}
+batch = 36 (Δ=28.097s)
+{"phase": "train", "epoch": 0, "completed": 148, "selected": 494, "trained": 148, "error": null}
+batch = 37 (Δ=27.293s)
+{"phase": "train", "epoch": 0, "completed": 152, "selected": 494, "trained": 152, "error": null}
+batch = 38 (Δ=23.845s)
+{"phase": "train", "epoch": 0, "completed": 156, "selected": 494, "trained": 156, "error": null}
+batch = 39 (Δ=22.437s)
+{"phase": "train", "epoch": 0, "completed": 160, "selected": 494, "trained": 160, "error": null}
+batch = 40 (Δ=27.548s)
+{"phase": "train", "epoch": 0, "completed": 164, "selected": 494, "trained": 164, "error": null}
+batch = 41 (Δ=26.807s)
+{"phase": "train", "epoch": 0, "completed": 168, "selected": 494, "trained": 168, "error": null}
+batch = 42 (Δ=24.080s)
+{"phase": "train", "epoch": 0, "completed": 172, "selected": 494, "trained": 172, "error": null}
+batch = 43 (Δ=22.334s)
+{"phase": "train", "epoch": 0, "completed": 176, "selected": 494, "trained": 176, "error": null}
+batch = 44 (Δ=26.884s)
+{"phase": "train", "epoch": 0, "completed": 180, "selected": 494, "trained": 180, "error": null}
+batch = 45 (Δ=26.707s)
+{"phase": "train", "epoch": 0, "completed": 184, "selected": 494, "trained": 184, "error": null}
+batch = 46 (Δ=25.256s)
+{"phase": "train", "epoch": 0, "completed": 188, "selected": 494, "trained": 188, "error": null}
+batch = 47 (Δ=22.404s)
+{"phase": "train", "epoch": 0, "completed": 192, "selected": 494, "trained": 192, "error": null}
+batch = 48 (Δ=26.932s)
+{"phase": "train", "epoch": 0, "completed": 196, "selected": 494, "trained": 196, "error": null}
+batch = 49 (Δ=26.942s)
+{"phase": "train", "epoch": 0, "completed": 200, "selected": 494, "trained": 200, "error": null}
+batch = 50 (Δ=25.441s)
+{"phase": "train", "epoch": 0, "completed": 204, "selected": 494, "trained": 204, "error": null}
+batch = 51 (Δ=22.409s)
+{"phase": "train", "epoch": 0, "completed": 208, "selected": 494, "trained": 208, "error": null}
+batch = 52 (Δ=22.010s)
+{"phase": "train", "epoch": 0, "completed": 212, "selected": 494, "trained": 212, "error": null}
+batch = 53 (Δ=22.091s)
+{"phase": "train", "epoch": 0, "completed": 216, "selected": 494, "trained": 216, "error": null}
+batch = 54 (Δ=28.313s)
+{"phase": "train", "epoch": 0, "completed": 220, "selected": 494, "trained": 220, "error": null}
+batch = 55 (Δ=37.915s)
+{"phase": "train", "epoch": 0, "completed": 224, "selected": 494, "trained": 224, "error": null}
+batch = 56 (Δ=37.152s)
+{"phase": "train", "epoch": 0, "completed": 228, "selected": 494, "trained": 228, "error": null}
+batch = 57 (Δ=28.920s)
+{"phase": "train", "epoch": 0, "completed": 232, "selected": 494, "trained": 232, "error": null}
+batch = 58 (Δ=22.569s)
+{"phase": "train", "epoch": 0, "completed": 236, "selected": 494, "trained": 236, "error": null}
+batch = 59 (Δ=37.912s)
+{"phase": "train", "epoch": 0, "completed": 240, "selected": 494, "trained": 240, "error": null}
+batch = 60 (Δ=37.330s)
+{"phase": "train", "epoch": 0, "completed": 244, "selected": 494, "trained": 244, "error": null}
+batch = 61 (Δ=29.012s)
+{"phase": "train", "epoch": 0, "completed": 248, "selected": 494, "trained": 248, "error": null}
+batch = 62 (Δ=22.674s)
+{"phase": "train", "epoch": 0, "completed": 252, "selected": 494, "trained": 252, "error": null}
+batch = 63 (Δ=37.658s)
+{"phase": "train", "epoch": 0, "completed": 256, "selected": 494, "trained": 256, "error": null}
+batch = 64 (Δ=37.604s)
+{"phase": "train", "epoch": 0, "completed": 260, "selected": 494, "trained": 260, "error": null}
+batch = 65 (Δ=32.809s)
+{"phase": "train", "epoch": 0, "completed": 264, "selected": 494, "trained": 264, "error": null}
+batch = 66 (Δ=22.556s)
+{"phase": "train", "epoch": 0, "completed": 268, "selected": 494, "trained": 268, "error": null}
+batch = 67 (Δ=39.558s)
+{"phase": "train", "epoch": 0, "completed": 272, "selected": 494, "trained": 272, "error": null}
+batch = 68 (Δ=39.950s)
+{"phase": "train", "epoch": 0, "completed": 276, "selected": 494, "trained": 276, "error": null}
+batch = 69 (Δ=32.938s)
+{"phase": "train", "epoch": 0, "completed": 280, "selected": 494, "trained": 280, "error": null}
+batch = 70 (Δ=21.984s)
+{"phase": "train", "epoch": 0, "completed": 284, "selected": 494, "trained": 284, "error": null}
+batch = 71 (Δ=22.288s)
+{"phase": "train", "epoch": 0, "completed": 288, "selected": 494, "trained": 288, "error": null}
+batch = 72 (Δ=22.149s)
+{"phase": "train", "epoch": 0, "completed": 292, "selected": 494, "trained": 292, "error": null}
+batch = 73 (Δ=24.476s)
+{"phase": "train", "epoch": 0, "completed": 296, "selected": 494, "trained": 296, "error": null}
+batch = 74 (Δ=24.786s)
+{"phase": "train", "epoch": 0, "completed": 300, "selected": 494, "trained": 300, "error": null}
+batch = 75 (Δ=24.923s)
+{"phase": "train", "epoch": 0, "completed": 304, "selected": 494, "trained": 304, "error": null}
+batch = 76 (Δ=24.596s)
+{"phase": "train", "epoch": 0, "completed": 308, "selected": 494, "trained": 308, "error": null}
+batch = 77 (Δ=52.572s)
+{"phase": "train", "epoch": 0, "completed": 312, "selected": 494, "trained": 312, "error": null}
+batch = 78 (Δ=30.261s)
+{"phase": "train", "epoch": 0, "completed": 316, "selected": 494, "trained": 316, "error": null}
+batch = 79 (Δ=51.166s)
+{"phase": "train", "epoch": 0, "completed": 320, "selected": 494, "trained": 320, "error": null}
+batch = 80 (Δ=30.106s)
+{"phase": "train", "epoch": 0, "completed": 324, "selected": 494, "trained": 324, "error": null}
+batch = 81 (Δ=52.697s)
+{"phase": "train", "epoch": 0, "completed": 328, "selected": 494, "trained": 328, "error": null}
+batch = 82 (Δ=32.623s)
+{"phase": "train", "epoch": 0, "completed": 332, "selected": 494, "trained": 332, "error": null}
+batch = 83 (Δ=54.007s)
+{"phase": "train", "epoch": 0, "completed": 336, "selected": 494, "trained": 336, "error": null}
+batch = 84 (Δ=31.401s)
+{"phase": "train", "epoch": 0, "completed": 340, "selected": 494, "trained": 340, "error": null}
+batch = 85 (Δ=49.624s)
+{"phase": "train", "epoch": 0, "completed": 344, "selected": 494, "trained": 344, "error": null}
+batch = 86 (Δ=51.769s)
+{"phase": "train", "epoch": 0, "completed": 348, "selected": 494, "trained": 348, "error": null}
+batch = 87 (Δ=51.281s)
+{"phase": "train", "epoch": 0, "completed": 352, "selected": 494, "trained": 352, "error": null}
+batch = 88 (Δ=51.494s)
+{"phase": "train", "epoch": 0, "completed": 356, "selected": 494, "trained": 356, "error": null}
+batch = 89 (Δ=51.214s)
+{"phase": "train", "epoch": 0, "completed": 360, "selected": 494, "trained": 360, "error": null}
+batch = 90 (Δ=49.902s)
+{"phase": "train", "epoch": 0, "completed": 364, "selected": 494, "trained": 364, "error": null}
+batch = 91 (Δ=49.907s)
+{"phase": "train", "epoch": 0, "completed": 368, "selected": 494, "trained": 368, "error": null}
+batch = 92 (Δ=49.838s)
+{"phase": "train", "epoch": 0, "completed": 372, "selected": 494, "trained": 372, "error": null}
+batch = 93 (Δ=50.414s)
+{"phase": "train", "epoch": 0, "completed": 376, "selected": 494, "trained": 376, "error": null}
+batch = 94 (Δ=51.207s)
+{"phase": "train", "epoch": 0, "completed": 380, "selected": 494, "trained": 380, "error": null}
+batch = 95 (Δ=51.521s)
+{"phase": "train", "epoch": 0, "completed": 384, "selected": 494, "trained": 384, "error": null}
+batch = 96 (Δ=52.858s)
+{"phase": "train", "epoch": 0, "completed": 388, "selected": 494, "trained": 388, "error": null}
+batch = 97 (Δ=52.183s)
+{"phase": "train", "epoch": 0, "completed": 392, "selected": 494, "trained": 392, "error": null}
+batch = 98 (Δ=50.951s)
+{"phase": "train", "epoch": 0, "completed": 396, "selected": 494, "trained": 396, "error": null}
+batch = 99 (Δ=46.120s)
+{"phase": "train", "epoch": 0, "completed": 400, "selected": 494, "trained": 400, "error": null}
+batch = 100 (Δ=44.525s)
+{"phase": "train", "epoch": 0, "completed": 404, "selected": 494, "trained": 404, "error": null}
+batch = 101 (Δ=45.130s)
+{"phase": "train", "epoch": 0, "completed": 408, "selected": 494, "trained": 408, "error": null}
+batch = 102 (Δ=44.452s)
+{"phase": "train", "epoch": 0, "completed": 412, "selected": 494, "trained": 412, "error": null}
+batch = 103 (Δ=44.729s)
+{"phase": "train", "epoch": 0, "completed": 416, "selected": 494, "trained": 416, "error": null}
+batch = 104 (Δ=44.537s)
+{"phase": "train", "epoch": 0, "completed": 420, "selected": 494, "trained": 420, "error": null}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py", line 290, in <module>
+    run(parser.parse_args())
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py", line 234, in run
+    model.runBatch(train=training,optimizer=optimizer,batchNum=offset//args.batch_size,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13774, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13920, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14302, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8868, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10321, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8553, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8331, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23943, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17393, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22477, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22029, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21018, in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py", line 160, in sentence_pair
+    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21012, in train_trial
+    self._sentence_train_step(loss)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 19789, in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 2757, in _backward_training_loss
+    backward_owned(costs, owners, scale=scale, audit=writers,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ObjectiveOwnership.py", line 70, in backward_owned
+    gradients = (pullback.gradients(value, parameters)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py", line 100, in gradients
+    measured = torch.autograd.grad(cost,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 540, in grad
+    result_tuple = handle_torch_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py", line 1773, in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 594, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 1072, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py", line 58, in <lambda>
+    with torch.autograd.graph.saved_tensors_hooks(pack, lambda saved: saved.unpack()):
+
+KeyboardInterrupt

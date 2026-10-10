@@ -1,0 +1,17 @@
+{
+  "protocol": "forced journal / real writer; adapter control only",
+  "before": {
+    "reference": -1,
+    "word_id": 13,
+    "requested": true,
+    "source": "unresolved"
+  },
+  "after": {
+    "reference": 1477744118468032614,
+    "word_id": 13,
+    "requested": true,
+    "source": "written individual"
+  },
+  "written_row": 0,
+  "passed": true
+}

@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "revision": 2,
+  "files": {
+    "biased_train.text.jsonl": "1ae08778a2524b05bbb7fa37f56068edc62c5a587e345c0fd32ed9da2367406e",
+    "biased_train.labels.jsonl": "f41c280184cb40b204f8f693dc3d90570df77c59e92d1cd913bc5943539aed4c",
+    "confounded_train.text.jsonl": "f4d1d742f5b5c5865e1f2e5d79a184fcd41cc0adf07d472fbb57373cf90d98bd",
+    "confounded_train.labels.jsonl": "9e144ac6e40d36ef1fc032e49e78873d6e8a5caccedbca04c5f19653bb4867ea",
+    "eval.text.jsonl": "861adbe2c973f20365820f9d19b88ac98164b827a4a7000a59df597a34795be1",
+    "eval.labels.jsonl": "1e31ea4bcb99b0a28d256c1fe88c5c00171f86fe7131dcae5b24b3ac262cca14",
+    "reversed_eval.text.jsonl": "c159224deb11ef2a4cb1cc09a8ad245bdf3d31bad445e85115fc178273204107",
+    "reversed_eval.labels.jsonl": "9c08a1d10b85cb3ffb13ed39967fc7e150bd4fcec65a2bffe6505a3b3dfdf271",
+    "train.text.jsonl": "ca2a381b94ef67dcbf3ae272c39529dcc7f1bd56b4b52a3603d4fca067cb710b",
+    "train.labels.jsonl": "1eee15a5ca0eb486bbfcd4d3b845072ea95c6bf723eb779103912377bc218b6a"
+  },
+  "documents": 740,
+  "by_split": {
+    "train": 494,
+    "confounded_train": 64,
+    "eval": 150,
+    "biased_train": 16,
+    "reversed_eval": 16
+  },
+  "by_family": {
+    "singleton": 64,
+    "factorial_support": 192,
+    "support_rehearsal": 36,
+    "confounded": 64,
+    "prediction_vocabulary": 16,
+    "pronoun": 64,
+    "neither_candidate": 32,
+    "recency_biased": 16,
+    "reversed_recency": 16,
+    "pronoun_three": 108,
+    "pronoun_one": 8,
+    "determiner": 88,
+    "determiner_conflict": 4,
+    "same_kind": 16,
+    "document_context": 16
+  }
+}

@@ -1,0 +1,8 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+{"before": {"reference": -1, "word_id": 13, "requested": true, "source": "unresolved"}, "after": {"reference": -1, "word_id": 13, "requested": true, "source": "unresolved"}, "nodes": [{"order": 1, "word": 13, "row": 1, "identity": 574998929434755732}, {"order": 1, "word": 13, "row": 0, "identity": 726934142225172953}]}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-10-item6/identity-corpus/check_observer.py", line 46, in <module>
+    assert after['source']=='written individual' and index is not None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

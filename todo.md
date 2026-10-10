@@ -179,6 +179,12 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   current reversed pair: a live near-copy wins by roundoff, and the exact-fit
   override bypasses learned orientation. Keep the order lesson, content
   coverage, walk order stamps and family-metadata use under part 2 (review J–L).
+- The [identity corpus preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
+  exposes a native exploratory trace/admission mismatch: an admitted leaf is
+  filtered from reconstruction, which then underflows a binary operation.
+  The preserved cold passive-input reproduction remains open even though the
+  corpus's separate grammatical-role labelling error has been corrected.
+  This probe has not been bisected against 6.1; do not call it an H regression.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
@@ -204,6 +210,12 @@ Their original failing evidence remains in the receipts.
    positional bind path, mode/cosine resolver and mode-gated admission only
    when its lesson passes without it; otherwise retain it and report the failure.
    No parallel learned and declared replacement; no further declared modes.
+   The [corpus and measurement preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
+   is accepted for landing in plan §5: 740 documents, separate grading labels,
+   native reference observation and both control datasets. Its native outcomes
+   and limitations are recorded separately from grading sanity controls;
+   no identity rule is retired and no learned-control result is inferred from
+   an unresolved reference or a failed run.
    Measure forced raw/bounded and free stored recovery by depth and chain
    length on fixed forward artifacts, now with trained A/B columns; report
    stored dictionary separately from sentence-time live wholes. Which family

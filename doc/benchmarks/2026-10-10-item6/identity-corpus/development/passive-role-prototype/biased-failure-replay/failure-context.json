@@ -1,0 +1,1321 @@
+{
+  "error": "compose trace binary operation underflows",
+  "sentence": 0,
+  "trial": "explore",
+  "records": [
+    {
+      "batch": 0,
+      "active_words": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "grammar_leaves": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12
+      ],
+      "sentence_ids": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "source_order": [
+        0,
+        1,
+        5,
+        2,
+        3,
+        4
+      ],
+      "operations": [
+        {
+          "slot": 0,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 1,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 2,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 3,
+          "rule": 15,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 4,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 5,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 6,
+          "rule": 17,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 7,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 8,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 9,
+          "rule": 29,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 10,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 11,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 12,
+          "rule": 15,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 13,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 14,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 15,
+          "rule": 18,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 16,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 17,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 288,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 289,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 290,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 291,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 292,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 293,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 294,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 295,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 296,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 297,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 298,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 299,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 300,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 301,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 302,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 303,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        }
+      ]
+    },
+    {
+      "batch": 1,
+      "active_words": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "grammar_leaves": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12
+      ],
+      "sentence_ids": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "source_order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "operations": [
+        {
+          "slot": 0,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 1,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 2,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 3,
+          "rule": 15,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 4,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 5,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 6,
+          "rule": 18,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 7,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 8,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 9,
+          "rule": 8,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 10,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 11,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 12,
+          "rule": 18,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 13,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 14,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 15,
+          "rule": 17,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 16,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 17,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 288,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 289,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 290,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 291,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 292,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 293,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 294,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 295,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 296,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 297,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 298,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 299,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 300,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 301,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 302,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 303,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "active_words": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "grammar_leaves": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12
+      ],
+      "sentence_ids": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "source_order": [
+        4,
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7
+      ],
+      "operations": [
+        {
+          "slot": 0,
+          "rule": 17,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 1,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 2,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 3,
+          "rule": 21,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 4,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 5,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 6,
+          "rule": 22,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 7,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 8,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 9,
+          "rule": 17,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 10,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 11,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 12,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 13,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 14,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 15,
+          "rule": 22,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 16,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 17,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 18,
+          "rule": 22,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 19,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 20,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 21,
+          "rule": 18,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 22,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 23,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 320,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 321,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 322,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 323,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 324,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 325,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 326,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 327,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 328,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 329,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 330,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 331,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 332,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 333,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 334,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 335,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        }
+      ]
+    },
+    {
+      "batch": 3,
+      "active_words": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "grammar_leaves": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12
+      ],
+      "sentence_ids": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "source_order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "operations": [
+        {
+          "slot": 0,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 1,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 2,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 3,
+          "rule": 25,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 6,
+          "rule": 15,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 7,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 8,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 9,
+          "rule": 29,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 10,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 11,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 12,
+          "rule": 32,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 13,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 14,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 15,
+          "rule": 18,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 16,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 17,
+          "rule": 11,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 18,
+          "rule": 15,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 19,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 20,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 21,
+          "rule": 22,
+          "arity": 2,
+          "position": 1
+        },
+        {
+          "slot": 22,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 23,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 320,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 321,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 322,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 323,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 324,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 325,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 326,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 327,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 328,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 329,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 330,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 331,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 332,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 333,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 334,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        },
+        {
+          "slot": 335,
+          "rule": 31,
+          "arity": 1,
+          "position": 0
+        }
+      ]
+    }
+  ]
+}

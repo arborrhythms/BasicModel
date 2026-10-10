@@ -1,0 +1,153 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"phase": "train", "epoch": 0, "completed": 4, "selected": 16, "trained": 4, "error": null}
+batch = 1 (Δ=49.940s)
+{"phase": "train", "epoch": 0, "completed": 8, "selected": 16, "trained": 8, "error": null}
+batch = 2 (Δ=51.641s)
+{"phase": "train", "epoch": 0, "completed": 12, "selected": 16, "trained": 12, "error": null}
+batch = 3 (Δ=49.580s)
+{"phase": "train", "epoch": 0, "completed": 16, "selected": 16, "trained": 16, "error": null}
+batch = 0 (Δ=15.988s)
+{"phase": "evaluation", "epoch": 1, "completed": 4, "selected": 16, "trained": 16, "error": null}
+batch = 1 (Δ=15.998s)
+{"phase": "evaluation", "epoch": 1, "completed": 8, "selected": 16, "trained": 16, "error": null}
+batch = 2 (Δ=16.857s)
+{"phase": "evaluation", "epoch": 1, "completed": 12, "selected": 16, "trained": 16, "error": null}
+batch = 3 (Δ=15.133s)
+{"phase": "evaluation", "epoch": 1, "completed": 16, "selected": 16, "trained": 16, "error": null}
+{
+  "documents": 16,
+  "errors": 0,
+  "groups": {
+    "all": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "candidates=2": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=2/1/object": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=2/1/subject": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=reversed_recency": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "first_mention=0": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "first_mention=1": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "recency=1": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "role=object": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "role=subject": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    }
+  }
+}

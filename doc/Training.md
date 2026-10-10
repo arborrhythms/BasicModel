@@ -168,6 +168,17 @@ Measure the declared candidate-count/recency/role strata and both controls
 before changing the mechanisms. Rule retirement requires a passing lesson
 without that rule; the amendment and Claude's toy specify the evidence.
 
+The [first text corpus](../data/identity_from_data/README.md) and
+[measurement receipt](benchmarks/2026-10-10-item6/identity-corpus/README.md)
+implement this lesson inventory before any identity mechanism changes. The
+grader keeps missing and colliding candidates in the denominator, separates
+resolved coverage from conditional accuracy, and counts semantic rows rather
+than word rows. Its known-policy controls check the grader; native errors and
+unreached evaluations do not constitute a learned binding or chance result.
+The receipt records the native baseline and the still-required matched
+recency-training comparison. None of the existing rules is retired by this
+preparation.
+
 Why this order. Stages 1–3 teach what a word is and how to take one at a time;
 4a–4d teach sentences by the operations they need, one more at each step —
 a relation between two atoms, composition within a role, a verb against a

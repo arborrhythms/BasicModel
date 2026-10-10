@@ -1,0 +1,14 @@
+{
+  "data/identity_from_data/train.text.jsonl": "e7f862d0994a1052196cd94d6662094f429a342988a841e3e680644b7e9dfbb7",
+  "data/identity_from_data/train.labels.jsonl": "cb8d79e87de8e58a0b1997e324b4a4db4e32a372d17d7acd0aa71212efb2b401",
+  "data/identity_from_data/eval.text.jsonl": "cb03450d6689912f7264fe94c28b3e1b27600e4e0221d0128a23263086f2e459",
+  "data/identity_from_data/reversed_eval.labels.jsonl": "6b741e940eafe6ab17b541cfa9f091a079b4e4d1bd69292db42faf05ea8dd8b1",
+  "data/identity_from_data/confounded_train.labels.jsonl": "b2cfbde6b3e06be31561a732fac120f1938f4b327a0771d7a8ebc3f06263a88e",
+  "data/identity_from_data/confounded_train.text.jsonl": "c439c6116cd2be9dbe9c55d2247a1eba6e326c8ee526d0d53cbfeeb27fa5ba5b",
+  "data/identity_from_data/biased_train.labels.jsonl": "09cfa57c88bf40523c2e6737f3de7c2e5cff657f0e0d7120b9f51ecb36ba8dbd",
+  "data/identity_from_data/README.md": "9b067725d0e5e235f58b3baf187aa76aa3349737ad5fba87582b112a273ace5e",
+  "data/identity_from_data/manifest.json": "cb9ae0072df839d9d8c8e7e7fb1a02e6a628963ab8abc24e414666021ab45512",
+  "data/identity_from_data/eval.labels.jsonl": "3fc062ab39a58bf85d5df6f3543dcc7f5f5fe2400614218ffda53573c6bcd462",
+  "data/identity_from_data/reversed_eval.text.jsonl": "4fb3ce52d7b4a63849bda2f7b7d98c3bd7556b7a89cedc3582cdebf24e339c3e",
+  "data/identity_from_data/biased_train.text.jsonl": "6b8fea2a0579d42a29a95d3c9dd94f2ac761a6ab1fa802ee90f10b446cc614b9"
+}

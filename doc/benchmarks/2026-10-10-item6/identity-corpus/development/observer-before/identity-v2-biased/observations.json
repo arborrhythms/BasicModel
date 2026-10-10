@@ -1,0 +1,482 @@
+[
+  {
+    "id": "8001abb872f837394d8d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "788078e1e35cce5a2742",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "3cdeb281996808eb63e3",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "39cd1ccd8dce6152c8f0",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "9c3de847ab595f343077",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "499c3ff8cff8f831d1c7",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "2859e6bb45da2a1fdb0f",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "7eff38d162146ffaa76d",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 33,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "44e14f564c294a47b4b2",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "3e4acadca975817bb7e9",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "9d6e968a333701e2248e",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "7082ac43561d88aaed17",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "b54474d184656ec5fba8",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "79cfeca568e018fbce79",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "a006818549ed27bf71a3",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "d218791ebd626ef74887",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 35,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  }
+]

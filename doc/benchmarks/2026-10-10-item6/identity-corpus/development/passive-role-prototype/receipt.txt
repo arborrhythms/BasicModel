@@ -1,0 +1,176 @@
+# Item 6 part 2: corpus and measurement before mechanism changes
+
+This is an uncommitted preparation candidate after the reviewed
+[H/I follow-up](../followup/README.md), based on `c1d1ea03c`.
+It adds teaching text, separate grading labels and a native measurement driver.
+No production source, grammar, identity rule or admission policy changes.
+No rule is certified for retirement by this receipt.
+
+## Frozen inputs
+
+- [Corpus and usage](../../../../data/identity_from_data/README.md),
+  [generator](../../../../test/identity_corpus.py),
+  [measurement](../../../../test/identity_measurement.py),
+  [contract tests](../../../../test/test_identity_corpus.py).
+- [Source manifest](source.json): 769 files, the H baseline plus three Python
+  files and the corpus manifest. [Corpus hashes](corpus-source.json) cover all
+  twelve data files, including the explanatory README and label sidecars.
+- [Source archive](source.tar.gz), SHA-256
+  `53cb4a6babc0545a94c5613a28658ae741572deeb44efab1f69b0f9cea8f4589`.
+  [Metadata](source-metadata.json) records the base and review status.
+  Each native report checks its source and corpus hashes again at completion.
+
+The learner receives only sentence strings and opaque document addresses.
+Candidate lists, roles, mention offsets and target identities are evaluator
+data. The observer reads the selected order-one references and actual written
+individual addresses; it never forces a parse or resolves an identity for
+the learner. Negative native occurrence addresses are valid; `-1` and `0`
+are sentinels. Unavailable or colliding candidates remain in the denominator.
+
+## Lesson inventory
+
+There are 740 documents across five streams:
+
+| stream | documents | purpose |
+|---|---:|---|
+| train | 494 | singleton recurrence, factorial support, identity lessons |
+| eval | 150 | held-out documents and kind pairings, including controls |
+| confounded_train | 64 | kind/property confound, separate from main training |
+| biased_train | 16 | follow-up always rewards the most recent candidate |
+| reversed_eval | 16 | follow-up always rewards the other candidate |
+
+The 494 training documents comprise 64 singleton witnesses, 192 factorial
+sentences (64 at each maximum object support of 1, 2 and 3), 36 singleton
+rehearsals, 16 kind/predicate lessons, 90 pronoun documents, 80 determiner
+documents, eight same-kind documents and eight document-context cases.
+Every kind/property/verb combination occurs at each participating noun
+position in the factorial lesson. The stages count **objects**, not total
+independent atoms; a sentence also contains properties and a verb. This does
+not assert the toy's three-source recovery condition for a whole sentence.
+
+The two-candidate pronoun lesson crosses target recency, introduction role
+and first surface position jointly: eight cells, four documents each, in
+both train and evaluation. Active/passive introductions separate role from
+surface order; refresh mentions separate recency from introduction role.
+The three-candidate lesson balances kind, target recency and position; its
+two-subject/one-object marginal is reported rather than hidden.
+
+Determiner cues are reliable in 90% of training first/repeat mentions. The
+four held-out cue/content conflicts have `a black ... the white ...` with
+two individuals in a world with exclusive colours. Same-content individuals
+cannot be separated by content alone. Consequently the noisy determiner
+items are not assigned a perfect-accuracy gate. Same-kind lessons add later
+properties of the running and sleeping individuals; the stage-7 probe words
+refer to different individuals in different documents.
+
+The 150 evaluation documents provide 130 binding probes and 20 one-row/two-row
+probes. Binding is reported by candidate count, recency, role, their joint
+cells, and first-mention position, alongside resolved coverage, conditional
+accuracy, candidate availability and collisions. Row counts use distinct
+semantic addresses, never distinct word rows.
+
+Candidate count is the count in the teaching document. The report's
+`candidate_coverage` measures how many of those antecedents have recoverable
+semantic addresses in the selected journal. It does not inspect the complete
+live eight-space/cued-frame bank at the pronoun decision. That additional
+inventory audit is needed to separate a missing native candidate from an
+incorrect choice when a previous mention's address is known. This limitation
+cannot turn an unresolved or colliding reference into a correct answer.
+
+## Controls and checks
+
+[Corpus audit](corpus-audit.json) includes counts, joint cells and explicitly
+labelled grading controls. An oracle verifies the grader can give full credit;
+it is not a learner and uses the held-out answers. Always selecting the most
+recent candidate gives:
+
+| grading sanity control | accuracy |
+|---|---:|
+| biased_train | 16/16 |
+| reversed_eval | 0/16 |
+| neither-candidate paired documents | 16/32 |
+
+The recent-candidate control is given the gold candidate identities and
+changes only the pronoun's selection. Its row-count fields therefore inherit
+the oracle's identities; they do not measure a positional policy's ability to
+mint or bind individuals.
+
+The last control presents the same visible text with both hidden answers.
+It tests chance-level **choice**; zero resolved references do not pass it.
+These checks are not evidence that a trained native model learned either
+content or recency. Claude's existing
+[four-question toy](../../2026-10-10-identity-ica-toy/README.md) remains the
+separate labelled toy experiment.
+
+The [corpus checks](corpus-checks.log) pass all 11 tests. The
+[affected checks](affected.log) pass 46 with the unchanged overlap xfail.
+They cover regeneration and disjoint documents, factorial factors, joint
+counterbalancing, cue reliability, identifiable conflicts, both controls,
+missing/colliding candidates, negative occurrence addresses, semantic row
+counts and document-dependent reference. The full production receipt belongs
+to H/I; this preparation adds no production change and makes no new full-sweep
+claim.
+
+Before freezing this driver, a [cold four-document smoke check](development/native-smoke/results.json)
+and a [four-training/four-evaluation check](development/native-train-smoke/results.json)
+completed without exceptions. Both had zero resolved references on their four
+evaluation documents. They checked the native invocation and reporting path;
+neither is an accuracy gate, a successful chance control or a substitute for
+the main corpus pass. Their development source manifests are retained in
+their reports rather than represented as the final frozen source.
+
+## Native measurement protocol
+
+The driver uses the real tiny canonical model, CPU, one torch thread,
+16-coordinate events, 4,096 concept rows, the configured 262,144 LTM rows,
+a word bucket of 64 and document batches of four. It retains the production
+identity rules, disables capture for this eager baseline, and uses the
+production no-intra-predictor setting. Training is one raw-text epoch at
+learning rate .003. Seed 20261010 fixes the measurement; it is never searched
+or used to make an assertion pass. This is a first-pass baseline, not a
+convergence claim or a compiled-retention test.
+
+A native failure stops the run and is preserved. Unreached evaluation cases
+remain in the report with explicit errors. Their zeros are conservative
+denominators, **not measured binding accuracy**. No failing batch is skipped,
+rerolled or replaced with a forced reading.
+
+The native outcomes and next measurement gate are recorded below after the
+single main pass completes.
+
+## Cold recency-control failure
+
+The [cold biased run](identity-biased/results.json) fails in its first batch,
+before any of its 16 training documents complete. All 16 reversed-evaluation
+documents are unreached. The exception is
+`ValueError: compose trace binary operation underflows` in the production
+`_derivation_program`, called by the original `_sentence_observation` before
+the observer extracts references.
+
+The [diagnostic replay](biased-failure-replay/results.json) reproduces the
+same seed, source, raw text and failure; it is an investigation, not another
+accuracy attempt. [Driver](capture_native_failure.py),
+[trace facts](biased-failure-replay/failure-context.json) and
+[tensors](biased-failure-replay/failure-context.pt) are retained. At sentence 0
+in the explore trial, batch row 2 reads source positions
+`[4,0,1,2,3,5,6,7]`. Position 4 (`by`) is absent from the grammar-leaf mask,
+but source position 0 records binary rule 17. The derivation reconstruction
+filters out position 4, then applies that binary operation with only one
+operand. This records the inconsistent mask/trace; it does not establish why
+the earlier admission excluded the position.
+
+The source identifies the boundary to investigate: sentence scoring intersects
+the trial's field admission with `source_leaf_mask`, saved before the trial's
+attention handoff. `SentenceField` instead constructs its candidates from the
+current trial's accepted reading. A newly admitted exploratory leaf can
+therefore appear in the compose trace and disappear from the reconstruction
+mask. This is a newly exposed preflight finding on unchanged production
+source, not evidence of a regression introduced by H or of failed identity
+learning. No mask repair or grammar bypass is included in this preparation.
+
+This cold run lacks the main stream's common stage-1 warm-up. It is a native
+preflight, **not a matched learned-recency comparison**. A valid learned
+control must start both branches from the same trained warm-up state, train
+the counterbalanced and biased pronoun streams separately, and evaluate
+ordinary and reversed recency without binding-label supervision. That
+comparison remains pending; the corpus and scorer for it now exist.

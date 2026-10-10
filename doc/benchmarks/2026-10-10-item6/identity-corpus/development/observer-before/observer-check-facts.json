@@ -1,0 +1,28 @@
+{
+  "before": {
+    "reference": -1,
+    "word_id": 13,
+    "requested": true,
+    "source": "unresolved"
+  },
+  "after": {
+    "reference": -1,
+    "word_id": 13,
+    "requested": true,
+    "source": "unresolved"
+  },
+  "nodes": [
+    {
+      "order": 1,
+      "word": 13,
+      "row": 1,
+      "identity": 574998929434755732
+    },
+    {
+      "order": 1,
+      "word": 13,
+      "row": 0,
+      "identity": 726934142225172953
+    }
+  ]
+}

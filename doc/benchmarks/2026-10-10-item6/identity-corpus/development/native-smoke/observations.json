@@ -1,0 +1,112 @@
+[
+  {
+    "id": "24553aa802b6431ecd00",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "9bee4f72eba9fc9bc5b2",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m3": {}
+    }
+  },
+  {
+    "id": "6087dfec3900f724fb76",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {},
+      "m3": {}
+    }
+  },
+  {
+    "id": "e437ed0bd2ee793bb401",
+    "references": {
+      "m0": null,
+      "m1": null,
+      "m2": null,
+      "m3": null
+    },
+    "provenance": {
+      "m0": {
+        "reference": null,
+        "word_id": 13,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m1": {
+        "reference": null,
+        "word_id": 17,
+        "requested": false,
+        "source": "unresolved"
+      },
+      "m2": {},
+      "m3": {}
+    }
+  }
+]

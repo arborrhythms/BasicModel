@@ -1,0 +1,13 @@
+{
+  "complete": false,
+  "reason": "Stopped after discovering that active/passive agent/patient labels were incorrectly described as counterbalanced grammatical subject/object roles. No evaluation was reached; this is not a native failure or an accuracy result.",
+  "last_completed_batch": {
+    "phase": "train",
+    "epoch": 0,
+    "completed": 420,
+    "selected": 494,
+    "trained": 420,
+    "error": null
+  },
+  "source_matches_at_stop": true
+}

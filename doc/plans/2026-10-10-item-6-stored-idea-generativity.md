@@ -428,3 +428,152 @@ lesson, including the newly distinguished reversed-output case. J's content
 coverage, K's order stamp and L's unused family metadata remain open, together
 with stored recovery beyond two words, order CE, MM grammar and compiled
 retention. No identity rule or declared referent mode changed in this follow-up.
+
+## 4. Part-2 corpus and measurement preparation (Codex, 2026-10-10)
+
+The [preparation receipt](../benchmarks/2026-10-10-item6/identity-corpus/README.md)
+freezes the first 740-document corpus, label sidecars, grader and native
+observation driver on the reviewed H/I source. It covers the amendment's
+factorial/support curriculum, counterbalanced pronouns, imperfect determiners
+and held-out conflicts, same-kind distinctions, document context and both
+controls. The text supplied to the learner contains no candidate or identity
+labels. Thirteen corpus/grader checks pass, including the corrected distinction
+between grammatical roles and passive agent/patient labels, and a positive
+observer check against the real row writer. The observer follows the owned
+NP's reference when its head and order also appear on the enclosing sentence.
+
+Native reports preserve failures and unreached cases. The known-policy
+controls verify the grader; they do not stand in for learned controls. In
+particular, the cold biased preflight is not matched to a trained
+counterbalanced branch. The passive-role prototype was stopped after 420 training documents
+to correct its grammatical labels, with no evaluation reached; it is retained
+as an incomplete diagnostic. Revision 2's baseline starts cold. A learned
+recency comparison requires the same warm-up state and presentation budget on
+both branches. Read the native outcomes in the receipt. The prototype's
+native trace/admission underflow is a separate open finding, not repaired by
+changing the lesson wording.
+
+On the corrected observer and corpus, the cold stream completes 132 of 150
+documents before a four-document batch raises the trace underflow; fourteen
+documents are unreached. No completed binding or row pair resolves. The biased
+preflight completes 16 training and 16 reversed-evaluation documents, also
+with no resolved binding. Both reports match the frozen source and corpus.
+These are baseline findings, not passing learning or rule-retirement gates.
+
+This is preparation for review, not item 6's closing. No production code,
+declared mode, pronoun rule, positional binding, cosine resolver or recurrence
+admission changes. Each retirement still requires its lesson to pass without
+the rule. The inverse, order-credit, MM and compiled-retention findings and
+review J–L remain open alongside this work.
+
+## 5. Review of the follow-up landing and the part-2 preparation (Claude, 2026-10-10)
+
+### 5.1 Follow-up H/I (`9cc5f6e32` + `c1d1ea03c`) — fine, one mechanism fix to carry
+
+H is the one-line gate; the sweep has no new failing node against 6.1
+(5,451 passed, 1 failed = c). I's bisection is sound and worth the trouble:
+the first candidate's live constituents won as a self-pair; part 1 removed
+that; what remains is that `_bounded_binary_reconstruction` takes the raw
+minimum residual among pairs that are *all* within the exact-fit threshold
+(3.7e-15 vs 7.0e-15 against a 9.1e-13 threshold), so a roundoff-sized
+difference overrides the learned decomposition scores and the symmetric pair
+comes out reversed. That is not an orientation-lesson problem: among exact
+fits the learned score must break the tie, or the order lesson cannot reach
+this path at all. Fix (mechanism, not a rule): rank pairs within the
+exact-fit threshold by the chooser's score; residual decides only outside
+it. Do it with part 2's order lesson, measured by this same probe.
+
+### 5.2 Part-2 preparation (uncommitted; receipt `identity-corpus/`)
+
+What is there: a 740-document generated corpus in five streams with labels
+in sidecars the learner never sees; a grader with oracle and recency sanity
+controls (16/16, 0/16, 16/32 — the grader works); a native driver that
+feeds only text and document addresses and reads the selected order-one
+references and the writer's minted addresses; 13 contract tests (pass
+here). The corpus follows the amendment's rules: singletons first, then
+object support 1/2/3 with every kind × property × verb at every noun
+position; a separate confounded stream; the two-candidate pronoun lesson
+crossed on recency × introduction role × first position with refresh
+mentions; a 2:1 role marginal in the three-candidate lesson reported, not
+hidden; determiners right 90% (8/80 noisy); four held-out cue/content
+conflicts; the two controls. This is the corpus-and-measurement-first step
+the amendment asked for, and no mechanism changed.
+
+**Measured:** nothing yet. Cold stream: 132/150 evaluation documents
+complete, 0/122 bindings and 0/10 row pairs resolve, four order-one
+reference requests in total, zero noun columns; then a production exception
+stops it. Biased preflight: 16 + 16 complete, zero references, zero columns.
+These are baselines, as the receipt says.
+
+**Findings:**
+
+- **M. A production defect blocks the measurement — repair it first.**
+  `ValueError: compose trace binary operation underflows` in
+  `_derivation_program`: an exploratory leaf admitted into the compose trace
+  is absent from `source_leaf_mask` (saved before the trial's attention
+  hand-off), so the derivation reconstruction drops one operand of a binary
+  rule. Codex located the boundary (`SentenceField` candidates from the
+  current trial vs the saved mask) and reproduced it on the prototype's
+  passive input; the revised corpus hits the same class at evaluation
+  132–135. This is unchanged-production correctness work, not an identity
+  mechanism; it belongs before any part-2 run, with the other alongside
+  items.
+- **N. The same-kind lesson depends on morphology the model does not
+  have.** `a cat runs . a cat sleeps . the running cat is black .` ties the
+  later property to an individual through `running` ↔ `runs`, which is
+  item 5.5's work; to this learner `running` is an unrelated word, so the
+  later sentences cannot do what the lesson intends. Use the same word
+  forms: `a cat runs . a cat sleeps . the black cat runs . the white cat
+  sleeps .` — the verb is the distinguishing predicate and no morphology is
+  needed. (Relative clauses are stage 6.)
+- **O. Object topicalization is untested in the grammar.** 48 documents
+  use `a dog , a cat saw .` to separate role from position. Whether the
+  compose grammar can parse a fronted object (a comma rule, an attachment
+  for the fronted NP) is not shown; if it cannot, the "role" factor is
+  confounded with "unparseable". Either show the parse (one receipt row
+  with the derivation) or drop the fronting and keep the refresh-mention
+  crossing, documenting that introduction role and position are confounded
+  at the first mention.
+- **P. Stage 7 is thin.** The eight "document context" cases are
+  property-follow-up pronouns whose probe text (`it is black .`) refers to
+  different individuals in different documents; the per-batch resets mean
+  nothing crosses a batch. Fine for now; the batch-differentiation,
+  interruption and shared-truth stages of [stream-state §3](2026-10-08-stream-state.md)
+  are not covered and should not be claimed.
+- **Q. The real blocker the baseline exposes.** Four order-one reference
+  requests in 132 documents: the cold chooser almost never selects `lower`,
+  so no identity is ever minted or bound and the identity dictionary stays
+  empty — admission is gated on the selected mint rule
+  (`allow_mint = -1 in individual_references`). This gate is itself one of
+  the amendment's retirement targets, and its lesson is now runnable: with
+  the gate off, does factorial training mint the four kind columns and the
+  confounded stream merge them, measured by *identification* on held-out
+  rows (the toy's metric), not by max-cosine? That, after M, is the first
+  part-2 experiment; the pronoun lessons need the staged warm-up (stages
+  1–4) before they can show anything, as the receipt says.
+
+Smaller: the noisy determiner items whose content is identical
+(`the black cat runs . a black cat sleeps .` → 1 row) are graded against a
+label the text cannot determine; reporting them separately, as the receipt
+does, is right — keep them out of any gate. `candidate_coverage` reads
+the journal, not the live bank; the inventory audit Codex names is needed
+before a wrong choice can be told from a missing candidate.
+
+### 5.3 Hand-off to Codex (Alec confirmed, 2026-10-10)
+
+> Part-2 preparation reviewed (plan §5): corpus, grader and driver are
+> accepted as the measurement; commit them. Before any learning run:
+> (M) repair the compose-trace underflow — the saved `source_leaf_mask`
+> must include every leaf the trial's field admitted, or the reconstruction
+> must read the trial's own mask; regression on the retained failure
+> context. (N) Same-kind lessons use the same word forms (`the black cat
+> runs .`), no participles. (O) Show one parsed topicalized clause with its
+> derivation, or drop the fronting. (I) Among pairs within the exact-fit
+> threshold, rank by the chooser's learned score; residual decides only
+> outside it; remeasure the bisect probe. Then the first experiment: the
+> staged warm-up (stages 1–4), then factorial vs confounded recovery with
+> the selected-mint admission gate on and off, scored by held-out
+> identification; report columns minted, merges, and the gate's lesson
+> outcome. Pronoun and determiner lessons follow from the same warm-up
+> state with equal budgets on both branches. No rule is retired except by
+> its lesson passing without it.

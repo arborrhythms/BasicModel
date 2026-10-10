@@ -1,0 +1,478 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"phase": "evaluation", "epoch": 0, "completed": 4, "selected": 150, "trained": 0, "error": null}
+batch = 1 (Δ=11.933s)
+{"phase": "evaluation", "epoch": 0, "completed": 8, "selected": 150, "trained": 0, "error": null}
+batch = 2 (Δ=12.225s)
+{"phase": "evaluation", "epoch": 0, "completed": 12, "selected": 150, "trained": 0, "error": null}
+batch = 3 (Δ=11.130s)
+{"phase": "evaluation", "epoch": 0, "completed": 16, "selected": 150, "trained": 0, "error": null}
+batch = 4 (Δ=11.119s)
+{"phase": "evaluation", "epoch": 0, "completed": 20, "selected": 150, "trained": 0, "error": null}
+batch = 5 (Δ=11.686s)
+{"phase": "evaluation", "epoch": 0, "completed": 24, "selected": 150, "trained": 0, "error": null}
+batch = 6 (Δ=6.554s)
+{"phase": "evaluation", "epoch": 0, "completed": 28, "selected": 150, "trained": 0, "error": null}
+batch = 7 (Δ=11.300s)
+{"phase": "evaluation", "epoch": 0, "completed": 32, "selected": 150, "trained": 0, "error": null}
+batch = 8 (Δ=12.905s)
+{"phase": "evaluation", "epoch": 0, "completed": 36, "selected": 150, "trained": 0, "error": null}
+batch = 9 (Δ=8.444s)
+{"phase": "evaluation", "epoch": 0, "completed": 40, "selected": 150, "trained": 0, "error": null}
+batch = 10 (Δ=14.682s)
+{"phase": "evaluation", "epoch": 0, "completed": 44, "selected": 150, "trained": 0, "error": null}
+batch = 11 (Δ=11.963s)
+{"phase": "evaluation", "epoch": 0, "completed": 48, "selected": 150, "trained": 0, "error": null}
+batch = 12 (Δ=11.532s)
+{"phase": "evaluation", "epoch": 0, "completed": 52, "selected": 150, "trained": 0, "error": null}
+batch = 13 (Δ=11.776s)
+{"phase": "evaluation", "epoch": 0, "completed": 56, "selected": 150, "trained": 0, "error": null}
+batch = 14 (Δ=6.640s)
+{"phase": "evaluation", "epoch": 0, "completed": 60, "selected": 150, "trained": 0, "error": null}
+batch = 15 (Δ=11.404s)
+{"phase": "evaluation", "epoch": 0, "completed": 64, "selected": 150, "trained": 0, "error": null}
+batch = 16 (Δ=7.552s)
+{"phase": "evaluation", "epoch": 0, "completed": 68, "selected": 150, "trained": 0, "error": null}
+batch = 17 (Δ=7.523s)
+{"phase": "evaluation", "epoch": 0, "completed": 72, "selected": 150, "trained": 0, "error": null}
+batch = 18 (Δ=7.827s)
+{"phase": "evaluation", "epoch": 0, "completed": 76, "selected": 150, "trained": 0, "error": null}
+batch = 19 (Δ=7.925s)
+{"phase": "evaluation", "epoch": 0, "completed": 80, "selected": 150, "trained": 0, "error": null}
+batch = 20 (Δ=12.319s)
+{"phase": "evaluation", "epoch": 0, "completed": 84, "selected": 150, "trained": 0, "error": null}
+batch = 21 (Δ=12.063s)
+{"phase": "evaluation", "epoch": 0, "completed": 88, "selected": 150, "trained": 0, "error": null}
+batch = 22 (Δ=12.069s)
+{"phase": "evaluation", "epoch": 0, "completed": 92, "selected": 150, "trained": 0, "error": null}
+batch = 23 (Δ=12.155s)
+{"phase": "evaluation", "epoch": 0, "completed": 96, "selected": 150, "trained": 0, "error": null}
+batch = 24 (Δ=11.884s)
+{"phase": "evaluation", "epoch": 0, "completed": 100, "selected": 150, "trained": 0, "error": null}
+batch = 25 (Δ=11.449s)
+{"phase": "evaluation", "epoch": 0, "completed": 104, "selected": 150, "trained": 0, "error": null}
+batch = 26 (Δ=11.370s)
+{"phase": "evaluation", "epoch": 0, "completed": 108, "selected": 150, "trained": 0, "error": null}
+batch = 27 (Δ=11.429s)
+{"phase": "evaluation", "epoch": 0, "completed": 112, "selected": 150, "trained": 0, "error": null}
+batch = 28 (Δ=6.774s)
+{"phase": "evaluation", "epoch": 0, "completed": 116, "selected": 150, "trained": 0, "error": null}
+batch = 29 (Δ=11.866s)
+{"phase": "evaluation", "epoch": 0, "completed": 120, "selected": 150, "trained": 0, "error": null}
+batch = 30 (Δ=12.684s)
+{"phase": "evaluation", "epoch": 0, "completed": 124, "selected": 150, "trained": 0, "error": null}
+batch = 31 (Δ=11.911s)
+{"phase": "evaluation", "epoch": 0, "completed": 128, "selected": 150, "trained": 0, "error": null}
+batch = 32 (Δ=11.434s)
+{"phase": "evaluation", "epoch": 0, "completed": 132, "selected": 150, "trained": 0, "error": null}
+{"phase": "evaluation", "epoch": 0, "completed": 136, "selected": 150, "trained": 0, "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 241, in run\n    model.runBatch(train=training,optimizer=optimizer,batchNum=offset//args.batch_size,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13774, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13920, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14302, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8868, in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10321, in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8553, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8331, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23943, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17393, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22477, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22029, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21018, in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py\", line 143, in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20935, in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20072, in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_measurement.py\", line 124, in observation\n    value=observe(state,sid,active,**kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 19872, in _sentence_observation\n    _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12909, in _capture_reading_programs\n    program = self._derivation_program(slot if packed else None)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12792, in _derivation_program\n    apply(3 * w + r)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12781, in apply\n    raise ValueError('compose trace binary operation underflows')\nValueError: compose trace binary operation underflows\n"}
+{
+  "documents": 150,
+  "errors": 18,
+  "groups": {
+    "all": {
+      "n": 130,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4461538461538462,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "candidates=1": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 1.0,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "candidates=2": {
+      "n": 72,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "candidates=3": {
+      "n": 54,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=1/0/subject": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 1.0,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=2/0/object": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=2/0/subject": {
+      "n": 20,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=2/1/object": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=2/1/subject": {
+      "n": 20,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=3/0/object": {
+      "n": 6,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/0/subject": {
+      "n": 12,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/1/object": {
+      "n": 6,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/1/subject": {
+      "n": 12,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/2/object": {
+      "n": 6,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/2/subject": {
+      "n": 12,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=document_context": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=neither_candidate": {
+      "n": 32,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "family=pronoun": {
+      "n": 32,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=pronoun_one": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 1.0,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=pronoun_three": {
+      "n": 54,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "first_mention=0": {
+      "n": 58,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4827586206896552,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "first_mention=1": {
+      "n": 54,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4444444444444444,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "first_mention=2": {
+      "n": 18,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "recency=0": {
+      "n": 58,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4827586206896552,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "recency=1": {
+      "n": 54,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4444444444444444,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "recency=2": {
+      "n": 18,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "role=object": {
+      "n": 50,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.44,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "role=subject": {
+      "n": 80,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.45,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "rows=determiner/1": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=determiner/2": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=determiner_conflict/2": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=same_kind/1": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=same_kind/2": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    }
+  }
+}
