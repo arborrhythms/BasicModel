@@ -1,0 +1,28 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": 5,
+  "completed": 5,
+  "outcomes": {
+    "passed": 5
+  },
+  "raw_reports": 5,
+  "unique_reports": 5,
+  "source_matched_at_receipt": true,
+  "runner_source_unchanged": true,
+  "elapsed_seconds": 7.274577209027484,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 429376808,
+  "failure_nodes": [],
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-followup/h-source/output/embedding-covered",
+  "source_directory": "output/item6-followup/h-source"
+}

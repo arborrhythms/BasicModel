@@ -1,0 +1,373 @@
+{
+  "seed": 20261010,
+  "protocol": "One fixed initialization, identical 354 state tensors and identical captured root in all five versions. Targets enter grading only. Frozen forward replay isolates inverse changes.",
+  "stages": {
+    "baseline": {
+      "parameter_or_buffer_count": 354,
+      "changed_parameters_or_buffers": [],
+      "identical_forward_root": true,
+      "overlap": 1.0,
+      "target": [
+        [
+          0,
+          1
+        ]
+      ],
+      "topk": [
+        [
+          [
+            0,
+            4,
+            2
+          ],
+          [
+            1,
+            4,
+            2
+          ]
+        ]
+      ],
+      "replays": {
+        "original": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "old_eligibility": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "old_walk_and_eligibility": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "no_live_constituents": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ]
+      }
+    },
+    "initial": {
+      "parameter_or_buffer_count": 354,
+      "changed_parameters_or_buffers": [],
+      "identical_forward_root": true,
+      "overlap": 0.0,
+      "target": [
+        [
+          0,
+          1
+        ]
+      ],
+      "topk": [
+        [
+          [
+            4,
+            6,
+            2
+          ],
+          [
+            4,
+            6,
+            2
+          ]
+        ]
+      ],
+      "replays": {
+        "original": [
+          {
+            "count": [
+              0
+            ],
+            "truncated": [
+              true
+            ],
+            "overlap": 0.0
+          }
+        ],
+        "old_eligibility": [
+          {
+            "count": [
+              1
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 0.5
+          }
+        ],
+        "old_walk_and_eligibility": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "no_live_constituents": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ]
+      }
+    },
+    "pre-terminal": {
+      "parameter_or_buffer_count": 354,
+      "changed_parameters_or_buffers": [],
+      "identical_forward_root": true,
+      "overlap": 0.0,
+      "target": [
+        [
+          0,
+          1
+        ]
+      ],
+      "topk": [
+        [
+          [
+            4,
+            6,
+            2
+          ],
+          [
+            4,
+            6,
+            2
+          ]
+        ]
+      ],
+      "replays": {
+        "original": [
+          {
+            "count": [
+              0
+            ],
+            "truncated": [
+              true
+            ],
+            "overlap": 0.0
+          }
+        ],
+        "old_eligibility": [
+          {
+            "count": [
+              1
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 0.5
+          }
+        ],
+        "old_walk_and_eligibility": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "no_live_constituents": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ]
+      }
+    },
+    "terminal-filter": {
+      "parameter_or_buffer_count": 354,
+      "changed_parameters_or_buffers": [],
+      "identical_forward_root": true,
+      "overlap": 0.0,
+      "target": [
+        [
+          0,
+          1
+        ]
+      ],
+      "topk": [
+        [
+          [
+            4,
+            6,
+            2
+          ],
+          [
+            4,
+            6,
+            2
+          ]
+        ]
+      ],
+      "replays": {
+        "original": [
+          {
+            "count": [
+              0
+            ],
+            "truncated": [
+              true
+            ],
+            "overlap": 0.0
+          }
+        ],
+        "old_eligibility": [
+          {
+            "count": [
+              1
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 0.5
+          }
+        ],
+        "old_walk_and_eligibility": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "no_live_constituents": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ]
+      }
+    },
+    "current": {
+      "parameter_or_buffer_count": 354,
+      "changed_parameters_or_buffers": [],
+      "identical_forward_root": true,
+      "overlap": 0.0,
+      "target": [
+        [
+          0,
+          1
+        ]
+      ],
+      "topk": [
+        [
+          [
+            1,
+            4,
+            2
+          ],
+          [
+            0,
+            4,
+            2
+          ]
+        ]
+      ],
+      "replays": {
+        "original": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 0.0
+          }
+        ],
+        "old_eligibility": [
+          {
+            "count": [
+              1
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 0.5
+          }
+        ],
+        "old_walk_and_eligibility": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ],
+        "no_live_constituents": [
+          {
+            "count": [
+              2
+            ],
+            "truncated": [
+              false
+            ],
+            "overlap": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "interpretation": [
+    "Initial candidate: a live whole wins pair search and fails the later progress check. Shared menu with old eligibility emits one approximate leaf; removing live constituents restores two words and overlap 1.",
+    "Pre-terminal and terminal-mask snapshots both remain empty, overlap 0. The regression therefore predates the terminal mask.",
+    "Part 1 progress-before-ranking restores two words, but the selected pair reverses their order. Removing live constituents restores overlap 1 on the identical artifact.",
+    "Current exact-fit search chooses word row 1 then live row 64 (near word row 0): relative squared residual 3.7408028504524755e-15 versus 6.9542497642080016e-15 for word rows 0,1. Both are inside (8*float32 epsilon)^2 = 9.094947017729282e-13. The raw minimum overrides learned decomposition scores; bank-order tie breaking orients the winning symmetric pair.",
+    "No threshold, xfail, assertion or candidate-order rule is changed. The remaining per-position overlap failure belongs to the learned-order lesson, with the cause now identified."
+  ]
+}

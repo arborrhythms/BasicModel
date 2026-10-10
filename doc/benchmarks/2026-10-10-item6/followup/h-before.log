@@ -1,0 +1,55 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5726/test_missing_packed_sentence_d0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109fff080>
+
+    def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_path, monkeypatch):
+        import util
+        from test_packed_reconstruction_parity import build_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = build_model(tmp_path, word_capacity=8)
+        stage = model._stage_snapshot_bytes
+        def without_second_sentence():
+            stage()
+            isp = model.inputSpace
+            isp._ar_bank_valid[isp._ar_concept_lookup_sentence_ids == 1] = False
+        monkeypatch.setattr(model, '_stage_snapshot_bytes', without_second_sentence)
+        prime=model._prime_sentence_symbols
+        def without_prior_candidates(sid):
+            from dataclasses import replace
+            prime(sid)
+            if sid == 1:
+                bank=model._sentence_primed_bank
+                model._sentence_primed_bank=replace(bank,rows=torch.full_like(bank.rows,-1),
+                    byte_valid=torch.zeros_like(bank.byte_valid))
+        monkeypatch.setattr(model,'_prime_sentence_symbols',without_prior_candidates)
+        try:
+            model._install_unit_span_fn()
+            raw = model.inputSpace.prepPackedInput([['quorp flarn', 'wug blim']])
+            with torch.no_grad():
+                model.runBatch(train=False, batchSize=1, split='validation',
+                    batch_override=(raw, torch.empty(1, 0)))
+            assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
+>           assert float(model._recon_sentence_costs[0, 1]) == 0.
+E           assert 1.0 == 0.0
+E            +  where 1.0 = float(tensor(1.))
+
+test/test_reconstruction_scope.py:78: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7156: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5726/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+1 failed, 2 warnings in 5.20s

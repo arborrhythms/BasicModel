@@ -12272,7 +12272,8 @@ class BasicModel(BaseModel):
                 torch.zeros((), device=S.device, dtype=torch.long), S.new_zeros(B))))
             eligible = scope.any(-1) & candidates.any(-1)
             cost = torch.where(eligible, total / n_score.clamp_min(1), 0.)
-            cost = cost + (missing + excess).to(cost) / n_target.clamp_min(1)
+            cost = cost + torch.where(eligible,
+                (missing + excess).to(cost) / n_target.clamp_min(1), 0.)
             column = torch.as_tensor(sid, device=S.device).reshape(1,1).expand(B,1)
             byte_all = byte_all.scatter(1, column, cost[:, None])
             bad = bad | (scope.any(-1) & (truncated | ~candidates.any(-1)))

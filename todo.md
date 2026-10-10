@@ -173,10 +173,12 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
 - b's initial binding-distribution bound remains flaky after construction-based
   coverage of 32 documents, histories 1–4 and four names. Development maximum
   1.153045 exceeds the unchanged .9–1.1 band; no passing initialization closes it.
-- **New in part 1's sweep:** an unavailable packed sentence receives a coverage
-  cost of 1 instead of 0 (`test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction`).
-  The support charge needs the existing candidate-availability scope; preserve
-  the unchanged assertion and the measured failure in the part-1 receipt.
+- Per-position cleared-cache overlap remains 0.000 against .800. The
+  [follow-up bisection](doc/benchmarks/2026-10-10-item6/followup/README.md)
+  separates the initial self-pair obstruction (repaired in part 1) from the
+  current reversed pair: a live near-copy wins by roundoff, and the exact-fit
+  override bypasses learned orientation. Keep the order lesson, content
+  coverage, walk order stamps and family-metadata use under part 2 (review J–L).
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction

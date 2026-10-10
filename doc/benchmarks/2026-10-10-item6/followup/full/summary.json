@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5745,
+  "completed": 5745,
+  "outcomes": {
+    "passed": 5451,
+    "skipped": 292,
+    "failed": 1,
+    "xfailed": 1
+  },
+  "raw_reports": 5748,
+  "unique_reports": 5745,
+  "source_matched_at_receipt": true,
+  "runner_source_unchanged": true,
+  "elapsed_seconds": 598.616413999931,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 9243684768,
+  "failure_nodes": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode"
+  ],
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-followup/h-source/output/full",
+  "source_directory": "output/item6-followup/h-source"
+}

@@ -336,3 +336,95 @@ diagnostic retained lexical spellings; the repaired obstruction was candidate
 self-pairs. Its earlier empty inverse is explicitly classified as new relative
 to accepted 6.1. Stored recovery beyond two words and the order-lesson, MM and
 compiled-retention findings continue under part 2 and the alongside-item-6 list.
+
+### 1.7 Code review of the part-1 landing (Claude, 2026-10-10; `324b84d67` + `0b052d5ef`)
+
+Reviewed the landed source against the reviewed candidate's archive
+(`doc/benchmarks/2026-10-10-item6/source.tar.gz`) and the
+[part-1 receipt](../benchmarks/2026-10-10-item6/part1/README.md); reran the
+stored-idea, component, cleared-cache and scope tests here under the default
+backend (`MODEL_COMPILE` unset): 61 passed, 1 xfailed, 1 failed (the new
+scope failure below).
+
+**All five hand-off items are in the code as decided.**
+1. Dropped support is charged: `Generative.reconstruction_coverage` audits
+   emitted against expected leaf *counts* after the walk, marks the
+   reconstruction truncated and adds `reconstruction.coverage` to the keep
+   cost (`Models.py` ~12247, ~12299, ~20081). `lower` at 2/3/5 now reads
+   incomplete with costs .5/.667/.8. The walk itself still terminates on the
+   head (`walk_complete`); the charge is post-hoc, which the hand-off's "or"
+   allowed.
+2. The cleared-cache empty inverse was a self-pair, not the spelling mask:
+   `_bounded_binary_reconstruction(require_progress=free)` now rejects any
+   pair in which a child equals the parent within tolerance before ranking
+   (`Language.py` ~13847). The drivability test passes; the receipt corrects
+   its earlier "unchanged" claim.
+3. The walk clones every captured bank, mask and depth (`own()`,
+   `Models.py` ~13047), so overlapping views cannot alias across
+   `torch.while_loop`; the test enables capture explicitly. Passes here.
+4. The S/VP/adverb family-to-side map is gone; families are carried as
+   candidate types only; a 16-pair, both-orientation regression exists.
+5. `SparseDictionary.encode` is greedy (a column is kept only while it
+   lowers the remainder); `observe` mints the normalized remainder of
+   `value − prediction` under the existing columns, witnesses from the whole
+   row; `commit` passes the prediction's noun frame through the same chart.
+   `reverse_inverses` and its stubs are deleted; the materialisation test
+   now requires a supported word, exact text and no truncation.
+
+**Findings (follow-ups, not a re-review):**
+
+- **H. New regression from repair 1 — fix now.** The coverage charge is
+  added outside the candidate-availability mask (`Models.py` 12276:
+  `cost = cost + (missing + excess) / n_target`), so a packed sentence with
+  no candidates is charged 1.0 and dilutes the owned sentence's cost —
+  `test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction`
+  (new failure vs 6.1). One line: gate the term by `eligible`
+  (`torch.where(eligible, …, 0.)`); such a sentence is already flagged `bad`.
+- **I. Regression 6.1 → item 6, behind an xfail marker.**
+  `test_topk_recovered_words_overlap_input` XPASSed at accepted 6.1 (overlap
+  ≥ .8) and observes **0.000** in every item-6 sweep from the first candidate
+  on: after a cache clear the inverse emits a word (drivability passes) but
+  not the sentence's words. The receipt reports it as adverse; it needs a
+  bisect across the candidate's changes (shared menu, terminal mask,
+  progress rule) rather than carrying.
+- **J.** The audit is count-based: a reading that drops one modifier and
+  emits one spurious leaf has the expected count and is "covered"; only the
+  lexical score then catches it. Acceptable for part 1; content coverage
+  belongs with the derivation reconstruction in part 2.
+- **K.** With the progress rule, a projecting operator can never be a free
+  pair in the tensor walk (one child always equals the parent), so
+  determiners are recoverable only through the stored read's order-stamp
+  path. Consistent with the measurement; note it so part 2 carries the
+  order stamp into the walk rather than rediscovering this.
+- **L.** `constituent_families` is computed and threaded through
+  `SentenceUnderstanding` and the walk but now has no consumer. It is part
+  2's input; it should not stay dark longer than that.
+- b at 1.101915 against the 1.1 bound is the documented flaky finding.
+
+Disposition: the landing matches the authorization. H is a one-line
+follow-up commit; I is the one open regression to bisect before part 2's
+measurements are read against this baseline.
+
+### 1.8 Follow-ups H and I (Codex, 2026-10-10)
+
+H now applies `eligible` to the coverage charge as well as lexical cost.
+The unchanged missing-packed-sentence regression and all 24 scope/stored-read
+checks pass. The [follow-up receipt](../benchmarks/2026-10-10-item6/followup/README.md)
+freezes the one-file production change separately from part 2's corpus work.
+
+I is causally bisected on matching initial tensors and the identical forward
+root. The first candidate adds live constituents to pair search: a self-pair
+wins and is then rejected, concealing the lexical split. The terminal mask
+comes later. Part 1's progress filter repairs that obstruction, but a live
+near-copy of word 0 wins by a roundoff-sized residual advantage; the exact-fit
+override bypasses learned pair scores and the symmetric pair is emitted in
+reverse order. Both words are recovered, so overlap still reads 0.000.
+Removing the live constituents yields 1.000 on the same artifact at both
+stages. Full paired results and frozen tensors are in the receipt.
+
+This reports I's cause without weakening its .800 bar or declaring order
+learning repaired. Part 2 must measure the exact-fit override and orientation
+lesson, including the newly distinguished reversed-output case. J's content
+coverage, K's order stamp and L's unused family metadata remain open, together
+with stored recovery beyond two words, order CE, MM grammar and compiled
+retention. No identity rule or declared referent mode changed in this follow-up.

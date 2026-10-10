@@ -1,0 +1,12 @@
+{
+  "review": "plan \u00a71.7: follow-ups, not a re-review; H one-line follow-up commit",
+  "authorization": "Alec requests H eligibility gate and I repair or causal report, before beginning the corpus and measurements for part 2.",
+  "production_scope": [
+    "bin/Models.py: gate coverage charge by eligible"
+  ],
+  "source_sha256": "7acd0bbdd9790354625c99ad43c26290bfd5eda73908d009909cae32bcfea865",
+  "H": "fixed; unchanged regression passes",
+  "I": "cause bisected; reversed per-position output remains open for learned order",
+  "mechanism_commit": null,
+  "identity_rules_retired": []
+}
