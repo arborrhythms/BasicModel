@@ -1,0 +1,26 @@
+[
+  {
+    "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 77.82504983409308,
+    "message": "test/test_math_chain_section14.py:211: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate\n    assert min(ratios) >= .9 and max(ratios) <= 1.1, report\nE   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.9290397763252258, 1.101914867758751], 'initialization_documents': 32, ...}\nE   assert (0.9290397763252258 >= 0.9 and 1.101914867758751 <= 1.1)\nE    +  where 0.9290397763252258 = min([0.9999754428863525, 1.0000245571136475, 0.9999638199806213, 1.0000362396240234, 0.9999754428863525, 1.000024676322937, ...])\nE    +  and   1.101914867758751 = max([0.9999754428863525, 1.0000245571136475, 0.9999638199806213, 1.0000362396240234, 0.9999754428863525, 1.000024676322937, ...])",
+    "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=6.910s)\r\nbatch = 16 (\u0394=4.467s)\r\nbatch = 24 (\u0394=4.366s)\r\nbatch = 32 (\u0394=4.941s)\r\nbatch = 40 (\u0394=4.065s)\r\nbatch = 48 (\u0394=3.758s)\r\nbatch = 56 (\u0394=4.044s)\r\nbatch = 64 (\u0394=5.246s)\r\nbatch = 72 (\u0394=4.079s)\r\nbatch = 80 (\u0394=3.673s)\r\nbatch = 88 (\u0394=4.142s)\r\nbatch = 96 (\u0394=4.361s)\r\nbatch = 104 (\u0394=5.624s)\r\nbatch = 0 (\u0394=13.357s)\r\n"
+  },
+  {
+    "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 37.924390083993785,
+    "message": "test/test_math_chain_section14.py:244: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:241: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6569147320008780740), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -6569147320008780740),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x1304a4d60>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -6569147320008780740), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -6569147320008780740),))), scope=(), sentence_kind='relation'), 'five')",
+    "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=18.813s)\r\n"
+  },
+  {
+    "nodeid": "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 2.762139458092861,
+    "message": "test/test_reconstruction_scope.py:78: in test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction\n    assert float(model._recon_sentence_costs[0, 1]) == 0.\nE   assert 1.0 == 0.0\nE    +  where 1.0 = float(tensor(1.))",
+    "stdout": "batch = 0 (warm-up)\r\n"
+  }
+]

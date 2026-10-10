@@ -186,6 +186,15 @@ Declared hyperparameters: the sparsity prior's strength, the mint threshold
 on unexplained surprise, and the forgetting threshold. STM capacity and the
 three roles are already declared.
 
+*Part-1 mechanism repair (Alec, 2026-10-10; [item-6 plan §1.5](../plans/2026-10-10-item-6-stored-idea-generativity.md#15-alecs-decisions-2026-10-10)).*
+The source count is a ceiling, not a fixed top-k. Greedy residual selection
+adds a column only while the reconstructed remainder decreases, retaining the
+small differentiable solve, Laplace shrinkage and relevance scales. Admission
+normalizes the unexplained remainder of the expectation residual; without a
+prediction, the observed row is the surprise. Witnessing still reads the whole
+row's explanation. The recurrence gate stays. Removing mode-gated admission
+and the other declared identity rules waits for part 2's lessons.
+
 ### 2.5 Population, not batch
 
 The batch is two sentences, so the independence statistics run over a

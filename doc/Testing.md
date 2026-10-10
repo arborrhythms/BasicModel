@@ -1,5 +1,28 @@
 # Bounded development tests
 
+Item 6 **part 1** lands the [reviewed repair pass](benchmarks/2026-10-10-item6/part1/README.md):
+shared bounded inversion, support charges in the keep cost, captured-input
+isolation, candidates of every family on either side, and residual-surprise
+minting with greedy sparse encoding. The four requested repair checks pass,
+as do the recurrence regression, 102 affected cases, the strengthened lexical
+materialization check, two default-backend checks and two explicit compiled checks.
+The one source-matched sweep completes **5,745 cases: 5,454 passed,
+287 skipped, 3 failed and 1 expected failure**.
+The [comparison with accepted 6.1](benchmarks/2026-10-10-item6/part1/full/baseline-comparison.json)
+names the new coverage-scope failure and b's failed bound as new relative to
+that accepted sweep. b was already documented as flaky; no initialization is
+retried. The earlier empty cleared-cache inverse was new with the candidate;
+it now passes without changing its assertion. The existing overlap marker
+moves from the baseline's XPASS to XFAIL (.000 versus .800), and remains visible.
+
+Lower at 2/3/5 is incomplete with a charge for dropped support. Lift recovers
+2/3/5 with live wholes; stored dictionary-only 3/5 remain incomplete. The
+zero-gradient order lesson, capacity-blocked MM grammar recovery and intermittent
+compiled retention remain open alongside part 2, with all earlier receipts
+preserved. The [identity-from-data amendment](plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10)
+requires corpus and measurement before retiring rules. Part 1 makes no learned
+identity or stored-compound recovery claim; item 5 may not discard derivations.
+
 Item 6.5's [October 7 accepted mechanism receipt](benchmarks/2026-10-07-item6-5/README.md)
 records magnitude definedness first, then native identity/change columns and
 global bind/mint selection. Its final source has a green **5,527-case** sweep:

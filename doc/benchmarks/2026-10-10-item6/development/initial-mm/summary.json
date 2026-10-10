@@ -1,0 +1,30 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 1,
+  "completed": 1,
+  "outcomes": {
+    "failed": 1
+  },
+  "raw_reports": 1,
+  "unique_reports": 1,
+  "source_matched_at_receipt": true,
+  "runner_source_unchanged": true,
+  "elapsed_seconds": 19.154850249993615,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 2170620472,
+  "failure_nodes": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip"
+  ],
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-mm-roundtrip",
+  "source_directory": "."
+}

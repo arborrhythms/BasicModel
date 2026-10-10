@@ -245,10 +245,11 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
             model._sentence_fields[0][0].end_state[0], frame[2], rtol=0, atol=0)
         assert not torch.equal(entry.leaves[0], prior)
         active = model.inputSpace._word_active_mask
-        assert not model._recon_truncated.any()
-        # A free inverse searches from the exact fused root and rule sequence;
-        # it is not required to replay the original word displaced by a live
-        # reference. The source leaves must not act as inverse witnesses.
+        # This held referent has no lexical realization in the primed bank.
+        # Completing a shorter approximate word pair would lose its content;
+        # an honest free inverse must leave it pending. Source leaves cannot
+        # supply the displaced word as an inverse witness.
+        assert model._recon_truncated.tolist() == [True]
         from dataclasses import replace
         record = view['record']
         expected = model._reconstruct_trial(record)[0]

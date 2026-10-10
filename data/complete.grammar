@@ -235,7 +235,8 @@
       <rule>verb_I1, verb_I2 = verb.reverse(verb_O1)</rule>
       <rule>compound_I1, compound_I2 = compound.reverse(compound_O1)</rule>
       <rule>adverb_I1, adverb_I2 = adverb.reverse(adverb_O1)</rule>
-      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+      <rule referent="mint">lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+      <rule implementation="lower" referent="bind">definite_I1, definite_I2 = definite.reverse(definite_O1)</rule>
 
       <rule>preposition_I1, preposition_I2 = preposition.reverse(preposition_O1)</rule>
       <rule>bind_I1, bind_I2 = bind.reverse(bind_O1)</rule>

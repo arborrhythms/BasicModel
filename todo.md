@@ -17,13 +17,13 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** **6.1 is accepted as a mechanism landing** (Alec,
-2026-10-10; [stream-state §7.15–§7.16](doc/plans/2026-10-08-stream-state.md)).
-The two repairs and their measured outcomes are in the
-[receipt](doc/benchmarks/2026-10-09-item6-1/README.md). Learning gates remain
-at item 0's checkpoint; acceptance makes no learning claim. Next: item 6,
-with unresolved correctness work continued alongside it. The accepted
-6.2 and 6.5 mechanisms' learning gates also remain at the checkpoint.
+**Current:** Item 6 **part 1** is the reviewed mechanism landing after the
+October 10 repair pass ([receipt](doc/benchmarks/2026-10-10-item6/part1/README.md)).
+Item 6 **part 2** is next: identity learned through the same unmixing,
+with teaching corpus and measurements before rule retirement. Stored-idea
+recovery beyond two words, order-lesson CE, MM grammar recovery and compiled
+retention remain open below. Accepted 6.1, 6.2 and 6.5 mechanism landings make
+no learning claim; their checkpoint gates remain at item 0.
 
 **Current sequence (6.1 closed October 10; no conference freeze):**
 6 → 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
@@ -155,75 +155,58 @@ measurements and decisions are in the accepted receipt and its predecessors.
 Deferred from 6.5 (non-blocking): the detached role view's retirement is in
 item 2; learned-column pruning is in item 5.
 
-Alongside item 6, continue list-inverse recovery: the repaired source's
-enabled two-word list reconstructs 0/4 (its coordinates are explicitly
-unrecovered and uncharged); the four-word list has no final remeasurement
-because of the retrieval error below. These inverse limits remain active
-work, not deferred to the learning checkpoint.
+Alongside item 6, retain these open findings, with the historical and current
+outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1/README.md):
 
-Alongside item 6, close the landing sweep's remaining correctness failures:
-c's supplied-answer match (the captured initialization passes, but the sweep
-does not); packed-LTM retention; the eight-sentence fork-round diversity
-certificate; and pending-premise retention with order `False`. The exact
-failures and source remain in the [receipt](doc/benchmarks/2026-10-09-item6-1/README.md).
+- Stored-idea recovery beyond two words through trained A/B unmixing belongs
+  to part 2. Initial-source list free recovery is 0/4 throughout; enabled
+  two/four-word derivation recovery is 2/4 and 0/4. The order lesson's CE
+  stays at .3465735912 / .7945134640 through 64 presentations, with zero
+  scorer gradient. These inverse and credit findings remain active work.
+- MM grammar recovery: the 1,024-row LTM exhausts in epoch 2 before evaluation;
+  there is no new recovery rate. Item 5 may not discard derivations yet.
+- Compiled retention: the 64/312-element mismatch (max .2556) has no identified
+  cause. Later passing runs do not close it. Also retain accepted 6.1's packed
+  LTM retention and pending-premise order-`False` findings.
+- c's retained supplied answer does not match `five`, and the eight-sentence
+  fork certificate chooses only round 12. Keep both assertions unchanged.
+- b's initial binding-distribution bound remains flaky after construction-based
+  coverage of 32 documents, histories 1–4 and four names. Development maximum
+  1.153045 exceeds the unchanged .9–1.1 band; no passing initialization closes it.
+- **New in part 1's sweep:** an unavailable packed sentence receives a coverage
+  cost of 1 instead of 0 (`test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction`).
+  The support charge needs the existing candidate-availability scope; preserve
+  the unchanged assertion and the measured failure in the part-1 receipt.
 
-Alongside item 6, fix the native retrieval reference error found in 6.1's
-stage 3: a thought's cued LTM read passes an unsupported reference to
-`Taxonomy.concept_reference`, raising during disabled two-word presentation
-12 and enabled four-word presentation 8. Neither initialization was retried.
-This is active correctness work, not a checkpoint learning gate
-([receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
+The cleared-cache empty inverse was **new with the item-6 candidate**, not an
+unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
+and checks the unchanged drivability assertion. It also repairs the native
+retrieval `meta`-reference error, scopes stored-read operator activations,
+charges dropped support in the keep cost, and isolates captured walk inputs.
+Their original failing evidence remains in the receipts.
 
-Alongside item 6, tighten b's unseeded initial binding-distribution coverage
-by construction (more menus), never by a seed; retain the observed flaky
-bound in [operators §20](doc/plans/2026-10-05-operators-update.md#20-round-2d-hand-off-to-codex-claude-2026-10-06).
-
-- **6. Stored-idea generativity.** *Direction (Alec, 2026-10-09, from the 6.1
-   review, [stream-state §7.14](doc/plans/2026-10-08-stream-state.md)):* inverting
-   S yields nonterminals — NP and VP as compound states — not codebook words, so
-   the types must have characteristic, separable structure in conceptual
-   space; parts of speech are learned in the compose grammar so that generate
-   can segment into them without forcing them to be words. That structure is
-   [6.5's](doc/specs/2026-09-26-independent-components.md) decided model: nouns are
-   columns of `A` (object signatures over the order-0 coordinates), verbs columns
-   of `B` (patterns of change over the coordinates `A` defines) — things against
-   transformations, nouns first, verbs second — and a word is routed as noun or
-   verb by which matrix its row best serves (§2.7, credit not lookup). The free
-   inverse of a stored idea is then an unmixing by type family — which `A`
-   columns are active, which `B` column fired; inside a phrase, properties as
-   their own separable family (wholes are types) with the catalogue's
-   map inverses given the modifier — snapping to the codebook only at the
-   leaves. During a sentence the eight-space's composed wholes are available to
-   the inverse as well; from a stored idea only the structure is. Free compound
-   decoding is not a stage gate until this exists ([Training.md](doc/Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)).
-   *Observation from 6.2's closing (thinking
-   spec §14.13):* under a live departure the keep rule committed a reading of
-   `three plus one is four.` with the bare `three` as left operand — a kept
-   derivation that drops a phrase; reconstruction should have charged it.
-   Forgetting's dropping of derivations depends
-   on it. Item 1c's probe reports zero compound recovery
-   ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
-   small updates, so it mostly measures a split/stop policy that has not
-   learned to split (it does within ~100). The deeper limit is the operator:
-   with the correct split actions *forced*, the tied inverse of `lower` returns
-   children about 65% from their codes at depth 1, they project to the wrong
-   code, and 400 updates of the probe's training do not move that. Exit:
-   recovery reported separately for forced actions (the operator's inverse)
-   and free running (the policy, trained to convergence), by depth and chain
-   length; clean-up decoding evaluated for lift / lower — bounded candidate
-   search through the forward kernel (`_bounded_binary_reconstruction`) in
-   place of the reference-free affine inverse. Until a recovery rate is
-   measured, item 5 must not drop derivations. The `d4dc385` audit also records
-   the existing MM_20M grammar free-derivation harness at 0/4 exact recovery
-   after three epochs; its acceptance assertion now requires recovery rather
-   than preserving that zero ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
-   *Compatibility:* this is the serial grammar's `lift`/`lower` with their
-   tied chart inverses, unchanged by 11c and by item 10's drop. Recovery is
-   measured from forward artifacts — the stored derivation and activations —
-   never a saved input trace (Alec, 2026-09-25); and the 11c rule for
-   descent applies: reverse sigma is a choice of case, reverse pi is
-   attribution against the field, so clean-up decoding through the forward
-   kernel is the intended form of that choice.
+- **6. Part 2 — stored-idea unmixing and identity from data.** Part 1 is under
+   Done. Follow Alec's [full amendment, plan §2](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10):
+   one mechanism explains noun phrases and identifies occurrences, with
+   dictionary columns reused for binding and recurring unexplained surprise
+   for minting. Candidates are the eight-space plus cued frames; pronouns get
+   prediction credit from what follows and determiners are learned cues.
+   **Build the corpus and measurement before changing mechanisms**: factorial
+   properties/objects/verbs, support 1→2→3, counterbalanced pronouns,
+   imperfect determiner cues and conflicts, later distinguishing properties
+   for same-kind pairs, and varying document context. Measure binding by
+   candidate count, recency and role; one row versus two; determiner conflicts;
+   neither-candidate and reversed-recency controls. Claude's
+   [four-question numpy toy](doc/benchmarks/2026-10-10-identity-ica-toy/README.md)
+   precedes retirement. Remove each declared mode, separate pronoun rule,
+   positional bind path, mode/cosine resolver and mode-gated admission only
+   when its lesson passes without it; otherwise retain it and report the failure.
+   No parallel learned and declared replacement; no further declared modes.
+   Measure forced raw/bounded and free stored recovery by depth and chain
+   length on fixed forward artifacts, now with trained A/B columns; report
+   stored dictionary separately from sentence-time live wholes. Which family
+   comes first is taught by the corpus, never a family-to-side map. Carry the
+   four inverse/CE/MM/compiled findings above. One landing, one measurement.
 - **5.5. Where and when a sentence occurred; tense, aspect, the preposition
    and surface form** ([spec](doc/specs/2026-09-30-occurrence-tense-aspect.md)),
    after item 6 and needing item 6.5's verb columns; one check-in (Alec,
@@ -492,6 +475,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 6 part 1** (landing hash recorded after commit): shared stored/live inverse, dropped-support keep charge, cache recovery, captured-input isolation, family-order retirement and residual/greedy components; part 2 and measured failures stay open ([receipt](doc/benchmarks/2026-10-10-item6/part1/README.md)).
 
 - **Item 6.1** (`4d9d9ca8a`): support masks, one read per placement, eight-space STM with witnesses, derivation reconstruction and the order lesson; curriculum harness with identity/permanence and word identification passing; learning gates at item 0 ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
 - **Item 6.2 closed** (initial mechanism `e43638a`; Alec accepted the closing October 9, thinking §14.13): mechanism complete, decomposition demonstrated; learning deferred to item 0 under the four protocol corrections—one-step problems first, worked steps as intermediate answers, binding a found candidate, and budget in steps with each query’s record charge bounded separately ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md)).

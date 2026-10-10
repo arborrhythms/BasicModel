@@ -1,0 +1,35 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5737,
+  "completed": 5737,
+  "outcomes": {
+    "passed": 5446,
+    "skipped": 287,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "raw_reports": 5740,
+  "unique_reports": 5737,
+  "source_matched_at_receipt": true,
+  "runner_source_unchanged": true,
+  "elapsed_seconds": 621.9471622499404,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 8240115064,
+  "failure_nodes": [
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable"
+  ],
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-full-review-candidate",
+  "source_directory": "."
+}

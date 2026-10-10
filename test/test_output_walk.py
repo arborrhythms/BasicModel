@@ -258,13 +258,36 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     assert torch.allclose(idea, end)                        # zero-initialised conditioning
     T = m._walk_budget()
     assert targets is None  # generation has no input-reading targets
+    # Pin lexical realization with an explicitly representable resolved
+    # answer. The fresh compound above tests materialization, not learned
+    # compound recovery; truncation cannot satisfy this realization check.
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    from Understanding import SentenceEndState
     with torch.no_grad():
         bank = u.sentence_records[-1].primed
+        chosen = bank.terminal_valid.long().argmax(-1)
+        native = torch.zeros_like(idea)
+        native[:, 0] = bank.codes[torch.arange(2), chosen]
+        held = replace(derivation, conceptual_answer=native,
+            sentence_states=tuple(SentenceEndState(ConceptualMeaning.from_description(row))
+                                  for row in native[:, 0]), answer_meanings=((), ()))
+        idea, resolved, _, _ = m._materialize_answer_idea(u, held, What.supervised(0))
+        torch.testing.assert_close(idea, native)
+        _stop(m)
         words, n_emitted, truncated, cost = m._output_generate_walk(
             m._walk_operand(idea), T, False, targets,
-            basis=bank.codes, basis_valid=bank.valid)
+            basis=bank.codes, basis_valid=bank.valid, terminal_valid=bank.terminal_valid,
+            constituents=u.sentence_records[-1].constituents,
+            constituent_valid=u.sentence_records[-1].constituent_valid,
+            constituent_families=u.sentence_records[-1].constituent_families)
+        text = m._generated_word_text(words, n_emitted, bank=bank)
     assert tuple(words.shape) == (2, T, D)
-    assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
+    assert n_emitted.tolist() == [1, 1] and not truncated.any()
+    torch.testing.assert_close(words[:, 0], native[:, 0])
+    expected = tuple(bytes(bank.bytes[b, j][bank.byte_valid[b, j]].tolist()).decode('utf8')
+                     for b, j in enumerate(chosen.tolist()))
+    assert text == expected and all(text)
     m.End(); m.symbolSpace.soft_reset()
 
 

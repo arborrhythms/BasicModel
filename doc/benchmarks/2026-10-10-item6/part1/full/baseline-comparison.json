@@ -1,0 +1,55 @@
+{
+  "baseline_commit": "7c9aeac67840165fc1ac116eca8a528ca716c30e",
+  "baseline_counts": {
+    "passed": 5428,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "candidate_counts": {
+    "passed": 5454,
+    "skipped": 287,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "baseline_selected": 5719,
+  "candidate_selected": 5745,
+  "new_failures_vs_accepted_baseline": [
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+  ],
+  "persisting_failures": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode"
+  ],
+  "baseline_failures_with_current_outcome": {
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm": "passed",
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds": "passed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "passed"
+  },
+  "repair_checks": {
+    "test/test_independent_components.py::test_known_column_in_new_sentence_witnesses_without_pending_prototype": "passed",
+    "test/test_independent_components.py::test_greedy_support_stops_when_an_extra_column_worsens_remainder": "passed",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable": "passed",
+    "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility": "passed",
+    "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase": "passed",
+    "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation": "passed",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]": "passed",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]": "passed",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader": "passed",
+    "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[False]": "passed",
+    "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[True]": "passed",
+    "test/test_stored_idea_generation.py::test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons": "passed",
+    "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming": "passed",
+    "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores": "passed",
+    "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates": "passed",
+    "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance": "passed",
+    "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices": "passed",
+    "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word": "passed",
+    "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition": "passed",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]": "passed",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]": "passed",
+    "test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse": "passed"
+  },
+  "interpretation": "New means absent from the accepted baseline failure list; it does not establish causality. The candidate's earlier empty cleared-cache inverse was new relative to that baseline."
+}

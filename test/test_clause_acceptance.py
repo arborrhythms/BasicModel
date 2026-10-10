@@ -36,8 +36,7 @@ class SentenceFixture:
         self.language = SimpleNamespace(_compose_binary_rules=self.binary, _compose_unary_rules=self.unary,
             # Retrieval of unrecorded estimates uses an explicit stop-only
             # generate fixture; it cannot manufacture a reconstruction trace.
-            _generate_binary_ops=(), _generate_unary_ops=(),
-            reverse_inverses=lambda _ops: (), generate_policy_logits=lambda top: top.new_zeros(len(top), 1),
+            _generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda top: top.new_zeros(len(top), 1),
             forward_binary_step=lambda a, b, op, _: operation(self.binary[int(op[0])]).compose(
                 a[:, None], b[:, None]).reshape_as(a),
             forward_unary_step=lambda a, op, _: operation(self.unary[int(op[0])]).compose(a).reshape_as(a))

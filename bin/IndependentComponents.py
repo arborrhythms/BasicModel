@@ -46,9 +46,9 @@ def noun_frame(roles):
 class SparseDictionary(nn.Module):
     """An overcomplete, unit-column dictionary with amortized sparse inference.
 
-    A projection, Laplace soft threshold and the grammar's source ceiling
-    produce the activations in one differentiable pass. No iterative inference,
-    whitening pass or optimizer lives here. Reconstruction plus the Laplace
+    Greedy residual selection, a small differentiable solve and Laplace
+    shrinkage use at most the grammar's source ceiling. A column is admitted
+    to the support only while it lowers the remainder. No optimizer lives here. Reconstruction plus the Laplace
     negative log prior is the sparse-coding objective; column incoherence fixes
     redundant directions. Relevance scales belong to this same gradient.
     """
@@ -96,21 +96,32 @@ class SparseDictionary(nn.Module):
         count = min(self.max_sources if max_sources is None else int(max_sources), len(matrix))
         if count < 1:
             raise ValueError('a component observation needs a positive source ceiling')
-        selected = (projected * scales).abs().topk(count, dim=-1).indices
-        active = matrix[selected]
-        # Ordinary S permits two noun sources (one for B); relative S may
-        # extend that ceiling up to STM capacity. Solve the small normal
-        # equations once, differentiably; correlated
-        # signatures otherwise activate both cats on a singleton mention.
-        # This is an algebraic projection, not iterative sparse inference.
-        gram = active @ active.transpose(-1, -2)
-        ridge = torch.eye(count, device=values.device, dtype=values.dtype) * 1e-6
-        coordinates = torch.linalg.solve(gram + ridge,
-            projected.gather(-1, selected).unsqueeze(-1)).squeeze(-1)
-        sparse = F.softshrink(coordinates, self.prior_scale) * scales[selected]
-        coefficients = torch.zeros_like(projected).scatter(-1, selected, sparse)
-        reconstruction = coefficients @ matrix
-        return SparseEncoding(coefficients, reconstruction, values - reconstruction)
+        selected = torch.empty(*values.shape[:-1], 0, dtype=torch.long, device=values.device)
+        used = torch.zeros_like(projected, dtype=torch.bool)
+        coefficients = torch.zeros_like(projected)
+        reconstruction, residual = torch.zeros_like(values), values
+        continuing = torch.ones(values.shape[:-1], dtype=torch.bool, device=values.device)
+        for step in range(count):
+            score = ((residual @ matrix.T) * scales).abs().masked_fill(used, -torch.inf)
+            next_column = score.argmax(-1, keepdim=True)
+            selected = torch.cat((selected, next_column), -1)
+            active = matrix[selected]
+            gram = active @ active.transpose(-1, -2)
+            ridge = torch.eye(step + 1, device=values.device, dtype=values.dtype) * 1e-6
+            coordinates = torch.linalg.solve(gram + ridge,
+                projected.gather(-1, selected).unsqueeze(-1)).squeeze(-1)
+            sparse = F.softshrink(coordinates, self.prior_scale) * scales[selected]
+            proposed = torch.zeros_like(projected).scatter(-1, selected, sparse)
+            recovered = proposed @ matrix
+            remainder = values - recovered
+            energy = residual.square().sum(-1)
+            tolerance = torch.finfo(values.dtype).eps * values.square().sum(-1).clamp_min(1.)
+            continuing = continuing & (remainder.square().sum(-1) < energy - tolerance)
+            coefficients = torch.where(continuing[..., None], proposed, coefficients)
+            reconstruction = torch.where(continuing[..., None], recovered, reconstruction)
+            residual = values - reconstruction
+            used = used.scatter(-1, next_column, True)
+        return SparseEncoding(coefficients, reconstruction, residual)
 
     def loss(self, population, *, features=None, source_limits=None):
         """Mean sparse-coding energy over the population, independent of batching."""
@@ -139,7 +150,7 @@ class SparseDictionary(nn.Module):
         return reconstruction + sparse_prior + self.prior_scale * coherence + relevance_prior
 
     @torch.no_grad()
-    def observe(self, value, *, witness, allocate=None, max_sources=None, allow_mint=True):
+    def observe(self, value, *, witness, prediction=None, allocate=None, max_sources=None, allow_mint=True):
         """Admit unexplained recurring content after a kept closing, as an effect.
 
         ``allocate`` reserves an order-one native concept or returns None when
@@ -154,12 +165,13 @@ class SparseDictionary(nn.Module):
                 self._witnesses.setdefault(identity, set()).add(witness)
         if not allow_mint:
             return
-        residual = encoded.residual
+        # Witness the whole observed row, but admit only the part of its
+        # surprise that existing columns cannot explain.
+        surprise = value if prediction is None else value - prediction
+        residual = self.encode(surprise, max_sources=max_sources).residual
         if float(residual.norm()) <= self.mint_threshold:
             return
-        if not bool(value.any()):
-            return
-        direction = F.normalize(value.detach().to(self._anchor), dim=-1)
+        direction = F.normalize(residual.detach().to(self._anchor), dim=-1)
         pending = next((entry for entry in self._pending
                         if float((entry['direction'] @ direction).abs()) >= 1 - self.mint_threshold), None)
         if pending is None:
@@ -492,7 +504,9 @@ class IndependentComponents(nn.Module):
         if individual_references:
             self.nouns.observe(chart.expand(noun_frame(observed)), witness=witness,
                 allocate=self._allocate, max_sources=self.source_limit(store=store, row=row),
-                allow_mint=-1 in individual_references)
+                allow_mint=-1 in individual_references,
+                prediction=(None if prediction is None else
+                    chart.expand(noun_frame(chart.project(prediction.roles.detach())))))
         if prediction is not None and self.nouns.ids:
             residual = self.innovation(meaning.roles.detach(), prediction.roles.detach())
             self._innovations[identity] = residual.detach().cpu()

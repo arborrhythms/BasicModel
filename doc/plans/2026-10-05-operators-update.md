@@ -1420,6 +1420,13 @@ Tighten its coverage by construction (more menus), never by selecting a
 seed or changing an observed failure into a pass. The landing receipt
 retains that failure and reports the next source-matched outcome separately.
 
+**Item 6 coverage candidate, October 10.** The fixture now presents 32 real
+documents with history lengths 1–4 and four variable names at every length.
+The first unseeded development run covers 6,044 menus (sizes 2, 4–9) and
+fails the unchanged band at a maximum 1.125857. No seed or threshold changes;
+this expands coverage without closing the defect. Final validation and the
+raw menus are in the [item 6 receipt](../benchmarks/2026-10-10-item6/README.md).
+
 ## 21. Review of round 2d (Claude, 2026-10-06): the flip is fixed; the reader is now the only miss, and I caused it
 
 Receipt `doc/benchmarks/2026-10-06-operators-round2d/` (manifest `d7e2ead0…`):

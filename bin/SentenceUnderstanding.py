@@ -74,10 +74,16 @@ class PrimedSymbols:
     forms: torch.Tensor | None = None
     meaning_start: int | None = None
     normalize_reader: bool = False
+    type_families: object = None
 
     @property
     def valid(self):
         return self.rows >= 0
+
+    @property
+    def terminal_valid(self):
+        """Only a row with a lexical realization can end a word walk."""
+        return self.valid & self.byte_valid.any(-1)
 
     def reader_value(self, value, *, reference=None):
         """Shared snapshot scales retain an affine read, including the sum control.
@@ -109,6 +115,9 @@ class SentenceUnderstanding:
     word_valid: torch.Tensor
     primed: PrimedSymbols
     sentence: torch.Tensor
+    constituents: torch.Tensor | None = None
+    constituent_valid: torch.Tensor | None = None
+    constituent_families: torch.Tensor | None = None
 
     def reader_features(self, *, attention=None):
         """Fixed linear summaries; all evidence is detached at this boundary.
@@ -142,6 +151,8 @@ class SentenceUnderstanding:
                 if left is not right:
                     raise RuntimeError('sentence trials must share their priming snapshot')
                 values[field.name] = left
+            elif left is None and right is None:
+                values[field.name] = None
             elif left.ndim == 0:
                 values[field.name] = left.detach()
             else:

@@ -44,8 +44,7 @@ def test_only_the_inverted_index_is_owned_or_checkpointed():
 
 
 def test_unfold_candidates_are_the_current_priming_surface():
-    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(),
-        reverse_inverses=lambda ops: (), generate_policy_logits=lambda point: point.new_zeros(1, 1))
+    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda point: point.new_zeros(1, 1))
     basis = torch.eye(3)
     weights = torch.tensor([1., 2., 1.])
     active = lambda: weights

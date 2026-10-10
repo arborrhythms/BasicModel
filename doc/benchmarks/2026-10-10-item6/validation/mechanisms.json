@@ -1,0 +1,20 @@
+{
+  "source_manifest": "../source.json",
+  "source_archive_sha256": "4d398c0203c9a48e321c7f3c3ba45fac59f2aabc26d5e299f8d44e561e9615e2",
+  "source_matched_at_record": true,
+  "affected": {
+    "source_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-read-scope-source",
+    "passed": 42,
+    "failed": 0,
+    "command": "BASICMODEL_DEVICE=cpu MODEL_COMPILE=none PYTHONPATH=bin:test .venv/bin/python -m pytest -q test/test_stored_idea_generation.py test/test_accessible_mind.py test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "log": "inverse-read-state-affected.log.gz"
+  },
+  "compiled": {
+    "source_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-read-scope-source",
+    "passed": 2,
+    "failed": 0,
+    "command": "RUN_SLOW=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin:test .venv/bin/python -m pytest -q 'test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]' test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "log": "review-candidate-compiled.log.gz"
+  },
+  "note": "The affected selection includes all 17 stored-generation mechanism cases. Earlier failing probes and compiled retention failures remain in the receipt."
+}

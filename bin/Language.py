@@ -12832,6 +12832,7 @@ class LanguageSpace(nn.Module):
                                tuple(entry[3] for entry in entries))
             setattr(self, f"_generate_{label}_names",
                     tuple(entry[2].method_name for entry in entries))
+            setattr(self, f"_generate_{label}_rules", tuple(entry[2] for entry in entries))
         keys = [self._generate_rule_key(entry[2], arity)
                 for arity in (2, 1) for entry in catalog[arity]] + [0]
         cw = width
@@ -12893,6 +12894,12 @@ class LanguageSpace(nn.Module):
         import hashlib
         key = repr((rule.space_role, _dispatch_method_name_for_rule(rule),
                     arity, rule.width_min, rule.width_max))
+        # Definite/kind aliases share lower's numerical host, but express
+        # different identity operations. Keep the established mint key for
+        # old checkpoints; new semantic alternatives receive separate rows.
+        mode = getattr(rule, 'determiner_mode', None)
+        if mode in ('bind', 'kind'):
+            key += repr(('referent', mode))
         return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], 'big') >> 1
 
     @staticmethod
@@ -13573,54 +13580,12 @@ class LanguageSpace(nn.Module):
     # ``not``/``non`` through themselves. Lossy folds use a bounded, masked
     # compose-candidate search; a missing inverse reports unavailability.
 
-    def reverse_inverses(self, ops=None, required=None):
-        """The tied inverses the binary reverses need, computed once per
-        traversal: one ``W^-1`` per lift/lower op (``None`` for the
-        others), so a loop body applies a ready matrix instead of
-        rebuilding the LDU factors (and saving them for backward) at every
-        step."""
-        if ops is None:
-            binary = self._tree_layer(2)
-            ops = list(binary.ops) if binary is not None else ()
-        out = []
-        for index, op in enumerate(ops):
-            gl = getattr(op, "gl", op)
-            if isinstance(gl, SurfaceLayer):
-                out.append(torch.linalg.inv(gl.marker_map.weight))
-                continue
-            # Verb and adverb inherit Lift's Sigma, but do not use it in
-            # their actual compose operation.
-            if getattr(gl, "inverse_kind", None) == "gain":
-                out.append(None)
-                continue
-            inner = getattr(gl, "_sigma", None)
-            if inner is None:
-                inner = getattr(gl, "_pi", None)
-            layer = getattr(inner, "layer", None) if inner is not None else None
-            if layer is not None and hasattr(layer, "functional_Winverse") \
-                    and hasattr(inner, "generate_functional"):
-                if required is None:
-                    out.append(layer.functional_Winverse())
-                elif torch.compiler.is_compiling():
-                    out.append(torch.cond(
-                        required[index],
-                        lambda: layer.functional_Winverse(),
-                        lambda: torch.eye(
-                            layer.nOutput, layer.nInput,
-                            device=layer.raw_L.device, dtype=layer.raw_L.dtype),
-                        ()))
-                else:
-                    out.append(layer.functional_Winverse()
-                               if bool(required[index]) else None)
-            else:
-                out.append(None)
-        return out
-
     def reverse_binary_step(self, parent, op_local, valid, reference=None,
                             inverses=None, reference_side="right", ops=None,
                             basis=None, basis_valid=None, candidate_limit=16,
                             basis_priming=None, return_status=False, *, free=False,
-                            left_basis=None, right_basis=None, case_bank=None):
+                            left_basis=None, right_basis=None, case_bank=None,
+                            left_valid=None, right_valid=None):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -13628,8 +13593,8 @@ class LanguageSpace(nn.Module):
         row (an invalid row returns ``(parent, parent)``); ``reference``
         ``[B, D]`` (optional) the retained constituent reference of the
         newest operand (the dictionary row the word was pushed with), used
-        by the residual reverses; ``inverses`` the list ``reverse_inverses``
-        returned (optional; computed here otherwise).
+        by the residual reverses; ``inverses`` optional precomputed inverse matrices
+        (computed here otherwise).
         """
         if ops is None:
             binary = self._tree_layer(2)
@@ -13679,7 +13644,8 @@ class LanguageSpace(nn.Module):
                     op, values[:, 0], values[:, 1] if has_reference else None,
                     W_inv, (side[:, 0], side[:, 1]), basis, candidate_valid,
                     candidate_limit, basis_priming=basis_priming, free=free,
-                    left_basis=left_basis, right_basis=right_basis, case_bank=case_bank)
+                    left_basis=left_basis, right_basis=right_basis, case_bank=case_bank,
+                    left_valid=left_valid, right_valid=right_valid)
                 return torch.stack((a, b, available[:, None].expand_as(a).to(a.dtype)), dim=1)
 
             if compiling:
@@ -13699,7 +13665,8 @@ class LanguageSpace(nn.Module):
     def _reverse_of_binary_op(self, op, parent, reference, W_inv=None,
                               reference_side="right", basis=None, basis_valid=None,
                               candidate_limit=16, *, basis_priming=None, free=False,
-                              left_basis=None, right_basis=None, case_bank=None):
+                              left_basis=None, right_basis=None, case_bank=None,
+                              left_valid=None, right_valid=None):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
@@ -13723,7 +13690,8 @@ class LanguageSpace(nn.Module):
                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
                 left_priming=basis_priming, right_priming=basis_priming,
                 left_basis=left_basis, right_basis=right_basis,
-                chooser=self.decomposition_chooser)
+                left_valid=left_valid, right_valid=right_valid,
+                chooser=self.decomposition_chooser, require_progress=free)
 
         def oriented(remainder):
             return (torch.where(on_right[:, None], remainder, ref),
@@ -13829,10 +13797,11 @@ class LanguageSpace(nn.Module):
                                        left_valid=None, right_valid=None,
                                        left_priming=None, right_priming=None,
                                        left_basis=None, right_basis=None,
-                                       chooser=None, return_details=False):
+                                       chooser=None, return_details=False, require_progress=False):
         """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
 
-        At most K words per side, one signless form per word. The search has
+        At most K constituents per side, with words snapped only at leaves.
+        The search has
         at most K squared pairs, K=candidate_limit. Both evidence lanes are
         read independently only after the form has identified the words.
         Retrieval indices and any supplied reference are detached. Dictionary
@@ -13875,6 +13844,16 @@ class LanguageSpace(nn.Module):
         newer = torch.where((known & on_right)[:, None, None, None],
                             reference[:, None, None, :], newer)
         allowed = left_active[:, :, None] & right_active[:, None, :]
+        if require_progress:
+            form = parent if form_width is None else parent[..., :form_width]
+            lf = older if form_width is None else older[..., :form_width]
+            rf = newer if form_width is None else newer[..., :form_width]
+            tolerance = 1e-8 * form.square().mean(-1).clamp_min(1. / form.shape[-1])
+            progressing = (((lf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None])
+                          & ((rf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None]))
+            # Reject self-reproducing pairs before ranking, so a live whole
+            # cannot hide a supported lexical split with the same residual.
+            allowed = allowed & progressing
         folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
         if getattr(op, 'same_reference_idempotent', False):
             same = left_indices[:, :, None] == right_indices[:, None, :]
@@ -13929,7 +13908,7 @@ class LanguageSpace(nn.Module):
             from MeaningCodes import recover_lanes
             hard_left, hard_right = recover_lanes(getattr(op, 'meaning_rule', None),
                 parent.detach(), hard_left, hard_right, form_width)
-        available = left_active.any(-1) & right_active.any(-1)
+        available = allowed.flatten(1).any(-1)
         hard_left = torch.where(available[:, None], hard_left, 0.)
         hard_right = torch.where(available[:, None], hard_right, 0.)
         result = (hard_left.detach(), hard_right.detach(), available)
@@ -13941,7 +13920,8 @@ class LanguageSpace(nn.Module):
 
     @staticmethod
     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
-                            basis, basis_valid, *, case_bank=None):
+                            basis, basis_valid, *, case_bank=None,
+                            terminal_basis=None, terminal_valid=None):
         """A supported pair takes precedence over a single-symbol projection.
 
         Use the pair search's squared reconstruction residual, compared with
@@ -13965,12 +13945,22 @@ class LanguageSpace(nn.Module):
         if form_width is not None:
             bank, value = bank[..., :form_width], value[..., :form_width]
         valid = basis_valid & bank.square().sum(-1).gt(0)
-        denominator = bank.square().sum(-1).clamp_min(torch.finfo(bank.dtype).tiny)
-        activation = (value[:, None] * bank).sum(-1) / denominator
-        residual = (value[:, None] - activation[..., None] * bank).square().mean(-1)
-        residual = residual.masked_fill(~valid, torch.inf)
+        terminals = bank if terminal_basis is None else terminal_basis.detach()
+        if terminal_basis is not None and form_width is not None:
+            terminals = terminals[..., :form_width]
+        terminal_mask = valid if terminal_valid is None else terminal_valid & terminals.square().sum(-1).gt(0)
+        denominator = terminals.square().sum(-1).clamp_min(torch.finfo(bank.dtype).tiny)
+        activation = (value[:, None] * terminals).sum(-1) / denominator
+        residual = (value[:, None] - activation[..., None] * terminals).square().mean(-1)
+        residual = residual.masked_fill(~terminal_mask, torch.inf)
         best = residual.amin(-1)
-        singular = (valid & residual.eq(best[:, None])).sum(-1).eq(1) & value.ne(0).any(-1)
+        # The reader's existing relative 1e-4 code tolerance applies to the
+        # entire inverse, not just emitted leaves. A shorter approximate pair
+        # must not declare a compound completely recovered after dropping the
+        # unsupported remainder. No target length or trace is available here.
+        tolerance = 1e-8 * value.square().mean(-1).clamp_min(1. / value.shape[-1])
+        singular = ((terminal_mask & residual.eq(best[:, None])).sum(-1).eq(1)
+                    & value.ne(0).any(-1) & (best <= tolerance))
         for index, wrapped in enumerate(binary_ops):
             op = getattr(wrapped, 'gl', wrapped)
             left, right = lefts[index].detach(), rights[index].detach()
@@ -13978,7 +13968,8 @@ class LanguageSpace(nn.Module):
             rf = right if form_width is None else right[..., :form_width]
             left_readable = (valid & (bank == lf[:, None]).all(-1)).any(-1)
             right_readable = (valid & (bank == rf[:, None]).all(-1)).any(-1)
-            progress = lf.ne(value).any(-1) & rf.ne(value).any(-1)
+            progress = (((lf - value).square().mean(-1) > tolerance)
+                        & ((rf - value).square().mean(-1) > tolerance))
             if getattr(op, 'inverse_kind', None) == 'case_search':
                 if case_bank is None:
                     pair_masks.append(torch.zeros_like(singular))
@@ -13996,7 +13987,8 @@ class LanguageSpace(nn.Module):
             folded = folded if form_width is None else folded[..., :form_width]
             pair_error = (folded.detach() - value).square().mean(-1)
             pair_masks.append(available[:, index] & left_readable & right_readable
-                              & progress & (pair_error <= best))
+                              & progress & (pair_error <= best + tolerance)
+                              & (pair_error <= tolerance))
         pairs = (torch.stack(pair_masks, -1) if pair_masks else
                  available[:, :0])
         compound = pairs.any(-1)

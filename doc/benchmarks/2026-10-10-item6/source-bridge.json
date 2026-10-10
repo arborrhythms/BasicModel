@@ -1,0 +1,62 @@
+{
+  "curriculum_initial_to_final": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py",
+    "test/attention_field_gates.py",
+    "test/test_echoic_decoder.py",
+    "test/test_live_references.py",
+    "test/test_math_chain_section14.py",
+    "test/test_output_walk.py",
+    "test/test_stored_idea_generation.py"
+  ],
+  "corrected_to_final": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py",
+    "test/attention_field_gates.py",
+    "test/test_echoic_decoder.py",
+    "test/test_math_chain_section14.py",
+    "test/test_stored_idea_generation.py"
+  ],
+  "pre_terminal_to_final": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py",
+    "test/attention_field_gates.py",
+    "test/test_echoic_decoder.py",
+    "test/test_stored_idea_generation.py"
+  ],
+  "terminal_filter_to_final": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "bin/Models.py",
+    "test/attention_field_gates.py",
+    "test/test_echoic_decoder.py",
+    "test/test_stored_idea_generation.py"
+  ],
+  "pre_alias_to_final": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "test/test_stored_idea_generation.py"
+  ],
+  "pre_read_state_to_final": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "test/test_stored_idea_generation.py"
+  ],
+  "final_source_files": 765,
+  "source_archive_sha256": "4d398c0203c9a48e321c7f3c3ba45fac59f2aabc26d5e299f8d44e561e9615e2",
+  "production_changes_after_curriculum_start": [
+    "bin/Generative.py",
+    "bin/MemoryIndex.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py"
+  ],
+  "curriculum_source_archive": "development/initial-source/source.tar.gz",
+  "curriculum_source_archive_sha256": "8c2b57cd7f91d7fb5e710a3f897754d19cd16ec5f8c013e615332ab259937fde",
+  "note": "Earlier curriculum, MM grammar and development tests retain their own frozen sources. They are not remeasurements of the final cold-priming, lexical STOP, type-alias or stored-read state repairs."
+}

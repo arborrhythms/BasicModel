@@ -1,0 +1,18 @@
+[
+  {
+    "nodeid": "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 15.743561666924506,
+    "message": "test/test_math_chain_repair2.py:158: in test_eight_corpus_sentences_train_at_distinct_fork_rounds\n    assert len({row['departure'] for row in observations if row['departure'] >= 0}) > 1\nE   assert 1 > 1\nE    +  where 1 = len({24})",
+    "stdout": "batch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 41.19374737504404,
+    "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:229: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 8528701857534591991), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 8528701857534591991),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x12f7b1d00>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 8528701857534591991), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 8528701857534591991),))), scope=(), sentence_kind='relation'), 'five')",
+    "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=19.816s)\r\n"
+  }
+]

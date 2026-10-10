@@ -1,0 +1,34 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5732,
+  "completed": 5732,
+  "outcomes": {
+    "passed": 5437,
+    "skipped": 292,
+    "failed": 2,
+    "xfailed": 1
+  },
+  "raw_reports": 5735,
+  "unique_reports": 5732,
+  "source_matched_at_receipt": true,
+  "runner_source_unchanged": true,
+  "elapsed_seconds": 668.7930591669865,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 10993841160,
+  "failure_nodes": [
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode"
+  ],
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-full-corrected",
+  "source_directory": "output/item6-final-source"
+}

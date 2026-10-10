@@ -113,7 +113,11 @@ def test_two_cats_share_a_word_but_have_distinct_recurring_properties():
     columns.observe(second, witness=13)
     assert len(columns.ids) == 2
     codes = columns.encode(torch.stack((first, second, first, first + second))).codes
-    assert codes.ne(0).tolist() == [[True, False], [False, True], [True, False], [True, True]]
+    # The second admission is the unexplained remainder, not another whole
+    # cat. Its known content still reuses the first column.
+    assert codes.ne(0).tolist() == [[True, False], [True, True], [True, False], [True, True]]
+    assert not torch.allclose(columns.matrix()[1], second)
+    assert columns.encode(second).residual.norm() < columns.mint_threshold
 
 
 def test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns():
@@ -547,3 +551,41 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+def test_known_column_in_new_sentence_witnesses_without_pending_prototype():
+    columns = dictionary()
+    known, novel = torch.eye(4)[:2]
+    witness(columns, known)
+    identity = columns.ids[0]
+    before = columns.witness_count(identity)
+    # A new occurrence can be wholly surprising while already explainable.
+    columns.observe(known, witness=('new sentence', 1), prediction=torch.zeros(4))
+    assert columns.witness_count(identity) == before + 1
+    assert columns._pending == [] and columns.ids == (identity,)
+    # A correct prediction has no surprise but still witnesses the whole row.
+    columns.observe(known, witness=('new sentence', 2), prediction=known)
+    assert columns.witness_count(identity) == before + 2
+    assert columns._pending == []
+    # Only novel surprise becomes a prototype; it needs distinct recurrences.
+    for occurrence in range(3):
+        columns.observe(known + novel, witness=('novel sentence', occurrence), prediction=known)
+    assert columns.ids == (identity,) and len(columns._pending) == 1
+    torch.testing.assert_close(columns._pending[0]['direction'], novel)
+    columns.observe(known + novel, witness=('novel sentence', 3), prediction=known)
+    assert len(columns.ids) == 2
+    torch.testing.assert_close(columns.matrix()[1], novel)
+
+
+def test_greedy_support_stops_when_an_extra_column_worsens_remainder():
+    columns = dictionary(sources=2)
+    a, b = torch.eye(4)[:2]
+    witness(columns, a)
+    witness(columns, b, start=10)
+    # Relevance can over-amplify an explanation: the second column's best
+    # projected coefficient increases the residual and must not be retained.
+    with torch.no_grad():
+        columns.relevance[str(columns.ids[1])].fill_(5.)
+    encoded = columns.encode(a + .1 * b)
+    assert encoded.codes.ne(0).tolist() == [True, False]
+    assert encoded.residual.norm() < (a + .1 * b).norm()

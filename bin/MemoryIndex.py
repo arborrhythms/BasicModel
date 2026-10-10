@@ -35,12 +35,13 @@ class LeafCodeIndex:
         self._index_order_of = None
         self._leaf_needs_owner_reindex = False
 
-    def configure_leaf_index(self, *, code_row=None, unfold=None, order_of=None):
+    def configure_leaf_index(self, *, code_row=None, unfold=None, order_of=None, contextual=False):
         """Bind the current grammar owner. Code addresses do not supply terms."""
         if any(value is not None and not callable(value) for value in (code_row, unfold, order_of)):
             raise TypeError('leaf index adapters must be callable')
         self._index_code_row, self._index_unfold = code_row, unfold
         self._index_order_of = order_of
+        self._index_contextual = bool(contextual)
 
     @staticmethod
     def _checked_leaf_terms(terms):
@@ -77,7 +78,8 @@ class LeafCodeIndex:
                 elif not known and field_order >= 0 and self._index_unfold is not None and remaining[0] > 0:
                     allowance = min(remaining[0], work.remaining) if work is not None else remaining[0]
                     recovered = self._index_unfold(value.roles[role].detach(), allowance,
-                        order=field_order, work=work, **({} if stream is None else {'stream': stream}))
+                        order=field_order, work=work, **({} if stream is None else {'stream': stream}),
+                        **({'meaning': value, 'role': role} if getattr(self, '_index_contextual', False) else {}))
                     if recovered is not None:
                         codes, spent, known = recovered
                         if type(spent) is not int or not 0 <= spent <= remaining[0]:
@@ -302,7 +304,7 @@ class LeafCodeIndex:
         cue_order = 0
         if self._index_order_of is not None and self._index_code_row is not None:
             for reference in cue.role_refs:
-                if reference is not None and reference[0] in ('sym', 'meta'):
+                if reference is not None and reference[0] == 'sym':
                     code = self._index_code_row(reference)
                     if code is not None:
                         cue_order = max(cue_order, self._index_order_of(code))
@@ -354,9 +356,15 @@ class LeafCodeIndex:
                 'incomplete': tuple(dict.fromkeys(incomplete))}
 
 
+from Generative import preserve_operator_activations
+
+
 @torch.no_grad()
+@preserve_operator_activations
 def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
-                order=0, order_of=None, sigma_inverse=None, stream=None):
+                order=0, order_of=None, sigma_inverse=None, stream=None,
+                constituents=None, constituent_valid=None, constituent_families=None, candidate_limit=16,
+                binding=None):
     """Unfold a detached idea with the current generate MLP and tied faces.
 
     Neither recorded actions nor expected leaf codes are inputs. Stops count
@@ -389,36 +397,59 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
         return dict(codes=(), operations=(), spent=0, complete=False)
     candidate_basis = basis[candidates.to(basis.device)]
     binary, unary = language._generate_binary_ops, language._generate_unary_ops
-    inverses = language.reverse_inverses(binary)
-    pending, codes, operations, spent, complete = [(idea.detach(), order)], [], [], 0, True
+    candidate_orders = (None if order_of is None else
+                        candidates.new_tensor([order_of(int(code)) for code in candidates]))
+    pending, codes, operations, spent, complete = [(idea.detach(), order, binding)], [], [], 0, True
     while pending and spent < limit:
         if work is not None and not work.consume('unfold'):
             break
-        value, current_order = pending.pop()
+        value, current_order, current_binding = pending.pop()
         top = value.reshape(1, -1)
         if not bool(torch.isfinite(top).all()):
             raise FloatingPointError('nonfinite idea during grammar unfolding')
         spent += 1
-        action = int(language.generate_policy_logits(top).argmax(-1))
-        index = torch.tensor([action], device=top.device)
         gate = torch.ones(1, dtype=torch.bool, device=top.device)
+        from Generative import inverse_menu
+        lefts, rights, legal = inverse_menu(language, top, gate,
+            basis=candidate_basis[None], basis_valid=gate[:, None].expand(1, len(candidates)),
+            priming=weights[candidates][None].to(top), limit=candidate_limit,
+            constituents=constituents, constituent_valid=constituent_valid,
+            constituent_families=constituent_families,
+            terminal_valid=(None if candidate_orders is None else
+                            (candidate_orders <= current_order)[None]))
+        determined = {}
+        if candidate_orders is not None:
+            # A higher-order noun may share its point with a particular.
+            # Its stamp, not an invented numerical difference, tells the
+            # inverse that a determiner is still needed.
+            from Generative import determiner_expansions
+            determined = determiner_expansions(language, top[0], current_order,
+                candidate_basis, candidate_orders, binding=current_binding)
+            distance = (candidate_basis - top).norm(dim=-1)
+            terminal = ((distance <= 1e-4 * max(1., float(top.norm())))
+                        & (candidate_orders <= current_order)).any()
+            legal[:, -1] &= terminal
+            if determined and not bool(terminal):
+                legal.zero_()
+                for index in determined:
+                    legal[:, index] = True
+        if not bool(legal.any()):
+            complete = False
+            break
+        from Language import LanguageSpace
+        action = int(LanguageSpace.choose_generate(language,
+            language.generate_policy_logits(top).masked_fill(~legal, -torch.inf)))
         if action < len(binary):
-            left, right, unavailable = language.reverse_binary_step(
-                top, index, gate, ops=binary, inverses=inverses, basis=candidate_basis,
-                return_status=True)
-            if bool(unavailable.any()):
-                complete = False
-                break
             operations.append(('binary', action))
-            pending.extend(((right[0], current_order), (left[0], current_order)))
+            if action in determined:
+                left, right, left_order, right_order = determined[action]
+                pending.extend(((right, right_order, None), (left, left_order, None)))
+            else:
+                pending.extend(((rights[0, action], current_order, None),
+                                (lefts[0, action], current_order, None)))
         elif action < len(binary) + len(unary):
-            value, unavailable = language.reverse_unary_step(
-                top, index - len(binary), gate, ops=unary, return_status=True)
-            if bool(unavailable.any()):
-                complete = False
-                break
             operations.append(('unary', action - len(binary)))
-            pending.append((value[0], current_order))
+            pending.append((lefts[0, action], current_order, current_binding))
         else:
             # Terminal words can only name currently active symbols.
             distance = (candidate_basis.detach().to(top) - top).norm(dim=-1)
@@ -441,11 +472,24 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
                     complete = False
                     break
                 operations.append(('sigma', current_order, code))
-                pending.extend((point, current_order - 1) for point in reversed(children))
+                pending.extend((point, current_order - 1, None) for point in reversed(children))
             else:
                 operations.append(('code', code))
     return {'codes': tuple(codes), 'operations': tuple(operations), 'spent': spent,
             'complete': complete and not pending}
+
+
+def stored_binding(meaning, role):
+    """A filled identity licenses definite reference; provenance is not input.
+
+    Other records leave the choice to the learned grammar. In particular,
+    an identity alone cannot establish that its original wording was an
+    indefinite: its familiarity depends on the generation context.
+    """
+    if meaning is None or role is None or meaning.role_refs[role] is None:
+        return None
+    from ThoughtReferences import bindings
+    return 'bind' if ('referent', role) in bindings(meaning).get('_bound_roles', ()) else None
 
 
 def configure_model_index(model, store):
@@ -480,15 +524,31 @@ def configure_model_index(model, store):
         if not chosen or any(space._row_order(row) != order - 1 for row in chosen):
             return ()
         return tuple(basis[row] * signed[row] for row in chosen)
-    def unfold(value, limit, *, order=0, work=None, stream=None):
+    def unfold(value, limit, *, order=0, work=None, stream=None, meaning=None, role=None):
+        from Generative import primed_type_families
+        heat = space.priming_weights(batch=(
+            model._priming_batch_size() if hasattr(model, '_priming_batch_size') else None))
+        if not torch.is_tensor(heat):
+            return (), 0, False  # Definitions can precede a current priming snapshot.
+        candidate_limit = int(getattr(model, 'reconstruction_basis_limit', 16))
+        types = primed_type_families(space, heat, limit=candidate_limit)
+        if heat.ndim == 2:
+            if stream is None and len(heat) != 1:
+                return (), 0, False
+            row = 0 if stream is None else stream
+        else:
+            row = 0
         result = unfold_idea(language, _basis(space), value, limit, work=work,
-                             activation=lambda: space.priming_weights(batch=(
-                                 model._priming_batch_size() if hasattr(model, '_priming_batch_size') else None)),
+                             activation=heat, candidate_limit=candidate_limit,
+                             constituents=types.codes[row:row+1],
+                             constituent_valid=types.valid[row:row+1],
+                             constituent_families=types.families[None],
                              order=order, stream=stream,
+                             binding=stored_binding(meaning, role),
                              order_of=space._row_order, sigma_inverse=sigma_inverse)
         return result['codes'], result['spent'], result['complete']
     store.configure_leaf_index(code_row=code_row, unfold=unfold if language is not None else None,
-                               order_of=space._row_order)
+                               order_of=space._row_order, contextual=True)
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, space)
     import weakref

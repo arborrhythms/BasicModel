@@ -124,6 +124,25 @@ columns and their derived postings.
 
 ## Measured limits
 
+Item 6's [part-1 receipt](benchmarks/2026-10-10-item6/part1/README.md)
+records the shared bounded forward-kernel inverse. Words are terminals;
+learned A/B columns and higher-order properties are structural candidates
+on either side. Recomposition and the generate policy decide orientation.
+Sentence trials also use a bounded, detached snapshot of live composed values;
+stored reads cannot use that snapshot. Order and filled-reference context can
+license a determiner while the ordinary grammar ranks marker words. Those
+declared identity modes are retirement targets under
+[part 2's amendment](plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10).
+
+Numerical inversion alone cannot distinguish a projection's output from its
+head. Reconstruction therefore audits missing/excess support after decoding,
+marks the read incomplete and charges the actual keep cost. Support counts do
+not select decoder actions. Unspelled wholes remain candidates, while STOP
+requires a word; self-reproducing pairs are removed before candidate ranking.
+Stored recovery beyond two words, the zero-gradient order lesson, MM grammar
+recovery and compiled retention remain open. Item 5 cannot discard derivations
+on this evidence. Earlier nulls below remain historical measurements.
+
 The deterministic generativity probe uses distinct concept codes in each chain.
 It writes one compound per condition, keeps
 its stored idea fixed, then unfolds it with the current generate MLP and shared

@@ -1,0 +1,35 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5745,
+  "completed": 5745,
+  "outcomes": {
+    "passed": 5454,
+    "skipped": 287,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "raw_reports": 5748,
+  "unique_reports": 5745,
+  "source_matched_at_receipt": true,
+  "runner_source_unchanged": true,
+  "elapsed_seconds": 609.2244029580615,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 9190895448,
+  "failure_nodes": [
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+  ],
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-part1-full",
+  "source_directory": "/Users/arogers/github/WikiOracle/basicmodel"
+}

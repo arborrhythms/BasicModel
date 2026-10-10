@@ -1,0 +1,7 @@
+{
+  "fixture_file": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-5665/test_ordinary_initial_binding_0/distribution.json",
+  "modified_unix": 1791627164.5102012,
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-full-review-candidate",
+  "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+  "outcome": "passed"
+}

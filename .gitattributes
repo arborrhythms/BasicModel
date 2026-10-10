@@ -11,3 +11,5 @@ doc/benchmarks/**/last-state.pt filter=lfs diff=lfs merge=lfs -text
 doc/benchmarks/**/data/mnist_train.csv filter=lfs diff=lfs merge=lfs -text
 doc/benchmarks/**/data/fineweb/*.parquet filter=lfs diff=lfs merge=lfs -text
 doc/benchmarks/2026-10-09-item6-1/**/*.tar.gz filter=lfs diff=lfs merge=lfs -text
+doc/benchmarks/2026-10-10-item6/**/*.tar.gz filter=lfs diff=lfs merge=lfs -text
+doc/benchmarks/2026-10-10-item6/**/*.pt filter=lfs diff=lfs merge=lfs -text

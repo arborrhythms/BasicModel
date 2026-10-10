@@ -1,0 +1,6 @@
+{
+  "path": "/Users/arogers/github/WikiOracle/basicmodel/output/embeddings/sentence.pt",
+  "sha256": "19e21e7397a00344b59e2e0927cf9f16447136f51a6a7b2a571b3f173e5ba19c",
+  "size": 456197,
+  "note": "Existing read-only embedding fixture made available to the isolated final full sweep before its testpoint worker. The preceding isolated sweep skipped its five probes because the fixture was absent."
+}

@@ -92,7 +92,9 @@ def measure(model,stage):
         report=observation(model)
         record=model._last_sentence_understanding;bank=record.primed
         decoded=model._decode_conceptual_sentence(record.root,record.end_slots,record.end_depth,
-            bank.codes,bank.valid,bank.weights,case_bank=bank.case_bank)
+            bank.codes,bank.valid,bank.weights,case_bank=bank.case_bank,
+            terminal_valid=bank.terminal_valid, constituents=record.constituents,
+            constituent_valid=record.constituent_valid, constituent_families=record.constituent_families)
         texts=[' '.join(row) for row in words_from_leaves(*decoded[:2],bank)]
     target=stage.get('targets',stage['fields'])
     report.update(readbacks=texts,exact_readbacks=sum(a==b for a,b in zip(texts,target)),

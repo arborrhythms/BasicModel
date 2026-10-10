@@ -60,7 +60,7 @@ def test_sentence_cost_is_not_diluted_by_other_packed_sentences(monkeypatch):
         _packed_sentence_ids=torch.tensor([[0, 0, 1, 1]])),
         _byte_tables=lambda B,W: (True, torch.ones(B,W,1,dtype=torch.long), torch.ones(B,W,1,dtype=torch.bool)),
         _byte_word_cost=lambda *a, **kw: torch.tensor([2.]),
-        _decode_conceptual_sentence=lambda *a: (reference, torch.tensor([2]), torch.tensor([False]), root.sum(-1)*0, torch.zeros(1,4,dtype=torch.long)))
+        _decode_conceptual_sentence=lambda *a, **_options: (reference, torch.tensor([2]), torch.tensor([False]), root.sum(-1)*0, torch.zeros(1,4,dtype=torch.long)))
     result = Models.BasicModel._reconstruct_sentences(owner, root, reference, record.roots,
         record.depths, end, record.end_depth, record.sentence, understanding=record)
     torch.testing.assert_close(result[2], torch.tensor([2.]))

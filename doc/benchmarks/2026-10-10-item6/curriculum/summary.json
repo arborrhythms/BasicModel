@@ -1,0 +1,256 @@
+{
+  "source_matched": true,
+  "source": "../development/initial-source/source.json",
+  "final_source_bridge": "../source-bridge.json",
+  "epochs": 64,
+  "through_stage": 3,
+  "note": "Measured on the initial frozen candidate. Later cold-priming, lexical STOP/search, type-alias, stored-read state and measurement-helper changes are not remeasurements of this curriculum.",
+  "modes": {
+    "disabled": [
+      {
+        "name": "identity_permanence",
+        "stage": 1,
+        "passed": true,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": null,
+        "elapsed_seconds": null
+      },
+      {
+        "name": "identifying_words",
+        "stage": 2,
+        "passed": true,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": null,
+        "elapsed_seconds": null
+      },
+      {
+        "name": "reading_two",
+        "stage": 3,
+        "passed": true,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": null,
+        "elapsed_seconds": 764.8070855420083,
+        "read_gate_passed": true,
+        "exact_readbacks": 4,
+        "free_exact": 0,
+        "readbacks": [
+          "red blue",
+          "blue red",
+          "green gold",
+          "gold green"
+        ],
+        "free_readbacks": [
+          "red",
+          "",
+          "",
+          ""
+        ],
+        "orders": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "final_order_ce": null
+      },
+      {
+        "name": "reading_four",
+        "stage": 3,
+        "passed": true,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": null,
+        "elapsed_seconds": 1162.4198725420283,
+        "read_gate_passed": true,
+        "exact_readbacks": 2,
+        "free_exact": 0,
+        "readbacks": [
+          "<unresolved> <unresolved> green <unresolved>",
+          "gold green blue red",
+          "red gold red green",
+          "green red gold blue"
+        ],
+        "free_readbacks": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "orders": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "final_order_ce": null
+      }
+    ],
+    "enabled": [
+      {
+        "name": "identity_permanence",
+        "stage": 1,
+        "passed": true,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": null,
+        "elapsed_seconds": null
+      },
+      {
+        "name": "identifying_words",
+        "stage": 2,
+        "passed": true,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": null,
+        "elapsed_seconds": null
+      },
+      {
+        "name": "reading_two",
+        "stage": 3,
+        "passed": false,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": false,
+        "elapsed_seconds": 517.7483449999709,
+        "read_gate_passed": true,
+        "exact_readbacks": 2,
+        "free_exact": 0,
+        "readbacks": [
+          "dax blue",
+          "feni red",
+          "green gold",
+          "gold green"
+        ],
+        "free_readbacks": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "orders": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "final_order_ce": [
+          0.3465735912322998,
+          0.3465735912322998,
+          0.3465735912322998,
+          0.3465735912322998
+        ]
+      },
+      {
+        "name": "reading_four",
+        "stage": 3,
+        "passed": false,
+        "interpretable": true,
+        "departures_attempted": 0,
+        "departures_kept": 0,
+        "lesson_ce_passed": false,
+        "elapsed_seconds": 766.5622032920364,
+        "read_gate_passed": true,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "readbacks": [
+          "gold blue green gold",
+          "<unresolved> <unresolved> blue <unresolved>",
+          "<unresolved> <unresolved> red <unresolved>",
+          "<unresolved> <unresolved> <unresolved> blue"
+        ],
+        "free_readbacks": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "orders": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "final_order_ce": [
+          0.794513463973999,
+          0.794513463973999,
+          0.794513463973999,
+          0.794513463973999
+        ]
+      }
+    ]
+  }
+}

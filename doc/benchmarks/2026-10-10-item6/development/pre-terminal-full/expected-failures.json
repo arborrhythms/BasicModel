@@ -1,0 +1,10 @@
+[
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "phase": "call",
+    "outcome": "xfailed",
+    "duration": 0.2404089579358697,
+    "message": "test/test_stm_recon_from_cleared_cache.py:376: in test_topk_recovered_words_overlap_input\n    assert overlap >= (1.0 - ATOL_RECON), (\nE   AssertionError: top-k recovered-word overlap with input = 0.000; expected >= 0.800 (atol=0.2). Reverse from the owned understanding is not reconstructing the per-position words.\nE   assert 0.0 >= (1.0 - 0.2)",
+    "stdout": ""
+  }
+]

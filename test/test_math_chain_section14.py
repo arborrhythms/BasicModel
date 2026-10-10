@@ -172,8 +172,19 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
         initial = {name: value.detach().clone() for name, value in chooser.named_parameters()}
         provision = tmp_path/'provision'
         provision.mkdir()
-        stage(model, [ChainDocument('prior'+str(i), ('y is three.', 'what is y ?'), question=1)
-                      for i in range(8)])
+        # Cover small and larger retained menus with different real
+        # documents, not repeated initializations or a selected RNG state.
+        # Each history length has eight document streams, and every
+        # named variable is queried at each history length.
+        names, values = ('w', 'x', 'y', 'z'), ('one', 'two', 'three', 'four')
+        provision_documents = []
+        for count in range(1, 5):
+            for stream in range(8):
+                offset = stream % len(names)
+                premises = tuple(f'{names[(offset+i) % 4]} is {values[i]}.' for i in range(count))
+                provision_documents.append(ChainDocument(f'prior:{count}:{stream}',
+                    (*premises, f'what is {names[offset]} ?'), question=count))
+        stage(model, provision_documents)
         with binding_distributions() as prior_records, observer_class()(provision) as observer:
             observer.context = dict(epoch=0, phase='initialization_read')
             present(model, split='train', after_batch=observer.after_batch)
@@ -182,12 +193,13 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
         with binding_distributions() as records:
             rows = train_documents(model, documents, tmp_path)
         # Both contexts use the identical untrained chooser; the first has
-        # backward candidates within its real two-sentence documents.
+        # backward candidates within its real multi-sentence documents.
         records = prior_records + records
         assert records
         ratios = [p*len(item['alternatives']) for item in records for p in item['probabilities']]
         retained = sum(sum(value not in (0,-2) for value in item['alternatives']) for item in records)
         report = dict(forced=False, conditional_band=[.9,1.1], alternatives_relative_to_uniform=[min(ratios),max(ratios)],
+            initialization_documents=len(provision_documents), retained_premise_counts=[1,2,3,4],
             initialization_read_menus=len(prior_records), training_menus=len(records)-len(prior_records),
             retained_candidates=retained, menus=len(records), questions=len(rows),
             observed_committed_open=sum(bool(row['open']) for row in rows),

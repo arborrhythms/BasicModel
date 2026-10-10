@@ -1,0 +1,20 @@
+{
+  "accepted_baseline": "7c9aeac67840165fc1ac116eca8a528ca716c30e",
+  "files": 765,
+  "source_archive_sha256": "e36f183876e98952b7aad544f9a717e8bc2d8e367e039aafbb9e2498d925bdc4",
+  "changed_since_review": [
+    "bin/Generative.py",
+    "bin/IndependentComponents.py",
+    "bin/Language.py",
+    "bin/Models.py",
+    "test/index_fixtures.py",
+    "test/stored_idea_gates.py",
+    "test/test_clause_acceptance.py",
+    "test/test_identification_evidence.py",
+    "test/test_independent_components.py",
+    "test/test_math_chain_repair.py",
+    "test/test_output_walk.py",
+    "test/test_reference_index.py",
+    "test/test_stored_idea_generation.py"
+  ]
+}

@@ -15,7 +15,6 @@ def terminal_model_index(model, references):
     model.languageSpace = SimpleNamespace(
         language_layer=getattr(getattr(model, 'languageSpace', None), 'language_layer', None),
         _generate_binary_ops=(), _generate_unary_ops=(),
-        reverse_inverses=lambda _ops: (),
         generate_policy_logits=lambda values: values.new_zeros(len(values), 1))
     space = model.conceptualSpace
     rows = torch.tensor([_existing_row(space, reference) for reference in references

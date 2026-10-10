@@ -1,0 +1,89 @@
+--- a/bin/MemoryIndex.py
++++ b/bin/MemoryIndex.py
+@@ -522,6 +522,8 @@
+         from Generative import primed_type_families
+         heat = space.priming_weights(batch=(
+             model._priming_batch_size() if hasattr(model, '_priming_batch_size') else None))
++        if not torch.is_tensor(heat):
++            return (), 0, False  # Definitions can precede a current priming snapshot.
+         candidate_limit = int(getattr(model, 'reconstruction_basis_limit', 16))
+         types = primed_type_families(space, heat, limit=candidate_limit)
+         if heat.ndim == 2:
+--- a/test/test_live_references.py
++++ b/test/test_live_references.py
+@@ -245,10 +245,11 @@
+             model._sentence_fields[0][0].end_state[0], frame[2], rtol=0, atol=0)
+         assert not torch.equal(entry.leaves[0], prior)
+         active = model.inputSpace._word_active_mask
+-        assert not model._recon_truncated.any()
+-        # A free inverse searches from the exact fused root and rule sequence;
+-        # it is not required to replay the original word displaced by a live
+-        # reference. The source leaves must not act as inverse witnesses.
++        # This held referent has no lexical realization in the primed bank.
++        # Completing a shorter approximate word pair would lose its content;
++        # an honest free inverse must leave it pending. Source leaves cannot
++        # supply the displaced word as an inverse witness.
++        assert model._recon_truncated.tolist() == [True]
+         from dataclasses import replace
+         record = view['record']
+         expected = model._reconstruct_trial(record)[0]
+--- a/test/test_math_chain_section14.py
++++ b/test/test_math_chain_section14.py
+@@ -172,8 +172,19 @@
+         initial = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+         provision = tmp_path/'provision'
+         provision.mkdir()
+-        stage(model, [ChainDocument('prior'+str(i), ('y is three.', 'what is y ?'), question=1)
+-                      for i in range(8)])
++        # Cover small and larger retained menus with different real
++        # documents, not repeated initializations or a selected RNG state.
++        # Each history length has eight document streams, and every
++        # named variable is queried at each history length.
++        names, values = ('w', 'x', 'y', 'z'), ('one', 'two', 'three', 'four')
++        provision_documents = []
++        for count in range(1, 5):
++            for stream in range(8):
++                offset = stream % len(names)
++                premises = tuple(f'{names[(offset+i) % 4]} is {values[i]}.' for i in range(count))
++                provision_documents.append(ChainDocument(f'prior:{count}:{stream}',
++                    (*premises, f'what is {names[offset]} ?'), question=count))
++        stage(model, provision_documents)
+         with binding_distributions() as prior_records, observer_class()(provision) as observer:
+             observer.context = dict(epoch=0, phase='initialization_read')
+             present(model, split='train', after_batch=observer.after_batch)
+@@ -182,12 +193,13 @@
+         with binding_distributions() as records:
+             rows = train_documents(model, documents, tmp_path)
+         # Both contexts use the identical untrained chooser; the first has
+-        # backward candidates within its real two-sentence documents.
++        # backward candidates within its real multi-sentence documents.
+         records = prior_records + records
+         assert records
+         ratios = [p*len(item['alternatives']) for item in records for p in item['probabilities']]
+         retained = sum(sum(value not in (0,-2) for value in item['alternatives']) for item in records)
+         report = dict(forced=False, conditional_band=[.9,1.1], alternatives_relative_to_uniform=[min(ratios),max(ratios)],
++            initialization_documents=len(provision_documents), retained_premise_counts=[1,2,3,4],
+             initialization_read_menus=len(prior_records), training_menus=len(records)-len(prior_records),
+             retained_candidates=retained, menus=len(records), questions=len(rows),
+             observed_committed_open=sum(bool(row['open']) for row in rows),
+--- a/test/test_output_walk.py
++++ b/test/test_output_walk.py
+@@ -262,9 +262,16 @@
+         bank = u.sentence_records[-1].primed
+         words, n_emitted, truncated, cost = m._output_generate_walk(
+             m._walk_operand(idea), T, False, targets,
+-            basis=bank.codes, basis_valid=bank.valid)
++            basis=bank.codes, basis_valid=bank.valid,
++            constituents=u.sentence_records[-1].constituents,
++            constituent_valid=u.sentence_records[-1].constituent_valid,
++            constituent_families=u.sentence_records[-1].constituent_families)
+     assert tuple(words.shape) == (2, T, D)
+-    assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
++    # Materialization does not make a fresh model's off-dictionary root a
++    # word. Each row must either realize a supported leaf or explicitly leave
++    # its unresolved idea pending; emitting the root is not a lexical proof.
++    assert bool(((n_emitted >= 1) | truncated).all())
++    assert bool(torch.isfinite(words).all())
+     m.End(); m.symbolSpace.soft_reset()
+ 
+ 

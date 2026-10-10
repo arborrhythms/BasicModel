@@ -1,0 +1,26 @@
+[
+  {
+    "nodeid": "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 21.70081512501929,
+    "message": "test/test_math_chain_repair2.py:165: in test_eight_corpus_sentences_train_at_distinct_fork_rounds\n    assert not unexpected, unexpected\nE   AssertionError: ['conceptualSpaces.2.syntacticLayer.layers.0._sigma.activation']\nE   assert not ['conceptualSpaces.2.syntacticLayer.layers.0._sigma.activation']",
+    "stdout": "batch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 111.24117004207801,
+    "message": "test/test_math_chain_section14.py:211: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate\n    assert min(ratios) >= .9 and max(ratios) <= 1.1, report\nE   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.9140687584877014, 1.153044506907463], 'initialization_documents': 32, ...}\nE   assert (0.9140687584877014 >= 0.9 and 1.153044506907463 <= 1.1)\nE    +  where 0.9140687584877014 = min([1.0000109672546387, 0.9999890923500061, 1.0004569292068481, 0.9995430707931519, 1.0000110864639282, 0.9999889135360718, ...])\nE    +  and   1.153044506907463 = max([1.0000109672546387, 0.9999890923500061, 1.0004569292068481, 0.9995430707931519, 1.0000110864639282, 0.9999889135360718, ...])",
+    "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=4.964s)\r\nbatch = 16 (\u0394=5.405s)\r\nbatch = 24 (\u0394=6.206s)\r\nbatch = 32 (\u0394=9.133s)\r\nbatch = 40 (\u0394=5.676s)\r\nbatch = 48 (\u0394=6.785s)\r\nbatch = 56 (\u0394=8.540s)\r\nbatch = 64 (\u0394=8.836s)\r\nbatch = 72 (\u0394=5.427s)\r\nbatch = 80 (\u0394=6.118s)\r\nbatch = 88 (\u0394=7.952s)\r\nbatch = 96 (\u0394=8.819s)\r\nbatch = 104 (\u0394=9.114s)\r\nbatch = 0 (\u0394=12.973s)\r\n"
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.24566866597160697,
+    "message": "test/test_stm_recon_from_cleared_cache.py:247: in test_reverse_from_cleared_cache_is_drivable_and_decodable\n    assert words, 'the owned inverse must resolve at least one indexed word'\nE   AssertionError: the owned inverse must resolve at least one indexed word\nE   assert []",
+    "stdout": ""
+  }
+]

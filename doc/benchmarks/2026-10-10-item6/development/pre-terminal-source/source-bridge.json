@@ -1,0 +1,19 @@
+{
+  "corrected_to_final": [
+    "test/test_math_chain_section14.py"
+  ],
+  "final_source_files": 765,
+  "source_archive_sha256": "3459fe7c458c7837492c4016c1ff0c5fbfbce2e26b74480190017510e51e6f89",
+  "corrected_source_archive_sha256": "3384546fa9f3960b6747f8294b1f21da06bceb7102856bd1409b2904770a304c",
+  "curriculum_initial_to_final": [
+    "bin/MemoryIndex.py",
+    "test/test_live_references.py",
+    "test/test_math_chain_section14.py",
+    "test/test_output_walk.py"
+  ],
+  "production_changes_after_curriculum_start": [
+    "bin/MemoryIndex.py"
+  ],
+  "curriculum_source_archive": "development/initial-source/source.tar.gz",
+  "curriculum_source_archive_sha256": "8c2b57cd7f91d7fb5e710a3f897754d19cd16ec5f8c013e615332ab259937fde"
+}

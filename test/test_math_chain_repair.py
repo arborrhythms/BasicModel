@@ -73,8 +73,7 @@ def test_driver_batch_groups_resize_priming_before_reads_without_broadcast():
 
 def test_unfold_reads_the_readers_priming_row():
     from MemoryIndex import unfold_idea
-    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(),
-        reverse_inverses=lambda ops: (), generate_policy_logits=lambda point: point.new_zeros(1, 1))
+    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda point: point.new_zeros(1, 1))
     basis = torch.eye(3)
     weights = torch.tensor([[2., 1., 1.], [1., 2., 1.]])
     for row in range(2):

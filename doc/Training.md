@@ -156,6 +156,18 @@ decided gates of the plans and specs they cite.
 | 9 | **The age-appropriate corpus** | Wordbank → `interpret` → AO-CHILDES by age band ([FutureWork, gradual training](FutureWork.md)) | text; supplied answers where the corpus has them | the stall diagnostic flat per level | everything above, at scale; item 3's corpus |
 | 10 | **The full train** | the target corpus (item 0) | — | the standing gates unchanged or better | — |
 
+**Item 6 part 2 amendment (Alec, 2026-10-10).** The
+[identity-from-data lesson design](plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10)
+governs the stage 1 and stage 5 identity lessons: vary object, property and
+verb factors independently; grow support from one to three; counterbalance
+pronoun candidates' recency, role and order; include imperfect determiner cues,
+held-out cue/content conflicts, later distinguishing properties for same-kind
+individuals and document-dependent referents. In stage 5, `a` and `the` are
+evidence for identity choices, not unconditional mint/bind instructions.
+Measure the declared candidate-count/recency/role strata and both controls
+before changing the mechanisms. Rule retirement requires a passing lesson
+without that rule; the amendment and Claude's toy specify the evidence.
+
 Why this order. Stages 1–3 teach what a word is and how to take one at a time;
 4a–4d teach sentences by the operations they need, one more at each step —
 a relation between two atoms, composition within a role, a verb against a
