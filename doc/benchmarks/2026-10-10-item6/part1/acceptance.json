@@ -1,0 +1,26 @@
+{
+  "status": "part1_landed_with_open_findings",
+  "mechanism_commit": "324b84d67ffe85e31861a440d088290ee99abc9b",
+  "authorization": "Alec, 2026-10-10, plan \u00a71.6: direct landing after one measured repair pass; not item 6 closing",
+  "baseline_commit": "7c9aeac67840165fc1ac116eca8a528ca716c30e",
+  "source_files": 765,
+  "source_archive_sha256": "e36f183876e98952b7aad544f9a717e8bc2d8e367e039aafbb9e2498d925bdc4",
+  "full_sweep": {
+    "passed": 5454,
+    "skipped": 287,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "source_matched": true,
+  "open_findings": [
+    "new unavailable-packed-sentence coverage charge",
+    "b initial binding-distribution bound",
+    "c supplied-answer match",
+    "stored recovery beyond two words",
+    "order-lesson CE and zero gradient",
+    "MM grammar recovery capacity blocker",
+    "compiled retention and historical retention/fork findings",
+    "word-overlap XFAIL"
+  ],
+  "part2": "Corpus and measurement first; retire each identity rule only after its lesson passes without it."
+}

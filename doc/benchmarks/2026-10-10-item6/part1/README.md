@@ -157,6 +157,8 @@ not drop derivations on this evidence. No identity rule is retired in part 1.
 
 ## Reproduction and landing
 
+Mechanism commit: `324b84d67ffe85e31861a440d088290ee99abc9b` ([landing record](acceptance.json)).
+
 The accepted repair decision is in plan §1.6; it authorizes commit/push and
 WikiOracle's bump directly after this measured pass. The new coverage failure,
 b's failed bound and the carried correctness/learning findings remain open;
