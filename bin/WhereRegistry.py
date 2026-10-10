@@ -1,4 +1,4 @@
-"""A model's fixed address ranges for input locations and stored percepts.
+"""A model's fixed address ranges for input, codebooks and live conceptual slots.
 
 These addresses are coordinates, never keys into a content codebook. The
 registry is model-local so constructing another model cannot move a slice.
@@ -79,6 +79,10 @@ def install_where_registry(model):
         ('parts', capacity(parts)),
         ('wholes', sum(capacity(basis) for basis in wholes)),
         ('symbols', 2 * max(capacity(symbols), int(model.conceptualSpaces[0].nVectors))),
+        # The current conceptual eight-space has locations of its own.
+        # The C stages use the same slot geometry, independently of which
+        # codebook rows or composed ideas currently occupy those slots.
+        ('conceptual', max(int(space.stm.capacity) for space in model.conceptualSpaces)),
     ))
     parts.where_offset = registry.slices['parts'][0]
     offset = registry.slices['wholes'][0]
@@ -94,6 +98,8 @@ def install_where_registry(model):
         object.__setattr__(space, '_address_model', weakref.ref(model))
     object.__setattr__(model, 'where_registry', registry)
     object.__setattr__(model.symbolSpace, 'where_registry', registry)
+    for space in model.conceptualSpaces:
+        object.__setattr__(space, 'where_registry', registry)
     # One owner; compatibility carriers refer to the same ladders even when
     # their content-only layout has no muxed tail. Their nWhere/nWhen stays 0.
     from Spaces import Space, SubSpace, WhenEncoding

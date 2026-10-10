@@ -1,0 +1,261 @@
+{
+  "observations": {
+    "(True, (4, 16, 1))": {
+      "reads": 2400,
+      "eligible": 0,
+      "admitted": 0,
+      "last": [
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        }
+      ]
+    },
+    "(True, (4, 1, 1))": {
+      "reads": 2400,
+      "eligible": 9600,
+      "admitted": 1867,
+      "last": [
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        }
+      ]
+    },
+    "(True, (4, 8, 1))": {
+      "reads": 2400,
+      "eligible": 6956,
+      "admitted": 1866,
+      "last": [
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 2,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        }
+      ]
+    },
+    "(True, (4, 156, 1))": {
+      "reads": 400,
+      "eligible": 153600,
+      "admitted": 44640,
+      "last": [
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        },
+        {
+          "eligible": 384,
+          "admitted": 0
+        }
+      ]
+    },
+    "(False, (4, 16, 1))": {
+      "reads": 3,
+      "eligible": 0,
+      "admitted": 0,
+      "last": [
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 0,
+          "admitted": 0
+        }
+      ]
+    },
+    "(False, (4, 1, 1))": {
+      "reads": 3,
+      "eligible": 12,
+      "admitted": 0,
+      "last": [
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        }
+      ]
+    },
+    "(False, (4, 8, 1))": {
+      "reads": 3,
+      "eligible": 8,
+      "admitted": 0,
+      "last": [
+        {
+          "eligible": 0,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        },
+        {
+          "eligible": 4,
+          "admitted": 0
+        }
+      ]
+    },
+    "(False, (4, 156, 1))": {
+      "reads": 1,
+      "eligible": 384,
+      "admitted": 0,
+      "last": [
+        {
+          "eligible": 384,
+          "admitted": 0
+        }
+      ]
+    }
+  },
+  "parameters": {
+    "readout.bias": [
+      -0.022800540551543236,
+      0.6800861358642578,
+      0.03160275146365166,
+      0.6742608547210693,
+      -0.02274133637547493,
+      0.6801251173019409,
+      0.031617823988199234,
+      0.6742510199546814,
+      -0.022757455706596375,
+      0.6801140308380127,
+      0.031620532274246216,
+      0.6742493510246277,
+      -0.022743968293070793,
+      0.680122971534729,
+      0.03161556273698807,
+      0.6742523908615112,
+      -0.02269642986357212,
+      0.6801549792289734,
+      0.031627822667360306,
+      0.6742444038391113,
+      -0.022751811891794205,
+      0.6801177263259888,
+      0.031628839671611786,
+      0.6742435097694397,
+      -0.022745268419384956,
+      0.6801228523254395,
+      0.031618885695934296,
+      0.6742501258850098
+    ]
+  },
+  "source_matched": true
+}

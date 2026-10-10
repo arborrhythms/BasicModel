@@ -42,6 +42,30 @@ def test_input_occurrences_and_thought_symbols_use_their_own_ranges():
     assert registry.slices['symbols'][1] - registry.slices['symbols'][0] == 128
 
 
+def test_live_conceptual_eight_space_has_fixed_sinusoidal_slot_addresses(tmp_path):
+    from test_grounded_xor import grounded_model
+    model, _ = grounded_model(tmp_path)
+    cs = model.conceptualSpace
+    registry = model.where_registry
+    start, end = registry.slices['conceptual']
+    assert end - start == cs.stm.capacity == 8
+    bands = cs.where.clone()
+    assert bands.shape == (8, 4)
+    addresses = model.where_encoding.decode_index(bands)
+    torch.testing.assert_close(addresses, torch.arange(start, end))
+    assert torch.unique(bands, dim=0).shape[0] == 8
+    for name, (other_start, other_end) in registry.slices.items():
+        if name != 'conceptual':
+            assert end <= other_start or start >= other_end
+    # Locations index the eight-space, independently of identity and batch.
+    cs.stm.begin_forward(2)
+    cs.stm.push(0, torch.ones(cs.stm.concept_dim), concept_row=3)
+    cs.stm.push(0, torch.ones(cs.stm.concept_dim), concept_row=3)
+    torch.testing.assert_close(cs.where, bands, rtol=0, atol=0)
+    cs.stm.clear()
+    torch.testing.assert_close(cs.where, bands, rtol=0, atol=0)
+
+
 def test_large_where_ranges_keep_symbol_row_addresses_exact():
     from WhereRegistry import WhereRegistry
     registry = WhereRegistry([('parts', 1 << 25), ('symbols', 1 << 20)])
@@ -104,4 +128,3 @@ def test_content_only_encode_decode_preserves_all_coordinates(tmp_path):
         decoded, where, when = sub.decode(values.clone())
         torch.testing.assert_close(decoded, values)
         assert where.count_nonzero() == when.count_nonzero() == 0
-

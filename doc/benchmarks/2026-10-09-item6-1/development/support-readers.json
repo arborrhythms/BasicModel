@@ -1,0 +1,30 @@
+{
+  "_thought_grammar_context": {
+    "ast_matches_landing": true
+  },
+  "_selected_thought_memory": {
+    "ast_matches_landing": true
+  },
+  "_addressable_spaces": {
+    "ast_matches_landing": true
+  },
+  "_answer_attention_step": {
+    "ast_matches_landing": true
+  },
+  "_reasoning_spaces": {
+    "ast_matches_landing": true
+  },
+  "_resolve_answer": {
+    "ast_matches_landing": false
+  },
+  "_sentence_reference_bank": {
+    "ast_matches_landing": false
+  },
+  "bin/Queries.py": {
+    "bytes_match_landing": true
+  },
+  "retained_differences": {
+    "_resolve_answer": "Explicit current batch passed to chronological recall (retained batch-shape repair).",
+    "_sentence_reference_bank": "Only excludes the occurrence and embedded rows being replaced at the same document position, preventing a structural self-reference during repeated measurement; no learned attention mask or relevance filter."
+  }
+}

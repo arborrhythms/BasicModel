@@ -65,13 +65,14 @@ def test_xor_router_emits_per_space_role_rule_dict():
             assert rid in (0, 1, 2), f"unexpected rule_id {rid}"
 
 
-def test_xor_router_gradients_reach_all_three_ops():
+def test_xor_router_gradients_reach_all_three_ops(monkeypatch):
     router = _make_router()
 
     class _ParamApply(nn.Module):
         def __init__(self, D, op, arity):
             super().__init__()
             self.proj = nn.Linear(D, D, bias=False)
+            nn.init.eye_(self.proj.weight)
             self.op = op
             self.arity = arity
         def forward(self, *args):
@@ -87,8 +88,21 @@ def test_xor_router_gradients_reach_all_three_ops():
     router.attach_layer_ops(ops=[pand, por], rule_ids=[1, 2], space_role="SS")
 
     ss = _StubSymbolSpace()
-    x = torch.randn(2, 4, D, requires_grad=True)
-    router.compose(x, word_space=ss)
+    # Exercise NOT -> AND -> OR -> AND -> STOP through the real dispatcher.
+    # Fixed, small operands keep OR away from its clamp and every product
+    # nonzero. This is an operator-gradient fixture, not a learned routing
+    # or convergence assertion; no random initialization decides coverage.
+    select = router.operation_layer.select_logits
+    actions = iter((6, 0, 1, 0))  # N=4: six binary then four unary actions.
+    def select_each_op(logits, **kwargs):
+        action = next(actions, logits.shape[-1] - 1)
+        kwargs['replay_action'] = torch.full((logits.shape[0],), action,
+                                           device=logits.device, dtype=torch.long)
+        return select(logits, **kwargs)
+    monkeypatch.setattr(router.operation_layer, 'select_logits', select_each_op)
+    x = torch.linspace(.05, .2, 16).reshape(1, 4, D).requires_grad_()
+    rules = router.compose(x, word_space=ss)
+    assert rules['SS'] == [[0, 1, 2, 1]]
     loss = router._last_output.square().sum()
     loss.backward()
     for name, p in [("not", pnot.proj), ("and", pand.proj), ("or", por.proj)]:

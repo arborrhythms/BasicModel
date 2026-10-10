@@ -25,7 +25,7 @@ def test_readback_error_reaches_true_and_competing_codes_without_unit_constraint
     torch.testing.assert_close(codes.detach(), torch.tensor([[[2., .3], [.4, 3.]]]))
 
 
-def test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost(monkeypatch):
+def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkeypatch):
     from pathlib import Path
     import Models, util
     from test_mm_xor import _fresh_model
@@ -59,7 +59,15 @@ def test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost(monkeypatch)
             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
         assert calls == ['greedy', 'explore', 'greedy', 'explore']
         reconstruction = {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')}
-        assert reconstruction - {'reconstruction.compose_score_function'} == {'reconstruction.free_bytes', 'reconstruction.decomposition', 'reconstruction.walk_policy'}
+        assert reconstruction - {'reconstruction.compose_score_function'} == {
+            'reconstruction.free_bytes', 'reconstruction.decomposition',
+            'reconstruction.walk_policy'}
+        terms = model._sentence_cost_registry._terms
+        # XOR_grammar uses the mixing architecture, without native PS/WS
+        # candidate supports. Its landing reconstruction objective remains.
+        assert model.concept_binding == 'mixing'
+        assert model._last_sentence_field is None
+        assert terms['reconstruction.free_bytes']['trained']
         # Round 2 credits the single departure only when its owner-step total
         # differs. The inverse's byte objective above remains witness-free.
         if model._last_compose_score_function['advantage'].ne(0).any():

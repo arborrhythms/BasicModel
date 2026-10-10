@@ -17,15 +17,16 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** **6.2 is closed: mechanism complete, decomposition demonstrated**
-([acceptance](doc/benchmarks/2026-10-09-item6-2-closing/acceptance.json),
-thinking spec §14.13). Learning is deferred to item 0's checkpoint under the
-four protocol corrections recorded there; no learning result is claimed.
-Next: 6.1. The accepted 6.5 mechanism's learning gates remain pending the
-million-sentence checkpoint.
+**Current:** **6.1 is accepted as a mechanism landing** (Alec,
+2026-10-10; [stream-state §7.15–§7.16](doc/plans/2026-10-08-stream-state.md)).
+The two repairs and their measured outcomes are in the
+[receipt](doc/benchmarks/2026-10-09-item6-1/README.md). Learning gates remain
+at item 0's checkpoint; acceptance makes no learning claim. Next: item 6,
+with unresolved correctness work continued alongside it. The accepted
+6.2 and 6.5 mechanisms' learning gates also remain at the checkpoint.
 
-**Current sequence (6.2 closed October 9; no conference freeze):**
-6.1 → 6 → 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
+**Current sequence (6.1 closed October 10; no conference freeze):**
+6 → 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -154,46 +155,48 @@ measurements and decisions are in the accepted receipt and its predecessors.
 Deferred from 6.5 (non-blocking): the detached role view's retirement is in
 item 2; learned-column pruning is in item 5.
 
-- **6.1. Attention as a mask, and the context stages**
-   ([plan](doc/plans/2026-10-08-stream-state.md) §3–§5; Alec, 2026-10-08).
-   A multiplicative mask over all percepts, symbols included, on `.where`,
-   as the precursor to conceptual processing: per candidate a two- or
-   three-layer scorer over the current need (the open reference's slot, the
-   expectation image, the gist), the candidate's key and its structural
-   relations (in this word / sentence / document by the bands, recency,
-   priming as salience); several needs give several masks combined lane by
-   lane; divisive normalization over the pool keeps the budget; top-k under
-   the budget commits hard, soft weights train; the loss gradient is the
-   importance signal. Not QKV, though the chooser's scorer is already a
-   `QK` scorer; the structural masks are exact by the bands and need no
-   learning. *Amended (Alec, 2026-10-08, from the 4.5 conversation):* wire
-   the mask as **a single layer** whose input is the current perceptual and
-   symbolic activation (the spreading activation of the priming surface);
-   that is the top-down route of expectation into perception for now
-   ([4.5 spec §4.2](doc/specs/2026-10-08-expectation-at-every-level.md)).
-   Starts from attend-all with a small budget (the filter toy's
-   collapse). Its gates are the learning stages that force context as
-   content rather than managed state: mask training (the XOR pairs among
-   fillers; the math chain's question and its document), batch
-   differentiation, return after interruption, shared truth across
-   documents (situated vs absolute rows by credit), priming as a prior,
-   expectation from the right history. Per-stream state is not managed by
-   a registry: the LTM is shared with identifiers that separate rows, and
-   context is learned. After 6.2's closing; before item 6, so that item
-   0's run does not read every document as one.
-   *Batch-shape defects* from the [audit table](doc/plans/2026-10-08-stream-state.md#1-what-the-audit-found-verified-in-the-working-tree),
-   beyond the two the 6.2 repair pass takes (`index_stream`, the priming
-   surface): `_closing_images`, `_open_thought_rows`,
-   `_pending_thought_credit` and `_what_recall_*` are not resized when the
-   batch size changes; `_word_reference_*` is read by row without a shape
-   check and never reset; taxonomy `_priming` keeps overlapping rows on
-   resize; `_last_gist` pools all rows; `unfold_idea` uses row 0's priming
-   for every stream. Stage 2 (batch differentiation) cannot be measured
-   while they stand, so they are repaired here, by a shape mismatch that
-   raises, not by a registry. The legacy typed STM `_buffer` that only
-   grows is deleted in item 2.
+Alongside item 6, continue list-inverse recovery: the repaired source's
+enabled two-word list reconstructs 0/4 (its coordinates are explicitly
+unrecovered and uncharged); the four-word list has no final remeasurement
+because of the retrieval error below. These inverse limits remain active
+work, not deferred to the learning checkpoint.
 
-- **6. Stored-idea generativity.** *Observation from 6.2's closing (thinking
+Alongside item 6, close the landing sweep's remaining correctness failures:
+c's supplied-answer match (the captured initialization passes, but the sweep
+does not); packed-LTM retention; the eight-sentence fork-round diversity
+certificate; and pending-premise retention with order `False`. The exact
+failures and source remain in the [receipt](doc/benchmarks/2026-10-09-item6-1/README.md).
+
+Alongside item 6, fix the native retrieval reference error found in 6.1's
+stage 3: a thought's cued LTM read passes an unsupported reference to
+`Taxonomy.concept_reference`, raising during disabled two-word presentation
+12 and enabled four-word presentation 8. Neither initialization was retried.
+This is active correctness work, not a checkpoint learning gate
+([receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
+
+Alongside item 6, tighten b's unseeded initial binding-distribution coverage
+by construction (more menus), never by a seed; retain the observed flaky
+bound in [operators §20](doc/plans/2026-10-05-operators-update.md#20-round-2d-hand-off-to-codex-claude-2026-10-06).
+
+- **6. Stored-idea generativity.** *Direction (Alec, 2026-10-09, from the 6.1
+   review, [stream-state §7.14](doc/plans/2026-10-08-stream-state.md)):* inverting
+   S yields nonterminals — NP and VP as compound states — not codebook words, so
+   the types must have characteristic, separable structure in conceptual
+   space; parts of speech are learned in the compose grammar so that generate
+   can segment into them without forcing them to be words. That structure is
+   [6.5's](doc/specs/2026-09-26-independent-components.md) decided model: nouns are
+   columns of `A` (object signatures over the order-0 coordinates), verbs columns
+   of `B` (patterns of change over the coordinates `A` defines) — things against
+   transformations, nouns first, verbs second — and a word is routed as noun or
+   verb by which matrix its row best serves (§2.7, credit not lookup). The free
+   inverse of a stored idea is then an unmixing by type family — which `A`
+   columns are active, which `B` column fired; inside a phrase, properties as
+   their own separable family (wholes are types) with the catalogue's
+   map inverses given the modifier — snapping to the codebook only at the
+   leaves. During a sentence the eight-space's composed wholes are available to
+   the inverse as well; from a stored idea only the structure is. Free compound
+   decoding is not a stage gate until this exists ([Training.md](doc/Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)).
+   *Observation from 6.2's closing (thinking
    spec §14.13):* under a live departure the keep rule committed a reading of
    `three plus one is four.` with the bare `three` as left operand — a kept
    derivation that drops a phrase; reconstruction should have charged it.
@@ -424,7 +427,12 @@ item 2; learned-column pruning is in item 5.
    (episodes of 32 thought steps included), a week for thirty trainings;
    Alec deferred the thinking measurement "until we further optimize
    things" — this item's measurement now includes a thought episode's
-   step and the per-sentence time at the math corpus. The decoder's two-word
+   step and the per-sentence time at the math corpus. *2026-10-10:* profile
+   the rising per-presentation runtime in the 6.1 curriculum (the final
+   relation-answer stage took 1,001.95 seconds for 64 presentations plus
+   its initial/final measurements). Its timing traces and active-autograd
+   process sample are retained in the [6.1 receipt](doc/benchmarks/2026-10-09-item6-1/README.md);
+   compare like-for-like work before assigning a cause. The decoder's two-word
    walk (6.8 plan §10.2) may pay part of it back. The throughput levers for the serial loop — batch
    across sentences, the known-word lookup concession, subsampled
    reconstruction, closing the host islands and moving
@@ -473,11 +481,19 @@ item 2; learned-column pruning is in item 5.
    before running ([closing receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md),
    [protocol corrections](doc/benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json)).
 
+   **6.1's learning gates** also remain at item 0's checkpoint: supplied
+   answers and asked parts; free reading in the lesson's order on permuted
+   fields, with order-lesson CE near zero; and the context stages in
+   [stream-state §3](doc/plans/2026-10-08-stream-state.md#3-required-learning-stages-the-replacement-for-explicit-context-management).
+   The support mechanism and the first two generated-curriculum stages are
+   accepted; these learning claims are not.
+
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
 
+- **Item 6.1** (accepted October 10; commit recorded after landing): support masks, one read per placement, eight-space STM with witnesses, derivation reconstruction and the order lesson; curriculum harness with identity/permanence and word identification passing; learning gates at item 0 ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
 - **Item 6.2 closed** (initial mechanism `e43638a`; Alec accepted the closing October 9, thinking §14.13): mechanism complete, decomposition demonstrated; learning deferred to item 0 under the four protocol corrections—one-step problems first, worked steps as intermediate answers, binding a found candidate, and budget in steps with each query’s record charge bounded separately ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md)).
 
 - **Item 6.5 mechanism** (Alec accepted October 7; one landing from `f4a68404e`): definedness, native identity/change columns and global bind/mint; learning gates remain pending the million-sentence checkpoint ([acceptance](doc/benchmarks/2026-10-07-item6-5/acceptance.json)).

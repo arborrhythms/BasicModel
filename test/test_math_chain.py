@@ -103,7 +103,7 @@ def build_model(config=None):
     return BaseModel.from_config(str(config), data=TheData)[0]
 
 
-def test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention(tmp_path):
+def test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention(tmp_path, eager_reading):
     from MathChainTraining import present
     config = tmp_path / 'zero.xml'
     config.write_text((ROOT / 'data/MM_math_chain.xml').read_text().replace(
@@ -165,7 +165,7 @@ def test_document_batches_keep_every_sentence_and_do_not_mix_document_context():
     assert sorted(seen) == list(range(len(addresses))) and not streams
 
 
-def test_native_worked_document_trains_unforced_without_numeric_oracles(monkeypatch):
+def test_native_worked_document_trains_unforced_without_numeric_oracles(monkeypatch, eager_reading):
     """Construction/optimizer smoke, not a learning-gate attempt."""
     import exact
     from MathChainTraining import present
@@ -271,6 +271,7 @@ def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_
     from types import SimpleNamespace
     from Models import BasicModel
     from ReferenceContext import SituationFrame
+    from WhereRegistry import WhereRegistry
     frame = SituationFrame(1, torch.eye(4)[:3], torch.tensor([True, False, False]),
                            12345, torch.eye(4)[0] if has_point else None)
     discourse = SimpleNamespace(_inter_chain_window=2, _inter_last_meaning=[None],
@@ -278,7 +279,9 @@ def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_
     owner = SimpleNamespace(components=None)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=discourse),
         languageSpace=SimpleNamespace(_compose_binary_rules=()),
-        _concept_owner=lambda: owner, _sentence_reference_types=lambda _: None)
+        _concept_owner=lambda: owner, _sentence_reference_types=lambda _: None,
+        conceptualSpace=SimpleNamespace(),
+        where_registry=WhereRegistry((('conceptual', 8),)))
     bank = BasicModel._sentence_reference_bank(model, torch.tensor([True]), torch.zeros(1, 4))
     assert bank.ids[bank.valid].tolist() == [12345]
     assert bank.relations[bank.valid].tolist() == [not has_point]

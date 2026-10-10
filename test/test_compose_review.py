@@ -123,6 +123,33 @@ def test_fork_joins_by_saved_slot_when_packed_end_slots_are_out_of_order():
     assert seen == [[0., 0.], [7., 0.], [7., 0.], [7., 9.]]
 
 
+def test_fork_cannot_resume_on_another_rows_read_of_its_saved_word():
+    from SentenceFork import SentenceFork
+    fork = SentenceFork(torch.tensor([True, True]))
+    fork.slot = torch.tensor([3, 3])
+    fork.state = (torch.tensor([[7.], [9.]]),)
+    fork.start(dict(compose_round=fork.slot, narrowing=torch.tensor([False, False])))
+    fork.current_rows = torch.tensor([True, False])
+    state = fork.resume(torch.tensor(3), (torch.zeros(2, 1),))
+    assert state[0].flatten().tolist() == [7., 0.]
+    assert fork.joined.tolist() == [True, False]
+    fork.current_rows = torch.tensor([False, True])
+    state = fork.resume(torch.tensor(3), state)
+    assert state[0].flatten().tolist() == [7., 9.]
+
+
+def test_separate_closing_fork_waits_for_the_closing_visit():
+    from SentenceFork import SentenceFork
+    fork = SentenceFork(torch.tensor([True]))
+    fork.word, fork.slot = torch.tensor([1]), torch.tensor([24])
+    fork.start(dict(compose_round=fork.slot, narrowing=torch.tensor([False])))
+    fork.phase = 'word'
+    assert not fork.pending(torch.tensor(1), closing=True, width=8)
+    fork.phase = 'closing'
+    assert fork.pending(torch.tensor(1), closing=True, width=8)
+    assert not fork.pending(torch.tensor(1), closing=False, width=8)
+
+
 @pytest.mark.parametrize('explore_loss, expected', [(1., True), (2., False), (3., False)])
 def test_only_a_strictly_lower_loss_commits_the_alternative(explore_loss, expected):
     from SentenceCompose import sentence_pair

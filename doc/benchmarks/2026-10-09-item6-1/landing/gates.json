@@ -1,0 +1,236 @@
+[
+  {
+    "mode": "disabled",
+    "name": "identity_permanence",
+    "completed": true,
+    "passed": true,
+    "departures_attempted": 0,
+    "departures_kept": 0
+  },
+  {
+    "mode": "disabled",
+    "name": "identifying_words",
+    "completed": true,
+    "passed": true,
+    "departures_attempted": 0,
+    "departures_kept": 0
+  },
+  {
+    "mode": "disabled",
+    "name": "reading_two",
+    "completed": false,
+    "training_presentations": 11,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "passed": false,
+    "interpretable": false,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_last_rows": null,
+    "ce_is_final": false,
+    "free_order_exact": null,
+    "free_read_gate": null,
+    "list_reconstruction_exact": null,
+    "readbacks": null,
+    "orders": null,
+    "identity_audit": null,
+    "inverse_unavailable": null,
+    "status": "native error",
+    "error": "TypeError: taxonomy operands require a ('sym', positive concept id) reference"
+  },
+  {
+    "mode": "disabled",
+    "name": "reading_four",
+    "completed": false,
+    "training_presentations": 0,
+    "departures_attempted": null,
+    "departures_kept": null,
+    "passed": false,
+    "interpretable": false,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_last_rows": null,
+    "ce_is_final": false,
+    "free_order_exact": null,
+    "free_read_gate": null,
+    "list_reconstruction_exact": null,
+    "readbacks": null,
+    "orders": null,
+    "identity_audit": null,
+    "inverse_unavailable": null,
+    "status": "not reached",
+    "error": "TypeError: taxonomy operands require a ('sym', positive concept id) reference"
+  },
+  {
+    "mode": "enabled",
+    "name": "identity_permanence",
+    "completed": true,
+    "passed": true,
+    "departures_attempted": 0,
+    "departures_kept": 0
+  },
+  {
+    "mode": "enabled",
+    "name": "identifying_words",
+    "completed": true,
+    "passed": true,
+    "departures_attempted": 0,
+    "departures_kept": 0
+  },
+  {
+    "mode": "enabled",
+    "name": "reading_two",
+    "completed": true,
+    "training_presentations": 64,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "passed": false,
+    "interpretable": false,
+    "ce_first": 0.3465735912322998,
+    "ce_last": 0.3465735912322998,
+    "ce_last_rows": [
+      0.3465735912322998,
+      0.3465735912322998,
+      0.3465735912322998,
+      0.3465735912322998
+    ],
+    "ce_is_final": true,
+    "free_order_exact": 4,
+    "free_read_gate": true,
+    "list_reconstruction_exact": 0,
+    "readbacks": [
+      "<unresolved> <unresolved>",
+      "<unresolved> <unresolved>",
+      "<unresolved> <unresolved>",
+      "<unresolved> <unresolved>"
+    ],
+    "orders": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.0,
+      0.0
+    ],
+    "inverse_unavailable": [
+      [
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "status": "completed",
+    "error": null
+  },
+  {
+    "mode": "enabled",
+    "name": "reading_four",
+    "completed": false,
+    "training_presentations": 7,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "passed": false,
+    "interpretable": false,
+    "ce_first": 0.794513463973999,
+    "ce_last": 0.794513463973999,
+    "ce_last_rows": [
+      0.794513463973999,
+      0.794513463973999,
+      0.794513463973999,
+      0.794513463973999
+    ],
+    "ce_is_final": false,
+    "free_order_exact": null,
+    "free_read_gate": null,
+    "list_reconstruction_exact": null,
+    "readbacks": null,
+    "orders": null,
+    "identity_audit": null,
+    "inverse_unavailable": null,
+    "status": "native error",
+    "error": "TypeError: taxonomy operands require a ('sym', positive concept id) reference"
+  }
+]

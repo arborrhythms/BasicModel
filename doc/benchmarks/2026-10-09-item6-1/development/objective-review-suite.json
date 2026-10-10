@@ -1,0 +1,106 @@
+{
+  "generated_utc": "2026-10-09T15:14:22.038490+00:00",
+  "reason": "test_failure",
+  "exit_code": 1,
+  "complete": true,
+  "selected": 5717,
+  "completed": 5717,
+  "unique_completed": 5717,
+  "outcomes": {
+    "passed": 5425,
+    "skipped": 286,
+    "failed": 5,
+    "xpassed": 1
+  },
+  "elapsed_seconds": 1429.5785811250098,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 12884901888,
+    "workers": 8,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "warnings": [
+    "Latest weekly slow-test record is 7.6 days old (over seven days)."
+  ],
+  "peak_aggregate_memory_bytes": 10658725968,
+  "peak_worker_memory_bytes": 3857027968,
+  "compile_cache_retries": [],
+  "source_matched": true,
+  "source_files": 759,
+  "source_digest": "11b22d37ff1bfb261ca9a87077c409beacd3141a38817d4c1f74c7e7dc6e2ed6",
+  "when_inventory_sha256": "fd2c126a22937c2ad6b707a5237e637ff5f5f2a5665617ae402d9aeb71fe594a",
+  "runtime_and_learning_harness_unchanged": true,
+  "test_delta_from_learning": [
+    "test/test_math_chain.py",
+    "test/test_math_chain_repair2.py",
+    "test/test_math_chain_section14.py",
+    "test/test_operators_final_b.py",
+    "test/test_operators_round2c.py",
+    "test/test_output_walk.py",
+    "test/test_router_fires_per_word.py",
+    "test/test_sentence_expectation.py"
+  ],
+  "failures": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 23.394419041927904,
+      "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:229: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -5622348111269961409), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -5622348111269961409),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x12129d300>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -5622348111269961409), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -5622348111269961409),))), scope=(), sentence_kind='relation'), 'five')",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=7.801s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 9.889307042001747,
+      "message": "test/test_math_chain_section14.py:254: in test_forced_ordinary_bound_declaratives_open_no_episode\n    assert all(not row['open'] and not row['episode'] for row in rows)\nE   assert False\nE    +  where False = all(<generator object test_forced_ordinary_bound_declaratives_open_no_episode.<locals>.<genexpr> at 0x139d0e810>)",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=4.849s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.2853103330126032,
+      "message": "test/test_math_chain_section14.py:294: in test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage\n    rows = train_documents(model, documents, tmp_path, episode=episode)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:68: in record\n    index = store.index_of_row(field.row_id)\n                               ^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'row_id'",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.4279321669600904,
+      "message": "test/test_sentence_compose.py:182: in test_real_packed_ends_train_before_the_next_sentence\n    torch.testing.assert_close(actual.meaning.roles[actual.meaning.role_mask], expected.slots)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 64 / 312 (20.5%)\nE   Greatest absolute difference: 0.1596882939338684 at index (2, 1) (up to 1e-05 allowed)\nE   Greatest relative difference: 91.78904724121094 at index (2, 0) (up to 1.3e-06 allowed)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02057125000283122,
+      "message": "test/test_signal_router_xor_grammar.py:95: in test_xor_router_gradients_reach_all_three_ops\n    assert p.weight.grad is not None and p.weight.grad.abs().sum() > 0, \\\nE   AssertionError: no gradient reached the or op\nE   assert (tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) is not None and tensor(0.) > 0)\nE    +  where tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) = Parameter containing:\\ntensor([[ 0.1044, -0.3702,  0.2308, -0.4062],\\n        [ 0.4127, -0.4131,  0.3614, -0.3181],\\n        [ 0.4346,  0.3798,  0.3599,  0.3575],\\n        [-0.0162,  0.2431, -0.1929,  0.3746]], requires_grad=True).grad\nE    +    where Parameter containing:\\ntensor([[ 0.1044, -0.3702,  0.2308, -0.4062],\\n        [ 0.4127, -0.4131,  0.3614, -0.3181],\\n        [ 0.4346,  0.3798,  0.3599,  0.3575],\\n        [-0.0162,  0.2431, -0.1929,  0.3746]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight\nE    +  and   tensor(0.) = <built-in method sum of Tensor object at 0x13ee2ec60>()\nE    +    where <built-in method sum of Tensor object at 0x13ee2ec60> = tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]).sum\nE    +      where tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) = <built-in method abs of Tensor object at 0x13ee2d4f0>()\nE    +        where <built-in method abs of Tensor object at 0x13ee2d4f0> = tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]).abs\nE    +          where tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) = Parameter containing:\\ntensor([[ 0.1044, -0.3702,  0.2308, -0.4062],\\n        [ 0.4127, -0.4131,  0.3614, -0.3181],\\n        [ 0.4346,  0.3798,  0.3599,  0.3575],\\n        [-0.0162,  0.2431, -0.1929,  0.3746]], requires_grad=True).grad\nE    +            where Parameter containing:\\ntensor([[ 0.1044, -0.3702,  0.2308, -0.4062],\\n        [ 0.4127, -0.4131,  0.3614, -0.3181],\\n        [ 0.4346,  0.3798,  0.3599,  0.3575],\\n        [-0.0162,  0.2431, -0.1929,  0.3746]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight",
+      "stdout": ""
+    }
+  ],
+  "disposition": "Complete failing default sweep. 6.1 remains open; stop for Claude review before commit or push. Earlier failures and learning nulls remain retained.",
+  "unexpected_passes": [
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+      "phase": "call",
+      "outcome": "xpassed",
+      "duration": 7.951606624992564,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "documentation_check": {
+    "passed": 356,
+    "elapsed_seconds": 2.59,
+    "log": "output/item6-1-review-documentation.log"
+  },
+  "diff_check": "passed"
+}

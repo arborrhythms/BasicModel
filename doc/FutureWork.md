@@ -175,6 +175,23 @@ are not part of this proposal.
 
 ## 7. Episodic memory: a few active indices beside each row
 
+**Spatial bank (Alec, 2026-10-09, item 6.1 dialogue).** The current
+conceptual eight-space has a sinusoidal `.where` index for each of its eight
+slots, in addition to the addresses of its codebook. These are fixed slot
+locations, independent of their contents; the corresponding semantic
+content occupies one or three slots when stored in LTM.
+Episodic memory over LTM would retain a bank of these located fields. A
+candidate found in a remembered field would carry its structural
+`.where`/`.when` extent over the full address range, its evidence would
+provide its support mask, and one read would entertain it in an STM slot.
+A stored semantic row alone is not such a snapshot. Adding the episodic
+bank, its retention policy and its retrieval wiring is future work; item
+6.1 establishes the current field's coordinates and candidate support
+reads. The seven learned region outputs are superseded by the
+[support-mask decision](plans/2026-10-08-stream-state.md#710-the-mask-is-the-concepts-support-alec-2026-10-09-the-solution-to-79s-problem-2);
+the [eight-space addresses](plans/2026-10-08-stream-state.md#63-current-conceptual-space-and-future-episodic-fields-alec-2026-10-09)
+remain unchanged.
+
 **Decision (Alec, 2026-09-20).** LTM holds serial form only: a row is one
 idea per role, and several things at once can be stored only by chaining
 NP / VP into a compound sentence, which approximates episodic memory and

@@ -21,6 +21,15 @@ principle Alec asked about is verified in a toy (§5.3); a graded set in 4.5
 and the age-appropriate corpus before the final train (§5.4); the compose
 round needs no predictor of its own and 4.5 needs no content width (§3.1).
 
+*Rev 4 changes (Alec, 2026-10-09, after the literature review in
+[doc/research/reports/Expectation outside attention.md](../research/reports/Expectation%20outside%20attention.md)):*
+attention attenuates expectation and signal together — the region weight
+multiplies the sum, `c = g·(o + n)` (§4.3); deep expectation is per region,
+absent rather than attenuated outside it; the heterogeneity tolerance
+`hetTolerance` (§4.4) is the answer to "is novelty a salience term", left at 1;
+the shallow field-wide transition prior and the novelty term it feeds are
+proposed, not decided (§4.5); toys 5–6 added (§7).
+
 ## 0. Sources
 
 - Alec, 2026-10-08 (the direction):
@@ -185,6 +194,85 @@ single layer** whose input is the current perceptual and symbolic activation
 down for now." 4.5 builds nothing here; what is expected reaches the mask
 through the symbolic activation it already reads.
 
+### 4.3 One gain over signal and expectation (decided, Alec, 2026-10-09)
+
+Attention attenuates both the signal and the expectation over the
+unattended field, with one gain: the region weight `g` of 6.1's mask
+multiplies the **sum**,
+
+    c = g · (o + n),
+
+never `g·o + n`. With the signal attenuated and the image not, the unattended
+field fills with omission surprise — expected, nothing seen — and the mask
+hallucinates absences. Under one gain the surprise scales down without
+inverting.
+
+The deep images — the per-level expectations of §3 (word, sentence,
+document, the next) — are **per region**: realised inside a region, and
+absent, not attenuated, outside it. The predictors read the regions, not a
+lag window (the stream-state plan's stage 6, "expectation from the right
+history"; today `word_distribution` and `SentenceExpectation` condition on
+ARMA and `context_window` lags).
+
+What 6.1 has built is this rule's implementation: region membership is exact
+containment in the forward (zero outside; the reference bank and the
+conceptual STM are masked by it, and the in-STM predictor reads the masked
+STM), while the attention MLP reads the whole field's spreading activation
+unattenuated. Comprehension gain 0 outside the regions, placement gain 1:
+the literature's two tiers (the report's levels (a) and (b)) as a hard split.
+A floor on the comprehension path is wrong — unadmitted items would leak
+into compose and the budget would go. A parameter attenuating the MLP's
+field input under focused attention (Woldorff 1991; Molloy 2015) is a later
+refinement, not 6.1's.
+
+### 4.4 `hetTolerance`: the answer to "is novelty a salience term" (decided, Alec, 2026-10-09)
+
+Alec: the question gets a parameter for an answer. The mind tends to make
+reality non-contradictory; the tetralemma becomes Boolean at some degree of
+intolerance for heterogeneity. The dial is `hetTolerance = τ`, applied to
+the evidence lanes at the symbolic level (percepts are unsigned; the pair
+exists only for symbols and meanings, which is also where priming lives):
+
+    (c⁺, c⁻) ← (c⁺, c⁻) − (1 − τ) · min(c⁺, c⁻).
+
+At τ = 1 (the default, left in for now) nothing changes. At τ = 0 the shared
+overlap is removed: one lane is zero, the other holds `|c⁺ − c⁻|`; *both*
+collapses, *neither* (0, 0) survives, since absence of evidence cannot be
+netted into presence — three corners, for/against exclusive and the unknown.
+No signed scalar appears at any setting; both lanes stay positive
+(the two-lane rule, [operator catalogue, Lanes](2026-09-29-operator-catalogue.md)). It is one op where the lanes are
+read into the mask input; it may be declared with 6.1 or here.
+
+It is also the capture dial: the held *both* corner — the expected beside
+the arrived — is the surprise that orienting reads (report, level (c));
+τ → 0 is the rationalising mind, set-match wins and nothing captures.
+
+### 4.5 The shallow prior and the novelty term (proposed; pending Alec)
+
+The report's finding: prediction runs outside attention only for low-level,
+located, first-order regularities — where, when, form, the transition from
+the previous item — and attention scales that residual as a gain; identity
+and next-item expectation leave no error signature outside attention
+(Richter & de Lange 2019, preregistered, BF10 0.18–0.25; Bekinschtein 2009's
+global rule; lexical tracking only for the attended talker). Orienting is a
+third system, driven by violation of a learned prior, not by unfamiliarity
+(Vachon, Hughes & Jones 2012: no capture before a rule exists, d < 0.11;
+capture at its first violation, d ≈ 0.9–1.4; habituating), subordinate to
+set-match and stochastic.
+
+Proposed accordingly, for 4.5 if accepted: one **shallow field-wide
+transition image** beneath the regions — the first-order prediction of the
+arriving item's form, class and position from the previous item — computed
+wherever the field is active, not a region; its residual is a salience
+candidate, not admitted content. The **novelty term** is that residual's
+belief shift (prediction gain, not raw residual energy — persistent error
+without belief change is not surprise: the snow paradox, the noisy-TV
+pathology), fed into region placement a step behind onset, subordinate to
+priming and set-match, cancelled when the deviation itself becomes regular.
+Low priming alone is not a capture signal; low priming plus a violated
+shallow prior is. Without the shallow prior there is no novelty term, and
+6.1 has nothing to revise for it.
+
 ## 5. Explore and exploit
 
 ### 5.1 Exploit per level
@@ -338,6 +426,14 @@ only randomness is that one draw, plus where the departure lands. `τ` joins
    restricted to them still trains the predictors.
 4. **Inverted targets vs detached sources** (FutureWork's candidate): the XOR
    fixtures, with the collapse diagnostic.
+5. **The shallow prior and capture** (§4.5, if accepted): without the
+   field-wide shallow prior, unexpected tokens outside the regions are never
+   admitted and region placement collapses onto early winners; with it,
+   capture appears only after a transition regularity is learned, habituates
+   when the deviation becomes regular, returns when the higher-order rule
+   breaks — the Vachon signature.
+6. **Residual energy vs prediction gain** as the novelty quantity: only the
+   latter stops chasing an irreducibly noisy token stream.
 
 ## 8. Decisions and open questions
 
@@ -356,9 +452,16 @@ departures read at one end-of-sentence cost would confound each other's
 credit); the graded order is **one more round per item, bottom-up** —
 phrases, then clauses, then sentences.
 
+Decided (Alec, 2026-10-09): one gain over signal and expectation,
+`c = g·(o + n)`; deep expectation per region, absent outside it; 6.1's
+exact-containment mask with the MLP reading the whole field is the
+implementation (§4.3); `hetTolerance` τ on the lanes, left at 1, as the
+answer to novelty-as-salience (§4.4).
+
 Measured, not decided: a tunable softmax does not replace the departure; it
-becomes the departure's alternative draw (§5.5). Nothing else is open; §7's
-toys 2–4 remain before the hand-off.
+becomes the departure's alternative draw (§5.5). **Open:** the shallow
+field-wide transition prior and the novelty term it feeds (§4.5), and with
+them toys 5–6. §7's toys 2–4 remain before the hand-off.
 
 ## 9. Gates (proposed)
 

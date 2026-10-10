@@ -1,0 +1,11 @@
+{
+  "receipt_local_links_checked": 36,
+  "missing_links": [],
+  "original_receipt_prefix_unchanged": true,
+  "review_source_and_archive_match": true,
+  "git_diff_check": true,
+  "fixture_check": "6 passed in 2.08s",
+  "documentation_check": "356 passed in 2.69s",
+  "review_source_sha256": "24e5de1e91b9063e5b993c2bb8bb7d7974a0c7a6f3be8c451944a6cc6d15f164",
+  "head": "ed0d031bdd36712a05f445d4979a13fbcb427be9"
+}

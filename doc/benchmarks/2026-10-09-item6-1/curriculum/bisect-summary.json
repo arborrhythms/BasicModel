@@ -1,0 +1,105 @@
+{
+  "method": "Captured an unseeded fresh landing initialization and RNG state; replayed common parameter/buffer values and RNG state only in isolated diagnostic copies. No seed, changed assertion, forced cost or fixed keep decision.",
+  "candidate_against_free_cost": [
+    {
+      "row": 0,
+      "candidate_count": 12,
+      "cost_control_count": 28,
+      "first_different": null,
+      "shared_prefix": 12
+    },
+    {
+      "row": 1,
+      "candidate_count": 16,
+      "cost_control_count": 33,
+      "first_different": null,
+      "shared_prefix": 16
+    },
+    {
+      "row": 2,
+      "candidate_count": 16,
+      "cost_control_count": 34,
+      "first_different": null,
+      "shared_prefix": 16
+    },
+    {
+      "row": 3,
+      "candidate_count": 15,
+      "cost_control_count": 33,
+      "first_different": null,
+      "shared_prefix": 15
+    },
+    {
+      "row": 4,
+      "candidate_count": 16,
+      "cost_control_count": 32,
+      "first_different": null,
+      "shared_prefix": 16
+    },
+    {
+      "row": 5,
+      "candidate_count": 12,
+      "cost_control_count": 30,
+      "first_different": null,
+      "shared_prefix": 12
+    },
+    {
+      "row": 6,
+      "candidate_count": 13,
+      "cost_control_count": 31,
+      "first_different": null,
+      "shared_prefix": 13
+    },
+    {
+      "row": 7,
+      "candidate_count": 12,
+      "cost_control_count": 30,
+      "first_different": null,
+      "shared_prefix": 12
+    }
+  ],
+  "conclusion": "On this captured initialization, current traversal with field cost fails certificate c at its first question; the same current traversal with only R restored to the landing free-byte objective passes. First-sentence compose inputs and active trials are identical through scoring. This is a cost-selection counterexample, not a measurement retry.",
+  "landing_against_candidate_first_greedy": [
+    {
+      "row": 0,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 1,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 2,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 3,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 4,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 5,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 6,
+      "compared": 8,
+      "identical": true
+    },
+    {
+      "row": 7,
+      "compared": 8,
+      "identical": true
+    }
+  ],
+  "limits": "Diagnostic changes to R are isolated, not proposed production changes. The cost-only control switches the trained registry from field plus work to free bytes while still computing field reconstruction. The corresponding first-sentence greedy and explore inputs match exactly; this does not establish equivalence for every possible departure."
+}

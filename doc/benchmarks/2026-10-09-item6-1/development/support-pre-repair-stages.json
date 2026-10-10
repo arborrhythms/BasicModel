@@ -1,0 +1,728 @@
+{
+  "run": "output/item6-1-support-final-gates",
+  "source_sha256": "9620afaa01e248ac2a5f3336d187949d59de94ad5198805c0ed9021c27962df7",
+  "source_check": {
+    "source_matched": true
+  },
+  "epochs_per_stage": 64,
+  "seed": null,
+  "retries": 0,
+  "fresh_models": 2,
+  "learning_rate": 0.01,
+  "stages": [
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "fields": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "target": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "initial_readbacks": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "readbacks": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "exact": 4,
+      "passed": true,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "cost": {
+        "inside": [
+          0.24755632877349854,
+          0.2517845630645752,
+          0.27004140615463257,
+          0.2627403736114502
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.009999999776482582,
+          0.009999999776482582,
+          0.009999999776482582,
+          0.009999999776482582
+        ],
+        "total": [
+          0.25755631923675537,
+          0.26178455352783203,
+          0.2800413966178894,
+          0.27274036407470703
+        ]
+      },
+      "identity_audit": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 0,
+      "departures_kept": 0
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "fields": [
+        "red blue",
+        "blue red",
+        "green gold",
+        "gold green"
+      ],
+      "target": [
+        "red blue",
+        "blue red",
+        "green gold",
+        "gold green"
+      ],
+      "initial_readbacks": [
+        "red blue",
+        "red blue",
+        "green gold",
+        "green gold"
+      ],
+      "readbacks": [
+        "blue red",
+        "blue red",
+        "gold green",
+        "gold green"
+      ],
+      "exact": 2,
+      "passed": false,
+      "iterations": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "cost": {
+        "inside": [
+          33.313133239746094,
+          0.0,
+          33.11888122558594,
+          0.0
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.019999999552965164,
+          0.019999999552965164,
+          0.019999999552965164,
+          0.019999999552965164
+        ],
+        "total": [
+          33.333133697509766,
+          0.019999999552965164,
+          33.13888168334961,
+          0.019999999552965164
+        ]
+      },
+      "identity_audit": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 0,
+      "departures_kept": 0
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "fields": [
+        "red blue green gold",
+        "gold green blue red",
+        "blue gold red green",
+        "green red gold blue"
+      ],
+      "target": [
+        "red blue green gold",
+        "gold green blue red",
+        "blue gold red green",
+        "green red gold blue"
+      ],
+      "initial_readbacks": [
+        "blue green",
+        "blue green",
+        "green blue",
+        "green blue"
+      ],
+      "readbacks": [
+        "red green",
+        "red green",
+        "red green",
+        "red green"
+      ],
+      "exact": 0,
+      "passed": false,
+      "iterations": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "cost": {
+        "inside": [
+          83.95003509521484,
+          76.11174774169922,
+          104.7249984741211,
+          134.08897399902344
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.03999999910593033,
+          0.03999999910593033,
+          0.03999999910593033,
+          0.03999999910593033
+        ],
+        "total": [
+          83.99003601074219,
+          76.15174865722656,
+          104.76499938964844,
+          134.12896728515625
+        ]
+      },
+      "identity_audit": [
+        0.09016843885183334,
+        0.09016843885183334,
+        0.09016843885183334,
+        0.09016843885183334
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 0,
+      "departures_kept": 0
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "fields": [
+        "red blue green",
+        "gold green blue",
+        "blue gold red",
+        "green red gold"
+      ],
+      "target": [
+        "red blue green",
+        "gold green blue",
+        "blue gold red",
+        "green red gold"
+      ],
+      "initial_readbacks": [
+        "green green",
+        "green blue",
+        "red",
+        "red"
+      ],
+      "readbacks": [
+        "red",
+        "green blue",
+        "red",
+        "red"
+      ],
+      "exact": 0,
+      "passed": false,
+      "iterations": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "cost": {
+        "inside": [
+          67.12987518310547,
+          80.21977233886719,
+          66.72000122070312,
+          70.64293670654297
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746
+        ],
+        "total": [
+          67.15987396240234,
+          80.24977111816406,
+          66.75,
+          70.67293548583984
+        ]
+      },
+      "identity_audit": [
+        0.1803368777036667,
+        0.06011229380965233,
+        0.1803368777036667,
+        0.1803368777036667
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 0,
+      "departures_kept": 0
+    },
+    {
+      "mode": "disabled",
+      "stage": "asked_parts",
+      "not_run": "Stage 3 did not pass in both modes."
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "fields": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "target": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "initial_readbacks": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "readbacks": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "exact": 4,
+      "passed": true,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "cost": {
+        "inside": [
+          0.23740056157112122,
+          0.2416619211435318,
+          0.26015251874923706,
+          0.25273770093917847
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.009999999776482582,
+          0.009999999776482582,
+          0.009999999776482582,
+          0.009999999776482582
+        ],
+        "total": [
+          0.24740056693553925,
+          0.25166192650794983,
+          0.2701525092124939,
+          0.2627376914024353
+        ]
+      },
+      "identity_audit": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 0,
+      "departures_kept": 0
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "fields": [
+        "red blue",
+        "blue red",
+        "green gold",
+        "gold green"
+      ],
+      "target": [
+        "red blue",
+        "blue red",
+        "green gold",
+        "gold green"
+      ],
+      "initial_readbacks": [
+        "red blue",
+        "red blue",
+        "green green",
+        "green green"
+      ],
+      "readbacks": [
+        "blue blue red",
+        "blue blue red",
+        "green",
+        "gold"
+      ],
+      "exact": 0,
+      "passed": false,
+      "iterations": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "cost": {
+        "inside": [
+          40.79584503173828,
+          40.79584503173828,
+          48.1085090637207,
+          49.089088439941406
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.019999999552965164,
+          0.019999999552965164,
+          0.019999999552965164,
+          0.019999999552965164
+        ],
+        "total": [
+          40.81584548950195,
+          40.81584548950195,
+          48.128509521484375,
+          49.10908889770508
+        ]
+      },
+      "identity_audit": [
+        0.1803368777036667,
+        0.1803368777036667,
+        0.1803368777036667,
+        0.1803368777036667
+      ],
+      "end_depth": [
+        3,
+        3,
+        1,
+        1
+      ],
+      "decoded_count": [
+        3,
+        3,
+        1,
+        1
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 83,
+      "departures_kept": 20
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "fields": [
+        "red blue green gold",
+        "gold green blue red",
+        "blue gold red green",
+        "green red gold blue"
+      ],
+      "target": [
+        "red blue green gold",
+        "gold green blue red",
+        "blue gold red green",
+        "green red gold blue"
+      ],
+      "initial_readbacks": [
+        "blue",
+        "red",
+        "green",
+        "red"
+      ],
+      "readbacks": [
+        "blue",
+        "green",
+        "red",
+        "gold"
+      ],
+      "exact": 0,
+      "passed": false,
+      "iterations": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "cost": {
+        "inside": [
+          103.62715148925781,
+          98.40042114257812,
+          99.02725219726562,
+          98.97297668457031
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.03999999910593033,
+          0.03999999910593033,
+          0.03999999910593033,
+          0.03999999910593033
+        ],
+        "total": [
+          103.66715240478516,
+          98.44042205810547,
+          99.06725311279297,
+          99.01297760009766
+        ]
+      },
+      "identity_audit": [
+        0.1803368777036667,
+        0.1803368777036667,
+        0.1803368777036667,
+        0.1803368777036667
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 90,
+      "departures_kept": 25
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "fields": [
+        "red blue green",
+        "gold green blue",
+        "blue gold red",
+        "green red gold"
+      ],
+      "target": [
+        "red blue green",
+        "gold green blue",
+        "blue gold red",
+        "green red gold"
+      ],
+      "initial_readbacks": [
+        "blue",
+        "green",
+        "red",
+        "green red"
+      ],
+      "readbacks": [
+        "blue",
+        "green",
+        "red",
+        "green"
+      ],
+      "exact": 0,
+      "passed": false,
+      "iterations": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "cost": {
+        "inside": [
+          76.30873107910156,
+          85.33375549316406,
+          70.17401123046875,
+          75.58636474609375
+        ],
+        "outside": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "work": [
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746
+        ],
+        "total": [
+          76.33872985839844,
+          85.36375427246094,
+          70.20401000976562,
+          75.61636352539062
+        ]
+      },
+      "identity_audit": [
+        0.1803368777036667,
+        0.1803368777036667,
+        0.1803368777036667,
+        0.1803368777036667
+      ],
+      "end_depth": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoded_count": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "decoder_truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "departures_attempted": 92,
+      "departures_kept": 36
+    },
+    {
+      "mode": "enabled",
+      "stage": "asked_parts",
+      "not_run": "Stage 3 did not pass in both modes."
+    }
+  ]
+}

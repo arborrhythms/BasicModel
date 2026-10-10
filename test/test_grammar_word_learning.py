@@ -158,6 +158,13 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
 @pytest.mark.parametrize("comparison", ["tie", "distinct"])
 def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
     from test_compiled_word_chunk import _tiny_canonical_model
+    import SentenceCredit
+    native_departure = SentenceCredit.departure
+    def operation_departure(*args, **kwargs):
+        # This certificate checks the operation chooser's exact gradient.
+        # Candidate departures have their own native ownership certificate.
+        return native_departure(*args, **(kwargs | {'candidates': None}))
+    monkeypatch.setattr(SentenceCredit, 'departure', operation_departure)
 
     torch.manual_seed(613)
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)

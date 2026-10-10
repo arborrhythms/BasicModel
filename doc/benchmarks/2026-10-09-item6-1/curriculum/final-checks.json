@@ -1,0 +1,17 @@
+{
+  "source": {
+    "bytes": 3053339,
+    "sha256": "e7eb72b97e194f84248cf50db5b979125fdd8fcdddf00a360171d90d5455674c"
+  },
+  "development-evidence": {
+    "bytes": 41496229,
+    "sha256": "87db6d3b44df0fc8c58001583fe7a373f490f1c4b56c279039044cb2dd6ba32b"
+  },
+  "measured-evidence": {
+    "bytes": 13383041,
+    "sha256": "1f411c2ef219e5449cf497cfcef12b38fa99def7cf076ee2227a9b9c8aa6a65e"
+  },
+  "documentation_passed": 357,
+  "diff_check": "clean",
+  "head": "ed0d031bdd36712a05f445d4979a13fbcb427be9"
+}

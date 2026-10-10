@@ -207,16 +207,16 @@ def stage_input(model):
     # Open awareness is a read, with neither an optimizer step nor an EMA
     # write. Narrowing's learned choice is outside this no-gradient read.
     with torch.no_grad():
+        model._open_read=read_code_field(keys,live)
+        model._last_gist=(model._open_read*live[...,None]).sum(1)/live.sum(1).clamp_min(1)[:,None]
         poles=native_word_poles(model,spans,forms,known)
         model._attention_native_poles=poles
-        model._open_read=read_code_field(keys,live)
-        model._last_gist=(model._open_read*live[...,None]).sum((0,1))/live.sum().clamp_min(1)
     codebook=getattr(owner,'similarity_codebook',None)
     rows=codebook.getW() if codebook is not None else None
     boosts=owner.priming_weights(batch=B)
     live_width = max(1, int(torch.where(live,
         torch.arange(W, device=live.device)[None] + 1, 0).max()))
-    prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
+    prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist,boosts)
     if prior is not None: prior=F.pad(prior,(0,W-live_width))
     spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
     def read(*, sentence=None, spent_override=None, **trial):

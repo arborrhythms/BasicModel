@@ -21,6 +21,7 @@ def test_sentence_generation_lesson_keeps_its_weighted_output_gradient():
     model = SimpleNamespace(
         _publish_sentence_scratch=lambda state: None,
         _trial_understanding=lambda *args: object(),
+        _sentence_leaf_positions=lambda record, row: torch.arange(words),
         _tensor_pushed_ideas=torch.zeros(batch, words, width),
         reconstruct_in_loop=False,
         _sentence_observation=lambda *args: {'entries': (object(), object())},

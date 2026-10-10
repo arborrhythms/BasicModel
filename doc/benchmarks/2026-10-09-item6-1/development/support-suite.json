@@ -1,0 +1,80 @@
+{
+  "run": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-1-support-repaired-full",
+  "source_sha256": "4efe4d5ac880bbbba3aaf025755bfebc0fe495aa63de37f5b0da879f12db50a3",
+  "selected": 5706,
+  "completed": 5706,
+  "outcomes": {
+    "passed": 5415,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 1423.4989890409634,
+  "peak_worker_gib": 3.0849343985319138,
+  "peak_aggregate_gib": 8.631301641464233,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 12884901888,
+    "workers": 8,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "warnings": [
+    "Latest weekly slow-test record is 7.7 days old (over seven days)."
+  ],
+  "compile_cache_retries": [],
+  "duplicate_reports": [
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected"
+  ],
+  "failures": [
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00019895797595381737,
+      "message": "test/test_decomposition_chooser.py:106: in test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent\n    loss = BasicModel._decomposition_teacher_loss(model, {'entries': [program]}, record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19964: in _decomposition_teacher_loss\n    word_rows = record.word_rows[b].index_select(0, self._sentence_leaf_positions(record, b))\n                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_sentence_leaf_positions'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013248207978904247,
+      "message": "test/test_generation_lesson.py:34: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient\n    cost, *_ = BasicModel._sentence_path_cost(\nbin/Models.py:20102: in _sentence_path_cost\n    source_positions=[self._sentence_leaf_positions(record, b)])\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_sentence_leaf_positions'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 21.54317237494979,
+      "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:223: in after\n    assert not model._last_closing_thoughts\nE   AssertionError: assert not ((1, SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', 'address-v1',...eferent', 2))), ('_producing_operation', 'not'), ('_thought_witnesses', ())), scope=(), sentence_kind='relation')})))))\nE    +  where ((1, SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', 'address-v1',...eferent', 2))), ('_producing_operation', 'not'), ('_thought_witnesses', ())), scope=(), sentence_kind='relation')}))))) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n)._last_closing_thoughts",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=9.715s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 11.428769874968566,
+      "message": "test/test_math_chain_section14.py:254: in test_forced_ordinary_bound_declaratives_open_no_episode\n    assert all(not row['open'] and not row['episode'] for row in rows)\nE   assert False\nE    +  where False = all(<generator object test_forced_ordinary_bound_declaratives_open_no_episode.<locals>.<genexpr> at 0x12100c110>)",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=6.934s)\r\n"
+    }
+  ],
+  "certificates": {
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode": "failed",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage": "passed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "passed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]": "passed",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]": "passed",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]": "skipped",
+    "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops": "passed"
+  }
+}

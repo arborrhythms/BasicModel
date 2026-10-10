@@ -1,0 +1,44 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5714,
+  "completed": 5714,
+  "counts": {
+    "passed": 5425,
+    "skipped": 286,
+    "failed": 2,
+    "xpassed": 1
+  },
+  "raw_report_counts": {
+    "passed": 5428,
+    "skipped": 286,
+    "failed": 2,
+    "xpassed": 1
+  },
+  "subtest_note": "Three passing unittest subtest reports share their parent node ID; unique-node totals count that parent once.",
+  "elapsed_seconds": 1433.3563336250372,
+  "peak_aggregate_memory_bytes": 9912648240,
+  "compile_cache_retries": [],
+  "source_matched": true,
+  "failures": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 13.270777167053893,
+      "message": "test/test_math_chain_section14.py:199: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate\n    assert min(ratios) >= .9 and max(ratios) <= 1.1, report\nE   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.9352760910987854, 1.129295825958252], 'initialization_read_menus': 480, ...}\nE   assert (0.9352760910987854 >= 0.9 and 1.129295825958252 <= 1.1)\nE    +  where 0.9352760910987854 = min([1.0000226497650146, 0.9999773502349854, 1.0004721879959106, 0.9995279312133789, 1.0000226497650146, 0.9999774694442749, ...])\nE    +  and   1.129295825958252 = max([1.0000226497650146, 0.9999773502349854, 1.0004721879959106, 0.9995279312133789, 1.0000226497650146, 0.9999774694442749, ...])",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=3.749s)\r\nbatch = 0 (\u0394=6.808s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 21.631365959066898,
+      "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:229: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 7390807947608479785), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 7390807947608479785),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x12bc03c40>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 7390807947608479785), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 7390807947608479785),))), scope=(), sentence_kind='relation'), 'five')",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=9.269s)\r\n"
+    }
+  ],
+  "xpassed": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ]
+}

@@ -189,6 +189,10 @@ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monk
     model._install_unit_span_fn()
     model.reconstruct_in_loop = False
     model.loss.reconstruction_scale = 0.
+    # Supply an absolute reading for this evidence-storage contract; an
+    # untrained exclusion operator deliberately removes positive support.
+    from reading_fixtures import force_absolute_reading
+    force_absolute_reading(model)
     commit = SymbolSpace.commit_word_reference_slab
     calls = []
     def paired(owner, rows, activations, active, **kwargs):

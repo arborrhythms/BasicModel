@@ -1,0 +1,62 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5719,
+  "completed": 5719,
+  "counts": {
+    "passed": 5428,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "raw_report_counts": {
+    "passed": 5431,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "elapsed_seconds": 1431.6116682919674,
+  "compile_cache_retries": [],
+  "warnings": [
+    "Latest weekly slow-test record is 8.3 days old (over seven days)."
+  ],
+  "source_matched": true,
+  "source_files": 762,
+  "failures": [
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.6910835420712829,
+      "message": "test/test_expectation_defaults.py:242: in test_expectation_off_keeps_every_packed_observation_in_ltm\n    assert sum(row['kind'] == 'observation' for row in rows) == 2\nE   assert 1 == 2\nE    +  where 1 = sum(<generator object test_expectation_off_keeps_every_packed_observation_in_ltm.<locals>.<genexpr> at 0x124b17030>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 9.485465292003937,
+      "message": "test/test_math_chain_repair2.py:158: in test_eight_corpus_sentences_train_at_distinct_fork_rounds\n    assert len({row['departure'] for row in observations if row['departure'] >= 0}) > 1\nE   assert 1 > 1\nE    +  where 1 = len({12})",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 19.421286499942653,
+      "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:229: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -2691240210047935515), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -2691240210047935515),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x1229c3c40>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -2691240210047935515), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -2691240210047935515),))), scope=(), sentence_kind='relation'), 'five')",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=8.012s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 6.799674457986839,
+      "message": "test/test_math_chain_section14.py:388: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:348: in after\n    assert len(pending) >= 2, 'the first premise must persist pending x constituents in the batch'\nE   AssertionError: the first premise must persist pending x constituents in the batch\nE   assert 1 >= 2\nE    +  where 1 = len([(65, ('ltm', 'address-v1', 5847204939808161995))])",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    }
+  ],
+  "xpassed": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ]
+}

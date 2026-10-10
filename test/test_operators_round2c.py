@@ -22,7 +22,7 @@ def test_interpret_both_directions_preserve_form_presence_and_both_lanes():
 
 @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
 @pytest.mark.parametrize('walk',['narrowing','compose'])
-def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
+def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eager_reading):
     from test_mm_xor import _fresh_model
     from Language import OperationSelectionLayer
     import SentenceCredit

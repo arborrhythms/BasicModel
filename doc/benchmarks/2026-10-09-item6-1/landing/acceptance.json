@@ -1,0 +1,54 @@
+{
+  "item": "6.1",
+  "date": "2026-10-10",
+  "status": "accepted mechanism",
+  "authority": "Alec; stream-state plan sections 7.15-7.16; land either way",
+  "source_files": 762,
+  "source_archive_sha256": "81df1c8c619cfdf546471c990baf3fce1df8f9141576f6f11b13d83c8b0a3c53",
+  "repairs": [
+    "Undefined inverse coordinates excluded from inside cost and reported per read; no search or target",
+    "Candidate attention owner uses Adam at configured learning rate"
+  ],
+  "paired_c_passed": true,
+  "sweep_c_passed": false,
+  "sweep_counts": {
+    "passed": 5428,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "first_two_stages": {
+    "disabled": true,
+    "enabled": true
+  },
+  "stage3": {
+    "near_zero_ce_passed": false,
+    "two_word_enabled_ce": [
+      0.3465735912322998,
+      0.3465735912322998
+    ],
+    "two_word_enabled_free_order": 4,
+    "two_word_enabled_list_reconstruction": 0,
+    "rows": 4,
+    "disabled_two_word_completed_presentations": 11,
+    "enabled_four_word_completed_presentations": 7,
+    "four_word_final_evaluation": null,
+    "control_passed": false
+  },
+  "learning_claimed": false,
+  "checkpoint_gates": [
+    "answers and asked parts",
+    "order-lesson CE and free order on permutations",
+    "stream-state section 3 context stages"
+  ],
+  "active_correctness": [
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "taxonomy reference error in stage 3 native retrieval",
+    "list inverse recovery, including the unresolved four-word list"
+  ],
+  "b": "Flaky unseeded bound: review records 3/3 HEAD, 3/3 isolated candidate, earlier sweep maximum 1.129; passes landing sweep; tighten by construction, never seed",
+  "runtime_followup": "Item 1: rising per-presentation runtime; measure like-for-like before attributing a cause"
+}

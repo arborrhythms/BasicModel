@@ -3,7 +3,7 @@ import torch
 from GradientDiagnostics import _sum_gradients
 
 
-PRIMARY = ('reconstruction', 'expectation', 'output')
+PRIMARY = ('reconstruction', 'expectation', 'output', 'attention')
 
 
 def registry_costs(registry, *, reader_rows=None, expectation_rows=None):
@@ -24,6 +24,8 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None):
             owners = ('expectation',)
         elif objective in ('output', 'prediction', 'policy'):
             owners = ('output',)
+        elif objective == 'attention':
+            owners = ('attention',)
         else:
             owners = ('reconstruction',)
         raw = term['weight'] * term.get('multiplier', 1.) * registry._value(term)
@@ -51,7 +53,7 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None):
 def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
     """Accumulate exact objective gradients only into that objective's owners.
 
-    The perception pullback is traversed solely for reconstruction. Shared
+    The perception pullback is traversed for reconstruction and attention. Shared
     operator hosts remain differentiable for generation's reader but never
     receive its cotangent. Saved trial graphs remain alive until their caller
     releases the registry, so both trials use their pre-update forward values.
@@ -66,7 +68,7 @@ def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
         objective = ('reconstruction' if key in ('compose_lesson', 'generate_lesson') else key)
         value = cost * scale
         gradients = (pullback.gradients(value, parameters)
-                     if pullback is not None and objective == 'reconstruction'
+                     if pullback is not None and objective in ('reconstruction', 'attention')
                      else torch.autograd.grad(value, parameters, retain_graph=True, allow_unused=True))
         for parameter, gradient in zip(parameters, gradients):
             if gradient is None:

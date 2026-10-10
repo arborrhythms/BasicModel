@@ -1,0 +1,140 @@
+{
+  "stage": "reading_four",
+  "mode": "disabled",
+  "source": "source.json",
+  "initial_exact": 2,
+  "final_exact": 1,
+  "orders": [
+    [
+      0,
+      1,
+      2,
+      3
+    ],
+    [
+      0,
+      1,
+      2,
+      3
+    ],
+    [
+      0,
+      1,
+      2,
+      3
+    ],
+    [
+      0,
+      1,
+      2,
+      3
+    ]
+  ],
+  "readbacks": [
+    "blue blue green gold",
+    "blue green blue red",
+    "blue gold red green",
+    "blue red gold blue"
+  ],
+  "inside_by_read": [
+    [
+      104.9328384399414,
+      73.62604522705078,
+      89.69708251953125,
+      88.27792358398438
+    ],
+    [
+      0.16253727674484253,
+      0.17686566710472107,
+      0.25355154275894165,
+      0.12078630924224854
+    ],
+    [
+      0.17686566710472107,
+      0.16253727674484253,
+      0.12078630924224854,
+      0.25355154275894165
+    ],
+    [
+      0.25355154275894165,
+      0.12078630924224854,
+      0.17686566710472107,
+      0.16253727674484253
+    ]
+  ],
+  "unavailable": [
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  ],
+  "conclusion": "The source-order control fails; all reads are in source order and unavailable flags are false. Most numerical residual is in the first reconstructed leaf. The exact responsible operator has not been isolated on this measured initialization. No attribution to the attention scorer or successful alternative initialization is substituted."
+}

@@ -1,0 +1,24 @@
+{
+  "head": "ed0d031bdd36712a05f445d4979a13fbcb427be9",
+  "commit_created": false,
+  "python": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "torch": "2.14.0",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "device": "cpu",
+  "source_archive_sha256": "e7eb72b97e194f84248cf50db5b979125fdd8fcdddf00a360171d90d5455674c",
+  "protocol": {
+    "epochs": 64,
+    "batch_size": 4,
+    "learning_rate": 0.01,
+    "seed": null,
+    "retries": 0,
+    "fresh_models": 2,
+    "initialization": "One model per mode, carried across the curriculum."
+  },
+  "commands": [
+    "PYTHONPATH=bin:test BASICMODEL_DEVICE=cpu .venv/bin/python test/attention_curriculum_gates.py output/item6-1-curriculum-measured-gates --epochs 64",
+    "PYTHONPATH=test BASICMODEL_DEVICE=cpu .venv/bin/python output/item6-1-curriculum-measured-sweep.py",
+    "PYTHONPATH=bin:test BASICMODEL_DEVICE=cpu RUN_SLOW=1 .venv/bin/python -m pytest -q test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True] test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "PYTHONPATH=output/item6-1-curriculum-bisect:bin:test BASICMODEL_DEVICE=cpu ATTENTION_DIAGNOSTIC_OUTPUT=output/item6-1-curriculum-measured-certificates .venv/bin/python -m pytest -q -p diagnostic test/test_math_chain_section14.py -k 'forced_ordinary_answer_fills or forced_ordinary_bound_declaratives' --basetemp=output/item6-1-curriculum-measured-certificate-tmp"
+  ]
+}

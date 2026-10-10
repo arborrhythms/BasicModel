@@ -1,0 +1,20 @@
+--- measured/test/test_decomposition_chooser.py
++++ review/test/test_decomposition_chooser.py
+@@ -103,6 +103,7 @@
+         language_layer=SimpleNamespace(operation_layer=SimpleNamespace(ops=[Product()])),
+         _bounded_binary_reconstruction=LanguageSpace._bounded_binary_reconstruction)
+     model = SimpleNamespace(languageSpace=language, reconstruction_basis_limit=2)
++    model._sentence_leaf_positions = lambda record, row: BasicModel._sentence_leaf_positions(model, record, row)
+     loss = BasicModel._decomposition_teacher_loss(model, {'entries': [program]}, record)
+     assert model._last_decomposition_teacher[0]['target'] == [10, 11]
+     assert model._last_decomposition_teacher[0]['present']
+--- measured/test/test_generation_lesson.py
++++ review/test/test_generation_lesson.py
+@@ -21,6 +21,7 @@
+     model = SimpleNamespace(
+         _publish_sentence_scratch=lambda state: None,
+         _trial_understanding=lambda *args: object(),
++        _sentence_leaf_positions=lambda record, row: torch.arange(words),
+         _tensor_pushed_ideas=torch.zeros(batch, words, width),
+         reconstruct_in_loop=False,
+         _sentence_observation=lambda *args: {'entries': (object(), object())},

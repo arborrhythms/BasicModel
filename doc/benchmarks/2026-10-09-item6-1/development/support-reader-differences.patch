@@ -1,0 +1,27 @@
+--- HEAD:_resolve_answer
++++ support:_resolve_answer
+@@ -38,7 +38,7 @@
+                 entry = current_fields[b]
+                 if q.relation is WhatRelation.PAST:
+                     k = abs(int(q.offset))
+-                    history = self._recall_sentence_history().get(b)
++                    history = self._recall_sentence_history(batch=B).get(b)
+                     entry = (history[-k] if history is not None
+                              and k >= 1 and len(history) >= k else None)
+                     source = "recall" if entry is not None else "identity:cold-memory"
+--- HEAD:_sentence_reference_bank
++++ support:_sentence_reference_bank
+@@ -75,6 +75,13 @@
+                 relations[b].zero_()
+                 for i, (identity, point, relative) in enumerate(entries[-C:]):
+                     ids[b, i], values[b, i], valid[b, i], relations[b, i] = identity, point, True, relative
++            if store is not None:
++                from ReferenceContext import exclude_replaced_occurrences
++                from Occurrence import source_at
++                document, position = source_at(self, b, self._open_sentence_slot)
++                valid[b] = exclude_replaced_occurrences(store, ids[b], valid[b], document, position)
++                values[b] = torch.where(valid[b, :, None], values[b], 0.)
++                ids[b] = torch.where(valid[b], ids[b], -1)
+             queries.append(query)
+         types = self._sentence_reference_types(like)
+         cases = None

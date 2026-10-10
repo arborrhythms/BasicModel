@@ -10,6 +10,29 @@ import torch
 from torch.nn import functional as F
 
 
+def exclude_replaced_occurrences(store, identities, valid, document, position):
+    """A re-reading cannot use the occurrence it is about to replace.
+
+    These are structural eligibility checks, independent of relevance or
+    attention. The store has no versioned old interpretation to bind: such
+    a reference would become a self-edge when the selected reading commits.
+    The same applies to its embedded rows, whose addresses are reused.
+    """
+    from Occurrence import document_digest
+    current = document_digest(document)
+    embedded = document_digest(('embedded', current, position))
+    result = valid.clone()
+    for column, identity in enumerate(identities.detach().cpu().tolist()):
+        row = store.index_of_row(identity)
+        if row is None or not bool(valid[column]):
+            continue
+        source = bytes(store.document_keys[row].detach().cpu().tolist())
+        if source == embedded or (source == current and int(store.sentence_index[row]) == position):
+            result[column] = False
+    return result
+
+
+
 @dataclass(frozen=True)
 class SituationFrame:
     depth: int

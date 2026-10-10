@@ -1,0 +1,4522 @@
+[
+  {
+    "mode": "disabled",
+    "name": "identity_permanence",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": null,
+    "free_exact": null,
+    "answer_exact": null,
+    "readbacks": null,
+    "free_readbacks": null,
+    "answers": null,
+    "orders": null,
+    "order_exact": null,
+    "iterations": null,
+    "inverse_unavailable": null,
+    "identity_audit": null,
+    "cost": null,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": null
+  },
+  {
+    "mode": "disabled",
+    "name": "identifying_words",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": null,
+    "free_exact": null,
+    "answer_exact": null,
+    "readbacks": null,
+    "free_readbacks": null,
+    "answers": null,
+    "orders": null,
+    "order_exact": null,
+    "iterations": null,
+    "inverse_unavailable": null,
+    "identity_audit": null,
+    "cost": null,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": null
+  },
+  {
+    "mode": "disabled",
+    "name": "reading_two",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 2,
+    "answer_exact": null,
+    "readbacks": [
+      "red blue",
+      "blue red",
+      "green gold",
+      "gold green"
+    ],
+    "free_readbacks": [
+      "blue red",
+      "blue red",
+      "green gold",
+      "green gold"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "cost": {
+      "inside": [
+        0.25971412658691406,
+        0.2597109079360962,
+        0.3247392475605011,
+        0.32473984360694885
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.019999999552965164,
+        0.019999999552965164,
+        0.019999999552965164,
+        0.019999999552965164
+      ],
+      "total": [
+        0.2797141373157501,
+        0.27971091866493225,
+        0.34473925828933716,
+        0.3447398543357849
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 95.41341295803431
+  },
+  {
+    "mode": "disabled",
+    "name": "reading_four",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 1,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "blue blue green gold",
+      "blue green blue red",
+      "blue gold red green",
+      "blue red gold blue"
+    ],
+    "free_readbacks": [
+      "gold green",
+      "gold",
+      "gold",
+      "blue gold"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.09016843885183334,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.09016843885183334
+    ],
+    "cost": {
+      "inside": [
+        105.52579498291016,
+        74.08623504638672,
+        90.248291015625,
+        88.81480407714844
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.03999999910593033,
+        0.03999999910593033
+      ],
+      "total": [
+        105.5657958984375,
+        74.12623596191406,
+        90.28829193115234,
+        88.85480499267578
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 148.84453004202805
+  },
+  {
+    "mode": "disabled",
+    "name": "identities",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "cat is animal",
+      "dog is animal",
+      "x is three",
+      "y is four"
+    ],
+    "free_readbacks": [
+      "cat",
+      "green",
+      "green",
+      "green"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.8389599323272705,
+        1.8474549055099487,
+        4.29387903213501,
+        4.40963888168335
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        1.868959903717041,
+        1.8774548768997192,
+        4.323879241943359,
+        4.439639091491699
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 90.37910445791204
+  },
+  {
+    "mode": "disabled",
+    "name": "identities_asked_parts",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "cat is animal",
+      "dog is animal",
+      "x is three",
+      "y is four"
+    ],
+    "free_readbacks": [
+      "cat",
+      "green",
+      "green",
+      "green"
+    ],
+    "answers": [
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.8603644371032715,
+        1.8665716648101807,
+        2.945549249649048,
+        2.786993980407715
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        1.890364408493042,
+        1.8965716361999512,
+        2.9755492210388184,
+        2.8169939517974854
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 210.50396000000183
+  },
+  {
+    "mode": "disabled",
+    "name": "identities_supplied_answer",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "cat is animal",
+      "dog is animal",
+      "x is three",
+      "y is four"
+    ],
+    "free_readbacks": [
+      "cat",
+      "green",
+      "green",
+      "green"
+    ],
+    "answers": [
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.8989704847335815,
+        1.9034955501556396,
+        2.509223461151123,
+        2.3219528198242188
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        1.928970456123352,
+        1.9334955215454102,
+        2.5392234325408936,
+        2.3519527912139893
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 347.0743950420292
+  },
+  {
+    "mode": "disabled",
+    "name": "noun_phrase",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "the red ball",
+      "the blue box",
+      "the green ball",
+      "the gold box"
+    ],
+    "free_readbacks": [
+      "green",
+      "blue",
+      "green",
+      "green"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6341009736061096,
+        0.4878166913986206,
+        0.5821168422698975,
+        0.5754126906394958
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6641009449958801,
+        0.5178166627883911,
+        0.612116813659668,
+        0.6054126620292664
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 100.06717604200821
+  },
+  {
+    "mode": "disabled",
+    "name": "noun_phrase_asked_parts",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the red ball",
+      "the blue box",
+      "the green ball",
+      "the gold box"
+    ],
+    "free_readbacks": [
+      "green",
+      "blue",
+      "green",
+      "green"
+    ],
+    "answers": [
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6246918439865112,
+        0.4662875533103943,
+        0.5692485570907593,
+        0.5521755218505859
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6546918153762817,
+        0.4962875545024872,
+        0.5992485284805298,
+        0.5821754932403564
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 340.13317133300006
+  },
+  {
+    "mode": "disabled",
+    "name": "noun_phrase_supplied_answer",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the red ball",
+      "the blue box",
+      "the green ball",
+      "the gold box"
+    ],
+    "free_readbacks": [
+      "green",
+      "blue",
+      "green",
+      "green"
+    ],
+    "answers": [
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6234210133552551,
+        0.4570607542991638,
+        0.5644501447677612,
+        0.5412025451660156
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6534209847450256,
+        0.4870607554912567,
+        0.5944501161575317,
+        0.5712025165557861
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 321.51153074996546
+  },
+  {
+    "mode": "disabled",
+    "name": "noun_verb",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "the cat sleeps",
+      "the dog runs",
+      "the dog sleeps",
+      "the cat runs"
+    ],
+    "free_readbacks": [
+      "the",
+      "the",
+      "the",
+      "the"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6641489863395691,
+        0.641107439994812,
+        0.6641536951065063,
+        0.6411027908325195
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6941489577293396,
+        0.6711074113845825,
+        0.6941536664962769,
+        0.67110276222229
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 87.37409800000023
+  },
+  {
+    "mode": "disabled",
+    "name": "noun_verb_asked_parts",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the cat sleeps",
+      "the dog runs",
+      "the dog sleeps",
+      "the cat runs"
+    ],
+    "free_readbacks": [
+      "the",
+      "the",
+      "the",
+      "the"
+    ],
+    "answers": [
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6697337627410889,
+        0.6435680985450745,
+        0.6670336127281189,
+        0.6462683081626892
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6997337341308594,
+        0.673568069934845,
+        0.6970335841178894,
+        0.6762682795524597
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 311.5796708330745
+  },
+  {
+    "mode": "disabled",
+    "name": "noun_verb_supplied_answer",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the cat sleeps",
+      "the dog runs",
+      "the dog sleeps",
+      "the cat runs"
+    ],
+    "free_readbacks": [
+      "the",
+      "the",
+      "the",
+      "the"
+    ],
+    "answers": [
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs",
+      "the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the",
+      "runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs runs"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6726427674293518,
+        0.6431620717048645,
+        0.667300820350647,
+        0.6485040187835693
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.7026427388191223,
+        0.673162043094635,
+        0.6973007917404175,
+        0.6785039901733398
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 298.03065104200505
+  },
+  {
+    "mode": "disabled",
+    "name": "relations",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "cat is on mat",
+      "dog is on rug",
+      "x is bigger than y",
+      "y is bigger than x"
+    ],
+    "free_readbacks": [
+      "dax",
+      "dog dog",
+      "than",
+      "than"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      4,
+      4,
+      5,
+      5
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.09016843885183334,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.9653501510620117,
+        1.9986141920089722,
+        3.0668835639953613,
+        3.0668835639953613
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.04999999701976776,
+        0.04999999701976776
+      ],
+      "total": [
+        2.005350112915039,
+        2.038614273071289,
+        3.1168835163116455,
+        3.1168835163116455
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 140.40248212509323
+  },
+  {
+    "mode": "disabled",
+    "name": "relations_asked_parts",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "cat is on mat",
+      "dog is on rug",
+      "x is bigger than y",
+      "y is bigger than x"
+    ],
+    "free_readbacks": [
+      "dax",
+      "dog dog",
+      "than",
+      "than"
+    ],
+    "answers": [
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      4,
+      4,
+      5,
+      5
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.09016843885183334,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.8349010944366455,
+        1.8735244274139404,
+        2.8031578063964844,
+        2.8031578063964844
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.04999999701976776,
+        0.04999999701976776
+      ],
+      "total": [
+        1.8749010562896729,
+        1.9135243892669678,
+        2.8531577587127686,
+        2.8531577587127686
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 351.4785387500888
+  },
+  {
+    "mode": "disabled",
+    "name": "relations_supplied_answer",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "cat is on mat",
+      "dog is on rug",
+      "x is bigger than y",
+      "y is bigger than x"
+    ],
+    "free_readbacks": [
+      "dax",
+      "dog dog",
+      "than",
+      "than"
+    ],
+    "answers": [
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is",
+      "is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is is"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      4,
+      4,
+      5,
+      5
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.09016843885183334,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.7265985012054443,
+        1.7668167352676392,
+        2.59424090385437,
+        2.59424090385437
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.04999999701976776,
+        0.04999999701976776
+      ],
+      "total": [
+        1.7665984630584717,
+        1.8068166971206665,
+        2.6442408561706543,
+        2.6442408561706543
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 350.528262790991
+  },
+  {
+    "mode": "enabled",
+    "name": "identity_permanence",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": null,
+    "free_exact": null,
+    "answer_exact": null,
+    "readbacks": null,
+    "free_readbacks": null,
+    "answers": null,
+    "orders": null,
+    "order_exact": null,
+    "iterations": null,
+    "inverse_unavailable": null,
+    "identity_audit": null,
+    "cost": null,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": null
+  },
+  {
+    "mode": "enabled",
+    "name": "identifying_words",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": null,
+    "free_exact": null,
+    "answer_exact": null,
+    "readbacks": null,
+    "free_readbacks": null,
+    "answers": null,
+    "orders": null,
+    "order_exact": null,
+    "iterations": null,
+    "inverse_unavailable": null,
+    "identity_audit": null,
+    "cost": null,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": null
+  },
+  {
+    "mode": "enabled",
+    "name": "reading_two",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 3,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "red blue",
+      "blue red",
+      "green gold",
+      "green green"
+    ],
+    "free_readbacks": [
+      "blue",
+      "blue",
+      "green green",
+      "green green"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.0,
+      0.0
+    ],
+    "cost": {
+      "inside": [
+        0.3375014662742615,
+        0.3375014662742615,
+        0.4010120630264282,
+        16.705204010009766
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.019999999552965164,
+        0.019999999552965164,
+        0.019999999552965164,
+        0.019999999552965164
+      ],
+      "total": [
+        0.35750147700309753,
+        0.35750147700309753,
+        0.4210120737552643,
+        16.725204467773438
+      ]
+    },
+    "ce_first": 0.3465735912322998,
+    "ce_last": 0.34598975628614426,
+    "ce_mean": 0.34635559015441686,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 192.3916811250383
+  },
+  {
+    "mode": "enabled",
+    "name": "reading_four",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 1,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "red green blue gold",
+      "red green blue red",
+      "blue red gold green",
+      "green red gold blue"
+    ],
+    "free_readbacks": [
+      "gold",
+      "gold",
+      "gold",
+      "gold"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        2,
+        1,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        2,
+        1,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "order_exact": 2,
+    "iterations": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.8699466586112976,
+        38.09032440185547,
+        0.8699466586112976,
+        0.8699466586112976
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.03999999910593033,
+        0.03999999910593033
+      ],
+      "total": [
+        0.9099466800689697,
+        38.13032531738281,
+        0.9099466800689697,
+        0.9099466800689697
+      ]
+    },
+    "ce_first": 0.7935602366924286,
+    "ce_last": 0.7832409888505936,
+    "ce_mean": 0.7899926602840424,
+    "departures_attempted": 0,
+    "departures_kept": 0,
+    "elapsed_seconds": 300.4282501670532
+  },
+  {
+    "mode": "enabled",
+    "name": "identities",
+    "passed": false,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 2,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "cat is animal",
+      "dog is animal",
+      "is three x",
+      "is four y"
+    ],
+    "free_readbacks": [
+      "cat",
+      "green",
+      "x",
+      "four"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        1,
+        2,
+        0
+      ],
+      [
+        1,
+        2,
+        0
+      ]
+    ],
+    "order_exact": 2,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.9853282570838928,
+        0.9903878569602966,
+        6.738757610321045,
+        6.851742744445801
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        1.015328288078308,
+        1.020387887954712,
+        6.7687578201293945,
+        6.88174295425415
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 79,
+    "departures_kept": 9,
+    "elapsed_seconds": 411.02417162503116
+  },
+  {
+    "mode": "enabled",
+    "name": "identities_asked_parts",
+    "passed": false,
+    "interpretable": false,
+    "not_run": "Sentence reconstruction control or enabled reconstruction did not pass.",
+    "exact": null,
+    "free_exact": null,
+    "answer_exact": null,
+    "readbacks": null,
+    "free_readbacks": null,
+    "answers": null,
+    "orders": null,
+    "order_exact": null,
+    "iterations": null,
+    "inverse_unavailable": null,
+    "identity_audit": null,
+    "cost": null,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": null,
+    "departures_kept": null,
+    "elapsed_seconds": null
+  },
+  {
+    "mode": "enabled",
+    "name": "identities_supplied_answer",
+    "passed": false,
+    "interpretable": false,
+    "not_run": "Sentence reconstruction control or enabled reconstruction did not pass.",
+    "exact": null,
+    "free_exact": null,
+    "answer_exact": null,
+    "readbacks": null,
+    "free_readbacks": null,
+    "answers": null,
+    "orders": null,
+    "order_exact": null,
+    "iterations": null,
+    "inverse_unavailable": null,
+    "identity_audit": null,
+    "cost": null,
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": null,
+    "departures_kept": null,
+    "elapsed_seconds": null
+  },
+  {
+    "mode": "enabled",
+    "name": "noun_phrase",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "the red ball",
+      "the blue box",
+      "the green ball",
+      "the gold box"
+    ],
+    "free_readbacks": [
+      "red",
+      "blue",
+      "green",
+      "gold"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6648746132850647,
+        0.5749760866165161,
+        0.5805376172065735,
+        0.7418807148933411
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6948745846748352,
+        0.6049760580062866,
+        0.610537588596344,
+        0.7718806862831116
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 85,
+    "departures_kept": 22,
+    "elapsed_seconds": 427.97134970792104
+  },
+  {
+    "mode": "enabled",
+    "name": "noun_phrase_asked_parts",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the red ball",
+      "the blue box",
+      "the green ball",
+      "the gold box"
+    ],
+    "free_readbacks": [
+      "the red",
+      "the blue",
+      "green",
+      "the gold"
+    ],
+    "answers": [
+      "the the",
+      "the blue box",
+      "ball ball ball",
+      "box box box"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.06011229380965233,
+      0.06011229380965233,
+      0.1803368777036667,
+      0.06011229380965233
+    ],
+    "cost": {
+      "inside": [
+        0.617495059967041,
+        0.5469534397125244,
+        0.6553114652633667,
+        0.7407710552215576
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6474950313568115,
+        0.5769534111022949,
+        0.6853114366531372,
+        0.7707710266113281
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 89,
+    "departures_kept": 48,
+    "elapsed_seconds": 607.9265555830207
+  },
+  {
+    "mode": "enabled",
+    "name": "noun_phrase_supplied_answer",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the red ball",
+      "the blue box",
+      "the green ball",
+      "the gold box"
+    ],
+    "free_readbacks": [
+      "red",
+      "blue",
+      "green",
+      "gold"
+    ],
+    "answers": [
+      "the the ball",
+      "the the box",
+      "the the ball",
+      "the the box"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.5802886486053467,
+        0.5183842778205872,
+        0.5332112312316895,
+        0.6418343782424927
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6102886199951172,
+        0.5483842492103577,
+        0.56321120262146,
+        0.6718343496322632
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 96,
+    "departures_kept": 68,
+    "elapsed_seconds": 849.8982088749763
+  },
+  {
+    "mode": "enabled",
+    "name": "noun_verb",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "the cat sleeps",
+      "the dog runs",
+      "the dog sleeps",
+      "the cat runs"
+    ],
+    "free_readbacks": [
+      "the",
+      "the",
+      "the",
+      "the"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        0.6833075284957886,
+        0.6631118059158325,
+        0.6863728761672974,
+        0.6600464582443237
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.7133074998855591,
+        0.693111777305603,
+        0.7163728475570679,
+        0.6900464296340942
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 75,
+    "departures_kept": 0,
+    "elapsed_seconds": 613.1327960829949
+  },
+  {
+    "mode": "enabled",
+    "name": "noun_verb_asked_parts",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "the cat sleeps",
+      "the dog runs",
+      "the dog sleeps",
+      "the cat runs"
+    ],
+    "free_readbacks": [
+      "the",
+      "runs",
+      "the",
+      "runs"
+    ],
+    "answers": [
+      "the green sleeps",
+      "dog",
+      "the green sleeps",
+      "cat"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.12022458761930466,
+      0.1803368777036667,
+      0.12022458761930466
+    ],
+    "cost": {
+      "inside": [
+        0.6482227444648743,
+        0.5967333316802979,
+        0.6480526328086853,
+        0.5969034433364868
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6782227158546448,
+        0.6267333030700684,
+        0.6780526041984558,
+        0.6269034147262573
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 82,
+    "departures_kept": 0,
+    "elapsed_seconds": 768.9670808749506
+  },
+  {
+    "mode": "enabled",
+    "name": "noun_verb_supplied_answer",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": 2,
+    "readbacks": [
+      "the cat sleeps",
+      "the dog runs",
+      "the dog sleeps",
+      "the cat runs"
+    ],
+    "free_readbacks": [
+      "the",
+      "runs",
+      "the",
+      "runs"
+    ],
+    "answers": [
+      "the green sleeps",
+      "dog",
+      "the green sleeps",
+      "cat"
+    ],
+    "orders": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.12022458761930466,
+      0.1803368777036667,
+      0.12022458761930466
+    ],
+    "cost": {
+      "inside": [
+        0.6424568295478821,
+        0.4428637623786926,
+        0.6402192115783691,
+        0.44510138034820557
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746,
+        0.029999999329447746
+      ],
+      "total": [
+        0.6724568009376526,
+        0.4728637635707855,
+        0.6702191829681396,
+        0.47510138154029846
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 84,
+    "departures_kept": 0,
+    "elapsed_seconds": 816.2920383750461
+  },
+  {
+    "mode": "enabled",
+    "name": "relations",
+    "passed": true,
+    "interpretable": true,
+    "not_run": null,
+    "exact": 4,
+    "free_exact": 0,
+    "answer_exact": null,
+    "readbacks": [
+      "cat is on mat",
+      "dog is on rug",
+      "x is bigger than y",
+      "y is bigger than x"
+    ],
+    "free_readbacks": [
+      "dax",
+      "dog",
+      "than",
+      "than"
+    ],
+    "answers": null,
+    "orders": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "order_exact": 4,
+    "iterations": [
+      4,
+      4,
+      5,
+      5
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667
+    ],
+    "cost": {
+      "inside": [
+        1.0259764194488525,
+        1.027076005935669,
+        10.99744987487793,
+        10.99744987487793
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.04999999701976776,
+        0.04999999701976776
+      ],
+      "total": [
+        1.0659763813018799,
+        1.0670759677886963,
+        11.047450065612793,
+        11.047450065612793
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 85,
+    "departures_kept": 2,
+    "elapsed_seconds": 797.6768869169755
+  },
+  {
+    "mode": "enabled",
+    "name": "relations_asked_parts",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 0,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "cat mat is on",
+      "dog rug is on",
+      "bigger than is x y",
+      "bigger than is y x"
+    ],
+    "free_readbacks": [
+      "cat",
+      "green",
+      "than",
+      "x"
+    ],
+    "answers": [
+      "is is mat",
+      "is is on",
+      "than than y",
+      "than than bigger"
+    ],
+    "orders": [
+      [
+        0,
+        3,
+        1,
+        2
+      ],
+      [
+        0,
+        3,
+        1,
+        2
+      ],
+      [
+        2,
+        3,
+        1,
+        0,
+        4
+      ],
+      [
+        2,
+        3,
+        1,
+        0,
+        4
+      ]
+    ],
+    "order_exact": 0,
+    "iterations": [
+      4,
+      4,
+      5,
+      5
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.14426951110363007
+    ],
+    "cost": {
+      "inside": [
+        0.9479771256446838,
+        0.9545751214027405,
+        8.218908309936523,
+        8.218908309936523
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.04999999701976776,
+        0.04999999701976776
+      ],
+      "total": [
+        0.987977147102356,
+        0.9945751428604126,
+        8.268908500671387,
+        8.268908500671387
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 90,
+    "departures_kept": 1,
+    "elapsed_seconds": 984.5258326249896
+  },
+  {
+    "mode": "enabled",
+    "name": "relations_supplied_answer",
+    "passed": false,
+    "interpretable": false,
+    "not_run": null,
+    "exact": 0,
+    "free_exact": 0,
+    "answer_exact": 0,
+    "readbacks": [
+      "cat mat is on",
+      "dog rug is on",
+      "bigger than is x y",
+      "bigger than is y x"
+    ],
+    "free_readbacks": [
+      "cat",
+      "green",
+      "than",
+      "x"
+    ],
+    "answers": [
+      "is is cat",
+      "is is dog",
+      "than than x",
+      "than than y"
+    ],
+    "orders": [
+      [
+        0,
+        3,
+        1,
+        2
+      ],
+      [
+        0,
+        3,
+        1,
+        2
+      ],
+      [
+        2,
+        3,
+        1,
+        0,
+        4
+      ],
+      [
+        2,
+        3,
+        1,
+        0,
+        4
+      ]
+    ],
+    "order_exact": 0,
+    "iterations": [
+      4,
+      4,
+      5,
+      5
+    ],
+    "inverse_unavailable": [
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    ],
+    "identity_audit": [
+      0.1803368777036667,
+      0.1803368777036667,
+      0.1803368777036667,
+      0.14426951110363007
+    ],
+    "cost": {
+      "inside": [
+        0.8810984492301941,
+        0.8924452662467957,
+        6.553298473358154,
+        6.553298473358154
+      ],
+      "outside": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "work": [
+        0.03999999910593033,
+        0.03999999910593033,
+        0.04999999701976776,
+        0.04999999701976776
+      ],
+      "total": [
+        0.9210984706878662,
+        0.9324452877044678,
+        6.603298664093018,
+        6.603298664093018
+      ]
+    },
+    "ce_first": null,
+    "ce_last": null,
+    "ce_mean": null,
+    "departures_attempted": 76,
+    "departures_kept": 0,
+    "elapsed_seconds": 1001.9495510410052
+  }
+]

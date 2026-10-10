@@ -284,6 +284,16 @@
       <!-- Bounded work for one normal selected grammatical-thought episode.
            Zero permits only the defined cutoff/finish drain. -->
       <xs:element name="attentionBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="attentionFloor" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minExclusive value="0"/><xs:maxExclusive value="1"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <xs:element name="hetTolerance" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minInclusive value="0"/><xs:maxInclusive value="1"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
       <xs:element name="thoughtSearchExhaustion" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
            do not enable episodes, memory, or policy training. -->

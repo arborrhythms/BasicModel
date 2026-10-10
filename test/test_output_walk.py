@@ -182,7 +182,7 @@ def test_walk_is_invariant_to_reconstruction_only_state():
     assert torch.equal(again[1], base[1]) and torch.equal(again[2], base[2])
 
 
-def test_free_generate_policy_has_no_numerical_credit(monkeypatch):
+def test_free_generate_policy_has_no_numerical_credit(monkeypatch, eager_reading):
     """Free inference has no policy gradient; the compose teacher owns CE."""
     _walk_control_oracle(monkeypatch)
     m=_model()
@@ -223,7 +223,7 @@ def test_generate_policy_decides_an_unstamped_top(monkeypatch):
     assert torch.equal(out2[0, :live], event[0, :live])
 
 
-def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk():
+def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk(eager_reading):
     """The answer-materialisation boundary (spec sections 1-2): after
     resolution the answer is its own conceptual idea, [B, 3, D] at the
     concept width (the three LTM slots), the operand of the output loop;
@@ -502,7 +502,7 @@ def test_question_conditioner_legacy_singular_checkpoint_reloads_strictly(tmp_pa
             model.symbolSpace.soft_reset()
 
 
-def test_materialised_idea_follows_the_symbol_rows():
+def test_materialised_idea_follows_the_symbol_rows(eager_reading):
     """A completed answer owns its field; a new reading uses its own words.
 
     Exchanging the later input's row staging cannot alter the held answer.

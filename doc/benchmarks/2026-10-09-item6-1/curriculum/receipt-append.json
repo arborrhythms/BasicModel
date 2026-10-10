@@ -1,0 +1,9 @@
+{
+  "prior_bytes": 42764,
+  "append_bytes": 22722,
+  "heading_line": 731,
+  "prior_prefix_sha256": "c3a3d84338d7bb3f564c739c0b38bfbb82122a7fc4355a3e044706530b352135",
+  "append_sha256": "8694b05956cb14593b4928a9d47aa41ebc8cbc26902cea3f91094176b120563e",
+  "measured_source": "source.json",
+  "no_commit": true
+}

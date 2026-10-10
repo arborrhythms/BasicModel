@@ -81,6 +81,11 @@
     <!-- One completed selected grammatical question owns this many shared
          controller/query-work units. Policy sampling remains separately off. -->
     <attentionBudget>32</attentionBudget>
+    <!-- Whole-field reconstruction charges this fraction of the residual
+         outside the admitted regions, on cost only (never on forward gain). -->
+    <attentionFloor>0.1</attentionFloor>
+    <!-- Retain both overlapping meaning lanes at the mask input. -->
+    <hetTolerance>1</hetTolerance>
     <thoughtSearchExhaustion>1</thoughtSearchExhaustion>
 
     <!-- Reverse from the idea rather than replaying the forward grammar trace.

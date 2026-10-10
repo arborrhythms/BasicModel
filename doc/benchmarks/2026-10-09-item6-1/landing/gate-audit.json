@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "counts": {
+    "presentations": 98,
+    "per_read_rows": 1496,
+    "active_read_rows": 1496,
+    "unrecovered_word_rows": 1150,
+    "unrecovered_coordinate_rows": 119471,
+    "lesson_named_read_rows": 1424,
+    "training_presentations": 82
+  },
+  "scope": "All recorded presentations, including both trials; failing presentations have no completed report.",
+  "source_matched": true
+}

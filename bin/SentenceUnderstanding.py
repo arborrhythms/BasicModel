@@ -110,7 +110,7 @@ class SentenceUnderstanding:
     primed: PrimedSymbols
     sentence: torch.Tensor
 
-    def reader_features(self):
+    def reader_features(self, *, attention=None):
         """Fixed linear summaries; all evidence is detached at this boundary.
 
         The numeric reader is affine in the root, end slots and echoic bank.
@@ -125,7 +125,8 @@ class SentenceUnderstanding:
         root = self.primed.reader_value(self.root)
         end = self.primed.reader_value(end)
         bank = self.primed.reader_value(bank, reference=bank)
-        return torch.cat((root, end.flatten(1), bank), -1).detach()
+        from AttentionCredit import fixed_input
+        return fixed_input(torch.cat((root, end.flatten(1), bank), -1), attention)
 
     def detached(self):
         return type(self)(**{f.name: getattr(self, f.name).detach()
@@ -155,5 +156,5 @@ class SentenceRecordReader(nn.Module):
         super().__init__()
         self.weight = nn.Parameter(torch.zeros(int(output_size), 5*int(dimension)))
 
-    def forward(self, record):
-        return F.linear(record.reader_features(), self.weight)
+    def forward(self, record, *, attention=None):
+        return F.linear(record.reader_features(attention=attention), self.weight)

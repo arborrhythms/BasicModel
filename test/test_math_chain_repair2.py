@@ -139,7 +139,7 @@ def test_expectation_cannot_change_departure_or_keep():
     assert audit['deciding'] == ['tie:greedy', 'reconstruction', 'answer']
 
 
-def test_eight_corpus_sentences_train_at_distinct_fork_rounds(tmp_path):
+def test_eight_corpus_sentences_train_at_distinct_fork_rounds(tmp_path, eager_reading):
     from math_chain_corpus import MathChainCorpus
     from math_chain_ordinary import ordinary_model, train_documents, episode_observer
     model = ordinary_model(tmp_path)

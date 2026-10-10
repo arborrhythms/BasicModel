@@ -1403,6 +1403,23 @@ Measurement, receipt, tests and documents as §14.6–§14.7 and §16, in
 `doc/benchmarks/2026-10-06-operators-round2d/`; the 2, 2b and 2c directories
 preserved intact. Stop for Claude's review before any commit.
 
+**6.1 maintenance, 2026-10-09.** The standalone
+`test_xor_router_gradients_reach_all_three_ops` now prescribes the legal
+NOT → AND → OR → AND path through `select_logits(replay_action=...)`, with
+identity op matrices and a fixed positive input. It checks the resulting
+operation journal before asserting gradients to all three real operations.
+No seed selects the route. This repairs the assertion's former dependence
+on whether unseeded routing happened to visit every op; the production
+chooser is unchanged.
+
+**6.1 landing record, 2026-10-10 (stream-state §7.15–§7.16).** Certificate
+b, `test_ordinary_initial_binding_distribution_includes_every_retained_candidate`,
+has a flaky unseeded .9–1.1 bound: the review records 3/3 at HEAD and 3/3
+on the candidate in isolation, against the one sweep maximum of 1.129.
+Tighten its coverage by construction (more menus), never by selecting a
+seed or changing an observed failure into a pass. The landing receipt
+retains that failure and reports the next source-matched outcome separately.
+
 ## 21. Review of round 2d (Claude, 2026-10-06): the flip is fixed; the reader is now the only miss, and I caused it
 
 Receipt `doc/benchmarks/2026-10-06-operators-round2d/` (manifest `d7e2ead0…`):

@@ -537,8 +537,9 @@ class WhereEncoding(QuadratureEncoding):
     align with the muxed layout ``[what, where, when]``:
       index = [-(nWhere+nWhen), ..., -(nWhen+1)]
 
-    Input positions, part and whole rows, and symbol occurrences occupy
-    disjoint registry ranges. Codebook identity stays the row index.
+    Input positions, part and whole rows, symbol occurrences and the live
+    conceptual slots occupy disjoint registry ranges. Codebook identity
+    stays the row index.
     The legacy standalone stamping helper retains a resettable ``self.p``.
     """
     p = 0
@@ -8824,6 +8825,13 @@ class Space(SpaceCarrierMixin, nn.Module):
         signature; the legacy zero-arg fallback was removed in §8d of the
         brick-vectorization handoff.
         """
+        if hard:
+            surface = getattr(self, '_priming_boosts', None)
+            if surface is not None:
+                if batch is None:
+                    object.__setattr__(self, '_priming_boosts', None)
+                elif 0 <= int(batch) < surface.shape[0]:
+                    surface[int(batch)].fill_(1.)
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
                 layer.Reset(batch=batch, hard=hard)
@@ -12775,6 +12783,17 @@ class ConceptualSpace(Space):
     # and want the Euclidean / cached-norm matmul path. See
     # doc/Spaces.md "Codebook similarity metric".
     use_dot_product = True
+
+    @property
+    def where(self):
+        """Sinusoidal indices of the live eight-space, independent of its ideas.
+
+        The shared registry gives these slots their own range beside the
+        codebooks. Slot coordinates are derived from the model's one ladder,
+        so content changes, batch changes and reset cannot relabel them.
+        """
+        slots = torch.arange(self.stm.capacity, device=self.stm._buffer.device)
+        return self.where_registry.encode('conceptual', slots)
 
     def __init__(self, inputShape, spaceShape, outputShape,
                  stage_idx=None, is_last=False,

@@ -103,6 +103,7 @@ def test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent():
         language_layer=SimpleNamespace(operation_layer=SimpleNamespace(ops=[Product()])),
         _bounded_binary_reconstruction=LanguageSpace._bounded_binary_reconstruction)
     model = SimpleNamespace(languageSpace=language, reconstruction_basis_limit=2)
+    model._sentence_leaf_positions = lambda record, row: BasicModel._sentence_leaf_positions(model, record, row)
     loss = BasicModel._decomposition_teacher_loss(model, {'entries': [program]}, record)
     assert model._last_decomposition_teacher[0]['target'] == [10, 11]
     assert model._last_decomposition_teacher[0]['present']

@@ -31,13 +31,15 @@ class SentenceFork:
         self.selected = torch.zeros_like(active)
         self.joined = torch.zeros_like(active)
         self.taken = torch.zeros_like(active)
+        self.current_rows = active.clone()
+        self.phase = None
 
     def record(self, choice, slot, state, *, word, latches):
         if self.explore:
-            at = self.selected & (self.slot == slot)
+            at = self.selected & self.current_rows & (self.slot == slot)
             self.taken |= at & choice.valid & (choice.action != self.action)
             return
-        eligible = choice.valid & (choice.alternative_count > 0)
+        eligible = self.current_rows & choice.valid & (choice.alternative_count > 0)
         if not bool(eligible.any()):
             return
         self.count += eligible.long()
@@ -61,14 +63,14 @@ class SentenceFork:
     def begin_word(self, word, latches):
         if not self.explore:
             return latches
-        take = self.selected & (self.word == word)
+        take = self.selected & self.current_rows & (self.word == word)
         return (latches if self.latches is None else
                 select_rows(tuple(latches), self.latches, take))
 
     def resume(self, slot, state):
         if not self.explore or self.state is None:
             return state
-        take = self.selected & ~self.joined & (self.slot == slot)
+        take = self.selected & self.current_rows & ~self.joined & (self.slot == slot)
         self.joined |= take
         return select_rows(state, self.state, take) if bool(take.any()) else state
 
@@ -80,5 +82,7 @@ class SentenceFork:
     def pending(self, word, *, closing, width):
         if not self.explore:
             return False
-        return bool((self.selected & ~self.joined & (self.word == word)
+        if self.phase is not None and closing != (self.phase == 'closing'):
+            return False
+        return bool((self.selected & self.current_rows & ~self.joined & (self.word == word)
                      & ((self.slot >= 3 * width) == closing)).any())

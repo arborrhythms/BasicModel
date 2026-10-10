@@ -240,7 +240,7 @@ def test_unknown_expectation_scope_is_rejected_at_construction():
                            concept_dim=4, expectation_scope="flattened")
 
 
-def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
+def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch, eager_reading):
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
 
     model = _make_model(_SERIAL_CONFIG)

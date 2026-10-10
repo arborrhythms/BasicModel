@@ -1,0 +1,4645 @@
+{
+  "semantics": "Decoded leaves are aligned to admitted source positions after free sentence decoding. These are not separate prefix-decoder calls. Support size counts native paired-lane entries; supported_words counts the read word candidate. Outside is the remaining-field floor cost after this read, not an additive per-read charge. Inside and work are raw, before the registry whole-observation normalization.",
+  "reads": [
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.3854374289512634,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.3977294862270355,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.45547613501548767,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.4314113259315491,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.23414623737335205,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.23840658366680145,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.25692853331565857,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.24953019618988037,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.536672353744507,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 26.951255798339844,
+      "outside_remaining_field": 2.4582748413085938,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 27.34994125366211,
+      "outside_remaining_field": 2.7514913082122803,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 26.951255798339844,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 1.845454454421997,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 1.4888889789581299,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 1.836363673210144,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.307692289352417,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.989510536193848,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.642035484313965,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.6329450607299805,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.170706748962402,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 25.51748275756836,
+      "outside_remaining_field": 4.1440558433532715,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 25.51748275756836,
+      "outside_remaining_field": 3.334343433380127,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 16.55944061279297,
+      "outside_remaining_field": 3.796581268310547,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 16.656566619873047,
+      "outside_remaining_field": 3.6818180084228516,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 23.076923370361328,
+      "outside_remaining_field": 1.836363673210144,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 3,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.454544067382812,
+      "outside_remaining_field": 1.4888889789581299,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 14.88888931274414,
+      "outside_remaining_field": 2.307692289352417,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 3,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.363636016845703,
+      "outside_remaining_field": 1.845454454421997,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 4,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.363636016845703,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 4,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 14.88888931274414,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 23.076923370361328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 4,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.454544067382812,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 8.193137168884277,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 6.748312950134277,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 6.963131904602051,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 6.594830513000488,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 27.385387420654297,
+      "outside_remaining_field": 5.65646505355835,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 40.603668212890625,
+      "outside_remaining_field": 3.843338966369629,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 37.67835998535156,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.288163661956787,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 2.7514913082122803,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 3,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 1.306666612625122,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 3,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 2.536672353744507,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 4,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 4,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 4,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.441646099090576,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.441646099090576,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 4.058157920837402,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 4.058157920837402,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 27.385387420654297,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 40.603668212890625,
+      "outside_remaining_field": 2.536672353744507,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 37.67835998535156,
+      "outside_remaining_field": 1.306666612625122,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.7514913082122803,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 3,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 3,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.441646099090576,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 5.441646099090576,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 4.0778069496154785,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 4.0778069496154785,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 27.385387420654297,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.536672353744507,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 37.67835998535156,
+      "outside_remaining_field": 1.3263157606124878,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.7514913082122803,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 3,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.26315689086914,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "disabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 3,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.4430773854255676,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.4572073221206665,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.5235896706581116,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.49592623114585876,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.2506318688392639,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.25484350323677063,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.27298814058303833,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "one_word",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.26579079031944275,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 1,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.536672353744507,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 26.951255798339844,
+      "outside_remaining_field": 2.4582748413085938,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 1,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 2.7514913082122803,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 27.46765899658203,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 2,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 26.951255798339844,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 27.46765899658203,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 16.656566619873047,
+      "outside_remaining_field": 1.4888889789581299,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 1.4888889789581299,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 16.55944061279297,
+      "outside_remaining_field": 2.307692289352417,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 25.031585693359375,
+      "outside_remaining_field": 2.307692289352417,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 16.656566619873047,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "blue red",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "green gold",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.5
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 16.55944061279297,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "gold green",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 23.076923370361328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 3,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.363636016845703,
+      "outside_remaining_field": 5.642035484313965,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 25.61993408203125,
+      "outside_remaining_field": 5.642035484313965,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 26.299192428588867,
+      "outside_remaining_field": 5.6329450607299805,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 3,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.454544067382812,
+      "outside_remaining_field": 5.6329450607299805,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 23.076923370361328,
+      "outside_remaining_field": 3.334343433380127,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 2,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 23.076923370361328,
+      "outside_remaining_field": 3.334343433380127,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 14.88888931274414,
+      "outside_remaining_field": 4.1440558433532715,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 0.0,
+      "outside_remaining_field": 4.1440558433532715,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 3,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 16.656566619873047,
+      "outside_remaining_field": 1.4888889789581299,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 3,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.454544067382812,
+      "outside_remaining_field": 1.4888889789581299,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 3,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.363636016845703,
+      "outside_remaining_field": 2.307692289352417,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 3,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 18.363636016845703,
+      "outside_remaining_field": 2.307692289352417,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 4,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 18.464645385742188,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 4,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 14.88888931274414,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 23.076923370361328,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 16.55944061279297,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 6.963131904602051,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 6.963131904602051,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "gold"
+      ],
+      "inside": 29.386714935302734,
+      "outside_remaining_field": 6.963131904602051,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 3,
+      "eligible_before_read": 4,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 6.963131904602051,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 3,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 31.4372615814209,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 21.49966049194336,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 3,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green gold",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.5,
+        1.75
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue red",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.25,
+        1.5
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red green",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 3,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.75,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_four_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold blue",
+      "read": 4,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.25
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 32.69231414794922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 5.65646505355835,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 29.12008285522461,
+      "outside_remaining_field": 4.058157920837402,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 4.211640357971191,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 21.49966049194336,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 31.4372615814209,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 1.306666612625122,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.066665649414062,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "initial",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 32.69231414794922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 1,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 4.231289386749268,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 25.366724014282227,
+      "outside_remaining_field": 5.65646505355835,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 1,
+      "candidate": "blue",
+      "candidate_identity": 11,
+      "source_position": 0,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4399.0,
+        4400.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 29.12008285522461,
+      "outside_remaining_field": 4.0778069496154785,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 1,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 2,
+      "eligible_before_read": 3,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 4.231289386749268,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "green"
+      ],
+      "inside": 21.696151733398438,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 0,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "blue"
+      ],
+      "inside": 31.4372615814209,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 2,
+      "candidate": "gold",
+      "candidate_identity": 13,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4401.0,
+        4402.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 27.514911651611328,
+      "outside_remaining_field": 1.3263157606124878,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 2,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 1,
+      "eligible_before_read": 2,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.26315689086914,
+      "outside_remaining_field": 2.9049737453460693,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 0,
+      "field": "red blue green",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 1,
+      "field": "gold green blue",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 1,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.3333333730697632,
+        1.6666667461395264
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 29.04973602294922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 2,
+      "field": "blue gold red",
+      "read": 3,
+      "candidate": "red",
+      "candidate_identity": 10,
+      "source_position": 2,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4398.0,
+        4399.0
+      ],
+      "when": [
+        1.6666667461395264,
+        2.0
+      ],
+      "decoded_word": [
+        "<unresolved>"
+      ],
+      "inside": 13.26315689086914,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    },
+    {
+      "mode": "enabled",
+      "stage": "sentence_three_words",
+      "phase": "final",
+      "trial": 0,
+      "field_row": 3,
+      "field": "green red gold",
+      "read": 3,
+      "candidate": "green",
+      "candidate_identity": 12,
+      "source_position": 0,
+      "eligible_before_read": 1,
+      "support_size": 9,
+      "supported_words": 1,
+      "where": [
+        4400.0,
+        4401.0
+      ],
+      "when": [
+        1.0,
+        1.3333333730697632
+      ],
+      "decoded_word": [
+        "red"
+      ],
+      "inside": 32.69231414794922,
+      "outside_remaining_field": 0.0,
+      "work": 0.009999999776482582
+    }
+  ]
+}

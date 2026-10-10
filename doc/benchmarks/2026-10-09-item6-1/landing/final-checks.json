@@ -1,0 +1,18 @@
+{
+  "source_files": 762,
+  "staged_source_matches": true,
+  "historical_receipt_prefix_preserved": true,
+  "documentation": "357 passed in 2.58s",
+  "whitespace_check_exit": 2,
+  "whitespace_reports": {
+    "doc/benchmarks/2026-10-09-item6-1/curriculum/checks/source-order-certificates.log": 5,
+    "doc/benchmarks/2026-10-09-item6-1/curriculum/reads.tsv": 777,
+    "doc/benchmarks/2026-10-09-item6-1/curriculum/sweep.html": 466,
+    "doc/benchmarks/2026-10-09-item6-1/development/objective-focus-extents.svg": 1322,
+    "doc/benchmarks/2026-10-09-item6-1/landing/reads.tsv": 73,
+    "doc/benchmarks/2026-10-09-item6-1/landing/sweep.html": 466,
+    "test/test_native_candidate_attention.py": 1
+  },
+  "whitespace_disposition": "Preserve historical/raw receipt bytes and the already measured source; no post-sweep formatting edits.",
+  "archive_sha256": "81df1c8c619cfdf546471c990baf3fce1df8f9141576f6f11b13d83c8b0a3c53"
+}

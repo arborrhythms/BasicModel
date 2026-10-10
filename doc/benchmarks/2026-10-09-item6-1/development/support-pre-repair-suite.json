@@ -1,0 +1,136 @@
+{
+  "run": "output/item6-1-support-final-full",
+  "source_sha256": "9620afaa01e248ac2a5f3336d187949d59de94ad5198805c0ed9021c27962df7",
+  "selected": 5704,
+  "completed": 5704,
+  "outcomes": {
+    "passed": 5406,
+    "skipped": 286,
+    "failed": 11,
+    "xpassed": 1
+  },
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 1424.1231633330463,
+  "peak_worker_gib": 3.0435982272028923,
+  "peak_aggregate_gib": 9.690490908920765,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 12884901888,
+    "workers": 8,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "warnings": [
+    "Latest weekly slow-test record is 7.7 days old (over seven days)."
+  ],
+  "compile_cache_retries": [],
+  "duplicate_reports": [
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected"
+  ],
+  "failures": [
+    {
+      "nodeid": "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.9543406250886619,
+      "message": "test/test_free_reconstruction.py:62: in test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit\n    assert reconstruction - {'reconstruction.compose_score_function'} == {\nE   AssertionError: assert {'reconstruct....walk_policy'} == {'reconstruct....walk_policy'}\nE     \nE     Extra items in the right set:\nE     'reconstruction.field'\nE     'reconstruction.iterations'\nE     Use -v to get more diff",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.091555916937068,
+      "message": "test/test_gradient_factorization.py:137: in test_normal_batch_logs_owned_optimizer_gradients\n    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2, split=\"train\", optimizer=optimizer,\nbin/Models.py:13744: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13888: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14270: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8866: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10314: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8551: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8329: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23881: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17361: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22415: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20945: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20866: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20080: in _sentence_path_cost\n    objectives = self._grammar_lesson_objectives([program],\nbin/Models.py:13732: in _grammar_lesson_objectives\n    raise ValueError(\"grammar lesson text does not match its captured forward words\")\nE   ValueError: grammar lesson text does not match its captured forward words",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.7972957090241835,
+      "message": "test/test_grammar_word_learning.py:208: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    result, _ = model.runBatch(\nbin/Models.py:13744: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13888: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14270: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8866: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10314: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8551: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8329: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23881: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17361: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22415: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20945: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20929: in train_trial\n    loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/compose_score_probe.py:123: in compared\n    value = surrogate(model, path, costs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_grammar_word_learning.py:199: in constructed_costs\n    assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x1463367b0>()\nE    +    where <built-in method all of Tensor object at 0x1463367b0> = (tensor([-1, -1]) >= 0 | tensor([-1,  9]) >= 0).all",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.237658833968453,
+      "message": "test/test_grammar_word_learning.py:208: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    result, _ = model.runBatch(\nbin/Models.py:13744: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13888: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14270: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8866: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10314: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8551: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8329: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23881: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17361: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22415: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20945: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20929: in train_trial\n    loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/compose_score_probe.py:123: in compared\n    value = surrogate(model, path, costs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_grammar_word_learning.py:199: in constructed_costs\n    assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x1470333e0>()\nE    +    where <built-in method all of Tensor object at 0x1470333e0> = (tensor([-1, -1]) >= 0 | tensor([-1,  9]) >= 0).all",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8299292089650407,
+      "message": "test/test_negative_expectation.py:200: in test_native_unlabelled_batch_trains_the_same_chooser\n    result, _ = model.runBatch(train=True, batchNum=step, batchSize=1,\nbin/Models.py:13744: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13888: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14270: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8866: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10314: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8551: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8329: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23881: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17361: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22415: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20945: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20866: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20059: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19844: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:221: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:144: in finish_clause\n    raise ValueError('a completed field must have one or three slots')\nE   ValueError: a completed field must have one or three slots",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 13.027304041897878,
+      "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:220: in after\n    assert ('referent',0) in open_slots(store.meaning_of(index))\nE   AssertionError: assert ('referent', 0) in ()\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 3191792099364143266), ('sym', ...0.04119347780942917), ('reference', -1), ('role', 2)))), ('_open_references', ())), scope=(), sentence_kind='relation'))\nE    +    where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 3191792099364143266), ('sym', ...0.04119347780942917), ('reference', -1), ('role', 2)))), ('_open_references', ())), scope=(), sentence_kind='relation') = meaning_of(27)\nE    +      where meaning_of = TernaryTruthStore().meaning_of",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 13.0675603330601,
+      "message": "test/test_math_chain_section14.py:388: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:356: in after\n    assert correct, 'the arriving x is three must supply the bound referent'\nE   AssertionError: the arriving x is three must supply the bound referent\nE   assert False",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=6.086s)\r\n"
+    },
+    {
+      "nodeid": "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 13.997403166955337,
+      "message": "test/test_operators_final_b.py:159: in test_forced_not_and_or_descend_and_snapshot_certificate\n    assert all(value >= .01 for value in read['R'])\nE   assert False\nE    +  where False = all(<generator object test_forced_not_and_or_descend_and_snapshot_certificate.<locals>.<genexpr> at 0x11ed80fb0>)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.281s)\r\n"
+    },
+    {
+      "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 52.23348041600548,
+      "message": "test/test_operators_final_b.py:181: in test_both_training_trials_share_bootstrap_snapshot\n    assert (audit['components'][..., 0] >= .01).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x1480dd400>()\nE    +    where <built-in method all of Tensor object at 0x1480dd400> = tensor([[0., 0.],\\n        [0., 0.],\\n        [0., 0.],\\n        [0., 0.]]) >= 0.01.all",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 52.191s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.2298434160184115,
+      "message": "test/test_sentence_compose.py:170: in test_real_packed_ends_train_before_the_next_sentence\n    model.runBatch(train=True, optimizer=optimizer, batchSize=2,\nbin/Models.py:13744: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13888: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14270: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8866: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10314: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8551: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8329: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23881: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17361: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22415: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20945: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20866: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_sentence_compose.py:107: in controlled_cost\n    cost, recon, observation, pending = path_cost(path, sid, active)\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20059: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19844: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:221: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:144: in finish_clause\n    raise ValueError('a completed field must have one or three slots')\nE   ValueError: a completed field must have one or three slots",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.9550838749855757,
+      "message": "test/test_surface_grammar.py:238: in test_normal_batch_trains_supplied_grammar_lessons\n    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,\nbin/Models.py:13744: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13888: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14270: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8866: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10314: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8551: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8329: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23881: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17361: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22415: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20945: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20866: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20080: in _sentence_path_cost\n    objectives = self._grammar_lesson_objectives([program],\nbin/Models.py:13732: in _grammar_lesson_objectives\n    raise ValueError(\"grammar lesson text does not match its captured forward words\")\nE   ValueError: grammar lesson text does not match its captured forward words",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "certificates": {
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode": "passed",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage": "passed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]": "passed",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]": "failed",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]": "skipped",
+    "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops": "passed"
+  }
+}

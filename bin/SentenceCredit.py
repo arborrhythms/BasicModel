@@ -24,7 +24,7 @@ def expectation_terms(registry, pred, logits, kind_logit, target, occupied,
 
 
 def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
-              compose_round=None):
+              compose_round=None, candidates=None):
     """Uniform walk, then uniform eligible round; the chooser draws the action."""
     from WalkTrials import departure_at
     if narrowing is None:
@@ -34,7 +34,10 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
         if sentence_ids is not None:
             owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
             attention &= (owners == sentence) & (narrowing.round_words >= 0)
-    counts = torch.stack((attention.sum(-1), compose.sum(-1)), -1) * active[:, None]
+    groups = [attention.sum(-1), compose.sum(-1)]
+    if candidates is not None:
+        groups.append(candidates.sum(-1))
+    counts = torch.stack(groups, -1) * active[:, None]
     available = counts > 0
     walk = departure_at(available)
     walk_count = available.sum(-1)
@@ -49,10 +52,13 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
     chosen = torch.where(walk == 0, attention_round,
                          torch.where(walk == 1, width + compose_round, -1))
     at_attention, at_compose = walk == 0, walk == 1
+    candidate_round = (departure_at(candidates) if candidates is not None and candidates.shape[1]
+                       else torch.full_like(walk, -1))
     return dict(round=chosen, rounds=counts.sum(-1), walk=walk,
         walk_count=walk_count, walk_rounds=walk_rounds, narrowing=at_attention,
         attention_round=torch.where(at_attention, chosen, -1),
-        compose_round=torch.where(at_compose, chosen-width, -1))
+        compose_round=torch.where(at_compose, chosen-width, -1),
+        candidate_round=torch.where(walk == 2, candidate_round, -1))
 
 
 def components(registry, expectation, like, *, answer=None):

@@ -125,6 +125,165 @@ separate global attention gets no reward); that is why prediction is the
 stochastic exploration finally earns its keep in stage 5 (search has only a
 distal reward, so it must explore to break symmetry).
 
+
+## The generated supervised curriculum, in order (Alec, 2026-10-09)
+
+The objectives above are what is trained; this is the order in which the
+model is taught, by **generated corpora** whose targets name parts of the
+input — a word, a word's turn, a sentence's part, an answer — and never an
+attention action, an operator or an order rule. What a stage teaches is a
+learned prior a later corpus can revise; nothing here is built into the
+architecture (word order in particular is not universal across languages,
+so reading order is taught, not wired). Each stage is a gate: the enabled
+model against its disabled control, one fresh unseeded run per mode, no
+retries, the corpus generated from a small declared vocabulary. A stage is
+read as a result only when its control passes it. Later stages are the
+decided gates of the plans and specs they cite.
+
+| # | stage | generated corpus | what the lesson names | gate | trains |
+|---|---|---|---|---|---|
+| 1 | **Identity** | one percept whole (a letter run) presented, re-presented, and re-presented after an intervening item | *same* — the second occurrence reconstructs from the first's concept and row | the same percept gets the same concept row (the identity audit: no duplicate rows); the item is recognised again after the intervening one | identity by construction ([operators 3a](plans/2026-10-05-operators-update.md)); the row as the item's persistence. Object permanence *across sentences* is stage 5, not here |
+| 2 | **Identifying words** | one-word fields, known and novel words | the word — its reconstruction, and *which* word (the symbol) | readback 100 % for known words; a novel word is minted once and recognised on its second presentation | the word whole → concept read ([6.8](plans/2026-09-27-item-6-8-one-attention.md)); the support mask of one candidate ([stream-state §7.10](plans/2026-10-08-stream-state.md)) |
+| 3 | **Reading words in order** | fields of two, then more, words; the lesson gives the words in turn | the part whose turn it is — "the first word", then "the second": a cross-entropy on the candidate scorer toward that candidate, reads teacher-forced during the lesson; the order is the lesson's, from the data | every read supports one word in the lesson's order on permuted fields after training; lesson CE falls to near zero within 64 presentations; control = source order; list reconstruction is reported alongside, not used as this gate | the attention scorer's choice of the next read ([stream-state §7.9–§7.12](plans/2026-10-08-stream-state.md)); one read per placement; the eight-space as STM |
+| 4a | **Simple sentences: identities** | `x is three.` `a cat is an animal.` — two words joined by `is`, generated over variables/values and kinds | the sentence; the supplied answer to `what is x ?` | reconstruction 100 %; the question answered 100 % on held-out pairs | the one relation as a verb (`is`; [math not direct](specs/2026-09-09-mathematical-thinking.md)); the `what` question bound from supplied answers only ([answer-path ownership](plans/2026-09-14-answer-path-ownership-and-training.md)); the shortest `NP VP NP` row |
+| 4b | **Simple sentences: NP** | `the red ball`, `a big cat` — determiner, adjective, noun | the phrase; its asked parts ("the middle word", "the noun"); the supplied answer to `what is red ?` | reconstruction of the compound 100 %; asked parts; the property question | composition within a role and its inverses (adjective ∧ noun, sub-typing; [operator catalogue](specs/2026-09-29-operator-catalogue.md)); the determiner as the bind-or-mint cue ([6.5 §2.7](specs/2026-09-26-independent-components.md)); word → operator learned, never anchored |
+| 4c | **Simple sentences: NP + VP** | `the cat sleeps.` `a dog runs.` — subject and intransitive verb | the sentence; the supplied answer to `what sleeps ?` | reconstruction and the question 100 % | the verb as a pattern of change, categorically apart from nouns (`B` against `A`, [6.5 §2.3](specs/2026-09-26-independent-components.md)); the `NP1 VP` row |
+| 4d | **Simple sentences: relations** | `the cat is on the mat.` `x is bigger than y.` `the dog chases the cat.` — two NPs and a relation | the sentence; supplied answers on either role — `what is on the mat ?`, `what chases the cat ?`, `what does the dog chase ?` | reconstruction; both role questions 100 %; `the dog chases the cat` and `the cat chases the dog` answered differently | the two noun roles distinguished by order; relation operators; the full `NP VP NP` row ([two truths](specs/2026-09-16-two-truths-ideas-and-relations.md)) |
+| 5 | **Tying sentences together: object permanence by reference** | `the cat sleeps. it is black.` `a dog runs. the dog is brown.` — a pronoun or a definite re-mention referring to an earlier occurrence, with and without an intervening sentence | the referent (which earlier occurrence); the supplied answer to a question about the first sentence asked after the second (`what is black ?` → `the cat`) | the reference resolves to the right occurrence 100 %; the repeated noun reuses its row, `a dog` mints a new one; the question across sentences answered | identity is its occurrences tied by references in slots ([two truths §3.5](specs/2026-09-16-two-truths-ideas-and-relations.md), tests 17–21); the row persists when not being read — object permanence proper; "identity is an expectation" ([4.5](specs/2026-10-08-expectation-at-every-level.md)) |
+| 6 | **Graded composition** | the standing fixtures' vocabulary arranged so each item needs one more round than the last — clauses and embedding after the simple kinds — read in order and shuffled | reconstruction; the surprise at every level | the ordered set beats the shuffled on derivation optimality ([4.5 §5.4, §9](specs/2026-10-08-expectation-at-every-level.md)) | expectation at every level; one departure per sentence |
+| 7 | **Context as content** | several documents in parallel sharing vocabulary; a document split by another; a fact stated in one needed in another; a word whose referent differs between documents | the answer, which only the right context gives | [stream-state §3](plans/2026-10-08-stream-state.md) stages 2–6: batch differentiation; return after interruption (stage 5's permanence at the document level); shared truth; priming as a prior; expectation from the right history | the situation code in content ([5.5](specs/2026-09-30-occurrence-tense-aspect.md)); retrieval as a candidate entertained into a slot |
+| 8 | **Thinking** | one-step problems first (`x is three. what is x plus one ?`), then chains, worked steps scored as intermediate answers | the answer and the worked steps | the deferred protocol's four corrections ([thinking spec §14.10](specs/2026-10-07-thinking.md)); decomposition demonstrated at the closing | the thought loop and its credit ([6.2](specs/2026-10-07-thinking.md)) |
+| 9 | **The age-appropriate corpus** | Wordbank → `interpret` → AO-CHILDES by age band ([FutureWork, gradual training](FutureWork.md)) | text; supplied answers where the corpus has them | the stall diagnostic flat per level | everything above, at scale; item 3's corpus |
+| 10 | **The full train** | the target corpus (item 0) | — | the standing gates unchanged or better | — |
+
+Why this order. Stages 1–3 teach what a word is and how to take one at a time;
+4a–4d teach sentences by the operations they need, one more at each step —
+a relation between two atoms, composition within a role, a verb against a
+noun, two roles told apart by order; only then, in 5, are sentences tied to
+one another, because a reference needs sentences to refer to and a row to
+persist. Stage 7's "return after interruption" is stage 5's permanence raised
+to the document. Stages 1–3 absorb item 6.1's attention stages
+([stream-state §7.3](plans/2026-10-08-stream-state.md)); 4b's asked parts are
+its fourth. Stage 3 is the lesson that failed when reading order was left to
+sparse credit alone (§7.12 there): the scorer learned content, not position.
+Free decoding of compounds — unfolding a composed child against a bank that
+holds only words — is **not** a stage gate: reconstruction in every gate is the
+inversion along the actual derivation, excluding undefined coordinates from
+the inside loss and reporting their unrecovered words/coordinates separately
+(4.5 §3.1). Stage 3 gates on reads and lesson CE instead of list reconstruction
+(Alec, 2026-10-10; stream-state §7.15–§7.16). Free compound decoding is item 6's
+work, whose inverse will clean up against the primed words *and* STM's composed
+wholes.
+
+
+### Examples by stage, and the construction each introduces
+
+Every example uses only the constructions of its own stage and the stages
+before it. The ledger at the end says where each construction first appears,
+so that containment can be checked at a glance. Vocabulary is small and
+declared: variables `x y z`, numerals as opaque words `three seven nine`,
+colours `red blue green gold`, nouns `cat dog ball mat`, adjectives `big
+black`, verbs `sleeps runs eats chases`, and the function words each stage
+admits.
+
+**1. Identity** — single percept wholes; no words as concepts yet, no
+sequence, no sentence.
+
+    cat          cat          dog          cat
+    red          red          blue         red
+
+**2. Identifying words** — one word per field; a novel word (`zib`) minted
+once, recognised the second time.
+
+    red          blue         cat          zib          zib
+
+**3. Reading words in order** — lists of content words, no function words,
+no verb, no punctuation; the lesson names "the first word", "the second".
+
+    red blue
+    blue red
+    cat dog red
+    gold green blue red
+
+**4a. Identities** — two atoms and `is`; the period; the `what` question.
+No determiners, no adjectives, no action verbs.
+
+    x is three .          what is x ?      → three
+    y is seven .          what is y ?      → seven
+    z is nine .           what is z ?      → nine
+
+**4b. NP** — determiners and attributive adjectives; the phrase as a unit;
+asked parts and the property question. No verb other than the question's
+`is`.
+
+    the ball              the red ball          a big cat
+    the black dog         a red ball
+
+    the red ball          the middle word ?     → red
+    the red ball          what is red ?         → the ball
+
+**4c. NP + VP** — an intransitive verb after an NP of 4b; the subject role.
+One noun role only.
+
+    the cat sleeps .      what sleeps ?         → the cat
+    a dog runs .          what runs ?           → a dog
+    the black cat eats .  what eats ?           → the black cat
+
+**4d. Relations** — a second noun role: transitive verbs, prepositions,
+comparatives, and kind identity between two NPs. Order tells the roles
+apart.
+
+    the dog chases the cat .     what chases the cat ?        → the dog
+                                 what does the dog chase ?    → the cat
+    the cat chases the dog .     what chases the dog ?        → the cat
+    the cat is on the mat .      what is on the mat ?         → the cat
+    x is bigger than y .         what is bigger than y ?      → x
+    a cat is an animal .         what is an animal ?          → a cat
+
+**5. Tying sentences together** — two or three sentences; a pronoun or a
+definite re-mention refers to an earlier occurrence; a question about the
+first sentence is asked after the second. Every sentence is a 4c/4d
+sentence; the only new thing is the reference.
+
+    the cat sleeps . it runs .                         what runs ?   → the cat
+    a dog runs . the dog sleeps .                      what sleeps ? → the dog   (one row)
+    a dog runs . a dog sleeps .                                                   (two rows)
+    the cat sleeps . a dog runs . the cat eats .       what eats ?   → the cat   (same row as the first)
+    the cat is on the mat . it sleeps .                what sleeps ? → the cat
+
+**6. Graded composition** — one more round per item: coordination,
+relative clauses, embedding; read in order and shuffled.
+
+    the cat and the dog run .
+    the cat that sleeps is black .
+    the dog chases the cat that runs .
+
+**7. Context as content** — documents in parallel, interrupted, sharing
+facts (see [stream-state §3](plans/2026-10-08-stream-state.md)).
+
+    A: x is three .   B: x is seven .      A: what is x ? → three   B: what is x ? → seven
+    A₁: the cat sleeps .   B: a dog runs .   A₂: what sleeps ? → the cat
+
+**8. Thinking** — `plus` and chained identities, one step first; the
+successor is a verb, numerals stay opaque words.
+
+    x is three . what is x plus one ?             → four      (three plus one is four . given)
+    y is x . x is three . what is y ?             → three
+
+| construction | first appears |
+|---|---|
+| a single percept whole; repetition | 1 |
+| a novel word; a word as a concept | 2 |
+| several words; order; a named position | 3 |
+| `is` between two atoms; the period; `what … ?`; variables and numerals | 4a |
+| determiners `the`, `a`; attributive adjectives; the phrase as a unit; asked parts | 4b |
+| an intransitive verb; the subject role | 4c |
+| a second noun role; transitive verbs; prepositions; comparatives; kind identity between NPs; `does` | 4d |
+| a pronoun; definite re-mention; a document of several sentences; a question across sentences | 5 |
+| coordination; relative clauses; embedding | 6 |
+| parallel documents; interruption; facts shared across documents | 7 |
+| `plus`; identities chained across sentences; worked steps | 8 |
+
 ---
 
 ## Phase 1: Embedding Pretraining (`make train` / `embed.py train`)

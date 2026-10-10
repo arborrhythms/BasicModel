@@ -1,0 +1,174 @@
+{
+  "enabled": [
+    {
+      "stage": "one_word",
+      "readbacks": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "passed": true,
+      "admitted": 4.0,
+      "eligible": 4,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    },
+    {
+      "stage": "two_words_in_turn",
+      "readbacks": [
+        "blue",
+        "blue",
+        "green",
+        "green"
+      ],
+      "passed": false,
+      "admitted": 8.0,
+      "eligible": 8,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    },
+    {
+      "stage": "sentence",
+      "readbacks": [
+        "green gold",
+        "green red",
+        "green green",
+        "green gold"
+      ],
+      "passed": false,
+      "admitted": 16.0,
+      "eligible": 16,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    },
+    {
+      "stage": "asked_parts",
+      "readbacks": [
+        "green gold",
+        "green red",
+        "green green",
+        "green gold"
+      ],
+      "passed": false,
+      "admitted": 16.0,
+      "eligible": 16,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    }
+  ],
+  "disabled": [
+    {
+      "stage": "one_word",
+      "readbacks": [
+        "red",
+        "blue",
+        "green",
+        "gold"
+      ],
+      "passed": true,
+      "admitted": 4.0,
+      "eligible": 4,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    },
+    {
+      "stage": "two_words_in_turn",
+      "readbacks": [
+        "blue red",
+        "blue red",
+        "green gold",
+        "green gold"
+      ],
+      "passed": false,
+      "admitted": 8.0,
+      "eligible": 8,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    },
+    {
+      "stage": "sentence",
+      "readbacks": [
+        "red green",
+        "red green",
+        "red green",
+        "red green"
+      ],
+      "passed": false,
+      "admitted": 16.0,
+      "eligible": 16,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    },
+    {
+      "stage": "asked_parts",
+      "readbacks": [
+        "red green",
+        "red green",
+        "red green",
+        "red green"
+      ],
+      "passed": false,
+      "admitted": 16.0,
+      "eligible": 16,
+      "iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "backup_used": 0,
+      "backup_needed": 0,
+      "backup_kept": 0
+    }
+  ]
+}

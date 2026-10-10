@@ -1,0 +1,78 @@
+{
+  "original_run": "output/item6-1-review-final-full",
+  "original_worker": "worker-717",
+  "source_changes": [],
+  "unseeded_replays": [
+    {
+      "attempt": 0,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 3.50s"
+      ]
+    },
+    {
+      "attempt": 1,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 3.59s"
+      ]
+    },
+    {
+      "attempt": 2,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 3.61s"
+      ]
+    },
+    {
+      "attempt": 3,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 3.37s"
+      ]
+    },
+    {
+      "attempt": 4,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 3.60s"
+      ]
+    },
+    {
+      "attempt": 5,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 3.65s"
+      ]
+    },
+    {
+      "attempt": 6,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 4.29s"
+      ]
+    },
+    {
+      "attempt": 7,
+      "exit": 0,
+      "summary": [
+        "7 passed, 1 skipped in 4.17s"
+      ]
+    }
+  ],
+  "conclusion": "No failure reproduced in eight unseeded replays of the original worker selection. This does not identify an inter-test state leak or prove that the new closing-phase fix caused the old failure.",
+  "original_worker_request": {
+    "selectors": [
+      "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+      "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+      "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+      "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+      "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+      "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+      "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+      "test/test_sentence_compose.py::test_already_trained_observation_keeps_policy_and_skips_duplicate_loss"
+    ],
+    "collect": false,
+    "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-1-review-final-full/worker-717.recycle.json"
+  }
+}

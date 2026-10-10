@@ -1,0 +1,142 @@
+{
+  "source_results": "output/item6-1-objective-final-gates/enabled/results.json",
+  "purpose": "Autograd of the existing focus admission sum at recorded bounds; no training or parameter changes",
+  "results": [
+    {
+      "stage": "one_word",
+      "phase": "initial",
+      "admitted": 4.0,
+      "where_edge_gradient_l1": [
+        25145.015625,
+        25138.341796875,
+        25144.7265625,
+        25138.306640625
+      ],
+      "when_edge_gradient_l1": [
+        2898237.0,
+        2898776.75,
+        2898408.5,
+        2898799.0
+      ]
+    },
+    {
+      "stage": "one_word",
+      "phase": "final",
+      "admitted": 4.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "stage": "two_words_in_turn",
+      "phase": "initial",
+      "admitted": 8.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "stage": "two_words_in_turn",
+      "phase": "final",
+      "admitted": 8.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "stage": "sentence",
+      "phase": "initial",
+      "admitted": 16.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "stage": "sentence",
+      "phase": "final",
+      "admitted": 16.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "stage": "asked_parts",
+      "phase": "initial",
+      "admitted": 16.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "stage": "asked_parts",
+      "phase": "final",
+      "admitted": 16.0,
+      "where_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "when_edge_gradient_l1": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}

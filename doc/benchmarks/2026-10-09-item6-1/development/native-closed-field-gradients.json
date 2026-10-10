@@ -1,0 +1,35 @@
+{
+  "observations": [
+    {
+      "sentence": true,
+      "objectives": {
+        "reconstruction": {
+          "cost": 2.310539484024048,
+          "requires_grad": true,
+          "attention_gradient_norm": 0
+        },
+        "output": {
+          "cost": 0.3499999940395355,
+          "requires_grad": true,
+          "attention_gradient_norm": 0.0
+        }
+      }
+    },
+    {
+      "sentence": true,
+      "objectives": {
+        "reconstruction": {
+          "cost": 2.310539484024048,
+          "requires_grad": true,
+          "attention_gradient_norm": 0
+        },
+        "output": {
+          "cost": 0.699999988079071,
+          "requires_grad": true,
+          "attention_gradient_norm": 0.0
+        }
+      }
+    }
+  ],
+  "source_matched": true
+}

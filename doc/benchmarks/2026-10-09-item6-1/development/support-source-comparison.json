@@ -1,0 +1,13 @@
+{
+  "source_sha256": "24e5de1e91b9063e5b993c2bb8bb7d7974a0c7a6f3be8c451944a6cc6d15f164",
+  "measured_source_sha256": "4efe4d5ac880bbbba3aaf025755bfebc0fe495aa63de37f5b0da879f12db50a3",
+  "changed_since_measurement": [
+    "test/test_decomposition_chooser.py",
+    "test/test_generation_lesson.py"
+  ],
+  "explanation": "The two unit-test stand-ins now supply the new teacher-order method. Their assertions are unchanged. No bin, data, curriculum harness or model-building helper differs. The complete frozen sweep remains failing; its two fixture failures are retained and separately checked after the adapters were added.",
+  "receipt_prefix": {
+    "bytes": 26996,
+    "sha256": "29c3524c8db0533ebd330aea26747830fa1e460e0bcedeaa1249bfa360a8d021"
+  }
+}

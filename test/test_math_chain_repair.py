@@ -189,7 +189,7 @@ def test_ltm_capacity_takes_precedence_over_truth_view_capacity(tmp_path):
         model.End()
 
 
-def test_ordinary_driver_two_three_eight_stream_groups_after_single_write(tmp_path):
+def test_ordinary_driver_two_three_eight_stream_groups_after_single_write(tmp_path, eager_reading):
     from math_chain_corpus import MathChainCorpus, flatten
     from MathChainTraining import present
     from test_math_chain import ROOT, build_model

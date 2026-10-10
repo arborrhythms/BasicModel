@@ -8999,9 +8999,9 @@ class Taxonomy:
 
         ``live`` is the number of currently-occupied ref rows (the rest
         is slack reserved for symbol-learning appends). Re-allocation
-        with a smaller batch / capacity / live preserves any current
-        primed values in the overlapping region; a larger allocation
-        copies forward and fills the new space with 1.0.
+        preserves primed values across vocabulary capacity changes. A new
+        batch shape requires neutral state: live heat cannot be reassigned
+        to different streams by copying their overlapping row positions.
         """
         import torch
         B = int(batch_size)
@@ -9009,12 +9009,13 @@ class Taxonomy:
         L = int(live)
         if dtype is None:
             dtype = torch.float32
-        new = torch.ones(B, C, dtype=dtype, device=device)
         old = self._priming
-        if old is not None:
-            ob = min(B, old.shape[0])
+        if old is not None and old.shape[0] != B and bool((old != 1).any()):
+            raise ValueError('taxonomy priming batch shape changed before reset')
+        new = torch.ones(B, C, dtype=dtype, device=device)
+        if old is not None and old.shape[0] == B:
             oc = min(C, old.shape[1])
-            new[:ob, :oc] = old[:ob, :oc].to(device=device, dtype=dtype)
+            new[:, :oc] = old[:, :oc].to(device=device, dtype=dtype)
         self._priming = new
         self._priming_B = B
         self._priming_capacity = C
@@ -12615,18 +12616,10 @@ class SymbolSubSpace(SubSpace):
             self.reconstruction_stack.ensure_batch(batch)
             self._ensure_stm_batch(batch)
             return
-        self.batch = batch
-        self.category_stack.ensure_batch(batch)
-        self.reconstruction_stack.ensure_batch(batch)
-        self._ensure_stm_batch(batch)
-        # Keep the new buffers on the existing device so .to(device)
-        # invariants survive the resize.
         device = self._last_svo.device
-        self._last_svo = torch.zeros(batch, 3, self.svo_dim, device=device)
-        self._svo_valid = torch.zeros(batch, dtype=torch.bool, device=device)
-        # Resize priming buffer to match the new batch size. Existing
-        # primed values in the overlapping region are preserved (the
-        # Taxonomy.allocate_priming implementation does the copy).
+        # Resize only neutral priming; live heat must never survive a
+        # batch shape change by being copied into overlapping row positions.
+        # Check before changing the coordinator's batch counter or scratch.
         view = getattr(self, '_knowledge', None)
         tax = getattr(self, 'taxonomy', None)
         if view is not None and tax is not None and tax._priming is not None:
@@ -12636,6 +12629,12 @@ class SymbolSubSpace(SubSpace):
                 live=int(view.n_refs_live),
                 device=device,
             )
+        self.batch = batch
+        self.category_stack.ensure_batch(batch)
+        self.reconstruction_stack.ensure_batch(batch)
+        self._ensure_stm_batch(batch)
+        self._last_svo = torch.zeros(batch, 3, self.svo_dim, device=device)
+        self._svo_valid = torch.zeros(batch, dtype=torch.bool, device=device)
         # Source-row completion is intentionally not resized here -- see
         # docstring.  ``ensure_microbatch`` handles the B-sized fields.
 
@@ -14495,10 +14494,26 @@ class SymbolSpace(Space):
     # only catches MISSING attrs), so we override them to run the subspace's
     # implementation. (Step 2 of the decomposition migrates the grammar half UP
     # into this Space; these delegations shrink as that lands.)
-    def Reset(self, *a, **k):
-        return self.subspace.Reset(*a, **k)
+    def _clear_word_references(self, batch=None):
+        """Word references belong to one forward; hard reset also clears a row."""
+        for name in ('rows', 'orders', 'mask', 'presences', 'evidence'):
+            attribute = '_word_reference_' + name
+            value = getattr(self, attribute, None)
+            if batch is None or value is None:
+                object.__setattr__(self, attribute, None)
+            else:
+                selected = torch.arange(value.shape[0], device=value.device) == int(batch)
+                selected = selected.reshape(-1, *((1,) * (value.ndim - 1)))
+                fill = -1 if name in ('rows', 'orders') else 0
+                object.__setattr__(self, attribute, torch.where(selected, fill, value))
+
+    def Reset(self, batch=None, hard=True):
+        if hard:
+            self._clear_word_references(batch)
+        return self.subspace.Reset(batch=batch, hard=hard)
 
     def Start(self, *a, **k):
+        self._clear_word_references()
         return self.subspace.Start(*a, **k)
 
     def End(self, *a, **k):
@@ -14619,15 +14634,11 @@ class SymbolSpace(Space):
         valid = torch.logical_and(valid, rows >= 0)
         committed_rows = torch.where(
             valid, rows, torch.full_like(rows, -1))
-        torch._assert_async((presences >= 0).all(), 'word form presence must be nonnegative')
+        torch._assert_async((torch.isfinite(presences) & (presences >= 0)).all(),
+                            'word form presence must be finite and nonnegative')
         committed_presences = torch.where(
             valid.unsqueeze(-1), presences,
             torch.zeros_like(presences))
-        object.__setattr__(
-            self, "_word_reference_rows", committed_rows)
-        object.__setattr__(
-            self, "_word_reference_presences", committed_presences)
-        object.__setattr__(self, "_word_reference_mask", valid)
         # Keep both lanes intact. Without a conceptual walk, native positive
         # identification supplies the initial pair before any pole operation.
         if evidence is None:
@@ -14637,17 +14648,19 @@ class SymbolSpace(Space):
             raise ValueError('word reference evidence requires an aligned pair')
         torch._assert_async((torch.isfinite(evidence) & (evidence >= 0) & (evidence <= 1)).all(),
                             'word reference evidence requires finite poles in [0, 1]')
-        object.__setattr__(self, '_word_reference_evidence',
-                           torch.where(valid[..., None], evidence.detach(), torch.zeros_like(evidence)))
+        committed_evidence = torch.where(valid[..., None], evidence.detach(), torch.zeros_like(evidence))
         if orders is not None:
             if (not torch.is_tensor(orders)
                     or tuple(orders.shape) != tuple(rows.shape)):
                 raise ValueError(
                     "word reference orders must align with rows [B,W]")
-            object.__setattr__(
-                self, "_word_reference_orders",
-                torch.where(
-                    valid, orders, torch.full_like(orders, -1)))
+            committed_orders = torch.where(valid, orders, torch.full_like(orders, -1))
+        else:
+            committed_orders = None
+        # Publish the complete handoff only after every column is validated.
+        for name, value in (('rows', committed_rows), ('presences', committed_presences),
+                            ('mask', valid), ('evidence', committed_evidence), ('orders', committed_orders)):
+            object.__setattr__(self, '_word_reference_' + name, value)
         return committed_presences
 
     def _publish_symbol_snapshot(self, event, source=None, *,

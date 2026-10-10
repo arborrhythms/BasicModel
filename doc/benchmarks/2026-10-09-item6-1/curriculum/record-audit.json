@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "source_files": 762,
+  "counts": {
+    "stage_records": 32,
+    "presentations": 1730,
+    "per_read_rows": 46856,
+    "active_read_rows": 45296,
+    "lesson_named_read_rows": 6144,
+    "training_epochs": 1664,
+    "teacher_forced_read_rows": 3072,
+    "stages_not_run": 2,
+    "tsv_rows": 776
+  },
+  "errors": []
+}

@@ -425,10 +425,10 @@ def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
         fi['native_indices'] = torch.nn.functional.pad(fi['native_indices'], (0, 19), value=-1)
         fi['native_part_spans'] = torch.nn.functional.pad(fi['native_part_spans'], (0, 0, 0, 19))
         read = model._concept_owner().cs_read_memberships
-        def bounded(percepts, extents):
+        def bounded(percepts, extents, **kwargs):
             assert extents.shape[1] == width, 'padded words expanded the native field read'
             assert percepts[0].shape[1] == native_width, 'padded events expanded the native field read'
-            return read(percepts, extents)
+            return read(percepts, extents, **kwargs)
         monkeypatch.setattr(model._concept_owner(), 'cs_read_memberships', bounded)
         result = native_word_poles(model, spans, forms, known)
     torch.testing.assert_close(result[:, :width], reference, rtol=0, atol=0)

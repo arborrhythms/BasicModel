@@ -1,0 +1,28 @@
+{
+  "head": "ed0d031bdd36712a05f445d4979a13fbcb427be9",
+  "source_files": 762,
+  "source_archive_sha256": "81df1c8c619cfdf546471c990baf3fce1df8f9141576f6f11b13d83c8b0a3c53",
+  "modes": [
+    "disabled",
+    "enabled"
+  ],
+  "fresh_models": 2,
+  "seed": null,
+  "retries": 0,
+  "epochs": 64,
+  "through_stage": 3,
+  "attention_optimizer": "Adam",
+  "learning_rate": 0.01,
+  "order_ce_max": 0.01,
+  "order_gate": "Every free read supports one word in the lesson order; enabled final lesson CE <= .01 nats on every row and below its initial value. List reconstruction is reported separately.",
+  "paired_checkpoint_sha256": "0a2b961d94ab2f1fb6f2b7355ba3d96993b045e5c6cc7d4c073f24680deaeca5",
+  "paired_c_passed": true,
+  "commands": [
+    "PYTHONPATH=bin:test BASICMODEL_DEVICE=cpu .venv/bin/python test/attention_curriculum_gates.py output/item6-1-landing-gates --epochs 64 --through-stage 3",
+    "PYTHONPATH=test BASICMODEL_DEVICE=cpu .venv/bin/python output/item6-1-landing-run-sweep.py",
+    "PYTHONPATH=output/item6-1-curriculum-bisect:bin:test BASICMODEL_DEVICE=cpu PAIRED_DIRECTORY=output/item6-1-curriculum-bisect/paired-state PAIRED_MODE=replay PAIRED_OUTPUT=item6-1-landing-paired .venv/bin/python -m pytest -q -p paired test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode --basetemp=output/item6-1-landing-paired-tmp",
+    "PYTHONPATH=bin:test BASICMODEL_DEVICE=cpu .venv/bin/python output/item6-1-landing-enabled.py",
+    "PYTHONPATH=bin:test BASICMODEL_DEVICE=cpu RUN_SLOW=1 .venv/bin/python -m pytest -q test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True] test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+  ],
+  "continuation": "Disabled initialization was not retried. The previously unattempted enabled mode ran once in a separate process after the disabled mode raised in native retrieval."
+}

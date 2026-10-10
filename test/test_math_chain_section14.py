@@ -156,7 +156,7 @@ def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match()
     assert free.role_mask.tolist() == [True,True,True]
 
 
-def test_ordinary_initial_binding_distribution_includes_every_retained_candidate(tmp_path):
+def test_ordinary_initial_binding_distribution_includes_every_retained_candidate(tmp_path, eager_reading):
     """Certificate b: unforced distribution, with empirical openings reported."""
     import json
     from binding_distribution_probe import binding_distributions
@@ -201,7 +201,7 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
         model.End()
 
 
-def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode(tmp_path):
+def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode(tmp_path, eager_reading):
     """Certificate c, FORCED operation/binding; actual paired suffix and costs."""
     import json
     from BindingAnswers import matches
@@ -238,7 +238,7 @@ def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
         model.End()
 
 
-def test_forced_ordinary_bound_declaratives_open_no_episode(tmp_path):
+def test_forced_ordinary_bound_declaratives_open_no_episode(tmp_path, eager_reading):
     """Certificate d, FORCED operation/binding; real document training."""
     import json
     from forced_math_grammar import ForcedGrammar
@@ -257,7 +257,7 @@ def test_forced_ordinary_bound_declaratives_open_no_episode(tmp_path):
         model.End()
 
 
-def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp_path, monkeypatch):
+def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp_path, monkeypatch, eager_reading):
     """g on the authorized forced c/e grammars; both explore suffixes stay live."""
     import json
     from forced_math_grammar import ForcedGrammar
@@ -312,7 +312,7 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
 
 
 @pytest.mark.parametrize('reverse', [False, True])
-def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse):
+def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager_reading):
     """Certificate e, FORCED grammar, zero budget preserves pending arrivals."""
     import json
     from forced_math_grammar import ForcedGrammar

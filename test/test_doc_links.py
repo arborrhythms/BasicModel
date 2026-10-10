@@ -7,6 +7,7 @@ row that links a document must point at a file that exists. External links
 """
 import re
 from pathlib import Path
+from urllib.parse import unquote
 
 import pytest
 
@@ -41,7 +42,7 @@ def _relative_targets(text):
             continue
         target = target.split("#", 1)[0]
         # ``path:line`` clickable code references.
-        yield re.sub(r":\d+$", "", target)
+        yield unquote(re.sub(r":\d+$", "", target))
 
 
 @pytest.mark.parametrize("path", _markdown_files(),

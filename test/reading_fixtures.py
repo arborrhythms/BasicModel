@@ -152,13 +152,17 @@ def force_absolute_reading(model):
     def unary_scores(*args, **kwargs):
         stop, scores = unary(*args, **kwargs)
         indices = kwargs.get('op_indices')
-        if (kwargs.get('op_offset') == layer.r_reduce + layer.r_apply
-                or (indices is not None and bool((indices >= layer.r_reduce+layer.r_apply).all()))):
+        if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
             return stop, scores  # supplied grammar does not force attention
         mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
-        if kwargs.get('op_indices') is not None:
-            mask = mask.index_select(0, kwargs['op_indices'])
-        return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+        if indices is not None:
+            mask = mask.index_select(0, indices.clamp(0, len(unary_names) - 1))
+        forced = scores.masked_fill(~mask, -torch.inf) - 1e6
+        if indices is not None:
+            # Thought/attention indices are global, whereas compose's unary
+            # indices are local. Keep this distinction tensor-valued in HOPs.
+            forced = torch.where(indices >= layer.r_reduce + layer.r_apply, scores, forced)
+        return stop, forced
     layer.chooser.score_binary = binary_scores
     layer.chooser.score_unary = unary_scores
 

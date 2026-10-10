@@ -1,0 +1,11 @@
+{
+  "modes": [
+    "enabled",
+    "disabled"
+  ],
+  "runs_per_mode": 1,
+  "epochs": 400,
+  "seed": null,
+  "retries": 0,
+  "purpose": "Measure actual mask admission alongside the unchanged sum control and a disabled-mask comparison; no seed selection."
+}

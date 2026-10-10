@@ -87,6 +87,36 @@ runtime working state, not learned weights. `concept_dim` is the full CS output
 width reserved for the event payload; positional/temporal columns are preserved
 when a config gives CS nonzero `nWhere` / `nWhen`.
 
+**Spatial index (Alec, 2026-10-09).** The current conceptual eight-space
+has its own range in the model's shared `.where` allocation.
+`ConceptualSpace.where` exposes the slots' sinusoidal indices, using the
+same encoding as the perceptual codebooks. A slot keeps its location when
+ideas are pushed, reduced or cleared. The content's codebook address stays
+separate. Closing stores the corresponding one- or three-slot semantic
+content in LTM; a future episodic bank will retain located fields
+([Future Work §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
+The seven learned output regions are superseded by
+[the support-mask direction (§7.9–§7.10)](plans/2026-10-08-stream-state.md#79-alec-on-the-corrections-2026-10-09).
+
+**Candidate support (item 6.1 candidate, 2026-10-09).**
+`CandidateAttention(Layer)` scores each unread supported candidate with an
+ordinary MLP. One hard choice supplies one word read and one grammar step.
+The candidate's native paired evidence is its support mask, including
+negative evidence; zero means no evidence. `hetTolerance` acts on these
+lanes, with 1 a no-op. There is no learned region or boundary derivative.
+The existing paired-cost departure learner trains the scorer.
+
+During a sentence, `SentenceField` carries source-support indices beside
+the eight STM slots: pushes move the previous placements, unary operations
+retain their witnesses, and binary operations join their witnesses. The
+indices refer to the sentence's native evidence bank and its original
+`.where`/`.when` stamps. The scorer reads these stamps and all occupied
+slots; it never places the earlier reads again. The field has its own
+allowance and charges one `serial-word-loop` unit per read. The answer and
+memory readers retain their landing paths; retrieval into a slot is later
+work. Learning gates remain under validation in the
+[6.1 receipt](benchmarks/2026-10-09-item6-1/README.md).
+
 **`ShortTermMemory` owns its own live buffers (A5).** The idea stack is
 NOT proxied off `SymbolSubSpace`. `_buffer` / `_depth` / `_max_depth_host`
 are properties over plain (non-`nn.Module`-buffer) attributes

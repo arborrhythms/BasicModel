@@ -108,8 +108,11 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         assert model._word_symbol_concept_ids() is None
         report = model.ownership_gradient_diagnostics(optimizer)
         assert report['conflicts'] == 0
-        assert {r['owner'] for r in report['parameters'] if r['writers']} == {
-            'reconstruction', 'expectation', 'output'}
+        writers = {r['owner'] for r in report['parameters'] if r['writers']}
+        assert {'reconstruction', 'expectation', 'output'} <= writers
+        # Candidate selection has no pathwise derivative. A scorer writes
+        # only when this unseeded trial samples a non-tied candidate departure.
+        assert writers <= {'reconstruction', 'expectation', 'output', 'attention'}
         assert all(not row['writers'] or row['writers'] == [row['owner']] for row in report['parameters'])
     finally:
         model.End()

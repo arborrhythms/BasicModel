@@ -1,0 +1,55 @@
+{
+  "reason": "interrupted",
+  "exit_code": 130,
+  "completed": 5705,
+  "selected": 5717,
+  "elapsed_seconds": 1365.8141222919803,
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 12884901888,
+    "workers": 6,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "warnings": [
+    "Latest weekly slow-test record is 7.5 days old (over seven days)."
+  ],
+  "peak_aggregate_memory_bytes": 13479825376,
+  "source_unchanged": true,
+  "failures": [
+    {
+      "nodeid": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+      "phase": "call",
+      "message": "test/test_math_chain.py:282: in test_prior_statement_is_a_reference_candidate_before_noun_columns_exist\n    bank = BasicModel._sentence_reference_bank(model, torch.tensor([True]), torch.zeros(1, 4))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20721: in _sentence_reference_bank\n    where, when = memory_coordinates(self, ids, valid)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModelSpacetime.py:305: in memory_coordinates\n    start = model.where_registry.slices['conceptual'][0]\n            ^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'where_registry'"
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+      "phase": "call",
+      "message": "test/test_math_chain.py:282: in test_prior_statement_is_a_reference_candidate_before_noun_columns_exist\n    bank = BasicModel._sentence_reference_bank(model, torch.tensor([True]), torch.zeros(1, 4))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20721: in _sentence_reference_bank\n    where, when = memory_coordinates(self, ids, valid)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ModelSpacetime.py:305: in memory_coordinates\n    start = model.where_registry.slices['conceptual'][0]\n            ^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'where_registry'"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "phase": "call",
+      "message": "test/test_router_fires_per_word.py:210: in test_serial_words_use_the_shared_operation_layer\n    assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 1 > (2 * 8)"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "phase": "call",
+      "message": "test/test_router_fires_per_word.py:210: in test_serial_words_use_the_shared_operation_layer\n    assert probe['reduce'] > 2 * probe['capacity']  # online rounds precede the closing\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 1 > (2 * 8)"
+    },
+    {
+      "nodeid": "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops",
+      "phase": "call",
+      "message": "test/test_signal_router_xor_grammar.py:95: in test_xor_router_gradients_reach_all_three_ops\n    assert p.weight.grad is not None and p.weight.grad.abs().sum() > 0, \\\nE   AssertionError: no gradient reached the not op\nE   assert (tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) is not None and tensor(0.) > 0)\nE    +  where tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) = Parameter containing:\\ntensor([[ 0.0858,  0.0836, -0.4274, -0.2765],\\n        [-0.4103,  0.1096, -0.4261,  0.4127],\\n        [ 0.2307,  0.3647,  0.2496, -0.2638],\\n        [-0.1217,  0.2907,  0.1495, -0.3885]], requires_grad=True).grad\nE    +    where Parameter containing:\\ntensor([[ 0.0858,  0.0836, -0.4274, -0.2765],\\n        [-0.4103,  0.1096, -0.4261,  0.4127],\\n        [ 0.2307,  0.3647,  0.2496, -0.2638],\\n        [-0.1217,  0.2907,  0.1495, -0.3885]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight\nE    +  and   tensor(0.) = <built-in method sum of Tensor object at 0x11f43eb70>()\nE    +    where <built-in method sum of Tensor object at 0x11f43eb70> = tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]).sum\nE    +      where tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) = <built-in method abs of Tensor object at 0x11f43d6d0>()\nE    +        where <built-in method abs of Tensor object at 0x11f43d6d0> = tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]).abs\nE    +          where tensor([[0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.],\\n        [0., 0., 0., 0.]]) = Parameter containing:\\ntensor([[ 0.0858,  0.0836, -0.4274, -0.2765],\\n        [-0.4103,  0.1096, -0.4261,  0.4127],\\n        [ 0.2307,  0.3647,  0.2496, -0.2638],\\n        [-0.1217,  0.2907,  0.1495, -0.3885]], requires_grad=True).grad\nE    +            where Parameter containing:\\ntensor([[ 0.0858,  0.0836, -0.4274, -0.2765],\\n        [-0.4103,  0.1096, -0.4261,  0.4127],\\n        [ 0.2307,  0.3647,  0.2496, -0.2638],\\n        [-0.1217,  0.2907,  0.1495, -0.3885]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "message": "test/test_math_chain_section14.py:232: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:223: in after\n    assert not model._last_closing_thoughts\nE   AssertionError: assert not ((3, SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', 'address-v1',...3797553693945972)), ('_source_evidence', (1.0, 1.0)), ('_thought_witnesses', ())), scope=(), sentence_kind=None)})))),)\nE    +  where ((3, SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', 'address-v1',...3797553693945972)), ('_source_evidence', (1.0, 1.0)), ('_thought_witnesses', ())), scope=(), sentence_kind=None)})))),) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n)._last_closing_thoughts"
+    }
+  ],
+  "disposition": "Interrupted after over fifteen minutes of graph capture in a forced-reading behavioral fixture; not a complete or passing receipt. Source held unchanged. Remaining workers also interrupted during shutdown."
+}
