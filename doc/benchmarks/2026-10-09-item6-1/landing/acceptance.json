@@ -50,5 +50,6 @@
     "list inverse recovery, including the unresolved four-word list"
   ],
   "b": "Flaky unseeded bound: review records 3/3 HEAD, 3/3 isolated candidate, earlier sweep maximum 1.129; passes landing sweep; tighten by construction, never seed",
-  "runtime_followup": "Item 1: rising per-presentation runtime; measure like-for-like before attributing a cause"
+  "runtime_followup": "Item 1: rising per-presentation runtime; measure like-for-like before attributing a cause",
+  "landing_commit": "4d9d9ca8adb10b42f8b6a424f0c850c66e1b23ff"
 }

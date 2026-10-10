@@ -493,7 +493,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- **Item 6.1** (accepted October 10; commit recorded after landing): support masks, one read per placement, eight-space STM with witnesses, derivation reconstruction and the order lesson; curriculum harness with identity/permanence and word identification passing; learning gates at item 0 ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
+- **Item 6.1** (`4d9d9ca8a`): support masks, one read per placement, eight-space STM with witnesses, derivation reconstruction and the order lesson; curriculum harness with identity/permanence and word identification passing; learning gates at item 0 ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
 - **Item 6.2 closed** (initial mechanism `e43638a`; Alec accepted the closing October 9, thinking §14.13): mechanism complete, decomposition demonstrated; learning deferred to item 0 under the four protocol corrections—one-step problems first, worked steps as intermediate answers, binding a found candidate, and budget in steps with each query’s record charge bounded separately ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md)).
 
 - **Item 6.5 mechanism** (Alec accepted October 7; one landing from `f4a68404e`): definedness, native identity/change columns and global bind/mint; learning gates remain pending the million-sentence checkpoint ([acceptance](doc/benchmarks/2026-10-07-item6-5/acceptance.json)).
