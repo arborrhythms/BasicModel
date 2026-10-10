@@ -7,6 +7,6 @@
   "source_sha256": "7acd0bbdd9790354625c99ad43c26290bfd5eda73908d009909cae32bcfea865",
   "H": "fixed; unchanged regression passes",
   "I": "cause bisected; reversed per-position output remains open for learned order",
-  "mechanism_commit": null,
+  "mechanism_commit": "9cc5f6e327f83d3a26ba89bbbeb55571ceff9e12",
   "identity_rules_retired": []
 }

@@ -478,6 +478,8 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- **Item 6 H/I follow-up** (`9cc5f6e327`): unavailable reconstruction coverage is zero; I’s empty-inverse and remaining orientation causes are bisected, with learned order still open ([receipt](doc/benchmarks/2026-10-10-item6/followup/README.md)).
+
 - **Item 6 part 1** (`324b84d67f`): shared stored/live inverse, dropped-support keep charge, cache recovery, captured-input isolation, family-order retirement and residual/greedy components; part 2 and measured failures stay open ([receipt](doc/benchmarks/2026-10-10-item6/part1/README.md)).
 
 - **Item 6.1** (`4d9d9ca8a`): support masks, one read per placement, eight-space STM with witnesses, derivation reconstruction and the order lesson; curriculum harness with identity/permanence and word identification passing; learning gates at item 0 ([acceptance and receipt](doc/benchmarks/2026-10-09-item6-1/README.md)).
