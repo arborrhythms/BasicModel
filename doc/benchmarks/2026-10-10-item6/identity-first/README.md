@@ -4,6 +4,7 @@ The preparation landed as `06f6e2b88` after [plan §5](../../../plans/2026-10-10
 This pass was accepted as preparation in [plan §7](../../../plans/2026-10-10-item-6-stored-idea-generativity.md#7-review-of-the-53-pass-mnoi-and-the-first-native-experiment-claude-2026-10-10)
 and authorized for landing on October 11. This is the single receipt
 for the correctness repairs, revised corpus and first matched experiment.
+The reviewed preparation is committed as `af634ed35`.
 Results below distinguish completed measurements from the retained failed
 attempts. No learning claim is made and no rule is retired. The R/S/T repair
 pass and its unchanged eight-branch measurement follow this preparation.

@@ -551,6 +551,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 6 part-2 M/N/O/I preparation and first eight-branch native experiment: `af634ed35` ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)); reviewed in plan §7, no learning claim. R/S/T and all failed learning gates remain open.
 - Item 6 part-2 corpus and measurement preparation: `06f6e2b88` ([receipt](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)); M/N/O/I and the first experiment are accepted as preparation by plan §7, with no learning claim.
 
 - **Item 6 H/I follow-up** (`9cc5f6e327`): unavailable reconstruction coverage is zero; I’s empty-inverse and remaining orientation causes are bisected, with learned order still open ([receipt](doc/benchmarks/2026-10-10-item6/followup/README.md)).
