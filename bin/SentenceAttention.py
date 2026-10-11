@@ -143,6 +143,14 @@ class SentenceField(FieldTraversal):
         return self.support.new_zeros(self.scope.shape).scatter(1,
             self.positions[None].expand(len(self.support), -1), self.admission)
 
+    def grammar_leaves(self, prior):
+        """Reconstruct exactly the leaves this trial placed into compose.
+
+        Attention can admit a leaf absent before the trial's hand-off. The
+        old mask belongs only to the other sentences, not this trial's tree.
+        """
+        return torch.where(self.scope, self.full_admission().detach().bool(), prior)
+
     def costs(self, record, recovered, *, defined, step_cost):
         from AttentionObjective import field_cost
         admission = self.full_admission()

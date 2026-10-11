@@ -304,7 +304,12 @@ class LeafCodeIndex:
         cue_order = 0
         if self._index_order_of is not None and self._index_code_row is not None:
             for reference in cue.role_refs:
-                if reference is not None and reference[0] == 'sym':
+                # Cue payloads can remain useful with an unresolved address.
+                # Only an actual concept handle owns a taxonomic order; a
+                # sentinel must not enter the strict concept-table reader.
+                if (isinstance(reference, tuple) and len(reference) == 2
+                        and reference[0] == 'sym'
+                        and type(reference[1]) is int and reference[1] > 0):
                     code = self._index_code_row(reference)
                     if code is not None:
                         cue_order = max(cue_order, self._index_order_of(code))

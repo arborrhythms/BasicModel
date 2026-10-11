@@ -1,0 +1,53 @@
+{
+  "invalid_measurement": true,
+  "reason": "The tiny fixture exposes zero meaning pairs; the component event chart projects all nonzero observations to zero. These scores do not test admission or identification.",
+  "time": "2026-10-10T16:48:56.072415+00:00",
+  "progress": {
+    "recovery-factorial-off": {
+      "training": false,
+      "completed": 48,
+      "total": 48
+    },
+    "recovery-factorial-on": {
+      "training": false,
+      "completed": 48,
+      "total": 48
+    },
+    "identity-biased-off": {
+      "training": true,
+      "completed": 12,
+      "total": 136
+    },
+    "recovery-confounded-off": {
+      "training": false,
+      "completed": 48,
+      "total": 48
+    },
+    "recovery-confounded-on": {
+      "training": false,
+      "completed": 48,
+      "total": 48
+    },
+    "identity-biased-on": {
+      "training": true,
+      "completed": 12,
+      "total": 136
+    },
+    "warmup": {
+      "stage": "relations",
+      "step": 8,
+      "budget": 8
+    },
+    "identity-balanced-on": {
+      "training": true,
+      "completed": 20,
+      "total": 136
+    },
+    "identity-balanced-off": {
+      "training": true,
+      "completed": 20,
+      "total": 136
+    }
+  },
+  "evidence": "doc/benchmarks/2026-10-10-item6/identity-first/validation/admission-audit.json"
+}

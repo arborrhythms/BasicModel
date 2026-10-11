@@ -1,494 +1,494 @@
-{"id": "f186a1840838cbcb52f0", "sentences": ["cat ."]}
-{"id": "3d56ba606762d4187be9", "sentences": ["dog ."]}
-{"id": "da627bbbbd4c2b7453ac", "sentences": ["bird ."]}
-{"id": "fadd934981e0e57bae17", "sentences": ["horse ."]}
-{"id": "92b054d055983d6aabf9", "sentences": ["black ."]}
-{"id": "79cb141e0df6d46aaa5e", "sentences": ["white ."]}
-{"id": "fc35b355bb359e8ff921", "sentences": ["small ."]}
-{"id": "2e7bf9466257920c9cbd", "sentences": ["large ."]}
-{"id": "4a21c403ddb33ef0b1fb", "sentences": ["runs ."]}
-{"id": "91481b9eac77a22aacce", "sentences": ["sleeps ."]}
-{"id": "fe8895b03e3a93b82038", "sentences": ["waits ."]}
-{"id": "c63539a81c308d4ab831", "sentences": ["moves ."]}
-{"id": "318058cc44976ee237fe", "sentences": ["purred ."]}
-{"id": "4dbd197ebfc4d7c2162c", "sentences": ["barked ."]}
-{"id": "0cd26d78672cdbdfb354", "sentences": ["chirped ."]}
-{"id": "70bfd2e64203a49eeca6", "sentences": ["neighed ."]}
-{"id": "355071f34ec434321da9", "sentences": ["cat ."]}
-{"id": "081b7566ba55f6e1f97c", "sentences": ["dog ."]}
-{"id": "846f0274562c6e11c86e", "sentences": ["bird ."]}
-{"id": "2eb3812465f578c8a0ac", "sentences": ["horse ."]}
-{"id": "0a58d61c85ba1d790aef", "sentences": ["black ."]}
-{"id": "d8e98734184ecd1a96b2", "sentences": ["white ."]}
-{"id": "2fac8abd9ebb016035e0", "sentences": ["small ."]}
-{"id": "70f0a03223bd7d329b41", "sentences": ["large ."]}
-{"id": "b874211ca4dc6a832646", "sentences": ["runs ."]}
-{"id": "0edc371ff7732a99245e", "sentences": ["sleeps ."]}
-{"id": "23eadae887b1a2f5c334", "sentences": ["waits ."]}
-{"id": "194bb045fe53a99eed22", "sentences": ["moves ."]}
-{"id": "efa51b51bb77db6362ee", "sentences": ["purred ."]}
-{"id": "953c1e415a10bd709dd9", "sentences": ["barked ."]}
-{"id": "437e67b7dc8d8d9aa23b", "sentences": ["chirped ."]}
-{"id": "0e52c3ede765891bc328", "sentences": ["neighed ."]}
-{"id": "f2a9b88c58a7d9e06d49", "sentences": ["cat ."]}
-{"id": "b7b3d36fd8ace9eb9e4f", "sentences": ["dog ."]}
-{"id": "bd86e27294158ea4cf31", "sentences": ["bird ."]}
-{"id": "9427d34ccae5a12d10d8", "sentences": ["horse ."]}
-{"id": "025e7c4095d7b384ed91", "sentences": ["black ."]}
-{"id": "308e8a73340cdbf73f66", "sentences": ["white ."]}
-{"id": "676ba0c1f550d9323121", "sentences": ["small ."]}
-{"id": "6283cf9a420c9b9305ea", "sentences": ["large ."]}
-{"id": "324de8a96064499a605c", "sentences": ["runs ."]}
-{"id": "ab993b8ff999937269b2", "sentences": ["sleeps ."]}
-{"id": "72df0841b16cb6510d80", "sentences": ["waits ."]}
-{"id": "9adebd836c9facec86be", "sentences": ["moves ."]}
-{"id": "6b9c22f4262fa09a5552", "sentences": ["purred ."]}
-{"id": "c20c740ef2920cfb6172", "sentences": ["barked ."]}
-{"id": "6ba4cdf8c7379f1609a3", "sentences": ["chirped ."]}
-{"id": "416b1f84d2d7bc91d47d", "sentences": ["neighed ."]}
-{"id": "ab52766f22f62c8db012", "sentences": ["cat ."]}
-{"id": "aaae2d056cd5e7439c34", "sentences": ["dog ."]}
-{"id": "748215a02fe7e49a01af", "sentences": ["bird ."]}
-{"id": "7bc12bcdb65270bc3625", "sentences": ["horse ."]}
-{"id": "de32d2d1581f89024039", "sentences": ["black ."]}
-{"id": "eddffb3ec22ecf9d8077", "sentences": ["white ."]}
-{"id": "37e21f51797272b732b8", "sentences": ["small ."]}
-{"id": "ec7805f0bc8ec2ef1dd0", "sentences": ["large ."]}
-{"id": "4b5c709ca5f4fde6686c", "sentences": ["runs ."]}
-{"id": "c9851cc0cd63ac0fe6f1", "sentences": ["sleeps ."]}
-{"id": "05e8c83223e1ddae66c4", "sentences": ["waits ."]}
-{"id": "cb6d9a1ef69a597e3470", "sentences": ["moves ."]}
-{"id": "a4ddcfeebc23a4a52382", "sentences": ["purred ."]}
-{"id": "2b6c339b9a09ca360964", "sentences": ["barked ."]}
-{"id": "66079ff751379efc332c", "sentences": ["chirped ."]}
-{"id": "26d8b5f1c52072bf2338", "sentences": ["neighed ."]}
-{"id": "f69cf52af560d5f28608", "sentences": ["a black cat runs ."]}
-{"id": "b96b56de72f707e7e3c4", "sentences": ["a black cat sleeps ."]}
-{"id": "c57010240a1ae2a02d6d", "sentences": ["a black cat waits ."]}
-{"id": "cbd314c134af05979397", "sentences": ["a black cat moves ."]}
-{"id": "3a0f5ae4c40b1c1e640c", "sentences": ["a white cat runs ."]}
-{"id": "4cee5a7486ca110ea569", "sentences": ["a white cat sleeps ."]}
-{"id": "f2a59ea78d119776f681", "sentences": ["a white cat waits ."]}
-{"id": "34adad88d0ce9d8bee6d", "sentences": ["a white cat moves ."]}
-{"id": "4826e6d65fee20c29774", "sentences": ["a small cat runs ."]}
-{"id": "36afcd65aae24c84260a", "sentences": ["a small cat sleeps ."]}
-{"id": "a7f1ad336ca30aa480a6", "sentences": ["a small cat waits ."]}
-{"id": "aa8f5d1aa4852c8d6cf1", "sentences": ["a small cat moves ."]}
-{"id": "433e78d91593ebab2b08", "sentences": ["a large cat runs ."]}
-{"id": "da174b5380eb9a529c92", "sentences": ["a large cat sleeps ."]}
-{"id": "dfc320993ab2ad919c35", "sentences": ["a large cat waits ."]}
-{"id": "cbe29276f1c808ef3fc9", "sentences": ["a large cat moves ."]}
-{"id": "20786035d012031c3f08", "sentences": ["a black dog runs ."]}
-{"id": "58f631070ad02e5bbcf2", "sentences": ["a black dog sleeps ."]}
-{"id": "01bdd3238144446bd4c8", "sentences": ["a black dog waits ."]}
-{"id": "32f0c0744f70f5df70e7", "sentences": ["a black dog moves ."]}
-{"id": "80c67b74e40bf1412360", "sentences": ["a white dog runs ."]}
-{"id": "eb099058c9af03dedc1e", "sentences": ["a white dog sleeps ."]}
-{"id": "73905b9203b845d486d1", "sentences": ["a white dog waits ."]}
-{"id": "547cd60c4979a8ff504b", "sentences": ["a white dog moves ."]}
-{"id": "873d544ebd93a82c0921", "sentences": ["a small dog runs ."]}
-{"id": "21ca9ef3a2e690b39661", "sentences": ["a small dog sleeps ."]}
-{"id": "ec5a8a8ec06b09833625", "sentences": ["a small dog waits ."]}
-{"id": "8e87c300b5b28bb5f2bd", "sentences": ["a small dog moves ."]}
-{"id": "44c628bbc3cd1a49b48a", "sentences": ["a large dog runs ."]}
-{"id": "3c8b199d8595e4a68ae0", "sentences": ["a large dog sleeps ."]}
-{"id": "1a6eac00f9d3f70b1f0e", "sentences": ["a large dog waits ."]}
-{"id": "c7f5d949bfa67dbc04b6", "sentences": ["a large dog moves ."]}
-{"id": "0658667d1c6201e6afef", "sentences": ["a black bird runs ."]}
-{"id": "26185e145939d82395b1", "sentences": ["a black bird sleeps ."]}
-{"id": "79115cc98990ee6d34a4", "sentences": ["a black bird waits ."]}
-{"id": "a3256ca17497d8790b55", "sentences": ["a black bird moves ."]}
-{"id": "e82ff8eb4a0fe9f0f876", "sentences": ["a white bird runs ."]}
-{"id": "1aa506b5df6b7cd5def6", "sentences": ["a white bird sleeps ."]}
-{"id": "4c443e6533585dac6b1e", "sentences": ["a white bird waits ."]}
-{"id": "fe9b1337ef75eb7e71aa", "sentences": ["a white bird moves ."]}
-{"id": "f87f2e3bc16a0b6d13ef", "sentences": ["a small bird runs ."]}
-{"id": "67d6e69c0d263fd41855", "sentences": ["a small bird sleeps ."]}
-{"id": "3b032a891b7149f2923b", "sentences": ["a small bird waits ."]}
-{"id": "f516a5e9094b38b17c15", "sentences": ["a small bird moves ."]}
-{"id": "f4c1e523e31b4ae86273", "sentences": ["a large bird runs ."]}
-{"id": "f0bce712a2d51b22e4eb", "sentences": ["a large bird sleeps ."]}
-{"id": "dfef1bfb370fe0419bde", "sentences": ["a large bird waits ."]}
-{"id": "dec0b6f4e42fb2cea10b", "sentences": ["a large bird moves ."]}
-{"id": "6ae0d233b779b417864c", "sentences": ["a black horse runs ."]}
-{"id": "3a70aa606536d679dffd", "sentences": ["a black horse sleeps ."]}
-{"id": "b21bab75653748a7f999", "sentences": ["a black horse waits ."]}
-{"id": "7d8abd750e91c21609af", "sentences": ["a black horse moves ."]}
-{"id": "f22ec7d99d6f1bddb779", "sentences": ["a white horse runs ."]}
-{"id": "50e11fefff01684455cd", "sentences": ["a white horse sleeps ."]}
-{"id": "93a947de635611a5f805", "sentences": ["a white horse waits ."]}
-{"id": "2ca3e0af96f6c0372452", "sentences": ["a white horse moves ."]}
-{"id": "954af3420fb766f8e9f5", "sentences": ["a small horse runs ."]}
-{"id": "198a3c20d240827c7b93", "sentences": ["a small horse sleeps ."]}
-{"id": "c1d55fbf61f485302cb8", "sentences": ["a small horse waits ."]}
-{"id": "6c35eee0f98076d03fd7", "sentences": ["a small horse moves ."]}
-{"id": "98ea2ace7707eedec37d", "sentences": ["a large horse runs ."]}
-{"id": "8c20ecc5f0934fc82387", "sentences": ["a large horse sleeps ."]}
-{"id": "0f35dc1a5c55077d8e4b", "sentences": ["a large horse waits ."]}
-{"id": "d79099c17638c04b1660", "sentences": ["a large horse moves ."]}
-{"id": "49f466c2e32aff6b07b8", "sentences": ["cat ."]}
-{"id": "9be5b1c34b03a881786f", "sentences": ["dog ."]}
-{"id": "4f9eb7315ae59de7d07d", "sentences": ["bird ."]}
-{"id": "a6d658fad5d79b54a750", "sentences": ["horse ."]}
-{"id": "8efb58e5fae5dd0c29ab", "sentences": ["black ."]}
-{"id": "1955c4b74af2546dc423", "sentences": ["white ."]}
-{"id": "06e91edf7c86370e0983", "sentences": ["small ."]}
-{"id": "394ae856ee9aae6ef5aa", "sentences": ["large ."]}
-{"id": "7f58f487c41e282dbff3", "sentences": ["runs ."]}
-{"id": "364e63f3562ff6bc9a3e", "sentences": ["sleeps ."]}
-{"id": "11c53475da910ec06b45", "sentences": ["waits ."]}
-{"id": "06923215216d845038ff", "sentences": ["moves ."]}
-{"id": "a39ce55cf0b231655057", "sentences": ["a black cat and a white dog runs ."]}
-{"id": "2fd353f80b0ccfeb1c58", "sentences": ["a black cat and a white dog sleeps ."]}
-{"id": "15a35b4869f062f37d51", "sentences": ["a black cat and a white dog waits ."]}
-{"id": "9517b6d8944d3ed60402", "sentences": ["a black cat and a white dog moves ."]}
-{"id": "28a893b3bf84234e8571", "sentences": ["a white cat and a small dog runs ."]}
-{"id": "6b94e146eb220e051786", "sentences": ["a white cat and a small dog sleeps ."]}
-{"id": "f08febd5c5cafc271d7f", "sentences": ["a white cat and a small dog waits ."]}
-{"id": "11fde63da5b621d44542", "sentences": ["a white cat and a small dog moves ."]}
-{"id": "3fca09a3f9bc96ad0900", "sentences": ["a small cat and a large dog runs ."]}
-{"id": "4781be26b06fdbde985a", "sentences": ["a small cat and a large dog sleeps ."]}
-{"id": "c2c1a6ad6c36ab95bcb9", "sentences": ["a small cat and a large dog waits ."]}
-{"id": "ac586f088da942b916b0", "sentences": ["a small cat and a large dog moves ."]}
-{"id": "339c623aacca1e004f67", "sentences": ["a large cat and a black dog runs ."]}
-{"id": "f217b0b5e09e8296acdd", "sentences": ["a large cat and a black dog sleeps ."]}
-{"id": "2f3192e0d14fcdc1cf24", "sentences": ["a large cat and a black dog waits ."]}
-{"id": "6b7cd9f5662a19f98f72", "sentences": ["a large cat and a black dog moves ."]}
-{"id": "9b593e193e09ecbe841a", "sentences": ["a black dog and a white bird runs ."]}
-{"id": "ce077817e534174afed8", "sentences": ["a black dog and a white bird sleeps ."]}
-{"id": "fa6c89e23c3b881a2e7f", "sentences": ["a black dog and a white bird waits ."]}
-{"id": "1c327f24573f66868311", "sentences": ["a black dog and a white bird moves ."]}
-{"id": "4150bfad667fffaf6671", "sentences": ["a white dog and a small bird runs ."]}
-{"id": "416012863838d1348506", "sentences": ["a white dog and a small bird sleeps ."]}
-{"id": "26eadb3fe6934ddda444", "sentences": ["a white dog and a small bird waits ."]}
-{"id": "14ab9066ab1c1c3cd9b4", "sentences": ["a white dog and a small bird moves ."]}
-{"id": "a529af9fb29915c2d208", "sentences": ["a small dog and a large bird runs ."]}
-{"id": "d056f8a30979bd3cbdd3", "sentences": ["a small dog and a large bird sleeps ."]}
-{"id": "6052b2968cfe77144683", "sentences": ["a small dog and a large bird waits ."]}
-{"id": "a8bcb5fa9217198c73e9", "sentences": ["a small dog and a large bird moves ."]}
-{"id": "a69c578ff6991bac930e", "sentences": ["a large dog and a black bird runs ."]}
-{"id": "d4c75c91bed0fbc00767", "sentences": ["a large dog and a black bird sleeps ."]}
-{"id": "71b2ba7634670e5c10ef", "sentences": ["a large dog and a black bird waits ."]}
-{"id": "8950c19d8b3aa5721652", "sentences": ["a large dog and a black bird moves ."]}
-{"id": "f31e2c61290bc10b15fe", "sentences": ["a black bird and a white horse runs ."]}
-{"id": "4bc701cec9527645edbe", "sentences": ["a black bird and a white horse sleeps ."]}
-{"id": "8eefbf220135068802e8", "sentences": ["a black bird and a white horse waits ."]}
-{"id": "51886083a64f8d7027b7", "sentences": ["a black bird and a white horse moves ."]}
-{"id": "1e39f70acf4e8983eec0", "sentences": ["a white bird and a small horse runs ."]}
-{"id": "3cd0e31c5f7fb5f7e8c9", "sentences": ["a white bird and a small horse sleeps ."]}
-{"id": "aba4c9aedbf91837e184", "sentences": ["a white bird and a small horse waits ."]}
-{"id": "09b2641fb81dec9bbebb", "sentences": ["a white bird and a small horse moves ."]}
-{"id": "842cf3625d6d4e5b8666", "sentences": ["a small bird and a large horse runs ."]}
-{"id": "ef19ba3420c01bd63c7f", "sentences": ["a small bird and a large horse sleeps ."]}
-{"id": "d14c2e20ec8a47f208ba", "sentences": ["a small bird and a large horse waits ."]}
-{"id": "8421fe4b71938b0a9ec9", "sentences": ["a small bird and a large horse moves ."]}
-{"id": "87304dd219e1e73aebcb", "sentences": ["a large bird and a black horse runs ."]}
-{"id": "f8e7a103ef5867572ecd", "sentences": ["a large bird and a black horse sleeps ."]}
-{"id": "2746e4baec8ac923b161", "sentences": ["a large bird and a black horse waits ."]}
-{"id": "e6f961d1ec20d5bcb8b2", "sentences": ["a large bird and a black horse moves ."]}
-{"id": "17507cca5eb5d1e98b00", "sentences": ["a black horse and a white cat runs ."]}
-{"id": "c8494c084144b6da3a4f", "sentences": ["a black horse and a white cat sleeps ."]}
-{"id": "220105b209f710dfd6b2", "sentences": ["a black horse and a white cat waits ."]}
-{"id": "714212265debaeba36d7", "sentences": ["a black horse and a white cat moves ."]}
-{"id": "a416e4cedeb2ec5088fe", "sentences": ["a white horse and a small cat runs ."]}
-{"id": "c60c4828e15071fc6177", "sentences": ["a white horse and a small cat sleeps ."]}
-{"id": "6f460090682a5de5f1e2", "sentences": ["a white horse and a small cat waits ."]}
-{"id": "44bfaa48fadea551b3ae", "sentences": ["a white horse and a small cat moves ."]}
-{"id": "577a17c852710a1d0087", "sentences": ["a small horse and a large cat runs ."]}
-{"id": "001d334c031587693677", "sentences": ["a small horse and a large cat sleeps ."]}
-{"id": "90d4fe33f4f72994ff00", "sentences": ["a small horse and a large cat waits ."]}
-{"id": "53a1f33155b3b88e92f6", "sentences": ["a small horse and a large cat moves ."]}
-{"id": "1dbceef513a3c0121e0a", "sentences": ["a large horse and a black cat runs ."]}
-{"id": "378fccba887970c3261e", "sentences": ["a large horse and a black cat sleeps ."]}
-{"id": "04e98330198b5a16f047", "sentences": ["a large horse and a black cat waits ."]}
-{"id": "6b8cbe1f20ecf24f67b6", "sentences": ["a large horse and a black cat moves ."]}
-{"id": "361ba82c5f7f4e593eea", "sentences": ["cat ."]}
-{"id": "564d62b8d88f9c4951db", "sentences": ["dog ."]}
-{"id": "a987933bc4267f68d32d", "sentences": ["bird ."]}
-{"id": "3774325c4499fb065f92", "sentences": ["horse ."]}
-{"id": "a49f81ec3f9ecfc5a98b", "sentences": ["black ."]}
-{"id": "727f1984a73782d19e9d", "sentences": ["white ."]}
-{"id": "184ff9eb0e8db2313c23", "sentences": ["small ."]}
-{"id": "7e941c9f33d25c3efc87", "sentences": ["large ."]}
-{"id": "4045a34b640ff0232132", "sentences": ["runs ."]}
-{"id": "62a4955919de7c53ece3", "sentences": ["sleeps ."]}
-{"id": "9f3017b9a534f4b5c709", "sentences": ["waits ."]}
-{"id": "9f7b103b2992af0a1d4d", "sentences": ["moves ."]}
-{"id": "cc3376b1b1e0ad0db0c8", "sentences": ["a black cat and a white dog and a small bird runs ."]}
-{"id": "cbc92d043d09c8673a55", "sentences": ["a black cat and a white dog and a small bird sleeps ."]}
-{"id": "351f42ed5d8b09347d0a", "sentences": ["a black cat and a white dog and a small bird waits ."]}
-{"id": "f1a3a3943bb69c18e6e6", "sentences": ["a black cat and a white dog and a small bird moves ."]}
-{"id": "45953e794f61cd62cd6d", "sentences": ["a white cat and a small dog and a large bird runs ."]}
-{"id": "8419e8aca79224658cfd", "sentences": ["a white cat and a small dog and a large bird sleeps ."]}
-{"id": "74afdcd88f7c873a763c", "sentences": ["a white cat and a small dog and a large bird waits ."]}
-{"id": "03a92a538b776cc3fce8", "sentences": ["a white cat and a small dog and a large bird moves ."]}
-{"id": "bd559203ee1c7ac04392", "sentences": ["a small cat and a large dog and a black bird runs ."]}
-{"id": "ae6d0a67a9f747ef9622", "sentences": ["a small cat and a large dog and a black bird sleeps ."]}
-{"id": "d9b8373d76d5fe1496ac", "sentences": ["a small cat and a large dog and a black bird waits ."]}
-{"id": "2fd679df3a718eca9989", "sentences": ["a small cat and a large dog and a black bird moves ."]}
-{"id": "26d8c91901f8c0587ced", "sentences": ["a large cat and a black dog and a white bird runs ."]}
-{"id": "1c7a2f2f04cb8d6fdb38", "sentences": ["a large cat and a black dog and a white bird sleeps ."]}
-{"id": "e5eec7b180fb676378a3", "sentences": ["a large cat and a black dog and a white bird waits ."]}
-{"id": "ff07050cb00a0cc17ed4", "sentences": ["a large cat and a black dog and a white bird moves ."]}
-{"id": "1104e7b168ea6b137420", "sentences": ["a black dog and a white bird and a small horse runs ."]}
-{"id": "2eefa5746918f8a18377", "sentences": ["a black dog and a white bird and a small horse sleeps ."]}
-{"id": "4c317756f8234244dac9", "sentences": ["a black dog and a white bird and a small horse waits ."]}
-{"id": "314a52138c9b344a17b8", "sentences": ["a black dog and a white bird and a small horse moves ."]}
-{"id": "10f9122ffe4f8b05f847", "sentences": ["a white dog and a small bird and a large horse runs ."]}
-{"id": "356b981951b56fb5cfe1", "sentences": ["a white dog and a small bird and a large horse sleeps ."]}
-{"id": "3546aaa27e43a05d3d17", "sentences": ["a white dog and a small bird and a large horse waits ."]}
-{"id": "b02a1028817313949dee", "sentences": ["a white dog and a small bird and a large horse moves ."]}
-{"id": "51cc7b6a0906d39367c1", "sentences": ["a small dog and a large bird and a black horse runs ."]}
-{"id": "7bef48cd124c972e12f7", "sentences": ["a small dog and a large bird and a black horse sleeps ."]}
-{"id": "eea251d35adc821779b5", "sentences": ["a small dog and a large bird and a black horse waits ."]}
-{"id": "e028985d263455b83690", "sentences": ["a small dog and a large bird and a black horse moves ."]}
-{"id": "3108a0a5915cdd0ad09c", "sentences": ["a large dog and a black bird and a white horse runs ."]}
-{"id": "20ab9d13976ee4cde6b7", "sentences": ["a large dog and a black bird and a white horse sleeps ."]}
-{"id": "1c2d0d0a58df8e447651", "sentences": ["a large dog and a black bird and a white horse waits ."]}
-{"id": "e8863ddff496e19253c6", "sentences": ["a large dog and a black bird and a white horse moves ."]}
-{"id": "9d65ff9f96e64d1b2a70", "sentences": ["a black bird and a white horse and a small cat runs ."]}
-{"id": "875f722cb2b027fbce55", "sentences": ["a black bird and a white horse and a small cat sleeps ."]}
-{"id": "4d2b0bfafe050d3b727e", "sentences": ["a black bird and a white horse and a small cat waits ."]}
-{"id": "17ad99250a22949e21f1", "sentences": ["a black bird and a white horse and a small cat moves ."]}
-{"id": "41fb96c22492f0883f6c", "sentences": ["a white bird and a small horse and a large cat runs ."]}
-{"id": "3e0dad4697b61ad83b4f", "sentences": ["a white bird and a small horse and a large cat sleeps ."]}
-{"id": "cabf0be121dc01e61b2d", "sentences": ["a white bird and a small horse and a large cat waits ."]}
-{"id": "63e30515b25d46a4cd74", "sentences": ["a white bird and a small horse and a large cat moves ."]}
-{"id": "193c3261cbb1fb340615", "sentences": ["a small bird and a large horse and a black cat runs ."]}
-{"id": "e4ff9785c0d579dfcac5", "sentences": ["a small bird and a large horse and a black cat sleeps ."]}
-{"id": "2d24c1a9440c7210311a", "sentences": ["a small bird and a large horse and a black cat waits ."]}
-{"id": "225dded62c436f459ee7", "sentences": ["a small bird and a large horse and a black cat moves ."]}
-{"id": "edcd95eea5180905d7a2", "sentences": ["a large bird and a black horse and a white cat runs ."]}
-{"id": "96a6c28e5ad5bbb69364", "sentences": ["a large bird and a black horse and a white cat sleeps ."]}
-{"id": "db5c8cdb1b97b6940ca1", "sentences": ["a large bird and a black horse and a white cat waits ."]}
-{"id": "04f1567aa5892c6d2579", "sentences": ["a large bird and a black horse and a white cat moves ."]}
-{"id": "1388ea47c154e21dd950", "sentences": ["a black horse and a white cat and a small dog runs ."]}
-{"id": "f6e860868c621f609883", "sentences": ["a black horse and a white cat and a small dog sleeps ."]}
-{"id": "57dee0d1f7194c5d6327", "sentences": ["a black horse and a white cat and a small dog waits ."]}
-{"id": "5342c3d827b2b087fc64", "sentences": ["a black horse and a white cat and a small dog moves ."]}
-{"id": "952b1d244f1aa218651a", "sentences": ["a white horse and a small cat and a large dog runs ."]}
-{"id": "3569acbe04097c9941c3", "sentences": ["a white horse and a small cat and a large dog sleeps ."]}
-{"id": "3ea2dbf25b008ce8cfd1", "sentences": ["a white horse and a small cat and a large dog waits ."]}
-{"id": "e7d50e5e00d9a8043105", "sentences": ["a white horse and a small cat and a large dog moves ."]}
-{"id": "6167a2cb245ee604a05e", "sentences": ["a small horse and a large cat and a black dog runs ."]}
-{"id": "661ded6b5f26c50042dd", "sentences": ["a small horse and a large cat and a black dog sleeps ."]}
-{"id": "8b2f10249e90d6d3d5e6", "sentences": ["a small horse and a large cat and a black dog waits ."]}
-{"id": "42cb65c98d57bdc08750", "sentences": ["a small horse and a large cat and a black dog moves ."]}
-{"id": "d608d590befa6a18ca94", "sentences": ["a large horse and a black cat and a white dog runs ."]}
-{"id": "38ab6c737ec01f168936", "sentences": ["a large horse and a black cat and a white dog sleeps ."]}
-{"id": "1e5c39ffb8edafa45436", "sentences": ["a large horse and a black cat and a white dog waits ."]}
-{"id": "ab37b63237ec51853b84", "sentences": ["a large horse and a black cat and a white dog moves ."]}
-{"id": "df87d2f9b5601efb02c0", "sentences": ["cat ."]}
-{"id": "4660d281f715265724e5", "sentences": ["dog ."]}
-{"id": "4dabed50842e3fe38c64", "sentences": ["bird ."]}
-{"id": "200ccd72ee02b5e3f6fb", "sentences": ["horse ."]}
-{"id": "6417630afde1b22eb1c1", "sentences": ["black ."]}
-{"id": "93cfa196affd223a9a2d", "sentences": ["white ."]}
-{"id": "0ca091434942816e1dcd", "sentences": ["small ."]}
-{"id": "74c77ba9dfc73b835a94", "sentences": ["large ."]}
-{"id": "4216613187627d014ca6", "sentences": ["runs ."]}
-{"id": "9fc2d907c4dc2692b684", "sentences": ["sleeps ."]}
-{"id": "096f0b234f479489038a", "sentences": ["waits ."]}
-{"id": "36065938e31d90bbcc50", "sentences": ["moves ."]}
-{"id": "49d0cd67bd8c1d1607d1", "sentences": ["a black cat purred ."]}
-{"id": "a0c14567be4df4de27be", "sentences": ["a white cat purred ."]}
-{"id": "b72f4077fe49c2ae44f1", "sentences": ["a small cat purred ."]}
-{"id": "ba8b658a0cff7c3ac740", "sentences": ["a large cat purred ."]}
-{"id": "8b74b450051bc4b8138b", "sentences": ["a black dog barked ."]}
-{"id": "034663da7c7127f6c0a9", "sentences": ["a white dog barked ."]}
-{"id": "1a5cee594c82a236ef06", "sentences": ["a small dog barked ."]}
-{"id": "e19d6c6d5a0f61849956", "sentences": ["a large dog barked ."]}
-{"id": "ffcf49cb8b313e81d3d3", "sentences": ["a black bird chirped ."]}
-{"id": "98a4abd57e5cdc2f573f", "sentences": ["a white bird chirped ."]}
-{"id": "4b791133ee5bff218f30", "sentences": ["a small bird chirped ."]}
-{"id": "c65d446fc35ba82f6931", "sentences": ["a large bird chirped ."]}
-{"id": "d28b9371ae3327a17d61", "sentences": ["a black horse neighed ."]}
-{"id": "ad23c28a36ddfbeb0565", "sentences": ["a white horse neighed ."]}
-{"id": "b27209f140b1860f743d", "sentences": ["a small horse neighed ."]}
-{"id": "9eb1326f7eb133b3868f", "sentences": ["a large horse neighed ."]}
-{"id": "0cc1324689347f69d736", "sentences": ["a cat saw a dog .", "the cat waited .", "it purred ."]}
-{"id": "329def56df42ac27ab87", "sentences": ["a cat saw a dog .", "the cat waited .", "it barked ."]}
-{"id": "5ecff030b38e12df3b4e", "sentences": ["a cat saw a dog .", "the dog waited .", "it purred ."]}
-{"id": "a98fdee6da87d532d841", "sentences": ["a cat saw a dog .", "the dog waited .", "it barked ."]}
-{"id": "ad026df031acf0e12205", "sentences": ["a dog , a cat saw .", "the cat waited .", "it purred ."]}
-{"id": "e4a6fcdca9828597b896", "sentences": ["a dog , a cat saw .", "the cat waited .", "it barked ."]}
-{"id": "abcd6bc68b83f813f82e", "sentences": ["a dog , a cat saw .", "the dog waited .", "it purred ."]}
-{"id": "84a31910beeedfb2a6a6", "sentences": ["a dog , a cat saw .", "the dog waited .", "it barked ."]}
-{"id": "165cabcb74534411d00b", "sentences": ["a dog saw a cat .", "the cat waited .", "it purred ."]}
-{"id": "2f1fb610b34d64ca8fa8", "sentences": ["a dog saw a cat .", "the cat waited .", "it barked ."]}
-{"id": "53cb64a7c134f2b30d4d", "sentences": ["a dog saw a cat .", "the dog waited .", "it purred ."]}
-{"id": "0781e066e58c4e296dfb", "sentences": ["a dog saw a cat .", "the dog waited .", "it barked ."]}
-{"id": "20a08152a288f2e055a1", "sentences": ["a cat , a dog saw .", "the cat waited .", "it purred ."]}
-{"id": "f231e2701f250a69c153", "sentences": ["a cat , a dog saw .", "the cat waited .", "it barked ."]}
-{"id": "1d4fdcaa52b0fde8d275", "sentences": ["a cat , a dog saw .", "the dog waited .", "it purred ."]}
-{"id": "6b097864fca99caf7629", "sentences": ["a cat , a dog saw .", "the dog waited .", "it barked ."]}
-{"id": "e73def7c0bbf1c6439cd", "sentences": ["a bird saw a horse .", "the bird waited .", "it chirped ."]}
-{"id": "00f98b1abe1c8fed25f1", "sentences": ["a bird saw a horse .", "the bird waited .", "it neighed ."]}
-{"id": "e4de1514224ff1ff1078", "sentences": ["a bird saw a horse .", "the horse waited .", "it chirped ."]}
-{"id": "a59e5272bfa75ed714b4", "sentences": ["a bird saw a horse .", "the horse waited .", "it neighed ."]}
-{"id": "a3339f1115921eba7f61", "sentences": ["a horse , a bird saw .", "the bird waited .", "it chirped ."]}
-{"id": "9c9b4f9f36f29fa4a2d3", "sentences": ["a horse , a bird saw .", "the bird waited .", "it neighed ."]}
-{"id": "351f56abf78faa030e08", "sentences": ["a horse , a bird saw .", "the horse waited .", "it chirped ."]}
-{"id": "c7519e5b085cb5a5b30a", "sentences": ["a horse , a bird saw .", "the horse waited .", "it neighed ."]}
-{"id": "a89e7fa052585cac212e", "sentences": ["a horse saw a bird .", "the bird waited .", "it chirped ."]}
-{"id": "aa81758eab2b4c2e0948", "sentences": ["a horse saw a bird .", "the bird waited .", "it neighed ."]}
-{"id": "ffd9b0b14863b46f5be2", "sentences": ["a horse saw a bird .", "the horse waited .", "it chirped ."]}
-{"id": "4e44ce5374635faf20f4", "sentences": ["a horse saw a bird .", "the horse waited .", "it neighed ."]}
-{"id": "d8eee81511ca4e6798d0", "sentences": ["a bird , a horse saw .", "the bird waited .", "it chirped ."]}
-{"id": "47e427564151c298cf00", "sentences": ["a bird , a horse saw .", "the bird waited .", "it neighed ."]}
-{"id": "fffa3007f3e9fe50f62f", "sentences": ["a bird , a horse saw .", "the horse waited .", "it chirped ."]}
-{"id": "d70c902d6fdba16af4fc", "sentences": ["a bird , a horse saw .", "the horse waited .", "it neighed ."]}
-{"id": "ccc5e8ab1e93d5987562", "sentences": ["a cat saw a dog .", "a bird waited .", "the cat moved .", "it purred ."]}
-{"id": "27415530ba76e2dabe0f", "sentences": ["a cat saw a dog .", "a bird waited .", "the cat moved .", "it barked ."]}
-{"id": "ca11bd24ef9b51afc9c5", "sentences": ["a cat saw a dog .", "a bird waited .", "the cat moved .", "it chirped ."]}
-{"id": "ca3702c6ff56c82f4a97", "sentences": ["a cat saw a dog .", "a bird waited .", "the dog moved .", "it purred ."]}
-{"id": "07b8dcf44842373fd6fb", "sentences": ["a cat saw a dog .", "a bird waited .", "the dog moved .", "it barked ."]}
-{"id": "7c896eda2552247f517c", "sentences": ["a cat saw a dog .", "a bird waited .", "the dog moved .", "it chirped ."]}
-{"id": "306ece6c34a3d47511ea", "sentences": ["a cat saw a dog .", "a bird waited .", "the bird moved .", "it purred ."]}
-{"id": "e1d2d6f351484f19998f", "sentences": ["a cat saw a dog .", "a bird waited .", "the bird moved .", "it barked ."]}
-{"id": "ffa2d7d83aa906299d89", "sentences": ["a cat saw a dog .", "a bird waited .", "the bird moved .", "it chirped ."]}
-{"id": "b7fa19003ecb2841498a", "sentences": ["a cat saw a bird .", "a dog waited .", "the cat moved .", "it purred ."]}
-{"id": "4d4f875b1901174e7f83", "sentences": ["a cat saw a bird .", "a dog waited .", "the cat moved .", "it chirped ."]}
-{"id": "6dd57dc5e3396fc53e01", "sentences": ["a cat saw a bird .", "a dog waited .", "the cat moved .", "it barked ."]}
-{"id": "18e242824b2480fd66fc", "sentences": ["a cat saw a bird .", "a dog waited .", "the bird moved .", "it purred ."]}
-{"id": "4494259823664d045ff4", "sentences": ["a cat saw a bird .", "a dog waited .", "the bird moved .", "it chirped ."]}
-{"id": "a676d4dd0964d330005f", "sentences": ["a cat saw a bird .", "a dog waited .", "the bird moved .", "it barked ."]}
-{"id": "381111b645cec0729a99", "sentences": ["a cat saw a bird .", "a dog waited .", "the dog moved .", "it purred ."]}
-{"id": "2ba9b6f1e0d6dfcfbd12", "sentences": ["a cat saw a bird .", "a dog waited .", "the dog moved .", "it chirped ."]}
-{"id": "ba6c4f38e3293db14d8f", "sentences": ["a cat saw a bird .", "a dog waited .", "the dog moved .", "it barked ."]}
-{"id": "25d7b590efde0a5436ea", "sentences": ["a dog saw a cat .", "a bird waited .", "the dog moved .", "it barked ."]}
-{"id": "b4316877ffc0b566d84c", "sentences": ["a dog saw a cat .", "a bird waited .", "the dog moved .", "it purred ."]}
-{"id": "467290326d5069e16f51", "sentences": ["a dog saw a cat .", "a bird waited .", "the dog moved .", "it chirped ."]}
-{"id": "b50eea116377744df36c", "sentences": ["a dog saw a cat .", "a bird waited .", "the cat moved .", "it barked ."]}
-{"id": "5ae7bdb245bbb4babfae", "sentences": ["a dog saw a cat .", "a bird waited .", "the cat moved .", "it purred ."]}
-{"id": "ad53f16de61186468b9a", "sentences": ["a dog saw a cat .", "a bird waited .", "the cat moved .", "it chirped ."]}
-{"id": "5f7c42053f18cb815504", "sentences": ["a dog saw a cat .", "a bird waited .", "the bird moved .", "it barked ."]}
-{"id": "dafa2170601e275dd244", "sentences": ["a dog saw a cat .", "a bird waited .", "the bird moved .", "it purred ."]}
-{"id": "df313f8a5c0c72385420", "sentences": ["a dog saw a cat .", "a bird waited .", "the bird moved .", "it chirped ."]}
-{"id": "66574882a936e20551b3", "sentences": ["a dog saw a bird .", "a cat waited .", "the dog moved .", "it barked ."]}
-{"id": "6caaeb8944f45d5cd702", "sentences": ["a dog saw a bird .", "a cat waited .", "the dog moved .", "it chirped ."]}
-{"id": "64bfeec6237565d946eb", "sentences": ["a dog saw a bird .", "a cat waited .", "the dog moved .", "it purred ."]}
-{"id": "b713eb2dc308fe67a334", "sentences": ["a dog saw a bird .", "a cat waited .", "the bird moved .", "it barked ."]}
-{"id": "cdfde82c4784e927a545", "sentences": ["a dog saw a bird .", "a cat waited .", "the bird moved .", "it chirped ."]}
-{"id": "b4bd7f56e27b5af92e95", "sentences": ["a dog saw a bird .", "a cat waited .", "the bird moved .", "it purred ."]}
-{"id": "3f076f0f7d8877e49b22", "sentences": ["a dog saw a bird .", "a cat waited .", "the cat moved .", "it barked ."]}
-{"id": "99e8210bd12e01fa1fe9", "sentences": ["a dog saw a bird .", "a cat waited .", "the cat moved .", "it chirped ."]}
-{"id": "16bcd4549208965598bb", "sentences": ["a dog saw a bird .", "a cat waited .", "the cat moved .", "it purred ."]}
-{"id": "de931d2fbbdb96c6edfc", "sentences": ["a bird saw a cat .", "a dog waited .", "the bird moved .", "it chirped ."]}
-{"id": "9277fb96937074defc6f", "sentences": ["a bird saw a cat .", "a dog waited .", "the bird moved .", "it purred ."]}
-{"id": "081a7e45c304fafab27c", "sentences": ["a bird saw a cat .", "a dog waited .", "the bird moved .", "it barked ."]}
-{"id": "fed8f0078b780060858d", "sentences": ["a bird saw a cat .", "a dog waited .", "the cat moved .", "it chirped ."]}
-{"id": "aeee0f0510174008f2eb", "sentences": ["a bird saw a cat .", "a dog waited .", "the cat moved .", "it purred ."]}
-{"id": "9f98bd5e9ad1d242696c", "sentences": ["a bird saw a cat .", "a dog waited .", "the cat moved .", "it barked ."]}
-{"id": "4b54c7b13d5025db7a63", "sentences": ["a bird saw a cat .", "a dog waited .", "the dog moved .", "it chirped ."]}
-{"id": "c15432fbc888ba5f8141", "sentences": ["a bird saw a cat .", "a dog waited .", "the dog moved .", "it purred ."]}
-{"id": "f61e2d8fc32d851600fb", "sentences": ["a bird saw a cat .", "a dog waited .", "the dog moved .", "it barked ."]}
-{"id": "5849aadf403e0702d76e", "sentences": ["a bird saw a dog .", "a cat waited .", "the bird moved .", "it chirped ."]}
-{"id": "6a639198217be329ec02", "sentences": ["a bird saw a dog .", "a cat waited .", "the bird moved .", "it barked ."]}
-{"id": "30237af6cfdbe32306a0", "sentences": ["a bird saw a dog .", "a cat waited .", "the bird moved .", "it purred ."]}
-{"id": "0b3fa24cbaaf9b487560", "sentences": ["a bird saw a dog .", "a cat waited .", "the dog moved .", "it chirped ."]}
-{"id": "c6b0e7c2e8c2dd5c8878", "sentences": ["a bird saw a dog .", "a cat waited .", "the dog moved .", "it barked ."]}
-{"id": "a6d4a268047ab0c2fa17", "sentences": ["a bird saw a dog .", "a cat waited .", "the dog moved .", "it purred ."]}
-{"id": "d4dae84ea8732d65bda2", "sentences": ["a bird saw a dog .", "a cat waited .", "the cat moved .", "it chirped ."]}
-{"id": "3d603b6329e9d5c2f8ae", "sentences": ["a bird saw a dog .", "a cat waited .", "the cat moved .", "it barked ."]}
-{"id": "9d2706fc7c71e71d528b", "sentences": ["a bird saw a dog .", "a cat waited .", "the cat moved .", "it purred ."]}
-{"id": "ee5ae56a73646dafcf79", "sentences": ["a cat runs .", "it purred ."]}
-{"id": "4511fda98a135640eb30", "sentences": ["a dog runs .", "it barked ."]}
-{"id": "1f8ffba6fd04fb8abebe", "sentences": ["a bird runs .", "it chirped ."]}
-{"id": "24668f2f7d8606c0dba3", "sentences": ["a horse runs .", "it neighed ."]}
-{"id": "40772e2a0655f52ad7db", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "11540d9fefc0149fee03", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "4bf4cbe06f7ded1bc05e", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "e62c4718100fe4ee5d7b", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "e94a49fd96137f7c29c9", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "f4c0342ff3aa84bfdd99", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "09ca3e3030a8903f0457", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "50b7458b23bb5da0bab9", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "288bf50cf2bfe909c4ad", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "897b427f8a3efaee4a6c", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "710d70b58fc302f4b661", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "1c8637ac0e2cc6877c54", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "9b7a236a2c89719e2c2e", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "bf52b570b314f6752179", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "6dc343c5da8b8aa64ca2", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "25f96df0c3893a6d4a28", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "01ad7dbcaa3f65dfb7dc", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "65e2fab80783d2464e9c", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "e416ffc688953f41e8ec", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "3abda9f37856f12e5f9f", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "5a214607eca60029b29e", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "8623ab0034fc055ac360", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "bc10ae66b8702649684e", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "579b7da72b0f0d6f0d65", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "1e09496e4111cd0bb23d", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "706153d38856cb626dc6", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "f2e9c6f69b99f474e5a7", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "592ca032153182dbc38b", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "e035468ce8dd6ce81583", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "1d3fafc9373fc54375f7", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "cef965457a4b1f531ed3", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "2c38bc86e1281298322e", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "069188189ac16869f8e7", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "2c050f9479061406a081", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "46fa49d4ab3c6f9a453a", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "b6e86a4d42fb1b17dbd6", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "875ab8d8571c0b36c9d0", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "53fd9b5947c2353da24e", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "55206ed006c1761bd8a2", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "64c6fbf5874c08e29be1", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "a7a6d6a5c7ef1a837943", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "0a96a12b415ec6103eb6", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "a47f0621ea54a8cb768f", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "95cbee48b98c1328546e", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "08acaf0233abc7839239", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "de88f25773c98f689d60", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "5a1de0ca0d2947312b4c", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "27507bcf38a9eb3fb6fb", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "6849aa9cba151e1225bc", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "5efbb1a56e15e0c48ed0", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "20b79a55b35684e4d700", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "d89c69a0b021ccb07dbc", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "ad591ee84b8c50fa1cf0", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "2d18aa7b9301a3c6c9cf", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "ea2b8c9539c0599dddb9", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "0e2783c7e36ea88b1b73", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "3ca06c7e7e8c0874f0b4", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "4bf757a9f8f40d9f213e", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "28f9888b389f8c04c8d4", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "cea54a61f6b3e1439310", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "a9dce537f793dfd30033", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "f6c6a1a6211b7732d02f", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "179bc47406386fdeefb2", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "65227830381b0d8eae6a", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "ab307bdd041401657012", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
-{"id": "71eaead637dfaf5aa4ba", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
-{"id": "f3999735a114cf4b0c8f", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
-{"id": "11b5c91819e52ba3d356", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
-{"id": "36251b2eb54e160efc79", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
-{"id": "090aa387989f7b38f668", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
-{"id": "2fb0a3f61008687da984", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
-{"id": "56cd6ad655c3445af830", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
-{"id": "dd568eca1df5923e1532", "sentences": ["the black cat runs .", "the white cat sleeps .", "it is white ."]}
-{"id": "caf7bce09ad6d9a16fb6", "sentences": ["the black cat runs .", "a black cat sleeps .", "it is black ."]}
-{"id": "af37b969862cd03afebc", "sentences": ["the black dog runs .", "the white dog sleeps .", "it is white ."]}
-{"id": "d745deca1cfa81e61bf5", "sentences": ["the black dog runs .", "a black dog sleeps .", "it is black ."]}
-{"id": "babe53cdd2a66801b822", "sentences": ["the black bird runs .", "the white bird sleeps .", "it is white ."]}
-{"id": "e48db965e39e402e7eb6", "sentences": ["the black bird runs .", "a black bird sleeps .", "it is black ."]}
-{"id": "77f3cb3c7faafb7db02e", "sentences": ["the black horse runs .", "the white horse sleeps .", "it is white ."]}
-{"id": "96422c2b5a58a7132b1f", "sentences": ["the black horse runs .", "a black horse sleeps .", "it is black ."]}
-{"id": "3e7e6854d9ffc9497924", "sentences": ["a cat runs .", "a cat sleeps .", "the running cat is black .", "the sleeping cat is white ."]}
-{"id": "a64e5eb2999b25f53aed", "sentences": ["a cat runs .", "the cat sleeps .", "the running cat is black .", "the sleeping cat is black ."]}
-{"id": "d2ff47422098b0f539b9", "sentences": ["a dog runs .", "a dog sleeps .", "the running dog is black .", "the sleeping dog is white ."]}
-{"id": "517f72c26c7dce1bf4b3", "sentences": ["a dog runs .", "the dog sleeps .", "the running dog is black .", "the sleeping dog is black ."]}
-{"id": "01c8ffd67c3359be10bb", "sentences": ["a bird runs .", "a bird sleeps .", "the running bird is black .", "the sleeping bird is white ."]}
-{"id": "7869d5b8081e03c758f0", "sentences": ["a bird runs .", "the bird sleeps .", "the running bird is black .", "the sleeping bird is black ."]}
-{"id": "b9dca14b1e9bb711c46d", "sentences": ["a horse runs .", "a horse sleeps .", "the running horse is black .", "the sleeping horse is white ."]}
-{"id": "c9ff4bc50bcb92eb034f", "sentences": ["a horse runs .", "the horse sleeps .", "the running horse is black .", "the sleeping horse is black ."]}
-{"id": "fda8898ce9846fbe078a", "sentences": ["a cat is black .", "a dog is white .", "it is black ."]}
-{"id": "38f0d2a99545a0715dbf", "sentences": ["a cat is black .", "a dog is white .", "it is white ."]}
-{"id": "315cfc789c7570ea570a", "sentences": ["a cat is white .", "a dog is black .", "it is black ."]}
-{"id": "6f92daa9b69c8fda00cf", "sentences": ["a cat is white .", "a dog is black .", "it is white ."]}
-{"id": "2de91e4c659052f41f37", "sentences": ["a dog is white .", "a cat is black .", "it is black ."]}
-{"id": "894c404d86d09feb13ff", "sentences": ["a dog is white .", "a cat is black .", "it is white ."]}
-{"id": "34ecc92961ad4cae4e2b", "sentences": ["a dog is black .", "a cat is white .", "it is black ."]}
-{"id": "0904568f582ae7e62fec", "sentences": ["a dog is black .", "a cat is white .", "it is white ."]}
+{"id": "40af638ca728e48a7fa2", "sentences": ["cat ."]}
+{"id": "09501f29abce48f84622", "sentences": ["dog ."]}
+{"id": "976378ea60e55109b8ee", "sentences": ["bird ."]}
+{"id": "5ee5f27c599f3c78a837", "sentences": ["horse ."]}
+{"id": "9bd44deb1c2852be2d2c", "sentences": ["black ."]}
+{"id": "c7420c90a592077e4f73", "sentences": ["white ."]}
+{"id": "c89f6c443f14df6655e7", "sentences": ["small ."]}
+{"id": "7f839d8518037d6804d5", "sentences": ["large ."]}
+{"id": "ec42dd0fb453465b4b02", "sentences": ["runs ."]}
+{"id": "dc499c01d10b7d811c54", "sentences": ["sleeps ."]}
+{"id": "6690608c3d1fd8ef57f2", "sentences": ["waits ."]}
+{"id": "db8b4b03fcabc066531e", "sentences": ["moves ."]}
+{"id": "447959c0713a98fb9c73", "sentences": ["purred ."]}
+{"id": "b214b986d77f5369476a", "sentences": ["barked ."]}
+{"id": "ad929a9f75b5b174715d", "sentences": ["chirped ."]}
+{"id": "f186dacca0c1007fe175", "sentences": ["neighed ."]}
+{"id": "1c365d485d6f440a1ee7", "sentences": ["cat ."]}
+{"id": "02744b3e62d3cb584f8d", "sentences": ["dog ."]}
+{"id": "1b9872d71bc22cf602d7", "sentences": ["bird ."]}
+{"id": "5e0152968be92e0d3807", "sentences": ["horse ."]}
+{"id": "76a8b83349ce14d306a9", "sentences": ["black ."]}
+{"id": "1877a2ee0a3f2ae33174", "sentences": ["white ."]}
+{"id": "477219a8245bfb63400a", "sentences": ["small ."]}
+{"id": "61bb58b1c20e0217c2b0", "sentences": ["large ."]}
+{"id": "d1ce112503e164328731", "sentences": ["runs ."]}
+{"id": "a0b329c08a93fd6ecff5", "sentences": ["sleeps ."]}
+{"id": "426949e0698311657470", "sentences": ["waits ."]}
+{"id": "54b17ebe03f840b2bfc7", "sentences": ["moves ."]}
+{"id": "f65f343a3220aa7e6bba", "sentences": ["purred ."]}
+{"id": "00d071c06e685bc67bb4", "sentences": ["barked ."]}
+{"id": "c0b92cadeaa446845dd9", "sentences": ["chirped ."]}
+{"id": "dabd2ae6fabc484352c1", "sentences": ["neighed ."]}
+{"id": "04fc0a33b65b22a8b95d", "sentences": ["cat ."]}
+{"id": "fb71f606bd84c5b26bb8", "sentences": ["dog ."]}
+{"id": "8deed4a997e22f6cb1f9", "sentences": ["bird ."]}
+{"id": "e40980fb4121430d50ec", "sentences": ["horse ."]}
+{"id": "1b875e86cf6581263cd6", "sentences": ["black ."]}
+{"id": "991031c34a3aab998c9d", "sentences": ["white ."]}
+{"id": "e9a5ab155bf2806a75ab", "sentences": ["small ."]}
+{"id": "19c2db26996166a94e97", "sentences": ["large ."]}
+{"id": "b0fdda5e80d120716d7f", "sentences": ["runs ."]}
+{"id": "23a5ae4b8856d2369924", "sentences": ["sleeps ."]}
+{"id": "9c862df3a611b0efbb4b", "sentences": ["waits ."]}
+{"id": "160c6961340948afe8ff", "sentences": ["moves ."]}
+{"id": "b65070c7dc30f9da82d7", "sentences": ["purred ."]}
+{"id": "9b3c1eb2c21cb7edc892", "sentences": ["barked ."]}
+{"id": "ecaaaffd78c37654a04c", "sentences": ["chirped ."]}
+{"id": "ab51af3fbab2baa23e0e", "sentences": ["neighed ."]}
+{"id": "f4a1917d1640a0ada88e", "sentences": ["cat ."]}
+{"id": "25527f6fd9ee5e2dfbef", "sentences": ["dog ."]}
+{"id": "8cc2685dcdf75dfef6b6", "sentences": ["bird ."]}
+{"id": "e361a2f82dcf3bd1b21f", "sentences": ["horse ."]}
+{"id": "e3883070c69a2126d0e2", "sentences": ["black ."]}
+{"id": "bdb416ccb819f6b3359c", "sentences": ["white ."]}
+{"id": "028f973eaab6a2296283", "sentences": ["small ."]}
+{"id": "eae597e357586bd4c1c2", "sentences": ["large ."]}
+{"id": "cfba0e6557c5acce092b", "sentences": ["runs ."]}
+{"id": "411c7a10c3ceaf1e7e6f", "sentences": ["sleeps ."]}
+{"id": "3088f742041d640d1ebb", "sentences": ["waits ."]}
+{"id": "1b4a59bf2e63cda12971", "sentences": ["moves ."]}
+{"id": "0a070a61d372a766d7f1", "sentences": ["purred ."]}
+{"id": "eaed4f04788f539f92f8", "sentences": ["barked ."]}
+{"id": "4bcd293ecf90cdbdf242", "sentences": ["chirped ."]}
+{"id": "674e9cb811f521f3c5fb", "sentences": ["neighed ."]}
+{"id": "8927fc35b14447465f7e", "sentences": ["a black cat runs ."]}
+{"id": "55097aef7bbb5e07e616", "sentences": ["a black cat sleeps ."]}
+{"id": "5c77d5345b55a6025f9f", "sentences": ["a black cat waits ."]}
+{"id": "b960ff85c0d58f4953ca", "sentences": ["a black cat moves ."]}
+{"id": "08c8f179e148edbc4924", "sentences": ["a white cat runs ."]}
+{"id": "090413c11ab4c21c955b", "sentences": ["a white cat sleeps ."]}
+{"id": "fa45afb2317c21d3013f", "sentences": ["a white cat waits ."]}
+{"id": "dd293e158627aa99e854", "sentences": ["a white cat moves ."]}
+{"id": "c5f9ace6fdfabbdaa4c0", "sentences": ["a small cat runs ."]}
+{"id": "39cbb8919e4fb3e262e2", "sentences": ["a small cat sleeps ."]}
+{"id": "0a1fb57d4b1db2d7f809", "sentences": ["a small cat waits ."]}
+{"id": "cc8b6a24c8bb0e373232", "sentences": ["a small cat moves ."]}
+{"id": "f8100d5e1305a2a5bac5", "sentences": ["a large cat runs ."]}
+{"id": "0ba10d01d4ab2e4eb802", "sentences": ["a large cat sleeps ."]}
+{"id": "70c69e37b2f9578e6a4a", "sentences": ["a large cat waits ."]}
+{"id": "a5ed4504fdc6771a734e", "sentences": ["a large cat moves ."]}
+{"id": "3f7381295b0e82e9f6ce", "sentences": ["a black dog runs ."]}
+{"id": "023b1f87d332cadbcc9f", "sentences": ["a black dog sleeps ."]}
+{"id": "270361892fd74e8ed7e1", "sentences": ["a black dog waits ."]}
+{"id": "1d6253d15b0bcad3fec1", "sentences": ["a black dog moves ."]}
+{"id": "dd0ffa744fc0ae2dd189", "sentences": ["a white dog runs ."]}
+{"id": "f7a6e02184fa3d2ec5ea", "sentences": ["a white dog sleeps ."]}
+{"id": "16ebd0744216124a765b", "sentences": ["a white dog waits ."]}
+{"id": "9a7bc8ee6b5862a39888", "sentences": ["a white dog moves ."]}
+{"id": "b5580493b570109582b7", "sentences": ["a small dog runs ."]}
+{"id": "c73c1f4e98c25f9c0e6a", "sentences": ["a small dog sleeps ."]}
+{"id": "738f6191f4cabbb86e79", "sentences": ["a small dog waits ."]}
+{"id": "08e75413ea99b12034e4", "sentences": ["a small dog moves ."]}
+{"id": "3a5f70ccc221cf262d59", "sentences": ["a large dog runs ."]}
+{"id": "d932bac3a7ef48e7f6f9", "sentences": ["a large dog sleeps ."]}
+{"id": "78172ac51fb4683aa358", "sentences": ["a large dog waits ."]}
+{"id": "2a16854a28331c933106", "sentences": ["a large dog moves ."]}
+{"id": "1834ab3677edc1039ae6", "sentences": ["a black bird runs ."]}
+{"id": "66a2b7860a27e868b026", "sentences": ["a black bird sleeps ."]}
+{"id": "abe47251a6dc412ea7bf", "sentences": ["a black bird waits ."]}
+{"id": "e6a1e19c01e344fe7efe", "sentences": ["a black bird moves ."]}
+{"id": "2141febd897a637acf3d", "sentences": ["a white bird runs ."]}
+{"id": "538b685c92312b81926e", "sentences": ["a white bird sleeps ."]}
+{"id": "f66fe7252e65c3c958c0", "sentences": ["a white bird waits ."]}
+{"id": "4f0253f24b6b52251703", "sentences": ["a white bird moves ."]}
+{"id": "1819363bcfc84451d6fe", "sentences": ["a small bird runs ."]}
+{"id": "c591dfad31985a43f3ac", "sentences": ["a small bird sleeps ."]}
+{"id": "49c79bce9038ae448bd1", "sentences": ["a small bird waits ."]}
+{"id": "127e84e7f089be3e4ef1", "sentences": ["a small bird moves ."]}
+{"id": "6a154f3a43751d6b05e7", "sentences": ["a large bird runs ."]}
+{"id": "541e6ff322eb806f4430", "sentences": ["a large bird sleeps ."]}
+{"id": "8bc0a1fb915946d88c53", "sentences": ["a large bird waits ."]}
+{"id": "4cde2e23b3d7867f8694", "sentences": ["a large bird moves ."]}
+{"id": "b223b51c8041b8212f2a", "sentences": ["a black horse runs ."]}
+{"id": "4f90bb7ef1904fee6435", "sentences": ["a black horse sleeps ."]}
+{"id": "292f40e287c7bc358526", "sentences": ["a black horse waits ."]}
+{"id": "f293edfc55bf72a4f447", "sentences": ["a black horse moves ."]}
+{"id": "11d1594305b095684396", "sentences": ["a white horse runs ."]}
+{"id": "d04c8e5d8b25b0c28fff", "sentences": ["a white horse sleeps ."]}
+{"id": "7be31f4abeecf31dcbad", "sentences": ["a white horse waits ."]}
+{"id": "e8602182f18a5b4dbdbd", "sentences": ["a white horse moves ."]}
+{"id": "08aa3d493a33b7409685", "sentences": ["a small horse runs ."]}
+{"id": "56ae9bafaa729b9e2fd2", "sentences": ["a small horse sleeps ."]}
+{"id": "80f4899cd6efc4d16d1a", "sentences": ["a small horse waits ."]}
+{"id": "e0feb879b03243ab77e4", "sentences": ["a small horse moves ."]}
+{"id": "5058d896f64af248ef7f", "sentences": ["a large horse runs ."]}
+{"id": "c7abc4b0a1c7987d6f6c", "sentences": ["a large horse sleeps ."]}
+{"id": "cd7583e4a9926926501c", "sentences": ["a large horse waits ."]}
+{"id": "a81022ca8e0c4d4bb637", "sentences": ["a large horse moves ."]}
+{"id": "2f8301bb3409e14ecbea", "sentences": ["cat ."]}
+{"id": "108a57730030003fa52f", "sentences": ["dog ."]}
+{"id": "1d00418ce2b4054c6ace", "sentences": ["bird ."]}
+{"id": "7b8cbbb449cbd2456ebe", "sentences": ["horse ."]}
+{"id": "287f40536f8a22ec8fb7", "sentences": ["black ."]}
+{"id": "ff153aef2f99c8ed54c8", "sentences": ["white ."]}
+{"id": "31072b8261c02922e8c1", "sentences": ["small ."]}
+{"id": "194678000a30b485bb3e", "sentences": ["large ."]}
+{"id": "e60b0317b7fff02234b0", "sentences": ["runs ."]}
+{"id": "ba079e41f1fde825eb69", "sentences": ["sleeps ."]}
+{"id": "4c097635f4b5e8b711a7", "sentences": ["waits ."]}
+{"id": "bb9b28d47ed6c1023ce7", "sentences": ["moves ."]}
+{"id": "8f80a94d1fd30a707e83", "sentences": ["a black cat and a white dog runs ."]}
+{"id": "c2b97ca748bcc9119d37", "sentences": ["a black cat and a white dog sleeps ."]}
+{"id": "495b2d6878da1501e285", "sentences": ["a black cat and a white dog waits ."]}
+{"id": "c30d9de61786ba4f53cb", "sentences": ["a black cat and a white dog moves ."]}
+{"id": "7c871d228337d27dae39", "sentences": ["a white cat and a small dog runs ."]}
+{"id": "7998d9012aa6037642f5", "sentences": ["a white cat and a small dog sleeps ."]}
+{"id": "27a62b7240601b981155", "sentences": ["a white cat and a small dog waits ."]}
+{"id": "8d85a56cff72407af937", "sentences": ["a white cat and a small dog moves ."]}
+{"id": "8b1b835ca58ad5e586f3", "sentences": ["a small cat and a large dog runs ."]}
+{"id": "e54133b0616b2c43e6ca", "sentences": ["a small cat and a large dog sleeps ."]}
+{"id": "e6c6d7a83d5e0a7410b9", "sentences": ["a small cat and a large dog waits ."]}
+{"id": "ecdd0f9be30c7cfe5b9f", "sentences": ["a small cat and a large dog moves ."]}
+{"id": "713f60d9ffabcd80e9a5", "sentences": ["a large cat and a black dog runs ."]}
+{"id": "f407bc4619f47504643d", "sentences": ["a large cat and a black dog sleeps ."]}
+{"id": "003ee8df7d060bcf8dea", "sentences": ["a large cat and a black dog waits ."]}
+{"id": "2fd02b86ec88eb56f044", "sentences": ["a large cat and a black dog moves ."]}
+{"id": "f956285ae6d1856a87fb", "sentences": ["a black dog and a white bird runs ."]}
+{"id": "e3db6aaf0c51a7949e2a", "sentences": ["a black dog and a white bird sleeps ."]}
+{"id": "190ec88a9a0f7bf5ef1c", "sentences": ["a black dog and a white bird waits ."]}
+{"id": "1c062fde542976c43a2c", "sentences": ["a black dog and a white bird moves ."]}
+{"id": "c65155d200c48a2f86b8", "sentences": ["a white dog and a small bird runs ."]}
+{"id": "b27aaeeb45703e87b0e7", "sentences": ["a white dog and a small bird sleeps ."]}
+{"id": "723c672421efe72b2dba", "sentences": ["a white dog and a small bird waits ."]}
+{"id": "b52e527cd26855164994", "sentences": ["a white dog and a small bird moves ."]}
+{"id": "e3c7572b18c82ea6ccec", "sentences": ["a small dog and a large bird runs ."]}
+{"id": "ad8f22dd3a521ab1eb87", "sentences": ["a small dog and a large bird sleeps ."]}
+{"id": "99497276fb88cbd92e2f", "sentences": ["a small dog and a large bird waits ."]}
+{"id": "492c4e394d124ab6854e", "sentences": ["a small dog and a large bird moves ."]}
+{"id": "6ac78b6153bcbe5a5856", "sentences": ["a large dog and a black bird runs ."]}
+{"id": "ceff193ca2d6ce901594", "sentences": ["a large dog and a black bird sleeps ."]}
+{"id": "3880ee590444af1f6a49", "sentences": ["a large dog and a black bird waits ."]}
+{"id": "65ce3575df201d4ff153", "sentences": ["a large dog and a black bird moves ."]}
+{"id": "ea6b772662bec602b408", "sentences": ["a black bird and a white horse runs ."]}
+{"id": "5b2c497d6743f37476a6", "sentences": ["a black bird and a white horse sleeps ."]}
+{"id": "c55d63efc884d759d7fc", "sentences": ["a black bird and a white horse waits ."]}
+{"id": "5d3fe0cde3d1dcbedd94", "sentences": ["a black bird and a white horse moves ."]}
+{"id": "853453c403c24ec72bb0", "sentences": ["a white bird and a small horse runs ."]}
+{"id": "d129d4f567b75eee0b9d", "sentences": ["a white bird and a small horse sleeps ."]}
+{"id": "5aefe7fa45c41c730f44", "sentences": ["a white bird and a small horse waits ."]}
+{"id": "69ec395807802dc52950", "sentences": ["a white bird and a small horse moves ."]}
+{"id": "24b90f6c91f377248386", "sentences": ["a small bird and a large horse runs ."]}
+{"id": "d8fa25f30148788762ca", "sentences": ["a small bird and a large horse sleeps ."]}
+{"id": "1caaaa16de4228366d6f", "sentences": ["a small bird and a large horse waits ."]}
+{"id": "6c05e1ab3964602e4c87", "sentences": ["a small bird and a large horse moves ."]}
+{"id": "e9faba9a84bae24f6dc5", "sentences": ["a large bird and a black horse runs ."]}
+{"id": "a645140833e648820632", "sentences": ["a large bird and a black horse sleeps ."]}
+{"id": "6ca5062d3f6445e759d2", "sentences": ["a large bird and a black horse waits ."]}
+{"id": "99df668cf81dcbf840de", "sentences": ["a large bird and a black horse moves ."]}
+{"id": "fe6cba41d317ec617a8f", "sentences": ["a black horse and a white cat runs ."]}
+{"id": "54a3caf27732321b61a8", "sentences": ["a black horse and a white cat sleeps ."]}
+{"id": "53e4019f1a68dc4240b5", "sentences": ["a black horse and a white cat waits ."]}
+{"id": "207977604cfda43bd470", "sentences": ["a black horse and a white cat moves ."]}
+{"id": "44150c65fbd71624ce91", "sentences": ["a white horse and a small cat runs ."]}
+{"id": "85ba0e7634fb4e620e87", "sentences": ["a white horse and a small cat sleeps ."]}
+{"id": "862fed846ac47b741947", "sentences": ["a white horse and a small cat waits ."]}
+{"id": "072fcee1ffea37d91272", "sentences": ["a white horse and a small cat moves ."]}
+{"id": "0b7cacdd6003a368ec43", "sentences": ["a small horse and a large cat runs ."]}
+{"id": "e81c1b6fca5c4d974f9a", "sentences": ["a small horse and a large cat sleeps ."]}
+{"id": "d3b6f7a0b4dc776e90b8", "sentences": ["a small horse and a large cat waits ."]}
+{"id": "137b846e47823daf3f19", "sentences": ["a small horse and a large cat moves ."]}
+{"id": "b3002effd22498c823f2", "sentences": ["a large horse and a black cat runs ."]}
+{"id": "f34f7aaa7e27477c8939", "sentences": ["a large horse and a black cat sleeps ."]}
+{"id": "58d2c748d1c2b7aa3afa", "sentences": ["a large horse and a black cat waits ."]}
+{"id": "2e2db1169d056cbed842", "sentences": ["a large horse and a black cat moves ."]}
+{"id": "0968c0b426e05716c6d1", "sentences": ["cat ."]}
+{"id": "37b6276efa7145740bcf", "sentences": ["dog ."]}
+{"id": "704174a9dcb8b6b217ae", "sentences": ["bird ."]}
+{"id": "fd61a4ad1ef14b137434", "sentences": ["horse ."]}
+{"id": "92c7c251f7225c1fc077", "sentences": ["black ."]}
+{"id": "c0a93627ea5586cd3e5d", "sentences": ["white ."]}
+{"id": "93b18e129437a805f75e", "sentences": ["small ."]}
+{"id": "0b6c0b091a03c682bab0", "sentences": ["large ."]}
+{"id": "3ebe09ec95adb4f8ea97", "sentences": ["runs ."]}
+{"id": "3f472d8b5fdc901a22a7", "sentences": ["sleeps ."]}
+{"id": "6223d18f005d6b7d03fb", "sentences": ["waits ."]}
+{"id": "fe3979044da64a3a21df", "sentences": ["moves ."]}
+{"id": "9eb3fb9fba52476e8e35", "sentences": ["a black cat and a white dog and a small bird runs ."]}
+{"id": "77a4772d47dc569e3f64", "sentences": ["a black cat and a white dog and a small bird sleeps ."]}
+{"id": "6bb982b397813b101b19", "sentences": ["a black cat and a white dog and a small bird waits ."]}
+{"id": "7a0471c3ca39bc5cbf7e", "sentences": ["a black cat and a white dog and a small bird moves ."]}
+{"id": "e2b45e8b5d078482f8bd", "sentences": ["a white cat and a small dog and a large bird runs ."]}
+{"id": "81dce9f05e992986a437", "sentences": ["a white cat and a small dog and a large bird sleeps ."]}
+{"id": "1ada8519e11d6eb1a480", "sentences": ["a white cat and a small dog and a large bird waits ."]}
+{"id": "2c14e6f8d85f7fc6f949", "sentences": ["a white cat and a small dog and a large bird moves ."]}
+{"id": "fc78a14d4c6c199d6193", "sentences": ["a small cat and a large dog and a black bird runs ."]}
+{"id": "4a2a06905b5a968c0aeb", "sentences": ["a small cat and a large dog and a black bird sleeps ."]}
+{"id": "633d6ad15eb1572b1e70", "sentences": ["a small cat and a large dog and a black bird waits ."]}
+{"id": "20089e5b7c0dedcac6cf", "sentences": ["a small cat and a large dog and a black bird moves ."]}
+{"id": "8e5f34959d4bd5aa5eec", "sentences": ["a large cat and a black dog and a white bird runs ."]}
+{"id": "0f1e825955c2a3287555", "sentences": ["a large cat and a black dog and a white bird sleeps ."]}
+{"id": "11ba0fb773605698dcda", "sentences": ["a large cat and a black dog and a white bird waits ."]}
+{"id": "883da47216260a84f810", "sentences": ["a large cat and a black dog and a white bird moves ."]}
+{"id": "2a8f88a93a079f004a95", "sentences": ["a black dog and a white bird and a small horse runs ."]}
+{"id": "3bbfc9a013477f4a5402", "sentences": ["a black dog and a white bird and a small horse sleeps ."]}
+{"id": "618f05bce7b40d575303", "sentences": ["a black dog and a white bird and a small horse waits ."]}
+{"id": "8ac6d987520a8114cc35", "sentences": ["a black dog and a white bird and a small horse moves ."]}
+{"id": "4fef85fa087e5307d3c7", "sentences": ["a white dog and a small bird and a large horse runs ."]}
+{"id": "8c90c148c5d314929f76", "sentences": ["a white dog and a small bird and a large horse sleeps ."]}
+{"id": "d088e99f4712672aaf16", "sentences": ["a white dog and a small bird and a large horse waits ."]}
+{"id": "d859829765813be4ebe9", "sentences": ["a white dog and a small bird and a large horse moves ."]}
+{"id": "fc1216d4f8413dc3e393", "sentences": ["a small dog and a large bird and a black horse runs ."]}
+{"id": "988202c97f7c3995c591", "sentences": ["a small dog and a large bird and a black horse sleeps ."]}
+{"id": "2b46b624207c846a6577", "sentences": ["a small dog and a large bird and a black horse waits ."]}
+{"id": "14349ce38450468b55a8", "sentences": ["a small dog and a large bird and a black horse moves ."]}
+{"id": "eb0b0729b36a61009122", "sentences": ["a large dog and a black bird and a white horse runs ."]}
+{"id": "a2486ad36ef7d8c262b5", "sentences": ["a large dog and a black bird and a white horse sleeps ."]}
+{"id": "83b7708ca774af65bfff", "sentences": ["a large dog and a black bird and a white horse waits ."]}
+{"id": "38e074c95ba0c11e7cc5", "sentences": ["a large dog and a black bird and a white horse moves ."]}
+{"id": "03f07cba7d086fb689f5", "sentences": ["a black bird and a white horse and a small cat runs ."]}
+{"id": "6564e82478d12eafe964", "sentences": ["a black bird and a white horse and a small cat sleeps ."]}
+{"id": "f0c5d92809a8aff14dec", "sentences": ["a black bird and a white horse and a small cat waits ."]}
+{"id": "72b75a330f4b1fd62bce", "sentences": ["a black bird and a white horse and a small cat moves ."]}
+{"id": "658f7e3fb829b9d3fc98", "sentences": ["a white bird and a small horse and a large cat runs ."]}
+{"id": "50213493d6003bc46ce5", "sentences": ["a white bird and a small horse and a large cat sleeps ."]}
+{"id": "61d978db54f67b8589dc", "sentences": ["a white bird and a small horse and a large cat waits ."]}
+{"id": "5d033659cb8378621c24", "sentences": ["a white bird and a small horse and a large cat moves ."]}
+{"id": "a17e5937c9ef755ff40e", "sentences": ["a small bird and a large horse and a black cat runs ."]}
+{"id": "d366ecbf2047731de547", "sentences": ["a small bird and a large horse and a black cat sleeps ."]}
+{"id": "82b33c9dd959eb0bae3d", "sentences": ["a small bird and a large horse and a black cat waits ."]}
+{"id": "e758bd19e1cf02f6474e", "sentences": ["a small bird and a large horse and a black cat moves ."]}
+{"id": "e517f09f7b082655c728", "sentences": ["a large bird and a black horse and a white cat runs ."]}
+{"id": "34a9e90a1ed9537fb8ae", "sentences": ["a large bird and a black horse and a white cat sleeps ."]}
+{"id": "16908fc787f6aabfac91", "sentences": ["a large bird and a black horse and a white cat waits ."]}
+{"id": "bdc2cb7e831256af41cc", "sentences": ["a large bird and a black horse and a white cat moves ."]}
+{"id": "a000f572101f01951c51", "sentences": ["a black horse and a white cat and a small dog runs ."]}
+{"id": "3dc6a7ea6b429edb3313", "sentences": ["a black horse and a white cat and a small dog sleeps ."]}
+{"id": "7df1ffd3376afb8b61fb", "sentences": ["a black horse and a white cat and a small dog waits ."]}
+{"id": "14f327e90ecb8e968444", "sentences": ["a black horse and a white cat and a small dog moves ."]}
+{"id": "16760b7b760df4bcfefb", "sentences": ["a white horse and a small cat and a large dog runs ."]}
+{"id": "a7552090b1cb6061b484", "sentences": ["a white horse and a small cat and a large dog sleeps ."]}
+{"id": "9220229b4b9756456500", "sentences": ["a white horse and a small cat and a large dog waits ."]}
+{"id": "eb7d0bc164436e33336a", "sentences": ["a white horse and a small cat and a large dog moves ."]}
+{"id": "267ba30f56857fa72f0c", "sentences": ["a small horse and a large cat and a black dog runs ."]}
+{"id": "b5d225ce33d0e492a584", "sentences": ["a small horse and a large cat and a black dog sleeps ."]}
+{"id": "b59d947668c201e8b678", "sentences": ["a small horse and a large cat and a black dog waits ."]}
+{"id": "a67c69c6d55ef70c0380", "sentences": ["a small horse and a large cat and a black dog moves ."]}
+{"id": "ff0470d58101f8f0a2d6", "sentences": ["a large horse and a black cat and a white dog runs ."]}
+{"id": "29281eb7f1962bfadd61", "sentences": ["a large horse and a black cat and a white dog sleeps ."]}
+{"id": "9802774928d7ec3a6b34", "sentences": ["a large horse and a black cat and a white dog waits ."]}
+{"id": "1d167b6016c0eaf9b5e0", "sentences": ["a large horse and a black cat and a white dog moves ."]}
+{"id": "6a917816dde97beabbfd", "sentences": ["cat ."]}
+{"id": "d44ce3acfb0443415d0a", "sentences": ["dog ."]}
+{"id": "6656f0d9048c29fa503b", "sentences": ["bird ."]}
+{"id": "f4bebc2cee91699e3bab", "sentences": ["horse ."]}
+{"id": "68fc3b944397187c4f11", "sentences": ["black ."]}
+{"id": "859268e5d4c1e1031c5a", "sentences": ["white ."]}
+{"id": "3476f889cf0404a0ba1e", "sentences": ["small ."]}
+{"id": "33e75a58fb771fbb06cc", "sentences": ["large ."]}
+{"id": "6a180baacc6f56b21517", "sentences": ["runs ."]}
+{"id": "e23141afa0378c2ce26b", "sentences": ["sleeps ."]}
+{"id": "3693f74b43a7427193c2", "sentences": ["waits ."]}
+{"id": "48a3327351f413625fa6", "sentences": ["moves ."]}
+{"id": "e7a950912bc0e9c243ed", "sentences": ["a black cat purred ."]}
+{"id": "77612aa1cea2f43a1594", "sentences": ["a white cat purred ."]}
+{"id": "0bbf5d6ded138972254d", "sentences": ["a small cat purred ."]}
+{"id": "e750bdb5b7216d4356f4", "sentences": ["a large cat purred ."]}
+{"id": "b59c437bb67259368ef5", "sentences": ["a black dog barked ."]}
+{"id": "b477a14dc827498e8ac8", "sentences": ["a white dog barked ."]}
+{"id": "31bbcd988f252879d270", "sentences": ["a small dog barked ."]}
+{"id": "5124fdac5494e341d095", "sentences": ["a large dog barked ."]}
+{"id": "7989b8a80e2e043969ad", "sentences": ["a black bird chirped ."]}
+{"id": "f854b482c1f12e6a6f33", "sentences": ["a white bird chirped ."]}
+{"id": "4994caeaf4a82d981da5", "sentences": ["a small bird chirped ."]}
+{"id": "3e6b9fadca8c1de7913e", "sentences": ["a large bird chirped ."]}
+{"id": "7d2f2dd2d4167ee3daf1", "sentences": ["a black horse neighed ."]}
+{"id": "6e2d15e0d814e26ed734", "sentences": ["a white horse neighed ."]}
+{"id": "e24211aa0bdd5a758714", "sentences": ["a small horse neighed ."]}
+{"id": "bcf2b46ef34b868df292", "sentences": ["a large horse neighed ."]}
+{"id": "94f9ec8798e7ad2837b5", "sentences": ["a cat saw a dog .", "the cat waited .", "it purred ."]}
+{"id": "dfab9238171736e4c0fb", "sentences": ["a cat saw a dog .", "the cat waited .", "it barked ."]}
+{"id": "8fcf14f5c7833861397a", "sentences": ["a cat saw a dog .", "the dog waited .", "it purred ."]}
+{"id": "46616ea8938c9a0efb0a", "sentences": ["a cat saw a dog .", "the dog waited .", "it barked ."]}
+{"id": "50ccfa685eba35b04da8", "sentences": ["a cat saw a dog .", "the cat waited .", "it purred ."]}
+{"id": "67b942313bf878ac42e7", "sentences": ["a cat saw a dog .", "the cat waited .", "it barked ."]}
+{"id": "a537d2707ac422ecec97", "sentences": ["a cat saw a dog .", "the dog waited .", "it purred ."]}
+{"id": "812e3b34fa4f809b345c", "sentences": ["a cat saw a dog .", "the dog waited .", "it barked ."]}
+{"id": "2e79dd42a8573d27b358", "sentences": ["a dog saw a cat .", "the cat waited .", "it purred ."]}
+{"id": "98e643ed4172ea372c8d", "sentences": ["a dog saw a cat .", "the cat waited .", "it barked ."]}
+{"id": "35fcbb968d6f8a411dcf", "sentences": ["a dog saw a cat .", "the dog waited .", "it purred ."]}
+{"id": "bba0f99451a430071f00", "sentences": ["a dog saw a cat .", "the dog waited .", "it barked ."]}
+{"id": "8628de666e4538f8518f", "sentences": ["a dog saw a cat .", "the cat waited .", "it purred ."]}
+{"id": "d3327028e69793d8916a", "sentences": ["a dog saw a cat .", "the cat waited .", "it barked ."]}
+{"id": "bb5714206f54d686840b", "sentences": ["a dog saw a cat .", "the dog waited .", "it purred ."]}
+{"id": "71a7797394ee499f04e4", "sentences": ["a dog saw a cat .", "the dog waited .", "it barked ."]}
+{"id": "caf3f6c15195fc981608", "sentences": ["a bird saw a horse .", "the bird waited .", "it chirped ."]}
+{"id": "ec60ab63864dc1aa0a3b", "sentences": ["a bird saw a horse .", "the bird waited .", "it neighed ."]}
+{"id": "f007611272c07dbbb9df", "sentences": ["a bird saw a horse .", "the horse waited .", "it chirped ."]}
+{"id": "8a2092a4bd8b41ca131a", "sentences": ["a bird saw a horse .", "the horse waited .", "it neighed ."]}
+{"id": "b9de7a48ec778b61c826", "sentences": ["a bird saw a horse .", "the bird waited .", "it chirped ."]}
+{"id": "cf265a096d6b6085ee1e", "sentences": ["a bird saw a horse .", "the bird waited .", "it neighed ."]}
+{"id": "765a9020bfa3314d9e3c", "sentences": ["a bird saw a horse .", "the horse waited .", "it chirped ."]}
+{"id": "48aea5f0656d6879533b", "sentences": ["a bird saw a horse .", "the horse waited .", "it neighed ."]}
+{"id": "28ad2d0285ebc2726456", "sentences": ["a horse saw a bird .", "the bird waited .", "it chirped ."]}
+{"id": "5c46059177cddc015b2f", "sentences": ["a horse saw a bird .", "the bird waited .", "it neighed ."]}
+{"id": "9a00350c567e45f73499", "sentences": ["a horse saw a bird .", "the horse waited .", "it chirped ."]}
+{"id": "bd140ee594bb5c0bad3a", "sentences": ["a horse saw a bird .", "the horse waited .", "it neighed ."]}
+{"id": "1b249f2967d3e54480fb", "sentences": ["a horse saw a bird .", "the bird waited .", "it chirped ."]}
+{"id": "602f1186776cfeca3707", "sentences": ["a horse saw a bird .", "the bird waited .", "it neighed ."]}
+{"id": "8cdfad8ee26382dff662", "sentences": ["a horse saw a bird .", "the horse waited .", "it chirped ."]}
+{"id": "2f5e5a22fc49bc49c1e8", "sentences": ["a horse saw a bird .", "the horse waited .", "it neighed ."]}
+{"id": "de3ae130027634bdf9e2", "sentences": ["a cat saw a dog .", "a bird waited .", "the cat moved .", "it purred ."]}
+{"id": "475a8cedcb251c6b17b9", "sentences": ["a cat saw a dog .", "a bird waited .", "the cat moved .", "it barked ."]}
+{"id": "477e5713cea3ecc0a9c8", "sentences": ["a cat saw a dog .", "a bird waited .", "the cat moved .", "it chirped ."]}
+{"id": "ea880a7b0e11ff2972e3", "sentences": ["a cat saw a dog .", "a bird waited .", "the dog moved .", "it purred ."]}
+{"id": "8abeb2e76581daad0345", "sentences": ["a cat saw a dog .", "a bird waited .", "the dog moved .", "it barked ."]}
+{"id": "e6c74a1467ccf5e3cbfc", "sentences": ["a cat saw a dog .", "a bird waited .", "the dog moved .", "it chirped ."]}
+{"id": "6a0c48e7bf4eae3f33de", "sentences": ["a cat saw a dog .", "a bird waited .", "the bird moved .", "it purred ."]}
+{"id": "507d5814ff2f3a28f618", "sentences": ["a cat saw a dog .", "a bird waited .", "the bird moved .", "it barked ."]}
+{"id": "f3e3b418c095f529e0f4", "sentences": ["a cat saw a dog .", "a bird waited .", "the bird moved .", "it chirped ."]}
+{"id": "9950eda0f3638a158213", "sentences": ["a cat saw a bird .", "a dog waited .", "the cat moved .", "it purred ."]}
+{"id": "33519b866de662b5650c", "sentences": ["a cat saw a bird .", "a dog waited .", "the cat moved .", "it chirped ."]}
+{"id": "baa9315873aa602eed36", "sentences": ["a cat saw a bird .", "a dog waited .", "the cat moved .", "it barked ."]}
+{"id": "95c1c93c038a258cb77f", "sentences": ["a cat saw a bird .", "a dog waited .", "the bird moved .", "it purred ."]}
+{"id": "8ce233ef71facc80465b", "sentences": ["a cat saw a bird .", "a dog waited .", "the bird moved .", "it chirped ."]}
+{"id": "6df364209dc339d27653", "sentences": ["a cat saw a bird .", "a dog waited .", "the bird moved .", "it barked ."]}
+{"id": "4797c78310ca75cff9f0", "sentences": ["a cat saw a bird .", "a dog waited .", "the dog moved .", "it purred ."]}
+{"id": "1a507923cbdce75b0a31", "sentences": ["a cat saw a bird .", "a dog waited .", "the dog moved .", "it chirped ."]}
+{"id": "11ccd935a215ba7caee8", "sentences": ["a cat saw a bird .", "a dog waited .", "the dog moved .", "it barked ."]}
+{"id": "f7f1ca06d2d3d0b4bcb3", "sentences": ["a dog saw a cat .", "a bird waited .", "the dog moved .", "it barked ."]}
+{"id": "2d35de5ebaed729c0ca5", "sentences": ["a dog saw a cat .", "a bird waited .", "the dog moved .", "it purred ."]}
+{"id": "e6a43acb3d253e1ea6ca", "sentences": ["a dog saw a cat .", "a bird waited .", "the dog moved .", "it chirped ."]}
+{"id": "56e8f1121cb17a966821", "sentences": ["a dog saw a cat .", "a bird waited .", "the cat moved .", "it barked ."]}
+{"id": "ca878329dbbecc605b1e", "sentences": ["a dog saw a cat .", "a bird waited .", "the cat moved .", "it purred ."]}
+{"id": "30898f7dec82058c7ca9", "sentences": ["a dog saw a cat .", "a bird waited .", "the cat moved .", "it chirped ."]}
+{"id": "f726dbebf663758cb446", "sentences": ["a dog saw a cat .", "a bird waited .", "the bird moved .", "it barked ."]}
+{"id": "1a18ab2de7c144a5eb6e", "sentences": ["a dog saw a cat .", "a bird waited .", "the bird moved .", "it purred ."]}
+{"id": "88c5654e28ab37fa0fc0", "sentences": ["a dog saw a cat .", "a bird waited .", "the bird moved .", "it chirped ."]}
+{"id": "cf5481bdc89c4f808d0d", "sentences": ["a dog saw a bird .", "a cat waited .", "the dog moved .", "it barked ."]}
+{"id": "a4cfc975607a3335bb89", "sentences": ["a dog saw a bird .", "a cat waited .", "the dog moved .", "it chirped ."]}
+{"id": "6df97a057fc8a8112aad", "sentences": ["a dog saw a bird .", "a cat waited .", "the dog moved .", "it purred ."]}
+{"id": "f827a832696b8dc5d712", "sentences": ["a dog saw a bird .", "a cat waited .", "the bird moved .", "it barked ."]}
+{"id": "24b33ea173e1b926b407", "sentences": ["a dog saw a bird .", "a cat waited .", "the bird moved .", "it chirped ."]}
+{"id": "700bebc6799040f0cc65", "sentences": ["a dog saw a bird .", "a cat waited .", "the bird moved .", "it purred ."]}
+{"id": "ca65804fd1c69d2d739c", "sentences": ["a dog saw a bird .", "a cat waited .", "the cat moved .", "it barked ."]}
+{"id": "c04cb9218357f02143b7", "sentences": ["a dog saw a bird .", "a cat waited .", "the cat moved .", "it chirped ."]}
+{"id": "d02c5b09d308d60dd536", "sentences": ["a dog saw a bird .", "a cat waited .", "the cat moved .", "it purred ."]}
+{"id": "58463fb49413e7d81fd0", "sentences": ["a bird saw a cat .", "a dog waited .", "the bird moved .", "it chirped ."]}
+{"id": "7679403146af9fa29ecd", "sentences": ["a bird saw a cat .", "a dog waited .", "the bird moved .", "it purred ."]}
+{"id": "b2495d8a079bf4b58231", "sentences": ["a bird saw a cat .", "a dog waited .", "the bird moved .", "it barked ."]}
+{"id": "77fc649ea24dae333c31", "sentences": ["a bird saw a cat .", "a dog waited .", "the cat moved .", "it chirped ."]}
+{"id": "b920f08e1f89c98b9cd3", "sentences": ["a bird saw a cat .", "a dog waited .", "the cat moved .", "it purred ."]}
+{"id": "c94086f3e00de4db6c59", "sentences": ["a bird saw a cat .", "a dog waited .", "the cat moved .", "it barked ."]}
+{"id": "fa54f83e2b6090259432", "sentences": ["a bird saw a cat .", "a dog waited .", "the dog moved .", "it chirped ."]}
+{"id": "5723dfeca43009869942", "sentences": ["a bird saw a cat .", "a dog waited .", "the dog moved .", "it purred ."]}
+{"id": "829754f6a980be368b5c", "sentences": ["a bird saw a cat .", "a dog waited .", "the dog moved .", "it barked ."]}
+{"id": "5fa707e9dd5cc9e1fdf9", "sentences": ["a bird saw a dog .", "a cat waited .", "the bird moved .", "it chirped ."]}
+{"id": "c57939cc7d150a2d283e", "sentences": ["a bird saw a dog .", "a cat waited .", "the bird moved .", "it barked ."]}
+{"id": "771887b15a9c2c3a2015", "sentences": ["a bird saw a dog .", "a cat waited .", "the bird moved .", "it purred ."]}
+{"id": "5e6057ac57397a8051b7", "sentences": ["a bird saw a dog .", "a cat waited .", "the dog moved .", "it chirped ."]}
+{"id": "04d5bb5ef66432502750", "sentences": ["a bird saw a dog .", "a cat waited .", "the dog moved .", "it barked ."]}
+{"id": "d9cd3e77c114642de75b", "sentences": ["a bird saw a dog .", "a cat waited .", "the dog moved .", "it purred ."]}
+{"id": "26a47e22971948bb2af3", "sentences": ["a bird saw a dog .", "a cat waited .", "the cat moved .", "it chirped ."]}
+{"id": "4568d6426d88672e06e4", "sentences": ["a bird saw a dog .", "a cat waited .", "the cat moved .", "it barked ."]}
+{"id": "c06f27d7c256c8991432", "sentences": ["a bird saw a dog .", "a cat waited .", "the cat moved .", "it purred ."]}
+{"id": "e2d8476300e73f9c6b56", "sentences": ["a cat runs .", "it purred ."]}
+{"id": "560a83091b4fb424c80e", "sentences": ["a dog runs .", "it barked ."]}
+{"id": "f77d046b3419716882fb", "sentences": ["a bird runs .", "it chirped ."]}
+{"id": "8f5d3e57f91df92f2b0b", "sentences": ["a horse runs .", "it neighed ."]}
+{"id": "0d3891aefb94948745fa", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "4fc65a2b207474eab102", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "36efcdbb680395b68f6b", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "5d8a6bb017b245ec83d4", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "c7f93ed5040fb3f5e560", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "c97cc4bac8887cd46dd6", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "f3c4f70aff4514eb41bb", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "e7d178210338c6410ab9", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "b0a62d27d3f5eb673005", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "b125cba4f1d706c72211", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "bca000ba77465dbc6528", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "e95b11f6f51c97774d94", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "c80c921f650a80a4343f", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "01b8860f0c29b75c52fe", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "29e0f45d95afbd130304", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "5920616eaa47d184acf8", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "b86aecb742f03876769c", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "1a903dd372b03fd67542", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "2732ded7c01f657e8ce8", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "13fc97ab3cc744e3a66a", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "595cd89068208bb80a32", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "65ddeca837669f78af10", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "0bd38770b6058a18d594", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "50aff8a09e781efc9788", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "0c30f602eb9469357774", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "0d41b1e8b3ab74bd3986", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "a7f17bb30a177cac8948", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "86e2f9eb67b50feef85a", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "aa4cc45548c24162f018", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "44eefa7731e3c28c5af1", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "40a3c697bd62b76c0a3f", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "44b81c135e307f2163b0", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "229ec0940063ea3007bd", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "4cd9586c89250ce94d33", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "ab2d2bb4388efbacf2f6", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "419cb077a02402130311", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "b640278fbbc0a3e097bc", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "3c8cb6263b19c9af4d64", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "b0a69ce144edbf441cef", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "e2e82d2d87d66373feae", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "d3595c159cc84d44c369", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "2e6858cc9657b31c584a", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "2376a10018c897a9b9ae", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "12e71195b9eea46e11af", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "e860f5a0c7be8fb50973", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "19faffca77e2b58ea32e", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "8cdd3c149ff121e657ee", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "d030be1263bc32cb8093", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "3b2ec82b44bfed13fa11", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "aabaaf09d81e95f074c8", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "fa550610cb0083c7f5fe", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "6df97350852358aae6db", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "af36080754f010ccad35", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "2c648318c534dbffb095", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "5c811b2e49632076051f", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "d31259404173857c2f35", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "b091313f05a224efab4e", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "72e0c453e8449409d91a", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "6d2ca2302b2ce8436d9f", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "f63551d2d8c551940656", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "7deb323974d80be2c79f", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "990e8cd0e6752f1de7bf", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "555ce254e550553522b9", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "9b8ac54991a8735fec90", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "7d9a84ed3aaca808deeb", "sentences": ["a black cat runs .", "a white cat sleeps .", "it is white ."]}
+{"id": "9483fb71926c5e9d3d49", "sentences": ["a black cat runs .", "the black cat sleeps .", "it is black ."]}
+{"id": "d304114d6049aaa43066", "sentences": ["a black dog runs .", "a white dog sleeps .", "it is white ."]}
+{"id": "29a8bdc839ef45fd8e02", "sentences": ["a black dog runs .", "the black dog sleeps .", "it is black ."]}
+{"id": "8caba0023bc2ec87d0a0", "sentences": ["a black bird runs .", "a white bird sleeps .", "it is white ."]}
+{"id": "067e68cb46099b83bec6", "sentences": ["a black bird runs .", "the black bird sleeps .", "it is black ."]}
+{"id": "ed13b28f3940a5564ac2", "sentences": ["a black horse runs .", "a white horse sleeps .", "it is white ."]}
+{"id": "d71f779f25ac9b955ec2", "sentences": ["a black horse runs .", "the black horse sleeps .", "it is black ."]}
+{"id": "1b8694a6afa4ef276489", "sentences": ["the black cat runs .", "the white cat sleeps .", "it is white ."]}
+{"id": "3cd75e592696b6c3ef9a", "sentences": ["the black cat runs .", "a black cat sleeps .", "it is black ."]}
+{"id": "b7807bed140c1d3dc65f", "sentences": ["the black dog runs .", "the white dog sleeps .", "it is white ."]}
+{"id": "242cec3b80cbf05e664f", "sentences": ["the black dog runs .", "a black dog sleeps .", "it is black ."]}
+{"id": "12e0dc337b4eb48faef4", "sentences": ["the black bird runs .", "the white bird sleeps .", "it is white ."]}
+{"id": "e1e081b09fce9bcaa8f8", "sentences": ["the black bird runs .", "a black bird sleeps .", "it is black ."]}
+{"id": "188b80beaaf35c28a5ce", "sentences": ["the black horse runs .", "the white horse sleeps .", "it is white ."]}
+{"id": "b5b1770f6d62922253dc", "sentences": ["the black horse runs .", "a black horse sleeps .", "it is black ."]}
+{"id": "affa5141db4c7e05263a", "sentences": ["a cat runs .", "a cat sleeps .", "the black cat runs .", "the white cat sleeps ."]}
+{"id": "5a143dd1d2b75d629b8d", "sentences": ["a cat runs .", "the cat sleeps .", "the black cat runs .", "the black cat sleeps ."]}
+{"id": "d606e2c3fdadbd503a78", "sentences": ["a dog runs .", "a dog sleeps .", "the black dog runs .", "the white dog sleeps ."]}
+{"id": "aa80d5b94a90ca1afe5d", "sentences": ["a dog runs .", "the dog sleeps .", "the black dog runs .", "the black dog sleeps ."]}
+{"id": "1f7f3016905fc384924d", "sentences": ["a bird runs .", "a bird sleeps .", "the black bird runs .", "the white bird sleeps ."]}
+{"id": "8f2fc1f8bbabcb85e14d", "sentences": ["a bird runs .", "the bird sleeps .", "the black bird runs .", "the black bird sleeps ."]}
+{"id": "5dcc99bab94dc56b7b77", "sentences": ["a horse runs .", "a horse sleeps .", "the black horse runs .", "the white horse sleeps ."]}
+{"id": "dcd236c713ccd60e8747", "sentences": ["a horse runs .", "the horse sleeps .", "the black horse runs .", "the black horse sleeps ."]}
+{"id": "4fc18188c270995320e8", "sentences": ["a cat is black .", "a dog is white .", "it is black ."]}
+{"id": "e52cfda906638c311a92", "sentences": ["a cat is black .", "a dog is white .", "it is white ."]}
+{"id": "ebbf9b1e03446a6e4f33", "sentences": ["a cat is white .", "a dog is black .", "it is black ."]}
+{"id": "91a1b3f2adef99173cff", "sentences": ["a cat is white .", "a dog is black .", "it is white ."]}
+{"id": "cb8872d2b87f331dd1fc", "sentences": ["a dog is white .", "a cat is black .", "it is black ."]}
+{"id": "4d16c02bff3adf4f6548", "sentences": ["a dog is white .", "a cat is black .", "it is white ."]}
+{"id": "199cb59bfc777dcdea2f", "sentences": ["a dog is black .", "a cat is white .", "it is black ."]}
+{"id": "61bdde9a93502eaca2d1", "sentences": ["a dog is black .", "a cat is white .", "it is white ."]}

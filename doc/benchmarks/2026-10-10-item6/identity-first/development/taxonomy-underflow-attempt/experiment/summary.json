@@ -1,0 +1,42 @@
+{
+  "branches": {
+    "recovery-factorial-on": {
+      "completed": false,
+      "not_run": true
+    },
+    "recovery-factorial-off": {
+      "completed": false,
+      "not_run": true
+    },
+    "recovery-confounded-on": {
+      "completed": false,
+      "not_run": true
+    },
+    "recovery-confounded-off": {
+      "completed": false,
+      "not_run": true
+    },
+    "identity-balanced-on": {
+      "completed": false,
+      "not_run": true
+    },
+    "identity-balanced-off": {
+      "completed": false,
+      "not_run": true
+    },
+    "identity-biased-on": {
+      "completed": false,
+      "not_run": true
+    },
+    "identity-biased-off": {
+      "completed": false,
+      "not_run": true
+    }
+  },
+  "exit_codes": {},
+  "source_check": {
+    "source_matched": true,
+    "corpus_matched": true,
+    "seconds": 1947.265962125035
+  }
+}

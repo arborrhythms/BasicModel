@@ -1,0 +1,187 @@
+{
+  "branches": {
+    "recovery-factorial-on": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "recovery-factorial-off": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "recovery-confounded-on": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "recovery-confounded-off": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "identity-balanced-on": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "identity-balanced-off": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "identity-biased-on": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    },
+    "identity-biased-off": {
+      "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 339, in branch\n    drift=restore_warmup(model,warm/'warmup.ckpt',restore)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 145, in restore_warmup\n    if not restore(model,str(path),require_match=True):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 5195, in load_weights\n    raise ValueError(\"\\n\".join(lines))\nValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt\n  Keys in file not present in model: 16\n    comparison_reader.weights.inputSpace/outputSpace/_readout_bias\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/W\n    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U\n    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight\n    comparison_reader.weights.answer_attention/space_bias\n    comparison_reader.weights.answer_attention/consume_gate\n    comparison_reader.weights.answer_attention/scorer/0/weight\n    comparison_reader.weights.answer_attention/scorer/0/bias\n    comparison_reader.weights.answer_attention/scorer/2/weight\n    comparison_reader.weights.answer_attention/scorer/2/bias\n    comparison_reader.weights.question_conditioners/104/weight\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.\n",
+      "completed": false
+    }
+  },
+  "exit_codes": {
+    "recovery-factorial-on": 1,
+    "recovery-factorial-off": 1,
+    "recovery-confounded-on": 1,
+    "recovery-confounded-off": 1,
+    "identity-balanced-on": 1,
+    "identity-balanced-off": 1,
+    "identity-biased-on": 1,
+    "identity-biased-off": 1
+  },
+  "warmup": {
+    "completed": true,
+    "stages": [
+      {
+        "name": "reading_two",
+        "presentations": 64,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": null,
+        "native_reported_passed": true,
+        "order_ce_gate": false,
+        "ce_range": [
+          0.34649062156677246,
+          0.3465735912322998
+        ],
+        "final_ce": [
+          0.3465735912322998,
+          0.3465735912322998,
+          0.3465735912322998,
+          0.3465735912322998
+        ]
+      },
+      {
+        "name": "reading_four",
+        "presentations": 64,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": null,
+        "native_reported_passed": true,
+        "order_ce_gate": false,
+        "ce_range": [
+          0.794513463973999,
+          0.794513463973999
+        ],
+        "final_ce": [
+          0.794513463973999,
+          0.794513463973999,
+          0.794513463973999,
+          0.794513463973999
+        ]
+      },
+      {
+        "name": "identities",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": null,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "identities_answer",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": 0,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "noun_phrase",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": null,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "noun_phrase_answer",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": 0,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "noun_verb",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": null,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "noun_verb_answer",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": 0,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "relations",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": null,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      },
+      {
+        "name": "relations_answer",
+        "presentations": 8,
+        "exact_readbacks": 0,
+        "free_exact": 0,
+        "answer_exact": 0,
+        "native_reported_passed": false,
+        "order_ce_gate": null,
+        "ce_range": null,
+        "final_ce": null
+      }
+    ],
+    "failure": null
+  },
+  "selected_mint_lesson": {
+    "outcome": "not_measured",
+    "retire": false
+  },
+  "source_check": {
+    "source_matched": true,
+    "corpus_matched": true,
+    "seconds": 5501.948652124964
+  }
+}

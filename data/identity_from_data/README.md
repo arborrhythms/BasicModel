@@ -1,4 +1,4 @@
-# Item 6 part 2: identity lessons, revision 2
+# Item 6 part 2: identity lessons, revision 3
 
 Generate with `PYTHONPATH=test .venv/bin/python test/identity_corpus.py`.
 The text files contain only an opaque document ID and sentence strings. All
@@ -17,12 +17,15 @@ each kind always has one property. Do not mix that stream into factorial trainin
 
 Stage 5 adds kind-specific follow-up predicates, pronouns with one/two/three
 candidates, determiners that are correct on 90% of first/repeat mentions, and
-same-kind pairs with distinguishing properties supplied later. The two-candidate
-lesson fully crosses target recency, introduction role and initial surface
-position (eight cells, four examples each per split). Ordinary and
-object-topicalized clauses (`a cat saw a dog .` / `a dog , a cat saw .`)
-separate grammatical role from surface order; equally frequent refresh mentions separate
-recency from the introduction's role. The three-candidate lesson balances each
+same-kind pairs with distinguishing properties supplied later, using the same
+verb forms: `a cat runs . a cat sleeps . the black cat runs . the white cat
+sleeps .`. No participle or morphology mapping is presumed. The two-candidate
+lesson crosses target recency and introduction role (four cells, eight
+presentations each per split). Introductions use ordinary SVO clauses only:
+`a cat saw a dog .`. Introduction role and first-mention position are therefore
+confounded. Object topicalization was removed because this measurement has no
+verified fronting derivation. Equally frequent refresh mentions preserve the
+independent recency crossing. The three-candidate lesson balances each
 kind and target recency/position; its two subject introductions and one object
 introduction give a 2:1 role marginal, which the report keeps visible.
 
@@ -35,8 +38,8 @@ small teaching world. Matching content alone does **not** prove that two identic
 individuals are one; noisy determiner examples therefore have irreducible
 uncertainty. The scorer reports them and does not impose a perfect-accuracy test.
 
-The neither-candidate control uses the same visible document twice, once for
-each hidden answer, with an uninformative `it glittered .` follow-up. Any
+The neither-candidate control uses the same visible document with both hidden answers (two witnesses of
+each), with an uninformative `it glittered .` follow-up. Any
 deterministic text-only policy has chance accuracy on the paired items. A
 separate 16-document `biased_train` stream always rewards recency; its
 16-document `reversed_eval` counterpart always opposes recency. The report's

@@ -53,7 +53,7 @@ class Document:
 
     def finish(self, number):
         # IDs are opaque, document-scoped addresses, not semantic features.
-        key = hashlib.sha256(f'identity-v2:{number}'.encode()).hexdigest()[:20]
+        key = hashlib.sha256(f'identity-v3:{number}'.encode()).hexdigest()[:20]
         public = dict(id=key, sentences=self.sentences)
         gold = dict(id=key, split=self.split, family=self.family, stage=self.stage,
                     tags=self.tags, mentions=self.mentions, probe=self.probe, row_pair=self.row_pair)
@@ -96,20 +96,19 @@ def build():
 
     def pronouns(split, pairs, family='pronoun', biased=False, neither=False):
         for pair in pairs:
-            for subject, object_first, refreshed, target in product(range(2), range(2), range(2), range(2)):
+            for subject, repeat, refreshed, target in product(range(2), range(2), range(2), range(2)):
                 if biased and target != refreshed:
                     continue
                 if family == 'reversed_recency' and target == refreshed:
                     continue
                 a, b = pair[subject], pair[1-subject]
                 roles = {a:'subject', b:'object'}
-                d = Document(split, family, 5, word_order='OSV' if object_first else 'SVO')
-                if object_first:
-                    # Object topicalization changes surface order without
-                    # turning the object into a passive grammatical subject.
-                    d.add(f'a {b} , a {a} saw .', [(1,b,'object'),(4,a,'subject')])
-                else:
-                    d.add(f'a {a} saw a {b} .', [(1,a,'subject'),(4,b,'object')])
+                # No demonstrated object-fronting derivation is available.
+                # Introduction role and first position are confounded; the
+                # independent refresh still crosses role with recent mention.
+                d = Document(split, family, 5, word_order='SVO', repeat=repeat,
+                             introduction_role_position_confounded=True)
+                d.add(f'a {a} saw a {b} .', [(1,a,'subject'),(4,b,'object')])
                 # Refresh each candidate equally; grammatical role in the
                 # introduction and last-mention recency are independent.
                 d.add(f'the {pair[refreshed]} waited .', [(1,pair[refreshed],'subject')])
@@ -169,10 +168,11 @@ def build():
         d = Document(split, 'same_kind', 5, expected_rows=1 if same else 2)
         first, = d.add(f'a {kind} runs .', [(1,'e0','subject')])
         second, = d.add(f'{"the" if same else "a"} {kind} sleeps .', [(1,'e0' if same else 'e1','subject')])
-        # Later distinguishing evidence, independent of the earlier verb.
+        # The same verb forms connect later properties to the earlier
+        # occurrences. No participle/morphology lesson is presumed.
         color = 'black' if split=='train' else 'white'
-        d.add(f'the running {kind} is {color} .', [(2,'e0','subject')])
-        d.add(f'the sleeping {kind} is {color if same else ("white" if color=="black" else "black")} .',
+        d.add(f'the {color} {kind} runs .', [(2,'e0','subject')])
+        d.add(f'the {color if same else ("white" if color=="black" else "black")} {kind} sleeps .',
               [(2,'e0' if same else 'e1','subject')])
         d.row_pair = dict(mentions=[first,second], expected=1 if same else 2); docs.append(d)
     for split, pair in (('train',train_pairs[0]),('eval',held_pairs[0])):
@@ -196,7 +196,7 @@ def write(destination=DEST):
             path=destination/f'{split}.{suffix}.jsonl'
             path.write_text(''.join(json.dumps(pair[index],sort_keys=True)+'\n' for pair in selected))
             paths[path.name]=hashlib.sha256(path.read_bytes()).hexdigest()
-    manifest=dict(schema=1, revision=2, files=paths, documents=len(rows),
+    manifest=dict(schema=1, revision=3, files=paths, documents=len(rows),
         by_split=dict(Counter(g['split'] for _,g in rows)),
         by_family=dict(Counter(g['family'] for _,g in rows)))
     (destination/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

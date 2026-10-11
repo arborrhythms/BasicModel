@@ -1,0 +1,99 @@
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-continued/warmup/warmup.ckpt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"training": true, "completed": 4, "total": 144}
+batch = 1 (Δ=33.008s)
+{"training": true, "completed": 8, "total": 144}
+batch = 2 (Δ=32.624s)
+{"training": true, "completed": 12, "total": 144}
+batch = 3 (Δ=33.339s)
+{"training": true, "completed": 16, "total": 144}
+batch = 4 (Δ=33.938s)
+{"training": true, "completed": 20, "total": 144}
+batch = 5 (Δ=33.300s)
+{"training": true, "completed": 24, "total": 144}
+batch = 6 (Δ=34.109s)
+{"training": true, "completed": 28, "total": 144}
+batch = 7 (Δ=33.524s)
+{"training": true, "completed": 32, "total": 144}
+batch = 8 (Δ=33.235s)
+{"training": true, "completed": 36, "total": 144}
+batch = 9 (Δ=33.603s)
+{"training": true, "completed": 40, "total": 144}
+batch = 10 (Δ=34.024s)
+{"training": true, "completed": 44, "total": 144}
+batch = 11 (Δ=33.547s)
+{"training": true, "completed": 48, "total": 144}
+batch = 12 (Δ=44.175s)
+{"training": true, "completed": 52, "total": 144}
+batch = 13 (Δ=45.608s)
+{"training": true, "completed": 56, "total": 144}
+batch = 14 (Δ=44.772s)
+{"training": true, "completed": 60, "total": 144}
+batch = 15 (Δ=45.007s)
+{"training": true, "completed": 64, "total": 144}
+batch = 16 (Δ=45.715s)
+{"training": true, "completed": 68, "total": 144}
+batch = 17 (Δ=42.976s)
+{"training": true, "completed": 72, "total": 144}
+batch = 18 (Δ=44.906s)
+{"training": true, "completed": 76, "total": 144}
+batch = 19 (Δ=43.273s)
+{"training": true, "completed": 80, "total": 144}
+batch = 20 (Δ=42.485s)
+{"training": true, "completed": 84, "total": 144}
+batch = 21 (Δ=39.881s)
+{"training": true, "completed": 88, "total": 144}
+batch = 22 (Δ=43.253s)
+{"training": true, "completed": 92, "total": 144}
+batch = 23 (Δ=40.952s)
+{"training": true, "completed": 96, "total": 144}
+batch = 24 (Δ=51.727s)
+{"training": true, "completed": 100, "total": 144}
+batch = 25 (Δ=54.305s)
+{"training": true, "completed": 104, "total": 144}
+batch = 26 (Δ=53.770s)
+{"training": true, "completed": 108, "total": 144}
+batch = 27 (Δ=50.415s)
+{"training": true, "completed": 112, "total": 144}
+batch = 28 (Δ=54.470s)
+{"training": true, "completed": 116, "total": 144}
+batch = 29 (Δ=53.252s)
+{"training": true, "completed": 120, "total": 144}
+batch = 30 (Δ=51.163s)
+{"training": true, "completed": 124, "total": 144}
+batch = 31 (Δ=52.493s)
+{"training": true, "completed": 128, "total": 144}
+batch = 32 (Δ=53.062s)
+{"training": true, "completed": 132, "total": 144}
+batch = 33 (Δ=49.249s)
+{"training": true, "completed": 136, "total": 144}
+batch = 34 (Δ=53.894s)
+{"training": true, "completed": 140, "total": 144}
+batch = 35 (Δ=52.931s)
+{"training": true, "completed": 144, "total": 144}
+batch = 0 (Δ=17.999s)
+{"training": false, "completed": 4, "total": 48}
+batch = 1 (Δ=11.134s)
+{"training": false, "completed": 8, "total": 48}
+batch = 2 (Δ=11.207s)
+{"training": false, "completed": 12, "total": 48}
+batch = 3 (Δ=11.428s)
+{"training": false, "completed": 16, "total": 48}
+batch = 4 (Δ=19.131s)
+{"training": false, "completed": 20, "total": 48}
+batch = 5 (Δ=18.546s)
+{"training": false, "completed": 24, "total": 48}
+batch = 6 (Δ=18.594s)
+{"training": false, "completed": 28, "total": 48}
+batch = 7 (Δ=19.032s)
+{"training": false, "completed": 32, "total": 48}
+batch = 8 (Δ=27.125s)
+{"training": false, "completed": 36, "total": 48}
+batch = 9 (Δ=28.864s)
+{"training": false, "completed": 40, "total": 48}
+batch = 10 (Δ=29.389s)
+{"training": false, "completed": 44, "total": 48}
+batch = 11 (Δ=28.149s)
+{"training": false, "completed": 48, "total": 48}
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-continued/recovery-factorial-off/final.ckpt

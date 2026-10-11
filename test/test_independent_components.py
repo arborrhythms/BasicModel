@@ -324,6 +324,24 @@ def test_kind_bind_and_mint_closings_obey_the_selected_choice():
     assert [columns.nouns.witness_count(identity) for identity in existing] == counts
 
 
+@pytest.mark.parametrize('references', [(), (77,)])
+def test_admission_ablation_keeps_recurrence_without_a_selected_mint(references):
+    from Layers import TernaryTruthStore
+    from Meaning import ConceptualMeaning
+    columns = component_fixture()
+    existing = columns.nouns.ids
+    store = TernaryTruthStore(4, capacity=8)
+    columns.owner._closed_clause_store = lambda: store
+    columns._allocate = lambda direction: 100
+    meaning = ConceptualMeaning.from_description(torch.eye(4)[2])
+    for position in range(4):
+        row = store.append_meaning(meaning, document_key='ungated-readings',
+            sentence_index=position, order=2, kind='observation')
+        columns.commit(row, meaning, individual_references=references, require_selected_mint=False)
+        assert columns.nouns.ids == (existing if position < 3 else (*existing, 100))
+    assert columns.nouns.witness_count(100) == 4
+
+
 @pytest.mark.parametrize('mode,reference,expected', [
     ('mint', -1, (-1,)), ('bind', 77, (77,)), ('kind', -1, ()),
 ])

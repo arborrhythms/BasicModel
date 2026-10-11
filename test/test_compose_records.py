@@ -8,6 +8,58 @@ from Models import BasicModel
 from Language import LanguageSpace
 
 
+@pytest.mark.parametrize('committed', [False, True])
+def test_retained_trial_reconstructs_every_admitted_leaf(committed):
+    """The October 10 exploratory trace starts with `by`, then a binary fold.
+
+    Before the trial hand-off `by` was masked out. Reusing that mask drops
+    the first operand. Exercise the saved trace, including all packed rows,
+    both while scoring and after the field is released at commit.
+    """
+    import json
+    from pathlib import Path
+    from SentenceAttention import SentenceField
+    root = Path(__file__).resolve().parents[1]
+    folder = root / 'doc/benchmarks/2026-10-10-item6/identity-corpus/development/passive-role-prototype/biased-failure-replay'
+    saved = torch.load(folder / 'failure-context.pt', weights_only=True)
+    context = json.loads((folder / 'failure-context.json').read_text())
+    orders = [r['source_order'] for r in context['records']]
+    rules, arities, mask = (saved[k] for k in ('rules', 'arities', 'mask'))
+    language = SimpleNamespace(
+        _cs_binary_rule_ids=rules[mask & (arities == 2)].unique(),
+        _cs_unary_rule_ids=rules[mask & (arities == 1)].unique(),
+        local_op_from_rule_ids=LanguageSpace.local_op_from_rule_ids)
+    trace = SimpleNamespace(choices=lambda: (rules, arities, mask),
+                            _choice_positions=saved['positions'])
+    field = object.__new__(SentenceField)
+    field.scope = saved['word_active'] & (saved['sentence_ids'] == context['sentence'])
+    field.positions = torch.arange(field.scope.shape[1])
+    field.valid = torch.zeros_like(field.scope)
+    for b, order in enumerate(orders):
+        field.valid[b, order] = True
+    field.remaining = torch.zeros_like(field.valid)
+    field.support = field.valid.float()[..., None, None]
+    field.source_order = lambda b: orders[b]
+    isp = SimpleNamespace(_word_active_mask=saved['word_active'],
+        _packed_sentence_ids=saved['sentence_ids'], _sentence_pack_enabled=True,
+        _ar_grammar_leaf_mask=saved['grammar_leaf'])
+    model = SimpleNamespace(_reconstruction_stack=lambda: trace, languageSpace=language,
+        inputSpace=isp, conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=8)),
+        _walk_budget=lambda: 128, _sentence_field=field)
+    with pytest.raises(ValueError, match='binary operation underflows'):
+        BasicModel._derivation_program(model, t=context['sentence'])
+    isp._ar_grammar_leaf_mask = field.grammar_leaves(isp._ar_grammar_leaf_mask)
+    assert isp._ar_grammar_leaf_mask[2, 4]
+    assert torch.equal(isp._ar_grammar_leaf_mask[~field.scope], saved['grammar_leaf'][~field.scope])
+    if committed:
+        model._sentence_field = None
+        model._sentence_read_order = orders
+    positions, actions, _, _ = BasicModel._derivation_program(model, t=context['sentence'])
+    for b, order in enumerate(orders):
+        assert positions[b, :len(order)].tolist() == order
+        assert int((actions[b, :, 0] == 0).sum()) == len(order)
+
+
 def _program_fixture():
     ids = torch.full((1, 14), -1, dtype=torch.long)
     arities = torch.zeros_like(ids)

@@ -1,0 +1,41 @@
+{
+  "factorial": {
+    "documents": 144,
+    "unique_texts": 144,
+    "text_multiplicities": {
+      "1": 144
+    },
+    "support": {
+      "1": 48,
+      "2": 48,
+      "3": 48
+    },
+    "present_atoms": 720
+  },
+  "confounded": {
+    "documents": 144,
+    "unique_texts": 48,
+    "text_multiplicities": {
+      "3": 48
+    },
+    "support": {
+      "1": 48,
+      "2": 48,
+      "3": 48
+    },
+    "present_atoms": 720
+  },
+  "heldout": {
+    "documents": 48,
+    "unique_texts": 48,
+    "text_multiplicities": {
+      "1": 48
+    },
+    "support": {
+      "1": 16,
+      "2": 16,
+      "3": 16
+    },
+    "present_atoms": 240
+  }
+}

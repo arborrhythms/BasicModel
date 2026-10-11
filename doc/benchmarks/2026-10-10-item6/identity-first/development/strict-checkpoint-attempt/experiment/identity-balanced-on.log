@@ -1,0 +1,37 @@
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/identity-balanced-on/failed-state.ckpt
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py", line 431, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py", line 392, in main
+    branch(args.out/args.branch,args.out/'warmup',args.branch);return
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py", line 339, in branch
+    drift=restore_warmup(model,warm/'warmup.ckpt',restore)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py", line 145, in restore_warmup
+    if not restore(model,str(path),require_match=True):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 5195, in load_weights
+    raise ValueError("\n".join(lines))
+ValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt
+  Keys in file not present in model: 16
+    comparison_reader.weights.inputSpace/outputSpace/_readout_bias
+    comparison_reader.weights.inputSpace/outputSpace/layers/0/W
+    comparison_reader.weights.inputSpace/outputSpace/layers/0/biasWeight
+    comparison_reader.weights.inputSpace/outputSpace/layers/1/W
+    comparison_reader.weights.inputSpace/outputSpace/layers/1/biasWeight
+    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_L
+    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/d
+    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/raw_U
+    comparison_reader.weights.inputSpace/outputSpace/percept_adapter/biasWeight
+    comparison_reader.weights.answer_attention/space_bias
+    comparison_reader.weights.answer_attention/consume_gate
+    comparison_reader.weights.answer_attention/scorer/0/weight
+    comparison_reader.weights.answer_attention/scorer/0/bias
+    comparison_reader.weights.answer_attention/scorer/2/weight
+    comparison_reader.weights.answer_attention/scorer/2/bias
+    comparison_reader.weights.question_conditioners/104/weight
+  The model config likely changed since this checkpoint was saved.
+  To fix: correct the model XML to match the saved weights,
+          or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-first-repaired/warmup/warmup.ckpt to start fresh.

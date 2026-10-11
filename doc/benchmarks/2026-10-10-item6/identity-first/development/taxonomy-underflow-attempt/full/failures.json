@@ -1,0 +1,18 @@
+[
+  {
+    "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 95.1929010830354,
+    "message": "test/test_math_chain_section14.py:211: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate\n    assert min(ratios) >= .9 and max(ratios) <= 1.1, report\nE   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.8485856652259827, 1.179174929857254], 'initialization_documents': 32, ...}\nE   assert (0.8485856652259827 >= 0.9)\nE    +  where 0.8485856652259827 = min([0.9999392032623291, 1.0000609159469604, 0.9995887279510498, 1.0004111528396606, 0.9999390244483948, 1.00006103515625, ...])",
+    "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=7.082s)\r\nbatch = 16 (\u0394=4.543s)\r\nbatch = 24 (\u0394=4.857s)\r\nbatch = 32 (\u0394=6.437s)\r\nbatch = 40 (\u0394=4.490s)\r\nbatch = 48 (\u0394=4.881s)\r\nbatch = 56 (\u0394=6.392s)\r\nbatch = 64 (\u0394=6.491s)\r\nbatch = 72 (\u0394=4.404s)\r\nbatch = 80 (\u0394=4.969s)\r\nbatch = 88 (\u0394=6.394s)\r\nbatch = 96 (\u0394=6.315s)\r\nbatch = 104 (\u0394=6.456s)\r\nbatch = 0 (\u0394=16.136s)\r\n"
+  },
+  {
+    "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 40.409658874967135,
+    "message": "test/test_math_chain_section14.py:244: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:241: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -8796364300731619795), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -8796364300731619795),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x130679a80>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', -8796364300731619795), ('sym',... 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', -8796364300731619795),))), scope=(), sentence_kind='relation'), 'five')",
+    "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=18.819s)\r\n"
+  }
+]

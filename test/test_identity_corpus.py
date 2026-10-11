@@ -46,10 +46,12 @@ def test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors(
 
 
 @pytest.mark.parametrize('split',['train','eval'])
-def test_two_candidate_pronouns_counterbalance_role_recency_and_order_jointly(split):
+def test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound(split):
     labels=[g for _,g in build() if g['split']==split and g['family']=='pronoun']
     cells=Counter((g['probe']['recency_rank'],g['probe']['role'],g['probe']['first_mention_rank']) for g in labels)
-    assert len(cells)==8 and set(cells.values())=={4}
+    assert len(cells)==4 and set(cells.values())=={8}
+    assert all(g['tags']['introduction_role_position_confounded'] for g in labels)
+    assert all((role, position) in (('subject', 0), ('object', 1)) for _, role, position in cells)
     by_kind=Counter()
     for g in labels:
         mentions={m['id']:m for m in g['mentions']}
@@ -65,14 +67,20 @@ def test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_l
         words=public['sentences'][0].split()
         mentions={m['role']:m for m in label['mentions'] if m['sentence']==0}
         subject,object_=mentions['subject'],mentions['object']
-        # In both ordinary and topicalized clauses the subject is the NP
-        # immediately before 'saw'; the object moves as an NP, not by passive.
+        # No unverified fronting or passive voice in the measured lesson.
         assert words[subject['word']+1]=='saw'
         assert 'by' not in words and 'was' not in words
-        if words[-2]=='saw':
-            assert words[object_['word']+1]==',' and object_['word']<subject['word']
-        else:
-            assert object_['word']>subject['word'] and ',' not in words
+        assert object_['word']>subject['word'] and ',' not in words
+
+
+def test_same_kind_later_properties_use_the_original_verb_forms():
+    for public, label in build():
+        if label['family'] != 'same_kind':
+            continue
+        words = [s.split() for s in public['sentences']]
+        assert words[0][-2] == words[2][-2] == 'runs'
+        assert words[1][-2] == words[3][-2] == 'sleeps'
+        assert not {'running', 'sleeping'} & set(sum(words, []))
 
 
 def test_imperfect_determiners_and_content_conflicts_have_separate_evidence():
@@ -94,7 +102,7 @@ def test_neither_candidate_control_has_identical_text_for_both_hidden_answers():
         if label['family']=='neither_candidate':by_text[tuple(public['sentences'])].append(label)
     assert by_text
     for labels in by_text.values():
-        assert len(labels)==2
+        assert len(labels)==4  # two repeat witnesses of each hidden answer
         assert {g['probe']['recency_rank'] for g in labels}=={0,1}
         assert not any(g['probe']['informative'] for g in labels)
     rows=[score_document(g,control_observation(g,'recent')) for labels in by_text.values() for g in labels]

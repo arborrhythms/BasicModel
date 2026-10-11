@@ -13826,9 +13826,7 @@ class LanguageSpace(nn.Module):
             scores = readback_scores(parent.detach(), candidates, priming,
                                      meaning_start=form_width)
             indices = scores.masked_fill(~valid, -torch.inf).topk(K, dim=-1).indices
-            # Top-k chooses the search set, not operand order. Preserve bank
-            # order for equal-residual pairs (commutative operations otherwise
-            # reverse a pair merely because their parent scores swapped).
+            # Top-k chooses the search set. The pair chooser owns orientation.
             indices = indices.sort(dim=-1).values
             candidates = candidates.gather(1, indices[:, :, None].expand(B, K, D))
             active = valid.gather(1, indices)
@@ -13894,13 +13892,14 @@ class LanguageSpace(nn.Module):
             logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
         else:
             selected, _, logits = chooser(features, allowed)
-        # Float-roundoff recompositions outrank all learned context. Ties
-        # retain the residual argmin's bank order. CE still sees every legal
-        # pair, so a noisy root can learn from its true decomposition.
+        # Any exact recomposition outranks an approximate one. Within that
+        # tolerance the learned chooser decides, so roundoff cannot bypass
+        # its orientation lesson. CE still sees every legal pair.
         fits = residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
-        best, argmin = fits.min(-1)
-        exact = best <= (8 * torch.finfo(parent.dtype).eps) ** 2
-        selected = torch.where(exact, argmin, selected)
+        exact_pairs = fits <= (8 * torch.finfo(parent.dtype).eps) ** 2
+        exact = exact_pairs.any(-1)
+        exact_choice = logits.masked_fill(~exact_pairs, -torch.inf).argmax(-1)
+        selected = torch.where(exact, exact_choice, selected)
         gather = selected[:, None, None].expand(B, 1, D)
         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)

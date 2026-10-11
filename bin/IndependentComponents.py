@@ -486,7 +486,8 @@ class IndependentComponents(nn.Module):
         return identity
 
     @torch.no_grad()
-    def commit(self, row, meaning, prediction=None, *, individual_references=()):
+    def commit(self, row, meaning, prediction=None, *, individual_references=(),
+               require_selected_mint=True):
         if getattr(self.owner, '_online_learning_frozen', False):
             return
         chart = self._ready()
@@ -501,10 +502,13 @@ class IndependentComponents(nn.Module):
         # Grammar chooses whether an individual is present and whether it
         # is new. Extension/kind readings supply no individual choice; bind
         # can re-witness existing columns but cannot start a mint recurrence.
-        if individual_references:
+        # The default preserves the reviewed admission rule. The explicit
+        # ablation permits its lesson to be measured without changing the
+        # selected grammar, references, or any binding decision.
+        if individual_references or not require_selected_mint:
             self.nouns.observe(chart.expand(noun_frame(observed)), witness=witness,
                 allocate=self._allocate, max_sources=self.source_limit(store=store, row=row),
-                allow_mint=-1 in individual_references,
+                allow_mint=not require_selected_mint or -1 in individual_references,
                 prediction=(None if prediction is None else
                     chart.expand(noun_frame(chart.project(prediction.roles.detach())))))
         if prediction is not None and self.nouns.ids:

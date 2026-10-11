@@ -1,0 +1,15 @@
+{
+  "base_commit": "06f6e2b88811a107fbf7dff505cc8b2af189c34b",
+  "source_files": 771,
+  "corpus_files": 12,
+  "sha256": "45fb85390ad3a28e2326c467017f74718a926deebe80320f6267e59cce192596",
+  "status": "Uncommitted candidate with strict comparison-reader restoration in the experiment adapter; no production change since the completed warm-up.",
+  "previous_attempt": "development/strict-checkpoint-attempt; completed warm-up and all eight failed strict-load starts retained",
+  "auxiliary_measurement": "bisect/learned_probe.py; frozen artifact, chooser-only reachability check",
+  "warmup_checkpoint_sha256": "a44de2c4f2b1d3c635d458fe66909910c0a407c5cad22a9480d852d2e0089ca4",
+  "changed_since_warmup": [
+    "test/identity_experiment.py",
+    "test/test_identity_experiment.py"
+  ],
+  "continuation_harness_sha256": "47222e3e79d33ced27c83e56fda48ba79ee6607bb9fbda70e995b47bd048bff0"
+}

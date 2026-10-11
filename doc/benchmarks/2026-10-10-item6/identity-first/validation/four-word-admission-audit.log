@@ -1,0 +1,47 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-four-word-checkpoint/four-word.ckpt
+[
+  {
+    "checkpoint": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-four-word-checkpoint/four-word.ckpt",
+    "sha256": "b77cd7446bf9fed2731c7a2c0e7e690f88b8023ef5ae58dc9ef60fbf44762b66",
+    "native_loader_drift": {
+      "conceptualSpaces.0.layers.3.W": {
+        "elements": 24,
+        "max_difference": 1.4901161193847656e-08
+      }
+    },
+    "online_learning_frozen": false,
+    "chart_rows": 38,
+    "basis_norms": {
+      "count": 38,
+      "nonzero": 24,
+      "minimum": 0.0,
+      "maximum": 0.9999999403953552
+    },
+    "allocated_row_orders": {
+      "0": 38,
+      "1": 41
+    },
+    "content_width": 232,
+    "meaning_start": 104,
+    "meaning_pairs": 64,
+    "pole_stride": 64,
+    "raw_observation_norms": {
+      "count": 34,
+      "nonzero": 34,
+      "minimum": 3.334843158721924,
+      "maximum": 6.2000412940979
+    },
+    "projected_noun_norms": {
+      "count": 34,
+      "nonzero": 8,
+      "minimum": 0.0,
+      "maximum": 0.25819888710975647
+    },
+    "unavailable_observations": 0,
+    "noun_columns": 21,
+    "pending": 203,
+    "mint_threshold": 0.2
+  }
+]

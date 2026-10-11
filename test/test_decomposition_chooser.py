@@ -31,6 +31,25 @@ def test_initial_choice_is_exactly_the_residual_argmin_without_rng():
     assert torch.equal(old[3]['selected'], new[3]['selected'])
 
 
+def test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order():
+    chooser = DecompositionChooser()
+    with torch.no_grad():
+        chooser.weight.copy_(torch.tensor([1., 0., 0., 1., -1.]))
+    bank = torch.tensor([[[.2, .8], [.7, .3], [.2 + 1e-7, .8]]])
+    parent = Product.compose(bank[:, 0], bank[:, 1])
+    priming = torch.tensor([[1., 2., 4.]])
+    for permutation in ([0, 1, 2], [2, 1, 0], [1, 0, 2]):
+        left, right, available, details = search(bank[:, permutation], parent, chooser,
+            left_priming=priming[:, permutation], right_priming=priming[:, permutation])
+        assert available.all() and details['exact'].all()
+        # The perturbed column has a worse residual but a better learned score.
+        torch.testing.assert_close(left, bank[:, 2], rtol=0, atol=0)
+        torch.testing.assert_close(right, bank[:, 1], rtol=0, atol=0)
+        fits = details['relative_residual'].flatten(1)
+        selected_fit = fits.gather(1, details['selected'][:, None])
+        assert selected_fit.item() > fits.min().item()
+
+
 def test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming():
     bank = torch.tensor([[[.2, .8], [.7, .3], [.8, .4]]], requires_grad=True)
     # A lossy/noisy root is near the heavily primed distractor, but not exact.

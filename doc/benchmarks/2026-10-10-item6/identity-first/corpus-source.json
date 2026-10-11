@@ -1,0 +1,14 @@
+{
+  "data/identity_from_data/train.text.jsonl": "b84ab01389f12f3bdb33d9425b884c3fdc418b3493c4118769045bd7fd277fee",
+  "data/identity_from_data/train.labels.jsonl": "86201694ed4f679d7f09b12f5fe9afb866e86a89bcd978538551201853cd997d",
+  "data/identity_from_data/eval.text.jsonl": "0555acb4364d3df12055be9aab517a1bd461e2a69ba4c4b4ce978771815db8f8",
+  "data/identity_from_data/reversed_eval.labels.jsonl": "3fd5c506e6a2f0037b8b97196df2718c62035ed087edb172e8cb6ab246bb4b0b",
+  "data/identity_from_data/confounded_train.labels.jsonl": "6064389c3cfc7e42079b566df4bc8640bb8c8b39234d7ee75ee5997f690b922d",
+  "data/identity_from_data/confounded_train.text.jsonl": "e34c74c5c0cb2206a0a3d5fb772bfb8bc1a6afd56b435309963180b0e72e91c5",
+  "data/identity_from_data/biased_train.labels.jsonl": "0709f127d8760b6a3b653c35a7a6e5c655ece9e807060ba42ab6055926739f97",
+  "data/identity_from_data/README.md": "064643d950c5d8f246409964df5249f3c958b92a11653aad9d4bb5077691adae",
+  "data/identity_from_data/manifest.json": "f7a51563e3cf7e0b52554c8db48d88d1b79f5fe5b4e45059ddbe104cf32c3e83",
+  "data/identity_from_data/eval.labels.jsonl": "399581deb223464e773da7b934c04878b60625f3370794f8d5054dcf94bdd81a",
+  "data/identity_from_data/reversed_eval.text.jsonl": "218cb9532b4939b593f503b651264a45b5121bf400275f235de8a8ece3c68422",
+  "data/identity_from_data/biased_train.text.jsonl": "fe11901c01180948610348b669c691cba4a5baa3d3f78b156ef1bfbeb1e7b1db"
+}

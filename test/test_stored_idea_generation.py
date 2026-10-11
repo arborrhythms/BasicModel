@@ -81,7 +81,9 @@ def test_compound_candidates_are_not_word_emissions(compiled):
     assert all(any(torch.equal(leaf, word) for word in words[0]) for leaf in out[0, :3])
 
 
-def test_nontaxonomic_cue_does_not_enter_concept_order_reader():
+@pytest.mark.parametrize('reference', [('meta', 1), ('sym', -1), ('sym', 0),
+                                      ('sym', -42), ('sym', True), ('sym', 1.5)])
+def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     from Taxonomy import concept_reference
@@ -90,13 +92,22 @@ def test_nontaxonomic_cue_does_not_enter_concept_order_reader():
     def code_row(reference):
         calls.append(reference)
         return concept_reference(reference)[1] - 1
-    store.configure_leaf_index(code_row=code_row, order_of=lambda _: 0,
-        unfold=lambda value, allowance, **kw: ((), 0, False))
+    unfolded = []
+    def unfold(value, allowance, **kw):
+        unfolded.append((value.clone(), kw['order']))
+        return (), 0, False
+    store.configure_leaf_index(code_row=code_row, order_of=lambda _: 2,
+        unfold=unfold)
     cue = ConceptualMeaning(torch.ones(3, 4), torch.tensor([True, False, False]),
-                            role_refs=(('meta', 1), None, None))
+                            role_refs=(reference, None, None))
     result = store.cued_rows(cue)
     assert result['value'] == ()
     assert calls == []
+    assert len(unfolded) == 1 and unfolded[0][1] == 0
+    torch.testing.assert_close(unfolded[0][0], cue.roles[0])
+    from dataclasses import replace
+    store.cued_rows(replace(cue, role_refs=(('sym', 1), None, None)))
+    assert calls == [('sym', 1)] and unfolded[-1][1] == 2
 
 
 @pytest.mark.parametrize('compiled', [False, True])

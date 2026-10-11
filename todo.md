@@ -19,7 +19,7 @@ lines below keep the numbers their items had when they landed.
 
 **Current:** Item 6 **part 1** is the reviewed mechanism landing after the
 October 10 repair pass ([receipt](doc/benchmarks/2026-10-10-item6/part1/README.md)).
-Item 6 **part 2** is next: identity learned through the same unmixing,
+Item 6 **part 2** is in measurement and review: identity learned through the same unmixing,
 with teaching corpus and measurements before rule retirement. Stored-idea
 recovery beyond two words, order-lesson CE, MM grammar recovery and compiled
 retention remain open below. Accepted 6.1, 6.2 and 6.5 mechanism landings make
@@ -163,6 +163,14 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   two/four-word derivation recovery is 2/4 and 0/4. The order lesson's CE
   stays at .3465735912 / .7945134640 through 64 presentations, with zero
   scorer gradient. These inverse and credit findings remain active work.
+  The valid part-2 two-word checkpoint reads its stored derivations at 4/4,
+  but free readback is 0/4. A [read-only probe](doc/benchmarks/2026-10-10-item6/identity-first/validation/attention-readout-audit/result.json)
+  finds every attention tanh unit saturated at ±1 and candidate logits tied;
+  locate the onset and cause before treating the order lesson as learnable
+  in this trained state. This saturation was left unchanged during the study.
+  Pair teaching also skips compound operands without identities in its word
+  shortlist; the successful lexical-pair probe does not establish sufficient
+  teaching credit for free reconstruction of longer constituents.
 - MM grammar recovery: the 1,024-row LTM exhausts in epoch 2 before evaluation;
   there is no new recovery rate. Item 5 may not discard derivations yet.
 - Compiled retention: the 64/312-element mismatch (max .2556) has no identified
@@ -170,21 +178,70 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   LTM retention and pending-premise order-`False` findings.
 - c's retained supplied answer does not match `five`, and the eight-sentence
   fork certificate chooses only round 12. Keep both assertions unchanged.
+  Question-sensitive answering also remains unproven in the current staged
+  warm-up: noun–verb answers are 0/4 and relations 1/4; the earlier 4/4
+  identity and noun-phrase scores match a last-word baseline
+  ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)).
 - b's initial binding-distribution bound remains flaky after construction-based
   coverage of 32 documents, histories 1–4 and four names. Development maximum
-  1.153045 exceeds the unchanged .9–1.1 band; no passing initialization closes it.
+  1.153045 and the [first part-2 sweep's](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
+  .848586–1.179175 range violate the unchanged .9–1.1 band; the latter is a new
+  failing node relative to accepted 6.1. No passing initialization closes it.
 - Per-position cleared-cache overlap remains 0.000 against .800. The
   [follow-up bisection](doc/benchmarks/2026-10-10-item6/followup/README.md)
   separates the initial self-pair obstruction (repaired in part 1) from the
-  current reversed pair: a live near-copy wins by roundoff, and the exact-fit
-  override bypasses learned orientation. Keep the order lesson, content
+  current reversed pair. The first part-2 candidate removes the exact-fit
+  override: learned weights give 1.000 overlap, against 0.000 with the old
+  override on those same weights; the cold probe remains 0.000. Keep the order lesson, content
   coverage, walk order stamps and family-metadata use under part 2 (review J–L).
 - The [identity corpus preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
   exposes a native exploratory trace/admission mismatch: an admitted leaf is
   filtered from reconstruction, which then underflows a binary operation.
-  The preserved cold passive-input reproduction remains open even though the
-  corpus's separate grammatical-role labelling error has been corrected.
+  The first part-2 candidate repairs the trial/commit masks and verifies the
+  preserved passive-input trace; that repair awaits review. The corpus drops
+  unverified object fronting and reports the introduction-role/position confound.
   This probe has not been bisected against 6.1; do not call it an H regression.
+- The first part-2 warm-up stopped on a non-concept `sym` cue entering the
+  taxonomy order reader (four-word presentation 8; all experiment branches
+  unreached). The candidate restricts that reader to positive concept handles;
+  the original failed attempt and corrected-source run stay in the
+  [same receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md).
+  The corrected run passes that point and retains a negative address tagged
+  `sym`; its old-reader replay raises and the corrected boundary unfolds the
+  payload. The producer's typed-reference provenance remains open.
+  Native checkpoint loading also changed eight shared-codebook tensor aliases
+  in the smoke probe; the experiment restores frozen tensors for matched starts,
+  without claiming a production retention repair.
+- Supplied-answer warm-up adds 16 lazy comparison-reader weights that native
+  strict checkpoint preflight rejects before the child's load hook can restore
+  them. The [first part-2 receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
+  preserves all eight failed branch starts. Its measurement adapter restores
+  the child first and verifies all 874 saved tensors; production loading remains
+  unchanged. This newly observed retention finding has not been bisected against
+  6.1. The retained branch continuation reused the warm-up without extra exposure.
+- The initial native identity experiment used a word-chunk fixture with no
+  meaning complement. Its four completed zero-identification results are
+  invalid admission measurements; the unfinished identity branches were stopped.
+  The [receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md) retains
+  the zero-projection audit. A fresh run with 64 meaning pairs and a verified
+  nonzero warm-up signal completes recovery at 0/240 on all four branches:
+  no new columns or merges, and every row selects mint, so the on/off gate
+  changes no eligibility. All 192 added observations have zero meaning-band
+  content despite nonzero full vectors. Four frozen replays locate the loss:
+  word meanings are nonzero, but selected `non` clears them and `lower`
+  repeatedly keeps the newer operand. Resolve why compose keeps these lossy
+  readings before claiming an ICA recovery or admission-gate lesson.
+- The matched identity branches complete 136 training and 166 evaluation
+  documents each: 0/146 bindings and 0/20 row pairs, all unresolved. Balanced
+  training mints 61 columns and biased training 62; neither count establishes
+  correct identification. All observed commits select mint, so on/off
+  eligibility is identical and checkpoints within each corpus are byte-identical.
+  All 146 probed banks contain entries, but no annotated mention reference
+  resolves. Trace the selected mint through the individual row write and
+  observation before interpreting the binding and recency-control failures
+  as learned choices. The [complete receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
+  is accepted as preparation by plan §7. Repair R/S/T in one pass and rerun
+  the identical eight branches; no rule is retired and part 2 remains open.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
@@ -211,11 +268,15 @@ Their original failing evidence remains in the receipts.
    when its lesson passes without it; otherwise retain it and report the failure.
    No parallel learned and declared replacement; no further declared modes.
    The [corpus and measurement preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
-   is accepted for landing in plan §5: 740 documents, separate grading labels,
+   landed as `06f6e2b88`: 740 documents, separate grading labels,
    native reference observation and both control datasets. Its native outcomes
    and limitations are recorded separately from grading sanity controls;
    no identity rule is retired and no learned-control result is inferred from
    an unresolved reference or a failed run.
+   The [first matched native experiment](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
+   is reviewed and accepted as preparation: all eight branches finish, but the recovery,
+   binding and row-count lessons do not pass. The open findings above retain
+   the failed prerequisites and distinguish column admission from identification.
    Measure forced raw/bounded and free stored recovery by depth and chain
    length on fixed forward artifacts, now with trained A/B columns; report
    stored dictionary separately from sentence-time live wholes. Which family
@@ -489,6 +550,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- Item 6 part-2 corpus and measurement preparation: `06f6e2b88` ([receipt](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)); M/N/O/I and the first experiment are accepted as preparation by plan §7, with no learning claim.
 
 - **Item 6 H/I follow-up** (`9cc5f6e327`): unavailable reconstruction coverage is zero; I’s empty-inverse and remaining orientation causes are bisected, with learned order still open ([receipt](doc/benchmarks/2026-10-10-item6/followup/README.md)).
 

@@ -1,0 +1,30 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": 5776,
+  "completed": 5776,
+  "outcomes": {
+    "passed": 5488,
+    "skipped": 286,
+    "xfailed": 1,
+    "failed": 1
+  },
+  "unique_reports": 5776,
+  "raw_reports": 5779,
+  "elapsed_seconds": 1010.4989394999575,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 9780279408,
+  "source_matched": true,
+  "failure_nodes": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode"
+  ]
+}

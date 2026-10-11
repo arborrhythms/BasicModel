@@ -1,0 +1,10 @@
+{
+  "recovery-factorial-on": 1,
+  "recovery-factorial-off": 1,
+  "recovery-confounded-on": 1,
+  "recovery-confounded-off": 1,
+  "identity-balanced-on": 1,
+  "identity-balanced-off": 1,
+  "identity-biased-on": 1,
+  "identity-biased-off": 1
+}

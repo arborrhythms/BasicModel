@@ -577,3 +577,347 @@ before a wrong choice can be told from a missing candidate.
 > outcome. Pronoun and determiner lessons follow from the same warm-up
 > state with equal budgets on both branches. No rule is retired except by
 > its lesson passing without it.
+
+## 6. First part-2 experiment candidate (Codex, 2026-10-10)
+
+The preparation accepted in §5 landed as `06f6e2b88`; WikiOracle is at
+`56544f1`. The [single next receipt](../benchmarks/2026-10-10-item6/identity-first/README.md)
+contains M's trial-owned leaf mask, N's same-form predicates, O's removal of
+unverified fronting with the introduction-role/position confound reported,
+and I's learned ranking within the exact-fit set. The cold bisect overlap
+remains 0.000 with an untrained residual-only chooser; learned-score reachability
+is separately covered by the permutation regression. A frozen-artifact teaching
+probe trains only the chooser for 64 steps: CE falls 1.837530 → .374767 and
+overlap reaches 1.000; the same learned weights with the old residual override
+still score 0.000. This proves that repair's narrow teaching path, not native
+curriculum learning. No fallback order is added.
+
+The native experiment fixes stages 1–4 warm-up, then equal budgets on all
+branches, active-column held-out identification, minted/merged-column reporting
+and the mint-admission ablation. The receipt declares the budgets and threshold
+before the learning run. Failed warm-up prerequisites remain visible; no rule
+is retired absent its passing lesson. Native checkpoint reload drift is
+recorded, with exact frozen tensor restoration used solely to match starts.
+
+The first warm-up stopped at four-word presentation 8, after seven completions,
+on a non-concept `sym` cue entering the taxonomy order reader. The full original
+attempt is retained in the same receipt, including the first sweep's new b
+failure. A narrow retrieval boundary repair preserves vector unfolding and
+admits only positive concept handles to the order reader. A corrected-source
+run uses the identical seed/budgets; it also retains native invalid-cue provenance
+and stage checkpoints. No learning outcome is assigned to the unrun branches.
+
+The corrected warm-up completes: final two-/four-word CE is .3465735912 /
+.7945134640, with all sentence reconstruction, free readback and supplied-answer
+checks at 0/4. Its eight branch starts then fail before training: the parent's
+strict checkpoint preflight rejects 16 lazy comparison-reader keys before the
+child's existing restoration hook runs. This failed start and its source remain
+in the receipt. The experiment adapter now restores that child through its own
+strict hook first. A replay of the retained checkpoint matches all 874 tensors
+with no extra tensors; the checkpoint contains zero noun columns. Production
+loading is unchanged and the newly observed retention finding stays open.
+
+The branch-only continuation uses that exact checkpoint and adds no warm-up
+presentations. Its guard verifies identical learner/corpus source; only the
+experiment restoration adapter and its regression differ. Both source manifests
+and the failed original starts are retained. Seven adapter/reader checks pass.
+That source's 5,776-case sweep reports 5,488 passed, 286 skipped, one failed (`five`)
+and one xfailed, with all 771 source files matching. The earlier new b failure
+and the overlap XPASS-to-XFAIL remain open.
+
+The continuation's four recovery branches completed with zero identification,
+columns and pending prototypes. These are **invalid measurements**: the
+word-chunk fixture used equal form and conceptual widths, leaving zero meaning
+pole pairs. A read-only checkpoint audit found all 55 final chart basis rows
+zero, and all 434 nonzero observations projected to zero. This setup cannot
+test residual admission. The unfinished identity branches were stopped, with
+their progress and every completed result preserved; no gate outcome follows
+from those zeros.
+
+The corrected measurement uses the production form/meaning separation:
+104 form coordinates plus 128 meaning coordinates (64 pole pairs), 4,096
+concept rows, 256 part rows and an 8,192-row LTM. Its ordinary-word preflight
+reads back 4/4, supplies four nonzero basis rows and projects three of four
+retained observations nontrivially. Constructor and post-lexical warm-up guards
+now reject a missing meaning signal. The fresh staged experiment completes
+with unchanged seed, data, presentation budgets and learning rate. All eight
+branches exit zero; source and corpus hashes match. Its final
+source-matched sweep is complete: 5,776 selected, 5,488 passed, 286 skipped,
+one failed (`five`) and one xfailed, in 973.50 seconds; no new failing node.
+The first attempt's new b failure and the adverse overlap outcome remain open.
+The old checkpoint is not reused across the geometry change. No rule is retired.
+
+The valid two-word warm-up completes 64 presentations and improves final
+stored-derivation readback from 0/4 to 4/4 on those training phrases, evaluated
+without the reading lesson. Free generation remains 0/4 and order CE stays
+.3465735912. Its checkpoint contains ten noun columns and 72 pending prototypes;
+those counts do not establish atom identification. The receipt's tensor audit
+confirms updates to attention, pair choice and the generate policy, without
+claiming that parameter changes establish successful order learning. The
+four-word lesson also completes 64 presentations: initial and final unguided
+trace readback are both 4/4, free readback is 0/4, and CE stays .7945134640.
+All stage-4 lessons finish: final trace readback is 4/4 in each and free
+readback is 0/4. Answer scores are 4/4, 4/4, 0/4 and 1/4; the first three
+match a last-word baseline. The shared warm-up has 41 noun columns and
+334 pending prototypes. All four recovery branches restore the same
+checkpoint with exact matches on all 2,138 tensors and no extra tensors;
+factorial/confounded × gate-on/off runs all finish at 0/240 held-out
+identification, with zero new columns and zero merges. Every row selects
+mint, so on/off eligibility is identical and the two checkpoints within each
+corpus are byte-identical. All 192 newly added observations have nonzero full
+vectors but zero meaning-band content. These are native pipeline misses,
+not an informative test of ICA recovery from mixtures or of a binding
+admission constraint. The numerical retirement gate fails; no rule retires.
+The four identity branches restore the same warm-up exactly, each complete
+136 training and 166 evaluation documents, and score 0/146 bindings and
+0/20 row pairs. One-/two-/three-candidate scores are 0/4, 0/88 and 0/54;
+neither-candidate and reversed-recency controls score 0/32 and 0/16. Every
+binding and row pair is unresolved. Balanced training mints 61 columns
+(102 total), biased training 62 (103 total); column counts do not establish
+correct identification. All 940 observed commits per branch select mint,
+including frozen evaluation, and the on/off checkpoints are byte-identical
+within each corpus. There is no admission eligibility contrast in either
+the recovery or identity experiment. Native banks are populated in all
+146 probed cases, but none of 690 annotated mention references resolves;
+the selected-mint-to-individual-reference seam remains open. These outcomes
+do not establish prediction-based choice, a recency shortcut, successful
+chance behavior, or a one-row/two-row distinction. No rule is retired.
+Frozen replays of four held-out rows locate the semantic loss in compose:
+adjective/noun/verb inputs have meaning norm .2, but selected `non` operations
+clear it; binary `lower` keeps the newer operand, ultimately the period.
+The chosen lossy readings and their cost/credit remain an open finding.
+A read-only probe of the saved two-word checkpoint finds all 64 attention
+tanh units saturated at exactly ±1 (preactivations about ±140). Candidate
+differences vanish through tanh and every row has tied logits. This explains
+the uniform-choice CE at that checkpoint; onset and cause remain unmeasured.
+The finding is retained without changing the declared experiment's learner.
+The code audit also bounds the reconstruction claim: pair teaching requires
+operand identities in the word shortlist and skips a compound operand marked
+`-1`. Its successful lexical-pair probe does not establish sufficient credit
+for longer constituents. Identical chooser features cannot be separated by
+training; information erased by `non` cannot be recovered from its value alone.
+
+The completed receipt retains the raw measurements, matched checkpoints,
+source/corpus archives and all earlier failed attempts. The §7 review below
+accepts this pass for landing as preparation, with no learning claim and no
+closing of item 6 part 2. R/S/T follow in one measured repair pass.
+
+## 6. Parts of speech from operand participation (Alec, 2026-10-10)
+
+*Where the code is (verified 2026-10-10).* No word carries a part of
+speech; the grammar's operations carry **named** operand kinds —
+`reference="I2:particular|pronoun|kind"` on `lower`/`definite`/`universal`/
+`bind` (`data/complete.grammar` 170–177, 238–239) — with a fixed name→order
+table (`Language.py:1681`: event 0; particular/name/pronoun 1; kind/generic
+2), and the names are read at `ReferenceContext.binding_spec`/`resolve_operand`
+(mode masks: a pronoun/bind operand may not be its own referent, mint names
+no row, kind cancels), `ClauseJournal` 92/193, `ClauseScope` 26,
+`Interpret.bind` (`explicit = mode in ('bind','pronoun')`) and
+`selected_individual_references`. The learned part of speech exists beside
+this: the MetaSymbol category learner (`Language.py:150`) accumulates each
+word's role-participation profile, assigns it to the nearest centroid of a
+**fixed-size** VQ codebook (`Spaces.assign_category`), EMAs the centroid,
+commits the id on the word's order-1 META row, and the chooser reads it as
+`cat_ctx`. It cannot start a new class for a word that fits none, never
+merges classes, and nothing but the chooser's context reads it.
+
+*Decision.*
+
+1. **Operand names are positional** — `argin1`, `argin2`, `argout1` —
+   never `pronoun`, `particular`, `kind`. What an operation declares is
+   structural: its arity, which operand is its head, and the order change
+   it performs (`order_delta`). An operand's reference order is read from
+   the operand's own order stamp and that change, not from a name.
+2. **Positions form classes.** Whatever words work in a position become
+   that position's class. Classes collapse: if the words that serve as the
+   adjective operation's operand and the words that serve as the verb's
+   second operand are the same words, those two positions are one class
+   (NP). A word may belong to several positions; the overlap is what
+   collapses them.
+3. **A small codebook of parts of speech, every word assigned to one,
+   learned class by class** as a speaker learns: a word whose participation
+   profile fits no existing class starts a new class vector; assignment and
+   centroids are updated by online EM (k-means form: assign to the nearest
+   class, move the class toward its members); classes whose centroids
+   coincide merge. Count noun, proper noun, pronoun, determiner, adjective,
+   verb are such classes if the data make them — the learner holds ids, not
+   our names. The existing category learner is the seed: add growth on
+   no-fit, merging on coincidence, and make its class the **only**
+   part-of-speech information the chooser and the reference machinery read.
+4. **Identity behaviour is learned per class**, by part 2's lessons: the
+   class whose referent is always elsewhere is what we call pronouns; the
+   mint/bind preference of determiners is a learned bias on their class
+   ([§2](#2-identity-from-data-amendment-alec-2026-10-10)); no mode is
+   declared on an operand.
+
+*Retired by this decision* (each only when its lesson passes without it,
+as in §2): the `reference=` name attributes and the name→order table; the
+name-keyed sites listed above; `determiner_mode` on rules and part 1's
+mode-keyed policy rows; `resolve_operand`'s mode masks and cosine argmax.
+Kept: `order_delta`, `head`, arity, `clause_form` as declared structure.
+
+*Lesson and measurement.* On the curriculum's stages 2–4 the learned
+classes are scored against the generator's hidden word classes (purity and
+completeness per class, number of classes over presentations, when each
+class first appears); collapse is tested on a corpus whose two positions
+share their words; the class ids must be stable across documents
+(stage 7). Claude runs a toy first ([[simulate-before-specifying]]):
+online k-means with growth and merge over participation profiles taken
+from the identity corpus's parses, against its hidden classes. This pass
+follows the §5.3 pass (M, N, O, I, the gate experiment), which proceeds
+unchanged.
+
+### 6.1 The learning rule (Alec, 2026-10-10; Claude's reading of it)
+
+Each word points to exactly one class; nothing else is stored per word (no
+participation profile — the existing learner's pending evidence rows go).
+The class vectors live in position space (one coordinate per operand
+position of each operation). When a word is used in a position:
+
+- **E step:** the word's pointer may switch to the class whose vector best
+  fits that position. The word's current class is its one memory slot, so
+  the switch is sticky: it happens only when the fitting class beats the
+  current one by a margin (a single odd use does not move a noun).
+- **M step:** the class vectors move — the chosen class toward the
+  observed position (ordinary online k-means), and on a *switch* the old
+  and the new class are pulled toward each other. Since no word remembers
+  that it has served in both, the switch itself is the only evidence that
+  two classes overlap; the pull records it in the classes.
+- **Collapse** follows from the pull: positions that share most of their
+  words make their classes converge until they are within the merge
+  distance, and the classes merge (the smaller class's words are re-pointed
+  by a remap table, no per-word scan). A minority of ambiguous words
+  (noun/verb `run`) pulls a little and keeps flipping, but the within-class
+  M steps hold the two classes apart — the fraction decides, as in
+  k-means, so noun and verb do not merge on ambiguity.
+- **Growth:** a use that fits no class beyond a distance threshold starts
+  a new class vector at that position, as the identity dictionary mints.
+
+The toy tests exactly this on the identity corpus's parses: class count
+and purity over presentations; the NP collapse when the adjective's and
+the verb's operand share words; no noun/verb merge under ambiguous words;
+stability of ids across documents.
+
+*Participation is soft (Alec, 2026-10-10).* A word's class never gates a
+position: if only class-c words could fill position p, no word could ever
+be seen in a new position and nothing above could be learned. The class
+matrix (classes × positions) read by column gives, for each position, a
+**softmax over classes** — the share of participation at that location —
+and the chooser adds the log-share of the word's class as a learned bias
+on placing that word there, beside its other evidence. Other classes keep
+nonzero probability, so exploration can try a word in a new position and
+the sentence's credit decides whether the use is kept; a kept use is the
+E step's observation. The same column softmax is the E step's criterion
+(assign to the class with the largest share at p, with the sticky margin).
+This is how `cat_ctx` already enters the chooser — as a feature, not a
+mask — so the wiring changes only in what the feature is.
+
+## 7. Review of the §5.3 pass: M/N/O/I and the first native experiment (Claude, 2026-10-10)
+
+Reviewed the uncommitted tree against `06f6e2b88` and the
+[receipt](../benchmarks/2026-10-10-item6/identity-first/README.md); read
+the captured derivation programs and the scorer audit myself.
+
+### 7.1 The repairs — correct, land them
+
+- **M** — the trial's own admitted leaves become the grammar-leaf mask
+  (`SentenceField.grammar_leaves`); the committed winner uses the mask of
+  its scored trial; regression on the retained `[4,0,1,2,3,5,6,7]` context.
+- **N** — corpus revision 3 uses the same word forms, no participles.
+- **O** — fronting dropped; the role/position confound at first mention is
+  stated; refresh mentions still cross recency with role.
+- **I** — among exact recompositions the decomposition chooser's learned
+  logits decide; residual no longer overrides them. Taught for 64
+  presentations the probe reaches 1.000 overlap, and replaying those weights
+  under the old override stays 0.000 — the obstruction is isolated. The
+  cold model still reads 0.000 (its chooser is `[1,0,0,0,0]`, residual
+  only), so the XFAIL stays adverse until the order lesson teaches.
+- The sweep: 5,776 cases, 5,488 passed, 1 failed (c), 1 xfailed; no new
+  failing node against 6.1.
+
+### 7.2 The experiment — ran as declared, and every score is zero
+
+Recovery 0/240 and identity 0/146, 0/20 in all eight branches; the
+selected-mint gate on/off produces byte-identical checkpoints because every
+one of the 192 (940) commits selects mint, so the ablation had nothing to
+ablate. The value of the run is its diagnostics, which locate three
+obstructions, all upstream of identity:
+
+**R. The compose policy erases meaning.** The captured programs for the
+held-out rows (`validation/recovery-program-audit`) read `the black cat
+runs .` as: push `the` → `non`,`non`,`non`; push `black` → `lower` →
+`non`,`non`; push `cat` → `lower` → `non`,`non`; … Every content word is
+lowered onto the previous one and its meaning cleared twice; the closed
+clause has meaning norm 0.0 while each word carried .2. `non` is the
+tetralemma's non-affirming exclusion, declared lossy with no inverse. So
+the rows handed to the identity dictionary contain nothing to unmix — the
+zeros follow. Nothing charged this reading: derivation readback reads the
+trace (4/4), the free reconstruction is reporting-only under the field
+objective, and part 1's coverage charge counts leaves, which `non` does
+not drop (finding J). This is the 6.2 observation — a kept reading that
+discards content uncharged — in its purest form, and it is the first thing
+to repair: a kept reading must pay for the meaning its row cannot return.
+Concretely, the keep cost needs a content term: the meaning the clause's
+own leaves carried that the closed row (through the derivation's lossy
+steps) does not retain — the free reconstruction's meaning error or a
+coverage over the leaves' meaning bands — so that `non` costs what it
+discards. The chooser learned this reading, so a rule banning `non` is not
+the fix; the objective is.
+
+**S. The attention scorer saturates.** The order lesson's flat CE
+(log 2 / 2, unchanged since 6.1) now has a cause: after the two-word stage
+all 64 tanh units sit at exactly ±1 on every row and candidate —
+preactivations span ±140, of which the shared-context block contributes
+±140 and the candidates ±.28 — so the hidden derivative is zero and the
+two candidates' logits are identical. The lexical-stage weights on the same
+input spanned −.5 to .76 with no saturation; the growth happened during
+stage 3 under Adam, which 6.1 §7.16 put on this scorer at my
+recommendation. Repair: bound the scorer's preactivation (normalize the
+shared-context input or the layer), and measure that the order lesson's CE
+moves on the same checkpoint.
+
+**T. The observer resolves no reference.** 0 of 690 annotated mention
+references resolve: 445 are mint sentinels, 245 missing. A selected mint's
+row address never reaches the grader, so even a correct mint→bind chain
+could not be scored. Measurement plumbing; must be fixed before any
+identity number is read. Relatedly, the grammar never selects
+`definite`/`bind` — binding by column reuse is the part-2 mechanism and
+cannot be tested before R.
+
+Also recorded: the answer stages (identities 4/4, NPs 4/4, noun–verb 0/4,
+relations 1/4) equal the free decoder's last word — not question-sensitive
+retrieval; four-word trace readback already 4/4 before its stage; free
+readback 0/4 everywhere. These stay in the alongside list.
+
+### 7.3 Recommendation
+
+Land this pass as it stands — repairs, revision-3 corpus, experiment driver,
+receipt — as preparation, with no learning claim. Then one repair pass for
+R, S and T with the identical experiment re-run (same seed, budgets,
+corpus) as its measurement, one receipt. §6's parts-of-speech pass waits
+for R: its observations are kept readings' operand positions, and readings
+that are `lower`+`non` everywhere would teach classes of nothing. The toy
+for §6 proceeds meanwhile.
+
+### 7.4 Hand-off to Codex (Alec confirmed, 2026-10-11)
+
+> §5.3 pass reviewed (plan §7): land it as preparation (commit, push,
+> bump), no learning claim. Next pass, one receipt, same experiment
+> re-run as the measurement:
+> (R) The keep cost charges discarded meaning: add a content term — the
+> meaning the clause's leaves carried that the closed row does not return
+> (free reconstruction's meaning error, or coverage over the leaves'
+> meaning bands) — so that `non`/lossy readings cost what they discard.
+> No rule against `non`; the objective decides. Measure: the held-out
+> rows' closed meaning norm is nonzero and the `lower`+`non` program is
+> no longer the kept reading.
+> (S) Bound the attention scorer's preactivation (normalize the
+> shared-context input or the layer); regression: on the saved two-word
+> checkpoint the candidates' logits differ and the order lesson's CE moves
+> from log 2 / 2 within the stage.
+> (T) The observer resolves a selected mint to the written row's address
+> so mint→bind chains are gradable; regression on the retained identity
+> run (690 references).
+> Then re-run the eight branches unchanged and report factorial vs
+> confounded identification, the gate contrast (or that it is still
+> vacuous), bindings and row pairs. No rule retired except by its lesson.

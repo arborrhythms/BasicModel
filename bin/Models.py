@@ -20928,10 +20928,7 @@ class BasicModel(BaseModel):
                     if not bool((fork.taken | ~fork.selected | ~present).all()):
                         raise RuntimeError('compose fork did not take its saved departure')
                 if field_trials[-1] is not None:
-                    admitted = field_trials[-1].full_admission().detach() > 0
-                    prior = source_leaf_mask
-                    self.inputSpace._ar_grammar_leaf_mask = torch.where(
-                        sentence_ids == sid, prior & admitted, prior)
+                    self.inputSpace._ar_grammar_leaf_mask = field_trials[-1].grammar_leaves(source_leaf_mask)
                 cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
                 if self._sentence_training and self.legacy_prediction_enabled:
                     numerator = path[1][1] - before[1][1]
@@ -21131,9 +21128,9 @@ class BasicModel(BaseModel):
                     activations = self._tensor_write_word_column(activations, index, value)
             chosen = (chosen[0], (activations, *chosen[1][1:]), chosen[2])
             if field_trials[0] is not None:
-                kept_admission = torch.where(wins[:, None], field_trials[-1].full_admission(),
-                                              field_trials[0].full_admission()).bool()
-                self.inputSpace._ar_grammar_leaf_mask = source_leaf_mask & (~(sentence_ids == sid) | kept_admission)
+                self.inputSpace._ar_grammar_leaf_mask = torch.where(wins[:, None],
+                    field_trials[-1].grammar_leaves(source_leaf_mask),
+                    field_trials[0].grammar_leaves(source_leaf_mask))
                 self._sentence_read_order = tuple(field_trials[-1 if bool(wins[b]) else 0].source_order(b)
                                                   for b in range(B))
             try:

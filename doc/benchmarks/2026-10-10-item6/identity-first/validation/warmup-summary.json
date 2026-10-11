@@ -1,0 +1,86 @@
+{
+  "completed": true,
+  "checkpoint": {
+    "sha256": "c479e513ee6690a887e4a2e3eb5e5c1ad899c7eeeb0de507919d844b380bc01d",
+    "note": "Fixed-budget warm-up, not a certificate that stages 3/4 passed; no fresh disabled training control."
+  },
+  "tensor_count": 2138,
+  "stages": [
+    {
+      "name": "reading_two",
+      "presentations": 64,
+      "initial_trace": 0,
+      "final_trace": 4,
+      "final_free": 0,
+      "answer_presentations": null,
+      "answer_exact": null,
+      "final_order_ce": [
+        0.3465735912322998,
+        0.3465735912322998,
+        0.3465735912322998,
+        0.3465735912322998
+      ],
+      "order_ce_gate": false
+    },
+    {
+      "name": "reading_four",
+      "presentations": 64,
+      "initial_trace": 4,
+      "final_trace": 4,
+      "final_free": 0,
+      "answer_presentations": null,
+      "answer_exact": null,
+      "final_order_ce": [
+        0.794513463973999,
+        0.794513463973999,
+        0.794513463973999,
+        0.794513463973999
+      ],
+      "order_ce_gate": false
+    },
+    {
+      "name": "identities",
+      "presentations": 8,
+      "initial_trace": 3,
+      "final_trace": 4,
+      "final_free": 0,
+      "answer_presentations": 8,
+      "answer_exact": 4,
+      "final_order_ce": null,
+      "order_ce_gate": null
+    },
+    {
+      "name": "noun_phrase",
+      "presentations": 8,
+      "initial_trace": 2,
+      "final_trace": 4,
+      "final_free": 0,
+      "answer_presentations": 8,
+      "answer_exact": 4,
+      "final_order_ce": null,
+      "order_ce_gate": null
+    },
+    {
+      "name": "noun_verb",
+      "presentations": 8,
+      "initial_trace": 4,
+      "final_trace": 4,
+      "final_free": 0,
+      "answer_presentations": 8,
+      "answer_exact": 0,
+      "final_order_ce": null,
+      "order_ce_gate": null
+    },
+    {
+      "name": "relations",
+      "presentations": 8,
+      "initial_trace": 2,
+      "final_trace": 4,
+      "final_free": 0,
+      "answer_presentations": 8,
+      "answer_exact": 1,
+      "final_order_ce": null,
+      "order_ce_gate": null
+    }
+  ]
+}

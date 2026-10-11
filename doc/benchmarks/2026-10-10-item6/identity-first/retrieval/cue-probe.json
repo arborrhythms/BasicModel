@@ -1,0 +1,58 @@
+{
+  "captured_from": "output/item6-identity-first-repaired/warmup/unresolved-cue.pt",
+  "baseline": "06f6e2b88811a107fbf7dff505cc8b2af189c34b",
+  "references": [
+    [
+      "sym",
+      -6431577289414244955
+    ],
+    [
+      "sym",
+      4010033338316264258
+    ],
+    [
+      "slot",
+      [
+        "ltm",
+        "address-v1",
+        -3625666381639457481
+      ],
+      2
+    ]
+  ],
+  "old": {
+    "error": "TypeError: taxonomy operands require a ('sym', positive concept id) reference",
+    "reader_calls": [
+      [
+        "sym",
+        -6431577289414244955
+      ]
+    ],
+    "unfolded": []
+  },
+  "corrected": {
+    "error": null,
+    "reader_calls": [
+      [
+        "sym",
+        4010033338316264258
+      ]
+    ],
+    "unfolded": [
+      {
+        "norm": 3.4729435443878174,
+        "order": 0
+      },
+      {
+        "norm": 1.0,
+        "order": 0
+      },
+      {
+        "norm": 3.4729485511779785,
+        "order": 0
+      }
+    ],
+    "candidates": 0
+  },
+  "scope": "Order-reader boundary replay on the corrected run capture; not a retained context from the first failed run, and not an end-to-end replay."
+}

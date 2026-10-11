@@ -1,0 +1,135 @@
+{
+  "checkpoint_sha256": "e366561c5adbbe97170cbdf8aa34ebf98b2ed371413a742e6544085c587d121c",
+  "script_sha256": "f93446ff243c54f6dc9635f79e757e2df9d419ff82d6daf23725588243e5a894",
+  "protocol": "Read-only attention audit on a retained warm-up checkpoint.\n\nOne ordinary evaluation, no optimizer or lesson guidance. Hooks observe the\nnative scorer's linear input, tanh output and final logits without replacing\nany value. This state is never reused by the matched experiment.\n",
+  "native_loader_drift": {
+    "conceptualSpaces.0.layers.3.W": {
+      "elements": 36,
+      "max_difference": 1.4901161193847656e-08
+    }
+  },
+  "fields": [
+    "red blue",
+    "blue red",
+    "green gold",
+    "gold green"
+  ],
+  "reads": [
+    {
+      "candidates": 2,
+      "preactivation_min": -140.04306030273438,
+      "preactivation_max": 140.30674743652344,
+      "preactivation_abs_ge_10": 1.0,
+      "preactivation_candidate_spread": [
+        0.0524749755859375,
+        0.0507659912109375,
+        0.05239105224609375,
+        0.0504913330078125
+      ],
+      "hidden_candidate_spread": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hidden_abs_eq_one": 1.0,
+      "logits": [
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ],
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ],
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ],
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ]
+      ],
+      "logit_candidate_spread": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "candidates": 2,
+      "preactivation_min": -139.97520446777344,
+      "preactivation_max": 140.23153686523438,
+      "preactivation_abs_ge_10": 1.0,
+      "preactivation_candidate_spread": [
+        0.0688323974609375,
+        0.0707550048828125,
+        0.06842041015625,
+        0.068389892578125
+      ],
+      "hidden_candidate_spread": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hidden_abs_eq_one": 1.0,
+      "logits": [
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ],
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ],
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ],
+        [
+          -0.19607359170913696,
+          -0.19607359170913696
+        ]
+      ],
+      "logit_candidate_spread": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "readbacks": [
+    "red blue",
+    "blue red",
+    "green gold",
+    "gold green"
+  ],
+  "free_readbacks": [
+    "blue",
+    "red",
+    "gold",
+    "green"
+  ],
+  "orders": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ]
+  ]
+}

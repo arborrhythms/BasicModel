@@ -1,0 +1,442 @@
+{
+  "branches": {
+    "recovery-confounded-off": {
+      "correct": 0,
+      "total": 240,
+      "identification": 0.0,
+      "by_atom": {
+        "cat": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "dog": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "bird": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "horse": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "black": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "white": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "small": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "large": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "runs": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "sleeps": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "waits": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "moves": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        }
+      },
+      "unavailable_rows": 0,
+      "columns": 41,
+      "clean_columns": 0,
+      "merges": [
+        {
+          "kind": "cat",
+          "property": "black",
+          "columns": []
+        },
+        {
+          "kind": "dog",
+          "property": "white",
+          "columns": []
+        },
+        {
+          "kind": "bird",
+          "property": "small",
+          "columns": []
+        },
+        {
+          "kind": "horse",
+          "property": "large",
+          "columns": []
+        }
+      ],
+      "merged_pairs": 0,
+      "pending": 334,
+      "training_documents": 144,
+      "heldout_documents": 48,
+      "branch": "recovery-confounded-off",
+      "gate": "off",
+      "admission": {
+        "committed_rows": 192,
+        "selected_individual": 192,
+        "selected_mint": 192
+      },
+      "columns_minted": 0,
+      "admission_drops": 0,
+      "completed": true
+    },
+    "recovery-confounded-on": {
+      "correct": 0,
+      "total": 240,
+      "identification": 0.0,
+      "by_atom": {
+        "cat": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "dog": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "bird": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "horse": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "black": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "white": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "small": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "large": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "runs": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "sleeps": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "waits": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "moves": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        }
+      },
+      "unavailable_rows": 0,
+      "columns": 41,
+      "clean_columns": 0,
+      "merges": [
+        {
+          "kind": "cat",
+          "property": "black",
+          "columns": []
+        },
+        {
+          "kind": "dog",
+          "property": "white",
+          "columns": []
+        },
+        {
+          "kind": "bird",
+          "property": "small",
+          "columns": []
+        },
+        {
+          "kind": "horse",
+          "property": "large",
+          "columns": []
+        }
+      ],
+      "merged_pairs": 0,
+      "pending": 334,
+      "training_documents": 144,
+      "heldout_documents": 48,
+      "branch": "recovery-confounded-on",
+      "gate": "on",
+      "admission": {
+        "committed_rows": 192,
+        "selected_individual": 192,
+        "selected_mint": 192
+      },
+      "columns_minted": 0,
+      "admission_drops": 0,
+      "completed": true
+    },
+    "recovery-factorial-off": {
+      "correct": 0,
+      "total": 240,
+      "identification": 0.0,
+      "by_atom": {
+        "cat": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "dog": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "bird": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "horse": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "black": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "white": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "small": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "large": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "runs": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "sleeps": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "waits": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "moves": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        }
+      },
+      "unavailable_rows": 0,
+      "columns": 41,
+      "clean_columns": 0,
+      "merges": [
+        {
+          "kind": "cat",
+          "property": "black",
+          "columns": []
+        },
+        {
+          "kind": "dog",
+          "property": "white",
+          "columns": []
+        },
+        {
+          "kind": "bird",
+          "property": "small",
+          "columns": []
+        },
+        {
+          "kind": "horse",
+          "property": "large",
+          "columns": []
+        }
+      ],
+      "merged_pairs": 0,
+      "pending": 334,
+      "training_documents": 144,
+      "heldout_documents": 48,
+      "branch": "recovery-factorial-off",
+      "gate": "off",
+      "admission": {
+        "committed_rows": 192,
+        "selected_individual": 192,
+        "selected_mint": 192
+      },
+      "columns_minted": 0,
+      "admission_drops": 0,
+      "completed": true
+    },
+    "recovery-factorial-on": {
+      "correct": 0,
+      "total": 240,
+      "identification": 0.0,
+      "by_atom": {
+        "cat": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "dog": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "bird": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "horse": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "black": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "white": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "small": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "large": {
+          "correct": 0,
+          "total": 24,
+          "identification": 0.0
+        },
+        "runs": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "sleeps": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "waits": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        },
+        "moves": {
+          "correct": 0,
+          "total": 12,
+          "identification": 0.0
+        }
+      },
+      "unavailable_rows": 0,
+      "columns": 41,
+      "clean_columns": 0,
+      "merges": [
+        {
+          "kind": "cat",
+          "property": "black",
+          "columns": []
+        },
+        {
+          "kind": "dog",
+          "property": "white",
+          "columns": []
+        },
+        {
+          "kind": "bird",
+          "property": "small",
+          "columns": []
+        },
+        {
+          "kind": "horse",
+          "property": "large",
+          "columns": []
+        }
+      ],
+      "merged_pairs": 0,
+      "pending": 334,
+      "training_documents": 144,
+      "heldout_documents": 48,
+      "branch": "recovery-factorial-on",
+      "gate": "on",
+      "admission": {
+        "committed_rows": 192,
+        "selected_individual": 192,
+        "selected_mint": 192
+      },
+      "columns_minted": 0,
+      "admission_drops": 0,
+      "completed": true
+    }
+  },
+  "process_exit_codes": {
+    "recovery-factorial-on": 0,
+    "recovery-factorial-off": 0,
+    "recovery-confounded-on": 0,
+    "recovery-confounded-off": 0
+  },
+  "interpretability": {
+    "native_pipeline_identification_measured": true,
+    "all_new_recovery_meaning_bands_zero": true,
+    "all_rows_select_mint": true,
+    "admission_ablation_changes_eligibility": false,
+    "isolated_ica_recovery_measured": false
+  },
+  "note": "The retirement threshold is not met. These native pipeline misses do not establish ICA recovery ability or a need for selected-mint gating; the gate admitted every row and the new observations carry zero meaning content."
+}

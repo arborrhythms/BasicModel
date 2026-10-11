@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-10-item6/identity-first/resume_branches.py", line 84, in <module>
+    if __name__=='__main__':raise SystemExit(main())
+                                             ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-10-item6/identity-first/resume_branches.py", line 76, in main
+    time.sleep(1)
+KeyboardInterrupt

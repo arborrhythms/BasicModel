@@ -1,0 +1,114 @@
+{
+  "protocol": "Teach only the pair chooser on the retained forward artifact, then replay.\nThis is a reachability diagnostic, not a learned language/order certificate.\n",
+  "artifact_sha256": "4d599ce3317fc6b483f77d3f9d3055b76f7143effb94fe363eda5c5bf05c8f37",
+  "presentations": 64,
+  "optimizer": "SGD .1; pair chooser only",
+  "results": [
+    {
+      "step": 0,
+      "loss": 1.8375300168991089,
+      "present": [
+        true
+      ],
+      "correct": [
+        false
+      ],
+      "weight": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "selected": [
+        30
+      ],
+      "left": [
+        [
+          [
+            1,
+            4,
+            2
+          ]
+        ]
+      ],
+      "right": [
+        [
+          [
+            0,
+            4,
+            2
+          ]
+        ]
+      ]
+    },
+    {
+      "step": 64,
+      "loss": 0.3747673034667969,
+      "present": [
+        true
+      ],
+      "correct": [
+        true
+      ],
+      "weight": [
+        1.9383198022842407,
+        -1.345270037651062,
+        1.6125123500823975,
+        1.517935872077942,
+        0.6740196943283081
+      ],
+      "selected": [
+        1
+      ],
+      "left": [
+        [
+          [
+            0,
+            4,
+            2
+          ]
+        ]
+      ],
+      "right": [
+        [
+          [
+            1,
+            4,
+            2
+          ]
+        ]
+      ]
+    }
+  ],
+  "repaired_overlap": 1.0,
+  "old_override_overlap": 0.0,
+  "repaired_topk": [
+    [
+      [
+        0,
+        4,
+        2
+      ],
+      [
+        1,
+        4,
+        2
+      ]
+    ]
+  ],
+  "old_override_topk": [
+    [
+      [
+        1,
+        4,
+        2
+      ],
+      [
+        0,
+        4,
+        2
+      ]
+    ]
+  ]
+}

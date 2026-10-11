@@ -1,0 +1,173 @@
+{
+  "protocol": "Post-hoc descriptive last-word baseline on the fixed warm-up evaluation texts; no model call or learning, no causal attribution.",
+  "stages": [
+    {
+      "stage": "identities",
+      "inputs": [
+        "cat is animal",
+        "dog is animal",
+        "x is three",
+        "y is four"
+      ],
+      "questions": [
+        "what is cat ?",
+        "what is dog ?",
+        "what is x ?",
+        "what is y ?"
+      ],
+      "targets": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "answers": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "answer_exact": 4,
+      "free_readbacks": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "last_word_baseline": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "baseline_exact": 4,
+      "answers_equal_free": true
+    },
+    {
+      "stage": "noun_phrase",
+      "inputs": [
+        "the red ball",
+        "the blue box",
+        "the green ball",
+        "the gold box"
+      ],
+      "questions": [
+        "what is red ?",
+        "what is blue ?",
+        "what is green ?",
+        "what is gold ?"
+      ],
+      "targets": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "answers": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "answer_exact": 4,
+      "free_readbacks": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "last_word_baseline": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "baseline_exact": 4,
+      "answers_equal_free": true
+    },
+    {
+      "stage": "noun_verb",
+      "inputs": [
+        "the cat sleeps",
+        "the dog runs",
+        "the dog sleeps",
+        "the cat runs"
+      ],
+      "questions": [
+        "what sleeps ?",
+        "what runs ?",
+        "what sleeps ?",
+        "what runs ?"
+      ],
+      "targets": [
+        "cat",
+        "dog",
+        "dog",
+        "cat"
+      ],
+      "answers": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "answer_exact": 0,
+      "free_readbacks": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "last_word_baseline": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "baseline_exact": 0,
+      "answers_equal_free": true
+    },
+    {
+      "stage": "relations",
+      "inputs": [
+        "cat is on mat",
+        "dog is on rug",
+        "x is bigger than y",
+        "y is bigger than x"
+      ],
+      "questions": [
+        "what is on mat ?",
+        "what is on rug ?",
+        "what is bigger than y ?",
+        "what is bigger than x ?"
+      ],
+      "targets": [
+        "cat",
+        "dog",
+        "x",
+        "y"
+      ],
+      "answers": [
+        "mat",
+        "dog",
+        "dog",
+        "x"
+      ],
+      "answer_exact": 1,
+      "free_readbacks": [
+        "mat",
+        "rug",
+        "y",
+        "x"
+      ],
+      "last_word_baseline": [
+        "mat",
+        "rug",
+        "y",
+        "x"
+      ],
+      "baseline_exact": 0,
+      "answers_equal_free": false
+    }
+  ]
+}

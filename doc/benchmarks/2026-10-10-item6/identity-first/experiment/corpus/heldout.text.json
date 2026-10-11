@@ -1,0 +1,290 @@
+[
+  {
+    "id": "570c8e01f26b7d3b7744",
+    "sentences": [
+      "the black cat runs ."
+    ]
+  },
+  {
+    "id": "02721b6164ea7708a88c",
+    "sentences": [
+      "the white cat moves ."
+    ]
+  },
+  {
+    "id": "83d6a5ca03bdb6242b8a",
+    "sentences": [
+      "the small cat waits ."
+    ]
+  },
+  {
+    "id": "09e0b7ad02dd3b86e977",
+    "sentences": [
+      "the large cat sleeps ."
+    ]
+  },
+  {
+    "id": "29fe722e37c3061150c5",
+    "sentences": [
+      "the black dog moves ."
+    ]
+  },
+  {
+    "id": "a8f6683e3ed77c4a7f48",
+    "sentences": [
+      "the white dog waits ."
+    ]
+  },
+  {
+    "id": "79f5fce7fc9fbab0e6ae",
+    "sentences": [
+      "the small dog sleeps ."
+    ]
+  },
+  {
+    "id": "53331892e81e5ae273cd",
+    "sentences": [
+      "the large dog runs ."
+    ]
+  },
+  {
+    "id": "d9d9716cfc8b092562d4",
+    "sentences": [
+      "the black bird waits ."
+    ]
+  },
+  {
+    "id": "b6c911adbeada612b879",
+    "sentences": [
+      "the white bird sleeps ."
+    ]
+  },
+  {
+    "id": "59da4106b1b9b4fdc8d7",
+    "sentences": [
+      "the small bird runs ."
+    ]
+  },
+  {
+    "id": "0a86b5cddf189b34e6ac",
+    "sentences": [
+      "the large bird moves ."
+    ]
+  },
+  {
+    "id": "82c9fc06db5456a871a6",
+    "sentences": [
+      "the black horse sleeps ."
+    ]
+  },
+  {
+    "id": "774bfd406a2d7c73f9cb",
+    "sentences": [
+      "the white horse runs ."
+    ]
+  },
+  {
+    "id": "9003d72da1f14c1dbfec",
+    "sentences": [
+      "the small horse moves ."
+    ]
+  },
+  {
+    "id": "7c50bdd70eda35b5df8a",
+    "sentences": [
+      "the large horse waits ."
+    ]
+  },
+  {
+    "id": "1d454b92caf0912514c1",
+    "sentences": [
+      "the black cat and the white dog runs ."
+    ]
+  },
+  {
+    "id": "4095dd0e39cd8ec5111e",
+    "sentences": [
+      "the white cat and the small dog moves ."
+    ]
+  },
+  {
+    "id": "1e55e2859f4ae2530a6e",
+    "sentences": [
+      "the small cat and the large dog waits ."
+    ]
+  },
+  {
+    "id": "1f8c389e55d00310dfe8",
+    "sentences": [
+      "the large cat and the black dog sleeps ."
+    ]
+  },
+  {
+    "id": "6f0092200f113a3b7272",
+    "sentences": [
+      "the black dog and the white bird moves ."
+    ]
+  },
+  {
+    "id": "2f01cfe03676925703cb",
+    "sentences": [
+      "the white dog and the small bird waits ."
+    ]
+  },
+  {
+    "id": "90e73658a5b9c9abb498",
+    "sentences": [
+      "the small dog and the large bird sleeps ."
+    ]
+  },
+  {
+    "id": "1da7cdf8750c5de3de1c",
+    "sentences": [
+      "the large dog and the black bird runs ."
+    ]
+  },
+  {
+    "id": "3d9fa616f50a3b470780",
+    "sentences": [
+      "the black bird and the white horse waits ."
+    ]
+  },
+  {
+    "id": "cf6d07c657501aef2d7a",
+    "sentences": [
+      "the white bird and the small horse sleeps ."
+    ]
+  },
+  {
+    "id": "596dacb30db91cf05c84",
+    "sentences": [
+      "the small bird and the large horse runs ."
+    ]
+  },
+  {
+    "id": "623591fe4fed809b2781",
+    "sentences": [
+      "the large bird and the black horse moves ."
+    ]
+  },
+  {
+    "id": "4ff728399c7ad2b839cf",
+    "sentences": [
+      "the black horse and the white cat sleeps ."
+    ]
+  },
+  {
+    "id": "f774f5e72abaad904f20",
+    "sentences": [
+      "the white horse and the small cat runs ."
+    ]
+  },
+  {
+    "id": "d1126bac60478e09a6ca",
+    "sentences": [
+      "the small horse and the large cat moves ."
+    ]
+  },
+  {
+    "id": "a7a9335405888c6c4674",
+    "sentences": [
+      "the large horse and the black cat waits ."
+    ]
+  },
+  {
+    "id": "a2f87c16be9ea358bf2d",
+    "sentences": [
+      "the black cat and the white dog and the small bird runs ."
+    ]
+  },
+  {
+    "id": "e35c65d907ce72f8bf1d",
+    "sentences": [
+      "the white cat and the small dog and the large bird moves ."
+    ]
+  },
+  {
+    "id": "6ebd833635a723380984",
+    "sentences": [
+      "the small cat and the large dog and the black bird waits ."
+    ]
+  },
+  {
+    "id": "832864d295b0236f5249",
+    "sentences": [
+      "the large cat and the black dog and the white bird sleeps ."
+    ]
+  },
+  {
+    "id": "dadd48f66b905d2cf859",
+    "sentences": [
+      "the black dog and the white bird and the small horse moves ."
+    ]
+  },
+  {
+    "id": "3d9aaea6273a77327d4c",
+    "sentences": [
+      "the white dog and the small bird and the large horse waits ."
+    ]
+  },
+  {
+    "id": "5958b1f2612197b92014",
+    "sentences": [
+      "the small dog and the large bird and the black horse sleeps ."
+    ]
+  },
+  {
+    "id": "1ab5f9062edf0491ddd7",
+    "sentences": [
+      "the large dog and the black bird and the white horse runs ."
+    ]
+  },
+  {
+    "id": "f4269b02feacbd6d6b42",
+    "sentences": [
+      "the black bird and the white horse and the small cat waits ."
+    ]
+  },
+  {
+    "id": "c0263aa3ed2878099c8d",
+    "sentences": [
+      "the white bird and the small horse and the large cat sleeps ."
+    ]
+  },
+  {
+    "id": "0fc1489f376b5dafa8b8",
+    "sentences": [
+      "the small bird and the large horse and the black cat runs ."
+    ]
+  },
+  {
+    "id": "620bb267d7f5e79cccd2",
+    "sentences": [
+      "the large bird and the black horse and the white cat moves ."
+    ]
+  },
+  {
+    "id": "34ee943ea8505d26349c",
+    "sentences": [
+      "the black horse and the white cat and the small dog sleeps ."
+    ]
+  },
+  {
+    "id": "a722e5c1a905f9794ea8",
+    "sentences": [
+      "the white horse and the small cat and the large dog runs ."
+    ]
+  },
+  {
+    "id": "56c8551c0772b06bf009",
+    "sentences": [
+      "the small horse and the large cat and the black dog moves ."
+    ]
+  },
+  {
+    "id": "f9914fabdf6e9bbf27f8",
+    "sentences": [
+      "the large horse and the black cat and the white dog waits ."
+    ]
+  }
+]
