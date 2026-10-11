@@ -20079,6 +20079,15 @@ class BasicModel(BaseModel):
                 trained=getattr(self, '_sentence_field', None) is None)
             meaning_start = record.primed.meaning_start
             if meaning_start is not None:
+                from SentenceCredit import forward_discard
+                # Undefined inverse coordinates keep kappa=0. Their forward
+                # owner pays, at each operation, for the meaning it removes.
+                # These step-relative charges are summed, never averaged over
+                # later empty operations or hidden by inverse definedness.
+                discarded = forward_discard(observation['entries'], meaning_start, root)
+                errors.add('reconstruction.forward_discard',
+                    torch.where(available, discarded, 0.),
+                    weight=self.loss.reconstruction_scale, category='reconstruction')
                 # A surface can be spelled from its form even after its
                 # meaning was erased. Compare the free read's meaning bands
                 # with this clause's own leaves, without trace witnesses or

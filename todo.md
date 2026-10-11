@@ -42,10 +42,13 @@ Work follows
 [Testing](doc/Testing.md). The September 17 handoff and preserved candidates
 are in [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md).
 
-**Publish rule, every item (updated by Alec, September 24):** failing probe →
-fix → affected files → one source-matched full receipt → **stop for Claude's
-code review** → resolve review → BasicModel commit/push → WikiOracle bump/push,
-with the co-author trailer. Do not commit or push before the review.
+**Publish rule (Alec, October 11):** repair → one regression per defect →
+scoped measurement → candidate commit on a branch → **Claude's code review**
+→ resolve review → one full sweep at landing → BasicModel push → WikiOracle
+bump/push, with the co-author trailer. Candidate commits are authorized before
+review; their commit hashes are the archive. No tarballs, manifests or
+integrity checks. Receipts contain gate numbers and one table per question;
+diagnostics stay in files.
 Natural word →
 operator associations use the existing compose/generate grammars. Mechanism
 probes do not satisfy learning gates, and a null result is recorded as null.
@@ -190,6 +193,11 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   1.153045 and the [first part-2 sweep's](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
   .848586–1.179175 range violate the unchanged .9–1.1 band; the latter is a new
   failing node relative to accepted 6.1. No passing initialization closes it.
+- The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/README.md#validation)
+  adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
+  failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
+  logit entry (`KeyError: '1'`). One isolated unchanged-assertion rerun passes
+  with one differentiable chooser call; the original cause remains unresolved.
 - Per-position cleared-cache overlap remains 0.000 against .800. The
   [follow-up bisection](doc/benchmarks/2026-10-10-item6/followup/README.md)
   separates the initial self-pair obstruction (repaired in part 1) from the
@@ -252,9 +260,11 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   individuals/requests before interpreting binding and recency controls as
   learned choices. Reviewed and accepted for landing by Alec (plan §8.4),
   with no learning claim; no rule is retired and part 2 remains open.
-  R2 adds the forward discarded-meaning charge after the forced-reading
-  diagnostic, with the same eight-branch measurement. The parts-of-speech
-  pass in plan §6 follows R2.
+  [R2](doc/benchmarks/2026-10-10-item6/identity-r2/README.md) adds the forward
+  discarded-meaning charge after the forced-reading diagnostic, with the
+  scoped four-clause and two-branch recovery measurement (factorial/confounded,
+  gate on), reusing the accepted R/S/T warm-up. Identity branches wait for
+  nonzero closed meaning. The parts-of-speech pass in plan §6 follows R2.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
@@ -565,6 +575,7 @@ Everything that is decided in direction but not on this path is in
 ### Done (newest first)
 
 - Item 6 part-2 M/N/O/I preparation and first eight-branch native experiment: `af634ed35` ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)); reviewed in plan §7, no learning claim. R/S/T and all failed learning gates remain open.
+- Item 6 R/S/T mechanism and matched measurement: `e38a19fbd`, WikiOracle `64a06d3` ([receipt](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)); reviewed in plan §8.4, no learning claim. R2 and all failed learning gates remain open.
 - Item 6 part-2 corpus and measurement preparation: `06f6e2b88` ([receipt](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)); M/N/O/I and the first experiment are accepted as preparation by plan §7, with no learning claim.
 
 - **Item 6 H/I follow-up** (`9cc5f6e327`): unavailable reconstruction coverage is zero; I’s empty-inverse and remaining orientation causes are bisected, with learned order still open ([receipt](doc/benchmarks/2026-10-10-item6/followup/README.md)).

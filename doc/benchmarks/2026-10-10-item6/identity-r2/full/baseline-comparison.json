@@ -1,0 +1,48 @@
+{
+  "baseline_commit": "7c9aeac67840165fc1ac116eca8a528ca716c30e",
+  "baseline_counts": {
+    "passed": 5428,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "current_counts": {
+    "passed": 5501,
+    "skipped": 287,
+    "failed": 2,
+    "xfailed": 1
+  },
+  "new_vs_accepted_6_1": [
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch"
+  ],
+  "persisting_vs_accepted_6_1": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode"
+  ],
+  "new_vs_R_S_T": [
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch"
+  ],
+  "baseline_failure_outcomes": {
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm": "passed",
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds": "passed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "passed"
+  },
+  "adverse_overlap_outcome": "xfailed",
+  "R_S_T_counts": {
+    "passed": 5495,
+    "skipped": 286,
+    "failed": 2,
+    "xfailed": 1
+  },
+  "additional_skips_vs_R_S_T": [
+    {
+      "nodeid": "test/test_stream_dataset.py::test_data_loader_list_outputs_survive_worker_pickling",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.0001367080258205533,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_stream_dataset.py', 413, 'Skipped: spawn start-method is too slow for a fast unit test')",
+      "stdout": ""
+    }
+  ],
+  "note": "New means absent from the baseline failing-node list; it does not itself establish causality. Historical open failures are not retired by a passing run."
+}

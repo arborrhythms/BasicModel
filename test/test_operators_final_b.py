@@ -116,9 +116,13 @@ def forced_prefix_certificate():
         flag=torch.zeros(len(root),dtype=torch.bool)
         left,right,valid=LanguageSpace._bounded_binary_reconstruction(op,root,
             torch.zeros_like(root),flag,flag,bank.codes,bank.valid,16)
+        registry=m._sentence_cost_registry
+        term=registry._terms.get('reconstruction.forward_discard')
+        discard=(torch.zeros(len(root)) if term is None else registry._value(term)*term['weight'])
         reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
             residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
             R=m._last_sentence_credit['components'][:,0,0].tolist(),
+            forward_discard=discard.detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),
             form_snapshot=id(m._concept_owner().similarity_codebook.mereology._form_context)))
@@ -151,7 +155,13 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
     assert len(report['reads']) == 2
     assert report['reads'][1]['meaning_norm'] > 0
     for read in report['reads']:
-        assert read['multisets'] == 4 and read['residual'] == [0.]*4 and read['R'] == [0.]*4
+        assert read['multisets'] == 4 and read['residual'] == [0.]*4
+        # R2 charges the counterevidence which OR removes in its forward
+        # step, even when all words and the inverse remain exact. Every
+        # original reconstruction term must still be exactly zero.
+        assert read['R'] == read['forward_discard']
+    assert report['reads'][0]['forward_discard'] == [0.]*4
+    assert all(value > 0 for value in report['reads'][1]['forward_discard'])
 
 
 def test_both_training_trials_share_bootstrap_snapshot():
@@ -159,10 +169,23 @@ def test_both_training_trials_share_bootstrap_snapshot():
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     try:
         optimizer = model.getOptimizer(lr=.01)
+        score=model._sentence_path_cost
+        contexts=[]
+        def capture(*args,**kwargs):
+            result=score(*args,**kwargs)
+            contexts.append(model._concept_owner().similarity_codebook.mereology._form_context)
+            return result
+        model._sentence_path_cost=capture
         for _ in range(3):
+            contexts.clear()
             model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
-            for audit in model._sentence_credit_audits:
-                assert not audit['components'][..., 0].any()
+            assert len(contexts)==2*len(model._sentence_credit_audits)
+            # R2 can train a departure on discarded counterevidence, so
+            # later readings need not have zero cost. Check the shared
+            # snapshot itself instead of using zero cost as its proxy.
+            for index in range(0,len(contexts),2):
+                assert contexts[index] is not None
+                assert contexts[index] is contexts[index+1]
         assert model._concept_owner().similarity_codebook.mereology.context_audit()
     finally:
         model.End(); model.symbolSpace.soft_reset()

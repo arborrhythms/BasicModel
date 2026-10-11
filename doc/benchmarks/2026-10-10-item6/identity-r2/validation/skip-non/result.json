@@ -1,0 +1,1874 @@
+{
+  "protocol": "One supplied native explore departure per retained clause, no learning.\n\nThe diagnostic fixes the reservoir at the first meaning-removing `non`\nand chooses its legal STOP alternative. Everything after that departure is\nthe native suffix. No production legality, scoring, or inverse is changed.\nThe real keep comparison is observed at learning rate zero; state is discarded.\n",
+  "checkpoint_sha256": "437c8c511180caaedc41d702686bc47d3efe2be84c0f1c86f4e42df079e347c8",
+  "script_sha256": "b3ce74103d03b00bc15a692266f9ffa5aef539cb0645cfba689f4399711e580c",
+  "native_loader_drift": {
+    "conceptualSpaces.0.layers.3.W": {
+      "elements": 6,
+      "max_difference": 0.00032216310501098633
+    }
+  },
+  "parameter_changes": [],
+  "trials": [
+    {
+      "trial": "exploit",
+      "keep_cost": [
+        4.850000381469727,
+        4.850000381469727,
+        4.850000381469727,
+        4.850000381469727
+      ],
+      "discard": [
+        3.0,
+        3.0,
+        3.0,
+        3.0
+      ],
+      "terms": {
+        "reconstruction.free_bytes": {
+          "weight": 1.0,
+          "value": 0.28853902220726013,
+          "weighted": 0.28853902220726013,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.28853902220726013,
+            0.28853902220726013,
+            0.28853902220726013,
+            0.28853902220726013
+          ],
+          "raw": 1.600000023841858,
+          "baseline": 5.545177459716797,
+          "active_entries": 4.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 1.0,
+          "value": 1.0,
+          "weighted": 1.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "raw": 1.0392305850982666,
+          "baseline": 1.0392305850982666,
+          "active_entries": 4.0
+        },
+        "reconstruction.coverage": {
+          "weight": 1.0,
+          "value": 0.800000011920929,
+          "weighted": 0.800000011920929,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929
+          ],
+          "raw": 4.0,
+          "baseline": 5.0,
+          "active_entries": 4.0
+        },
+        "reconstruction.field": {
+          "weight": 1.0,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 126.30442810058594,
+          "active_entries": 4.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.04999999701976776,
+            0.04999999701976776,
+            0.04999999701976776,
+            0.04999999701976776
+          ]
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            281.5075988769531,
+            281.5075988769531,
+            281.5075988769531,
+            281.5075988769531
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 7.716742038726807,
+          "weighted": 0.7716742038726807,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            7.799036979675293,
+            6.234372138977051,
+            8.90641975402832,
+            7.9271392822265625
+          ],
+          "raw": 7.716742038726807,
+          "baseline": 1.0,
+          "active_entries": 4.0
+        },
+        "concept_readout_l1": {
+          "weight": 0.01,
+          "value": 3.8163013458251953,
+          "weighted": 0.03816301345825195,
+          "space": null,
+          "category": "reg",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reg",
+          "trained": false,
+          "context_weight": 1.0
+        }
+      },
+      "closed_meaning_norm": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "actions": [
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ]
+      ]
+    },
+    {
+      "trial": "explore",
+      "keep_cost": [
+        4.250000476837158,
+        4.350000381469727,
+        4.25,
+        4.350000381469727
+      ],
+      "discard": [
+        2.4000000953674316,
+        2.5,
+        2.3999998569488525,
+        2.5
+      ],
+      "terms": {
+        "reconstruction.free_bytes": {
+          "weight": 1.0,
+          "value": 0.28853902220726013,
+          "weighted": 0.28853902220726013,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.28853902220726013,
+            0.28853902220726013,
+            0.28853902220726013,
+            0.28853902220726013
+          ],
+          "raw": 1.600000023841858,
+          "baseline": 5.545177459716797,
+          "active_entries": 4.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            2.4000000953674316,
+            2.5,
+            2.3999998569488525,
+            2.5
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 1.0,
+          "value": 1.0,
+          "weighted": 1.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "raw": 1.0392305850982666,
+          "baseline": 1.0392305850982666,
+          "active_entries": 4.0
+        },
+        "reconstruction.coverage": {
+          "weight": 1.0,
+          "value": 0.800000011920929,
+          "weighted": 0.800000011920929,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929
+          ],
+          "raw": 4.0,
+          "baseline": 5.0,
+          "active_entries": 4.0
+        },
+        "reconstruction.field": {
+          "weight": 1.0,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 126.30442810058594,
+          "active_entries": 4.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.04999999701976776,
+            0.04999999701976776,
+            0.04999999701976776,
+            0.04999999701976776
+          ]
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            281.5075988769531,
+            281.5075988769531,
+            281.5075988769531,
+            281.5075988769531
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 7.716742038726807,
+          "weighted": 0.7716742038726807,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            7.799036979675293,
+            6.234372138977051,
+            8.90641975402832,
+            7.9271392822265625
+          ],
+          "raw": 7.716742038726807,
+          "baseline": 1.0,
+          "active_entries": 4.0
+        },
+        "concept_readout_l1": {
+          "weight": 0.01,
+          "value": 3.8163013458251953,
+          "weighted": 0.03816301345825195,
+          "space": null,
+          "category": "reg",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reg",
+          "trained": false,
+          "context_weight": 1.0
+        }
+      },
+      "closed_meaning_norm": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "actions": [
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            0,
+            -1,
+            4
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ],
+          [
+            2,
+            2,
+            -1
+          ]
+        ]
+      ]
+    }
+  ],
+  "departures": [
+    {
+      "mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "from_action": [
+        1192,
+        1192,
+        1192,
+        1192
+      ],
+      "to_action": [
+        1200,
+        1200,
+        1200,
+        1200
+      ]
+    }
+  ],
+  "keep_costs": [
+    [
+      4.850000381469727,
+      4.250000476837158
+    ],
+    [
+      4.850000381469727,
+      4.350000381469727
+    ],
+    [
+      4.850000381469727,
+      4.25
+    ],
+    [
+      4.850000381469727,
+      4.350000381469727
+    ]
+  ],
+  "keep_decision": [
+    "explore",
+    "explore",
+    "explore",
+    "explore"
+  ],
+  "advantage": [
+    -0.5999999046325684,
+    -0.5,
+    -0.6000003814697266,
+    -0.5
+  ]
+}

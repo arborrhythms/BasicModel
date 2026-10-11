@@ -1102,3 +1102,69 @@ readback 0/4, c.
 > norm; the kept program; factorial vs confounded identification; the gate
 > contrast; bindings and row pairs. Carry the relation 2/4, the 43
 > unadmitted leaves and the order gates.
+
+## 9. R2 forward discard pass (Codex, 2026-10-11)
+
+The reviewed R/S/T pass is committed and pushed as `e38a19fbd`, and
+WikiOracle is bumped and pushed as `64a06d3`, without a learning claim.
+The [single R2 receipt](../benchmarks/2026-10-10-item6/identity-r2/README.md)
+records the diagnostic before the mechanism change, the forward penalty,
+and the matched measurement. No rule is retired; §6 follows R2.
+
+The supplied all-`sum`/STOP reading retains nonzero meaning in each of the
+four retained clauses, but costs 2.1323–2.1336 against greedy's 1.85.
+Coverage favors greedy by .2 and the field inverse by .0823–.0836. The
+content certificate remains 1 on both because free decoding fails to return
+the retained meaning. The inverse's κ = 0 contract remains unchanged.
+Warm-up first-word logits uniquely prefer `non` (.1564 versus about −.1);
+initial weights on the same input do not prefer it. This is learned preference.
+
+The forward charge sums each operation's removed meaning L1 mass relative
+to its detached input mass. Binary input coverage counts overlapping evidence
+once; a unary has one input. Empty steps pay zero and cannot dilute the sum.
+The cost uses actual values, not operation names or an inverse-definedness
+mask. Pole exchange preserves mass. The content certificate remains separate.
+On the retained four native paired walks, one supplied legal STOP departure
+skips the first meaning-removing `non`: greedy costs 4.85 and explore costs
+4.25 / 4.35 / 4.25 / 4.35. All four keep explore, with no parameter changes
+at learning rate zero. Their final meanings still vanish in the subsequent
+suffix; this local credit result is not the held-out retention outcome.
+
+Development checks exposed both a double-counting issue and a changed test
+contract. Shared evidence now counts once. The frozen operator certificate
+still requires exact words and zero recomposition residual; its reconstruction
+total must equal the new cost for actual counterevidence discarded by OR.
+The training certificate now directly checks that paired trials share the
+same context object; new credit can change later readings, so zero cost was
+no longer a valid proxy for sharing. Failed development checks are retained.
+
+### 9.1 Measurement scope (Alec, 2026-10-11)
+
+> The tests are exorbitant. R2 measures only what it can change: the four
+> retained clauses and the two recovery branches (factorial and confounded,
+> gate on). Identity branches wait until closed meaning is nonzero. One full
+> sweep at landing, not per step. Commit candidates to a branch; the commit
+> hash is the archive — no tarballs, manifests or integrity checks. The
+> receipt is the gate numbers and one table per question; diagnostics stay
+> in files. One regression per repaired defect.
+
+The superseded run was stopped during warm-up, before any branch began.
+The scoped recovery branches reuse the accepted R/S/T stages-1–4 checkpoint;
+seed, revision-3 corpus, learning rate and recovery budgets remain unchanged.
+Each branch trains on 144 documents and grades 48 held-out documents; closed
+meaning and kept programs are observed in that same held-out pass. No
+identity branch or gate-off contrast runs. Candidate commits on a branch
+replace source archives and integrity machinery; one retained-four-clause
+regression covers the repair. Results are pending in the single receipt.
+Carried gates: relation trace 2/4, 43 unadmitted leaves, both .01 order gates,
+and free readback 0/4.
+
+Before the scope correction, 91 affected checks passed and a full sweep completed:
+5,501 passed, 287 skipped, two failed and one XFAIL (5,791 selected and
+completed). The forced math-chain answer failure persists. A new failure
+relative to both accepted 6.1 and R/S/T is the review17 observer wiring
+probe: epoch-1 chooser logits are absent (`KeyError: '1'`). Its one isolated
+rerun passes with the unchanged assertion and no seed pin, recording just
+one differentiable chooser call; this does not establish the original cause
+or replace the failed sweep. The extra skip is the existing spawn-method
+guard in the data-loader pickling test. The cleared-cache overlap stays XFAIL.

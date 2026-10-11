@@ -2,6 +2,35 @@
 import torch
 
 
+def forward_discard(programs, meaning_start, like):
+    """Sum meaning mass removed at each selected forward operation.
+
+    Each step pays its own removed L1 mass relative to its detached input
+    mass. Zero-meaning steps pay zero and cannot dilute earlier losses.
+    A binary input is the coordinate-wise coverage of its two operands:
+    shared evidence counts once, so an idempotent union does not discard
+    meaning merely by combining overlapping values. A unary has one. A change
+    of evidence pole preserves mass. This reads actual forward values,
+    irrespective of operator names or the inverse's defined coordinates.
+    """
+    costs = []
+    for program in programs:
+        if program is None or program.operation_values is None:
+            costs.append(like.new_zeros(()))
+            continue
+        kind = program.actions[:, 0]
+        frames = program.operation_values[..., meaning_start:]
+        inputs = frames[:, 0].detach().abs()
+        inputs = torch.where((kind == 1)[:, None],
+            torch.maximum(inputs, frames[:, 1].detach().abs()), inputs).sum(-1)
+        output = frames[:, 2].abs().sum(-1)
+        removed = (inputs - output).relu()
+        denominator = torch.where(inputs > 0, inputs, 1.)
+        costs.append(torch.where(((kind == 1) | (kind == 2)) & (inputs > 0),
+                                 removed / denominator, 0.).sum())
+    return torch.stack(costs)
+
+
 def expectation_terms(registry, pred, logits, kind_logit, target, occupied,
                       kind, *, row, gain=1.):
     """Gate each role's error, retaining the Error registry's baseline.
