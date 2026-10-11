@@ -1,7 +1,8 @@
 # Item 6 R2: forward discarded-meaning charge
 
 R/S/T landed as BasicModel `e38a19fbd`, WikiOracle `64a06d3`, with no
-learning claim. R2 is a branch candidate; no rule is retired.
+learning claim. R2 mechanism and driver: `0cd221d74` on
+`codex/item6-r2-forward-discard`. No rule is retired.
 
 Alec's October 11 scope: four retained clauses and factorial/confounded
 recovery with the selected-mint gate on. Both branches restore the accepted
@@ -14,7 +15,8 @@ there is no repeated warm-up or held-out replay.
 
 Yes: coverage favors it by .2 and the inverse field term by .0823–.0836.
 The supplied all-`sum`/STOP reading is a mechanism witness, not a learned parse.
-[Diagnostic](diagnostic/objective/result.json), measured before the change:
+[Diagnostic](diagnostic/objective/result.json), measured before the change on
+the retained R/S/T factorial-off checkpoint:
 
 | Term / norm | Greedy (each) | black cat runs | white cat moves | small cat waits | large cat sleeps |
 |---|---:|---:|---:|---:|---:|
@@ -55,17 +57,28 @@ the certificate. One regression retains these four native paired programs.
 
 ## Does recovery retain meaning and identify the present atoms?
 
-Pending the two scoped branches. Identification counts present atoms carried
-by an **active** column with |cos| ≥ .9. The accepted R/S/T gate-on branches
-both scored 0/240 with 0/48 nonzero closed meanings, no new columns or merges.
+**No held-out recovery gain.** Both branches have **0/48** nonzero closed
+meanings and **0/240** identification, as in R/S/T. All norm minima, means
+and maxima are exactly zero, including the four retained clauses.
+Identification requires an **active** column with |cos| ≥ .9; confounded's
+one atom-aligned column is inactive and earns no identification credit.
+[Factorial readings](recovery/factorial.json),
+[confounded readings](recovery/confounded.json):
 
-| R2 branch (gate on) | Nonzero closed meanings | Meaning norm min / mean / max | Identification | Columns minted | Merged pairs | Kept program |
+| Gate-on branch | Nonzero meanings | Identification | Minted / total columns | Merged pairs | Selected mint / commits | Kept operations (rows out of 48) |
 |---|---:|---:|---:|---:|---:|---|
-| Factorial | pending | pending | pending / 240 | pending | pending | pending |
-| Confounded | pending | pending | pending / 240 | pending | pending | pending |
+| Factorial | 0/48 | 0/240 | 0 / 58 | 0 | 192/192 | `non` 48, `lower` 48, `verb` 12 |
+| Confounded | 0/48 | 0/240 | 4 / 62 | 0 | 136/192 | `non` 48, `adverb` 48, `lower` 1, `lift` 1 |
 
-The gate contrast is unmeasured under this scope. Carried, not remeasured:
-relation trace **2/4**, **43** unadmitted leaves, both **.01** order gates,
+The programs change (19 factorial signatures, 5 confounded), but **all 96
+held-out readings still use `non` and end with zero meaning**. Complete action
+sequences are in the linked files. The 192 observed commits include 48 frozen
+held-out calls. Mint is selected on every factorial call and
+on 136 confounded calls; it is not universally selected in the latter.
+
+The on/off gate contrast is unmeasured under this scope; its rule stays. Carried, not remeasured:
+relation trace **2/4**, **43** unadmitted leaves, two-word order CE
+**.031999–.032067** and four-word CE **.016526–.016706** (both gates **.01**),
 free readback **0/4**. Identity lessons and rule retirement remain deferred.
 The parts-of-speech pass in plan §6 follows R2.
 
@@ -82,6 +95,7 @@ remains XFAIL versus 6.1's XPASS. Existing operator certificates now account
 for real OR discard and check shared contexts directly
 ([diagnostic](development/additive-input/certificate-diagnostic.json)).
 
+Diagnostic context and reproduction details are in [notes](diagnostic/notes.md).
 The superseded eight-branch run was intentionally stopped during warm-up,
 before any branch began; its partial output stays in
 `output/item6-identity-r2`. Candidate commits are the source archive.

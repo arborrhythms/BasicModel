@@ -1155,7 +1155,21 @@ Each branch trains on 144 documents and grades 48 held-out documents; closed
 meaning and kept programs are observed in that same held-out pass. No
 identity branch or gate-off contrast runs. Candidate commits on a branch
 replace source archives and integrity machinery; one retained-four-clause
-regression covers the repair. Results are pending in the single receipt.
+regression covers the repair. Source is candidate `0cd221d74` on
+`codex/item6-r2-forward-discard`; both runs completed once.
+
+The single receipt records **0/48 nonzero closed meanings and 0/240 held-out
+identification on both branches**. Factorial adds no columns (58 total);
+confounded adds four (62 total), with no merged pairs on either. Confounded
+has one atom-aligned column, but it is inactive on the held-out rows and
+therefore receives no identification credit. Factorial selects mint on
+192/192 observed commits; confounded on 136/192 (including the 48 frozen
+held-out calls). The on/off contrast is unmeasured. The kept programs change
+to 19 factorial and five confounded signatures, but all 96 held-out readings
+still apply `non` and end with zero meaning. The four retained clauses also remain
+zero in each branch. Local credit passes 4/4; the retention and identification
+gates fail. Identity stays deferred; no rule is retired and no learning gain
+is claimed. The one retained-clause regression passes in 2.67 seconds.
 Carried gates: relation trace 2/4, 43 unadmitted leaves, both .01 order gates,
 and free readback 0/4.
 

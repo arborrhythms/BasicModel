@@ -193,7 +193,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   1.153045 and the [first part-2 sweep's](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
   .848586–1.179175 range violate the unchanged .9–1.1 band; the latter is a new
   failing node relative to accepted 6.1. No passing initialization closes it.
-- The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/README.md#validation)
+- The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
   adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
   failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
   logit entry (`KeyError: '1'`). One isolated unchanged-assertion rerun passes
@@ -264,7 +264,14 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   discarded-meaning charge after the forced-reading diagnostic, with the
   scoped four-clause and two-branch recovery measurement (factorial/confounded,
   gate on), reusing the accepted R/S/T warm-up. Identity branches wait for
-  nonzero closed meaning. The parts-of-speech pass in plan §6 follows R2.
+  nonzero closed meaning. Candidate `0cd221d74` on
+  `codex/item6-r2-forward-discard` passes the 4/4 local keep regression, but
+  both completed recovery branches have 0/48 nonzero closed meanings
+  and identify 0/240 atoms. Factorial mints zero columns; confounded mints four;
+  neither forms a measured kind/property merged pair. Confounded selects mint
+  on 136/192 observed commits versus factorial's 192/192; the off contrast is
+  unmeasured. All 96 kept readings still use `non`. No learning gain or rule
+  retirement is claimed. The parts-of-speech pass in plan §6 follows R2.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
