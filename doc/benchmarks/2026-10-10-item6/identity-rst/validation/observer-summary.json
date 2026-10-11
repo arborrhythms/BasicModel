@@ -1,0 +1,15 @@
+{
+  "annotated_references": 690,
+  "resolved": 0,
+  "sentinels": 0,
+  "missing_reasons": {
+    "mint_not_retained_in_written_clause": 445,
+    "no_individual_request": 243,
+    "leaf_not_admitted": 2
+  },
+  "all_original_selected_references_match": true,
+  "checkpoint_sha256": "f3cc91e067067c1334717a379d5fa9e573598a2255cb6ce6d327a0e8dc276181",
+  "protocol": "Retained final checkpoint replay with original attention scorer, no optimizer, conceptual admission frozen. The observer code is final; production code was loaded before the band-coverage repair (same production source as development/objective-contract/source.tar.gz).",
+  "mechanism_chain_regression": "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+  "learning_claim": false
+}

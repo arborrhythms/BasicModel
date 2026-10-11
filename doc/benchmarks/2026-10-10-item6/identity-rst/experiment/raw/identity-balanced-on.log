@@ -1,0 +1,155 @@
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-rst/warmup/warmup.ckpt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"training": true, "completed": 4, "total": 136}
+batch = 1 (Δ=7.515s)
+{"training": true, "completed": 8, "total": 136}
+batch = 2 (Δ=7.929s)
+{"training": true, "completed": 12, "total": 136}
+batch = 3 (Δ=27.630s)
+{"training": true, "completed": 16, "total": 136}
+batch = 4 (Δ=110.980s)
+{"training": true, "completed": 20, "total": 136}
+batch = 5 (Δ=89.817s)
+{"training": true, "completed": 24, "total": 136}
+batch = 6 (Δ=71.566s)
+{"training": true, "completed": 28, "total": 136}
+batch = 7 (Δ=71.260s)
+{"training": true, "completed": 32, "total": 136}
+batch = 8 (Δ=71.668s)
+{"training": true, "completed": 36, "total": 136}
+batch = 9 (Δ=91.335s)
+{"training": true, "completed": 40, "total": 136}
+batch = 10 (Δ=89.665s)
+{"training": true, "completed": 44, "total": 136}
+batch = 11 (Δ=90.896s)
+{"training": true, "completed": 48, "total": 136}
+batch = 12 (Δ=90.708s)
+{"training": true, "completed": 52, "total": 136}
+batch = 13 (Δ=73.225s)
+{"training": true, "completed": 56, "total": 136}
+batch = 14 (Δ=111.032s)
+{"training": true, "completed": 60, "total": 136}
+batch = 15 (Δ=90.936s)
+{"training": true, "completed": 64, "total": 136}
+batch = 16 (Δ=93.431s)
+{"training": true, "completed": 68, "total": 136}
+batch = 17 (Δ=70.767s)
+{"training": true, "completed": 72, "total": 136}
+batch = 18 (Δ=71.587s)
+{"training": true, "completed": 76, "total": 136}
+batch = 19 (Δ=92.542s)
+{"training": true, "completed": 80, "total": 136}
+batch = 20 (Δ=73.977s)
+{"training": true, "completed": 84, "total": 136}
+batch = 21 (Δ=112.870s)
+{"training": true, "completed": 88, "total": 136}
+batch = 22 (Δ=113.215s)
+{"training": true, "completed": 92, "total": 136}
+batch = 23 (Δ=94.501s)
+{"training": true, "completed": 96, "total": 136}
+batch = 24 (Δ=91.877s)
+{"training": true, "completed": 100, "total": 136}
+batch = 25 (Δ=73.555s)
+{"training": true, "completed": 104, "total": 136}
+batch = 26 (Δ=94.785s)
+{"training": true, "completed": 108, "total": 136}
+batch = 27 (Δ=71.962s)
+{"training": true, "completed": 112, "total": 136}
+batch = 28 (Δ=92.658s)
+{"training": true, "completed": 116, "total": 136}
+batch = 29 (Δ=92.658s)
+{"training": true, "completed": 120, "total": 136}
+batch = 30 (Δ=93.623s)
+{"training": true, "completed": 124, "total": 136}
+batch = 31 (Δ=93.879s)
+{"training": true, "completed": 128, "total": 136}
+batch = 32 (Δ=112.661s)
+{"training": true, "completed": 132, "total": 136}
+batch = 33 (Δ=105.098s)
+{"training": true, "completed": 136, "total": 136}
+batch = 0 (Δ=57.936s)
+{"training": false, "completed": 4, "total": 166}
+batch = 1 (Δ=57.729s)
+{"training": false, "completed": 8, "total": 166}
+batch = 2 (Δ=57.585s)
+{"training": false, "completed": 12, "total": 166}
+batch = 3 (Δ=57.773s)
+{"training": false, "completed": 16, "total": 166}
+batch = 4 (Δ=57.702s)
+{"training": false, "completed": 20, "total": 166}
+batch = 5 (Δ=57.606s)
+{"training": false, "completed": 24, "total": 166}
+batch = 6 (Δ=57.696s)
+{"training": false, "completed": 28, "total": 166}
+batch = 7 (Δ=57.745s)
+{"training": false, "completed": 32, "total": 166}
+batch = 8 (Δ=57.703s)
+{"training": false, "completed": 36, "total": 166}
+batch = 9 (Δ=57.790s)
+{"training": false, "completed": 40, "total": 166}
+batch = 10 (Δ=57.670s)
+{"training": false, "completed": 44, "total": 166}
+batch = 11 (Δ=57.641s)
+{"training": false, "completed": 48, "total": 166}
+batch = 12 (Δ=57.642s)
+{"training": false, "completed": 52, "total": 166}
+batch = 13 (Δ=57.831s)
+{"training": false, "completed": 56, "total": 166}
+batch = 14 (Δ=57.633s)
+{"training": false, "completed": 60, "total": 166}
+batch = 15 (Δ=57.675s)
+{"training": false, "completed": 64, "total": 166}
+batch = 16 (Δ=58.628s)
+{"training": false, "completed": 68, "total": 166}
+batch = 17 (Δ=58.620s)
+{"training": false, "completed": 72, "total": 166}
+batch = 18 (Δ=79.102s)
+{"training": false, "completed": 76, "total": 166}
+batch = 19 (Δ=78.939s)
+{"training": false, "completed": 80, "total": 166}
+batch = 20 (Δ=58.678s)
+{"training": false, "completed": 84, "total": 166}
+batch = 21 (Δ=78.942s)
+{"training": false, "completed": 88, "total": 166}
+batch = 22 (Δ=72.922s)
+{"training": false, "completed": 92, "total": 166}
+batch = 23 (Δ=72.424s)
+{"training": false, "completed": 96, "total": 166}
+batch = 24 (Δ=85.477s)
+{"training": false, "completed": 100, "total": 166}
+batch = 25 (Δ=79.535s)
+{"training": false, "completed": 104, "total": 166}
+batch = 26 (Δ=72.540s)
+{"training": false, "completed": 108, "total": 166}
+batch = 27 (Δ=59.036s)
+{"training": false, "completed": 112, "total": 166}
+batch = 28 (Δ=58.617s)
+{"training": false, "completed": 116, "total": 166}
+batch = 29 (Δ=48.533s)
+{"training": false, "completed": 120, "total": 166}
+batch = 30 (Δ=47.323s)
+{"training": false, "completed": 124, "total": 166}
+batch = 31 (Δ=57.971s)
+{"training": false, "completed": 128, "total": 166}
+batch = 32 (Δ=57.934s)
+{"training": false, "completed": 132, "total": 166}
+batch = 33 (Δ=76.366s)
+{"training": false, "completed": 136, "total": 166}
+batch = 34 (Δ=72.387s)
+{"training": false, "completed": 140, "total": 166}
+batch = 35 (Δ=76.139s)
+{"training": false, "completed": 144, "total": 166}
+batch = 36 (Δ=57.895s)
+{"training": false, "completed": 148, "total": 166}
+batch = 37 (Δ=60.646s)
+{"training": false, "completed": 152, "total": 166}
+batch = 38 (Δ=57.951s)
+{"training": false, "completed": 156, "total": 166}
+batch = 39 (Δ=57.952s)
+{"training": false, "completed": 160, "total": 166}
+batch = 40 (Δ=58.214s)
+{"training": false, "completed": 164, "total": 166}
+batch = 41 (Δ=31.622s)
+{"training": false, "completed": 166, "total": 166}
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item6-identity-rst/identity-balanced-on/final.ckpt

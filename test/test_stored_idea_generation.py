@@ -395,6 +395,42 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
     assert not terms['reconstruction.free_bytes']['trained']
 
 
+@pytest.mark.parametrize('available', [True, False])
+def test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf(available):
+    from types import SimpleNamespace
+    from Models import BasicModel
+    from SentenceUnderstanding import PrimedSymbols, SentenceUnderstanding
+    # Opposing leaves retain content even when their signed sum is zero.
+    words = torch.tensor([[[1., 0., .2, 0.], [0., 1., -.2, 0.]]])
+    root = words.sum(1)
+    end = torch.cat((root[:, None], root.new_zeros(1, 2, 4)), 1)
+    valid = torch.ones(1, 2, dtype=torch.bool)
+    bank = PrimedSymbols(torch.tensor([[0, 1]]), words, torch.ones(1, 2), valid,
+        torch.tensor([[[97], [98]]]), torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=2)
+    record = SentenceUnderstanding(root, end, torch.ones(1, dtype=torch.long),
+        end.flatten(1)[:, None], torch.ones(1, 1, dtype=torch.long), words,
+        bank.rows, valid, bank, torch.tensor(0))
+    # Surface-perfect free leaves with no meaning: byte/count checks cannot
+    # distinguish this value from a complete reading. No operator is masked.
+    returned = words.clone()
+    returned[..., 2:] = 0.
+    owner = SimpleNamespace(reconstruct_in_loop=True, loss=SimpleNamespace(reconstruction_scale=1.),
+        inter_loss_weight=0., inter_contrastive_weight=0., symbolSpace=SimpleNamespace(expectation=None),
+        inputSpace=SimpleNamespace(_reconstruction_sentence_available=torch.tensor([[available]])),
+        _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *a: record,
+        _tensor_pushed_ideas=words, _sentence_field=None,
+        _reconstruct_trial=lambda rec: (returned, root.new_zeros(1), root.new_zeros(1)),
+        _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
+    lang = [None] * 15
+    lang[9], lang[13], lang[14] = root[:, None], record.roots, record.depths
+    state = ((end,), lang, None)
+    erased, *_ = BasicModel._sentence_path_cost(owner, state, 0, torch.tensor([True]))
+    returned = words.flip(1)
+    retained, *_ = BasicModel._sentence_path_cost(owner, state, 0, torch.tensor([True]))
+    assert erased.item() == float(available)
+    assert retained.item() == 0.
+
+
 def test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse(monkeypatch):
     from Models import BasicModel
     import util

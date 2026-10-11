@@ -1,0 +1,46 @@
+{
+  "source_files": 771,
+  "source_archive_matched": true,
+  "current_source_matched": true,
+  "corpus_files": 12,
+  "corpus_matched": true,
+  "non_source_plan_identical": true,
+  "archives": {
+    "full/archive-manifest.json": {
+      "files": 156,
+      "uncompressed_bytes": 10975114
+    },
+    "experiment/archive-manifest.json": {
+      "files": 90,
+      "uncompressed_bytes": 3809071599
+    },
+    "validation/attention-archive-manifest.json": {
+      "files": 5,
+      "uncompressed_bytes": 4996090
+    },
+    "validation/observer-archive-manifest.json": {
+      "files": 4,
+      "uncompressed_bytes": 3904393
+    },
+    "validation/recovery-archive-manifest.json": {
+      "files": 18,
+      "uncompressed_bytes": 4952131
+    },
+    "validation/keep-credit-archive-manifest.json": {
+      "files": 3,
+      "uncompressed_bytes": 10932
+    }
+  },
+  "branch_exit_codes": {
+    "recovery-factorial-on": 0,
+    "recovery-factorial-off": 0,
+    "recovery-confounded-off": 0,
+    "recovery-confounded-on": 0,
+    "identity-balanced-on": 0,
+    "identity-balanced-off": 0,
+    "identity-biased-on": 0,
+    "identity-biased-off": 0
+  },
+  "all_branches_exit_zero": true,
+  "verifier_sha256": "cb95808c3bb84494223e38a0244b410a1b48803ddbe9f1e5ea6d4a8a3c5d5241"
+}

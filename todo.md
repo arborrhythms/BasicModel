@@ -166,8 +166,11 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   The valid part-2 two-word checkpoint reads its stored derivations at 4/4,
   but free readback is 0/4. A [read-only probe](doc/benchmarks/2026-10-10-item6/identity-first/validation/attention-readout-audit/result.json)
   finds every attention tanh unit saturated at ±1 and candidate logits tied;
-  locate the onset and cause before treating the order lesson as learnable
-  in this trained state. This saturation was left unchanged during the study.
+  that study left saturation unchanged. The [R/S/T candidate](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)
+  bounds the shared context and removes saturation in the retained 64-step
+  continuation. Fresh two-/four-word CE improves to .0320/.0166 but remains
+  above .01; free recovery remains 0/4. New adverse result: the later relation
+  trace falls from 4/4 to 2/4, swapping `than` and the final operand.
   Pair teaching also skips compound operands without identities in its word
   shortlist; the successful lexical-pair probe does not establish sufficient
   teaching credit for free reconstruction of longer constituents.
@@ -198,7 +201,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   exposes a native exploratory trace/admission mismatch: an admitted leaf is
   filtered from reconstruction, which then underflows a binary operation.
   The first part-2 candidate repairs the trial/commit masks and verifies the
-  preserved passive-input trace; that repair awaits review. The corpus drops
+  preserved passive-input trace; it landed as preparation in `af634ed35`. The corpus drops
   unverified object fronting and reports the introduction-role/position confound.
   This probe has not been bisected against 6.1; do not call it an H regression.
 - The first part-2 warm-up stopped on a non-concept `sym` cue entering the
@@ -231,17 +234,27 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   word meanings are nonzero, but selected `non` clears them and `lower`
   repeatedly keeps the newer operand. Resolve why compose keeps these lossy
   readings before claiming an ICA recovery or admission-gate lesson.
-- The matched identity branches complete 136 training and 166 evaluation
-  documents each: 0/146 bindings and 0/20 row pairs, all unresolved. Balanced
-  training mints 61 columns and biased training 62; neither count establishes
-  correct identification. All observed commits select mint, so on/off
-  eligibility is identical and checkpoints within each corpus are byte-identical.
-  All 146 probed banks contain entries, but no annotated mention reference
-  resolves. Trace the selected mint through the individual row write and
-  observation before interpreting the binding and recency-control failures
-  as learned choices. The [complete receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
-  is accepted as preparation by plan §7. Repair R/S/T in one pass and rerun
-  the identical eight branches; no rule is retired and part 2 remains open.
+  The [R/S/T replay](doc/benchmarks/2026-10-10-item6/identity-rst/validation/recovery-summary.json)
+  still has zero closed meaning and `lower`–`non`–`non` in all 48 held-out
+  rows despite a content charge of about 1.0. Four sampled paired walks
+  charge both erased readings equally; this retention outcome remains unmet.
+- The [R/S/T matched rerun](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)
+  completes all eight branches with the same seed, budgets and revision-3
+  corpus. Recovery remains 0/240; all identity branches remain 0/146 bindings
+  and 0/20 row pairs. Each now resolves 150/690 mentions to written individuals,
+  but no probe has a complete candidate set or a valid selected reference.
+  The other 540 mentions have named missing reasons; grading has no sentinels.
+  Balanced unadmitted leaves rise from two in the old retained audit to 43.
+  The balanced gate contrast is no longer vacuous: off mints 58 columns versus
+  on's 57, without accuracy gain. Recovery and biased training remain vacuous;
+  the admission lesson fails. The [retained observer audit](doc/benchmarks/2026-10-10-item6/identity-rst/validation/observer-summary.json)
+  accounts for the old 690 unresolved mentions separately. Solve the missing
+  individuals/requests before interpreting binding and recency controls as
+  learned choices. Reviewed and accepted for landing by Alec (plan §8.4),
+  with no learning claim; no rule is retired and part 2 remains open.
+  R2 adds the forward discarded-meaning charge after the forced-reading
+  diagnostic, with the same eight-branch measurement. The parts-of-speech
+  pass in plan §6 follows R2.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction

@@ -921,3 +921,184 @@ for §6 proceeds meanwhile.
 > Then re-run the eight branches unchanged and report factorial vs
 > confounded identification, the gate contrast (or that it is still
 > vacuous), bindings and row pairs. No rule retired except by its lesson.
+
+## 8. R/S/T repair and matched rerun (Codex, 2026-10-11)
+
+The §7 preparation is pushed: BasicModel `af634ed35`, landing record
+`f6d04afa5`, WikiOracle `7af3fbf`. No learning claim accompanies that landing.
+The [single R/S/T receipt](../benchmarks/2026-10-10-item6/identity-rst/README.md)
+contains the next candidate and its measurement. No identity rule is retired;
+the parts-of-speech pass in §6 remains subsequent work.
+
+R adds the free read's meaning-band coverage error to the keep objective,
+normalized by the clause's own leaf meaning and masked by sentence availability. It does
+not ban `non` or use a trace witness to replace discarded meaning. Replaying
+the four retained zero-meaning clauses charges 1.0 on each; the retrained
+held-out program measurement still finds zero closed meaning and
+`lower`–`non`–`non` in all 48 rows. R's requested retention outcome fails.
+Both paths of a discarded, zero-learning-rate four-clause diagnostic pay
+the same content charge of 1.0 and retain zero meaning. Its parameters do
+not change; it is not an extra experiment training branch.
+Positive and negative mass is summed separately per meaning coordinate;
+opposing leaves cannot cancel, and permutation alone incurs no content loss.
+
+S bounds the scorer's shared context norm before its existing MLP. On the
+saved first read, identical weights give distinct candidate logits and no
+exact tanh saturation. Its separate native 64-presentation continuation and
+the fresh matched warm-up are measured separately. The retained continuation
+finishes with zero saturation and training CE .02591–.02610, below the old
+.34657359 plateau but above the .01 lesson gate. Trace readback is 4/4;
+free readback is still 0/4. The diagnostic state is discarded.
+The fresh warm-up reaches two-/four-word CE .0320/.0166, still above .01,
+with free reconstruction 0/4 throughout. The later relation trace newly
+falls from 4/4 to 2/4 by swapping `than` and the final operand. Supplied
+answer scores remain 4/4, 4/4, 0/4 and 1/4 across the four stage-4 groups.
+
+T separates a selected raw reference from the address reported to grading.
+A uniquely matched written individual resolves a mint; discarded,
+ambiguous, unadmitted, and unobserved cases have named reasons. The native
+mint→bind writer fixture is gradable. The retained introduction audit shows
+that the old `lower` chain wrote only the punctuation-headed row, so absent
+noun rows cannot be repaired by inventing an address in the observer.
+The complete retained replay accounts for all 690 references with no grading
+sentinels: 445 mints lack a retained individual, 243 mentions have no
+individual request, and two leaves were not admitted. Every original
+selected reference matches; this is no claim of learned binding.
+
+The seed, budgets, revision-3 corpus hashes, branch definitions, warm-up and
+optimizer policy all match the previous experiment. The first validation
+attempt was interrupted after a test's exact objective-name list rejected
+the added content term; that attempt is preserved. Only the contract test
+changed before the second attempt. The next sweep found that positional content error charged a fully
+recovered permutation in the forced-operator certificate. That attempt is
+also preserved; the band coverage fixes it without changing the certificate's
+assertion. Both interrupted experiments stopped before their branch split.
+
+The final frozen-source run completes all eight branches in 13,941.33 seconds,
+with source and corpus matching. Factorial and confounded recovery both remain
+0/240, with zero new columns or merges; all 192 observed commits per branch
+select mint, and on/off checkpoints are byte-identical. All four identity
+branches remain 0/146 bindings and 0/20 row pairs. Each resolves 150/690
+mentions to written individuals, but no probe has a complete candidate set
+or a valid selected reference. Balanced missing reasons are 311 absent
+minted individuals, 186 absent requests and 43 unadmitted leaves; biased
+reasons are 403 absent minted individuals and 137 absent requests. Every
+mention is either resolved or has a named reason, with no grading sentinel.
+The balanced unadmitted count of 43 is adverse against two in the retained
+old audit.
+
+The balanced admission contrast is no longer vacuous: gate-off mints 58
+columns, versus gate-on's 57, and checkpoints differ, without an accuracy
+gain. The biased pair mints 59 each, selects mint on all 940 commits and has
+identical checkpoints. The admission lesson fails; no rule is retired.
+Full group tables, the two controls, row pairs and limits are in the receipt.
+
+Validation is 85 affected checks passing and one completed full sweep:
+5,495 passed, 286 skipped, two failed and one xfailed. One failure is the
+known forced-answer `five` case; the new receipt-link timing failure is
+repaired by restoring the files, with the raw failed sweep preserved. All
+368 final documentation checks pass. The source/corpus and raw archive
+integrity checks pass. This is a candidate
+for review, not completion of R's retention gate or item 6 part 2. The §6
+parts-of-speech pass remains subsequent work.
+
+## 8. Review of the R/S/T pass (Claude, 2026-10-11)
+
+Reviewed the uncommitted tree against `af634ed35`, the
+[receipt](../benchmarks/2026-10-10-item6/identity-rst/README.md), the
+paired-walk keep-credit diagnostic and the code (R is 20 lines in
+`Models.py`, S one line in `CandidateAttention.py`, T in the driver).
+
+### 8.1 What landed in the code
+
+- **S works.** Bounding the shared context's norm removes the saturation:
+  on the saved two-word checkpoint the same weights give preactivations
+  within ±1.8 and distinct candidate logits; the order lesson's CE then
+  moves for the first time since 6.1 — two-word .3466 → .032, four-word
+  .7945 → .0165 — still above the .01 gate but no longer a fixed point.
+  Free readback stays 0/4. A new adverse result: the relation stage's trace
+  readback falls 4/4 → 2/4 (`x is bigger y than`): the scorer, now
+  actually learning from two/four-word lessons, mis-orders a five-word
+  clause it was never taught. That is the lesson having an effect, not a
+  reason to withhold S; it goes on the list.
+- **T works.** Zero sentinels reach grading; 150/690 mentions resolve to
+  written addresses; the other 540 have named reasons — 311 "mint not
+  retained" (the clause's written row is headed by the period and contains
+  no individual), 186 no request, 43 leaves not admitted (up from 2,
+  adverse). The explicit mint→bind chain regression passes. The balanced
+  gate contrast is no longer vacuous (one column, 36/906 commits), with no
+  binding gain.
+- **R's term is right and insufficient.** `reconstruction.content`
+  compares the free read's meaning bands with the clause's own leaves,
+  signed lanes summed separately, permutation-invariant, masked by
+  availability; the old reading now pays 1.0. But the re-run keeps the
+  same `lower` + `non`,`non` program on all 48 held-out rows with zero
+  closed meaning, and T's "punctuation-headed row" is the same reading seen
+  from the writer. All eight branches therefore score zero again
+  (0/240, 0/146, 0/20).
+
+### 8.2 Why the charge did not move the policy
+
+The paired-walk diagnostic shows it: the explore trial departs at one
+round (attention round 8 or 2; compose round 12 or 10 of ~22) and *also*
+ends with zero meaning, so both readings pay 1.0, the keep costs tie
+(1.85/1.85; one row 1.85/2.05) and the greedy reading is kept. With `non`
+chosen at two of every five steps, a single departure never reaches a
+reading whose closed row retains meaning, and a global charge on the closed
+row gives every reachable alternative the same cost — zero credit. The
+charge is correct as a certificate and useless as a teacher.
+
+The root is a rule of ours. 6.1 §7.16 made undefined inverses uncharged
+(κ = 0) so the inverse is not blamed for coordinates it cannot know. `non`
+has no inverse, so under the derivation reconstruction it is free — and
+the policy found that a free way to make every other cost vanish is to
+erase the meaning. The reconciliation: **the inverse stays uncharged for
+what it cannot recover, but the forward is charged, at the step, for what
+it removes.** A lossy operator's discarded meaning is observable in the
+forward (its input's meaning minus its output's), so charge it there,
+relative to the input's meaning, summed over the derivation. Then an
+explore departure that skips one `non` is cheaper by that step's mass and
+is kept, and the policy is credited step by step; the global content term
+remains as the certificate. No rule against `non`.
+
+Before building that, one diagnostic settles whether the objective itself
+prefers emptiness: teacher-force the meaning-retaining reading of the same
+four clauses (no `non`) and compute its keep cost under the current
+objective beside the greedy reading's 1.85. If it is lower, the only
+problem is credit (above); if higher, some term rewards an empty row and
+must be named. Also report the warm-up chooser's unary logits at the first
+word: whether `non` wins by learned preference or by tie-break at
+initialization.
+
+### 8.3 Recommendation
+
+Land this pass as it stands — R's certificate term, S, T, the receipt —
+with no learning claim. Next pass (R2), one receipt, the same eight-branch
+re-run: the forced-reading cost diagnostic; the forward discard charge for
+lossy operators (κ = 0 kept for inverses); the `non` initialization report.
+Measure: the explore departure at a `non` step is kept; held-out closed
+meaning norm nonzero; the kept program no longer `lower`+`non`,`non`.
+§6's parts-of-speech pass waits for R2, for the reason given in §7.3.
+Carried: relation trace 2/4, 43 unadmitted leaves, both order gates, free
+readback 0/4, c.
+
+### 8.4 Hand-off to Codex (Alec confirmed, 2026-10-11)
+
+> R/S/T reviewed (plan §8): land as is (commit, push, bump), no learning
+> claim. R2, one receipt, same eight-branch re-run:
+> (1) Diagnostic first: teacher-force the meaning-retaining reading (no
+> `non`) of the four retained clauses and report its keep cost beside the
+> greedy 1.85 under the current objective, term by term; report the
+> warm-up chooser's unary logits at the first word (learned preference or
+> initialization tie-break for `non`).
+> (2) Charge lossy operators forward, at the step, for the meaning they
+> remove (input meaning minus output meaning, relative to the input,
+> summed over the derivation, in the keep cost); the inverse stays
+> uncharged for undefined coordinates (6.1 κ = 0). Keep
+> `reconstruction.content` as the certificate. No rule against `non`.
+> Regression: on the retained four clauses, an explore trial that skips one
+> `non` is kept over the greedy reading.
+> (3) Re-run the eight branches unchanged. Measure: held-out closed meaning
+> norm; the kept program; factorial vs confounded identification; the gate
+> contrast; bindings and row pairs. Carry the relation 2/4, the 43
+> unadmitted leaves and the order gates.

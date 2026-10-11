@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item6-rst-full/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item6-rst-full/collect.json"
+  ],
+  "pid": 82813,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 498042200,
+  "elapsed_seconds": 8.143832999980077,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item6-rst-full/collect.log"
+}

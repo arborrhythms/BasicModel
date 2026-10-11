@@ -1,0 +1,98 @@
+{
+  "checkpoint_sha256": "e366561c5adbbe97170cbdf8aa34ebf98b2ed371413a742e6544085c587d121c",
+  "source_sha256": {
+    "bin/CandidateAttention.py": "0b536d638be27cd45c5b83a7bfec9da709d1baa05893f22f905a742623ad198f",
+    "bin/Models.py": "862ef7c3e9304093adb6acb79fb3864b6564782d1807e71edada15c1e6744d72"
+  },
+  "source_matched": true,
+  "presentations": 64,
+  "initial": {
+    "ce": null,
+    "trace_exact": 4,
+    "free_exact": 0,
+    "orders": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "saturated_units": 0,
+    "preactivation_min": -1.7958118915557861,
+    "preactivation_max": 1.7899243831634521,
+    "two_candidate_logit_gaps": [
+      0.006964758038520813,
+      0.004830718040466309,
+      0.00609685480594635,
+      0.005677834153175354,
+      0.007656097412109375,
+      0.005509465932846069,
+      0.006789058446884155,
+      0.00635857880115509
+    ]
+  },
+  "final": {
+    "ce": null,
+    "trace_exact": 4,
+    "free_exact": 0,
+    "orders": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "saturated_units": 0,
+    "preactivation_min": -0.12799350917339325,
+    "preactivation_max": 0.1303325593471527,
+    "two_candidate_logit_gaps": [
+      2.984389066696167,
+      2.983433246612549,
+      2.9806257486343384,
+      2.986854314804077,
+      2.9573713541030884,
+      2.9564146995544434,
+      2.9536083936691284,
+      2.959841012954712
+    ]
+  },
+  "training_saturated_units": 0,
+  "first_training_ce": [
+    0.3448334336280823,
+    0.3453671634197235,
+    0.34504538774490356,
+    0.34514960646629333
+  ],
+  "last_training_ce": [
+    0.025991445407271385,
+    0.026007289066910744,
+    0.026098720729351044,
+    0.025909051299095154
+  ],
+  "every_last_training_ce_below_log2_over2": true,
+  "order_ce_threshold": 0.01,
+  "order_ce_passed": false,
+  "diagnostic_state_discarded": true
+}

@@ -171,10 +171,66 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
     with native_observer(model) as captured:
         model._sentence_observation(None,0,None,admit=True)
         token=captured[0][0]['tokens'][1]
-        assert token['requested'] and token['reference']==-1
+        assert token['requested'] and token['reference'] is None
+        assert token['selected_reference']==-1
+        assert token['missing_reason']=='mint_awaits_row_write'
         written={}
         root=fixture.store.write_clause(clause,stream=0,written_rows=written)
         child=written[id(clause.children[0])]
         assert root!=child and clause.order==clause.children[0].order==1
         assert token['reference']==int(fixture.store.row_ids[child])
         assert token['reference']!=int(fixture.store.row_ids[root])
+        assert token['missing_reason'] is None
+
+        # A later selected bind must expose the same address to the grader.
+        # This is an explicit grammar/writer mechanism fixture, not a lesson.
+        from ReferenceContext import SituationFrame
+        from identity_measurement import grade_capture, score_document
+        address=token['reference']
+        bound=fixture.program(('lift',('lower','the','cat'),'runs'))
+        local=next(i for i,r in enumerate(fixture.binary) if r.determiner_mode=='bind')
+        bound.actions[2,1]=local
+        bound=record_reading(fixture.language,resolve_reading_references(
+            fixture.language,bound,frames=(SituationFrame.from_row(fixture.store.row(child)),),
+            forced={1:address}))
+        entry=bound
+        model.inputSpace._packed_sentence_ids.fill_(1)
+        model._sentence_observation(None,1,None,admit=True)
+        assert captured[1][0]['tokens'][1]['reference']==address
+        label=dict(id='mint-bind',family='determiner',probe=None,
+            mentions=[dict(id='m0',sentence=0,word=1),dict(id='m1',sentence=1,word=1)],
+            row_pair=dict(mentions=['m0','m1'],expected=1))
+        graded=score_document(label,grade_capture(label,captured,0))
+        assert graded['rows']['correct'] and graded['rows']['resolved']
+
+
+def test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason(monkeypatch):
+    from types import SimpleNamespace
+    import torch
+    from ClauseJournal import finish_clause
+    from identity_measurement import native_observer, grade_capture
+    from reading_fixtures import record_reading, resolve_reading_references
+    from test_clause_acceptance import SentenceFixture
+    fixture=SentenceFixture(monkeypatch)
+    # The second projection discards the cat individual; only the final
+    # word becomes the head of the written row. Never assign that row to cat.
+    entry=fixture.program(('lower',('lower','a','cat'),'.'))
+    entry=record_reading(fixture.language,resolve_reading_references(
+        fixture.language,entry,forced={1:-1,2:-1}))
+    clause=finish_clause(fixture.language,entry,registry=fixture.registry)
+    model=SimpleNamespace(languageSpace=fixture.language,
+        symbolSpace=SimpleNamespace(ltm_store=fixture.store),
+        inputSpace=SimpleNamespace(_word_active_mask=torch.ones(1,3,dtype=torch.bool),
+            _packed_sentence_ids=torch.zeros(1,3,dtype=torch.long)),
+        _sentence_observation=lambda *a,**k:dict(entries=(entry,)),
+        _derivation_program=lambda *a:(torch.arange(3)[None],))
+    with native_observer(model) as captured:
+        model._sentence_observation(None,0,None,admit=True)
+        fixture.store.write_clause(clause,stream=0,written_rows={})
+        label=dict(mentions=[dict(id='cat',sentence=0,word=1),
+            dict(id='unread',sentence=0,word=7),dict(id='absent',sentence=1,word=0)])
+        result=grade_capture(label,captured,0)
+    assert all(value is None for value in result['references'].values())
+    assert result['provenance']['cat']['missing_reason']=='mint_not_retained_in_written_clause'
+    assert result['provenance']['unread']['missing_reason']=='leaf_not_admitted'
+    assert result['provenance']['absent']['missing_reason']=='sentence_not_observed'

@@ -23,6 +23,11 @@ class CandidateAttention(Layer):
                 or context.shape != (candidates.shape[0], self.context_width)
                 or candidates.shape[-1] != self.candidate_width):
             raise ValueError('candidate scorer requires aligned context and candidate features')
+        # A shared field can contain tens of thousands of occupied features.
+        # Its size must not drive every tanh unit to the same saturated value
+        # before the candidate contributes. Bound this block's length while
+        # retaining its direction and leaving candidate differences intact.
+        context = context / context.norm(dim=-1, keepdim=True).clamp_min(1.)
         inputs = torch.cat((context[:, None].expand(-1, candidates.shape[1], -1), candidates), -1)
         # Scoring is a reader. Named-part lessons and paired costs train it;
         # neither keys nor needs are extra writers of their source owners.

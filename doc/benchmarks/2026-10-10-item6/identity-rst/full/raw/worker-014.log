@@ -1,0 +1,36 @@
+........................................................................ [ 40%]
+..................ssssss................ss.............................. [ 81%]
+...F................sss.........                                         [100%]
+=================================== FAILURES ===================================
+_ test_forced_ordinary_answer_fills_committed_question_without_its_own_episode _
+test/test_math_chain_section14.py:244: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+test/test_math_chain_section14.py:241: in after
+    assert not open_slots(value) and matches(model,value,'five')
+E   AssertionError: assert (not () and False)
+E    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 6841162690959293713), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 6841162690959293713),))), scope=(), sentence_kind='relation'))
+E    +  and   False = <function matches at 0x14726f240>(BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=104, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 6841162690959293713), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 6841162690959293713),))), scope=(), sentence_kind='relation'), 'five')
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=23.450s)
+=============================== warnings summary ===============================
+test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
+1 failed, 164 passed, 11 skipped, 2 warnings in 565.56s (0:09:25)

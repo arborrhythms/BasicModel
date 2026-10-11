@@ -139,7 +139,13 @@ def native_observer(model):
                     word=source.index(position)
                     request=requests.get(leaf)
                     reference=(request[2] if request is not None and request[0]==1 else None)
-                    tokens[word]=dict(reference=reference, word_id=int(program.word_ids[leaf]),
+                    reason = (None if valid_reference(reference) else
+                              'mint_awaits_row_write' if reference == -1 else
+                              'selected_open_reference' if reference == 0 else
+                              'no_individual_request')
+                    tokens[word]=dict(reference=reference if valid_reference(reference) else None,
+                        selected_reference=reference, missing_reason=reason,
+                        word_id=int(program.word_ids[leaf]),
                         requested=request is not None and request[0]==1,
                         source='selected' if valid_reference(reference) else 'unresolved')
             records.append(dict(tokens=tokens))
@@ -166,8 +172,15 @@ def native_observer(model):
             visit(clause)
             for token in captured[sid][b]['tokens'].values():
                 matches=by_word.get(token['word_id'],set())
-                if token['reference']==-1 and token['requested'] and len(matches)==1:
-                    token.update(reference=next(iter(matches)),source='written individual')
+                if (token['selected_reference']==-1 and token['requested']
+                        and not valid_reference(token['reference'])):
+                    if len(matches)==1:
+                        token.update(reference=next(iter(matches)),source='written individual',
+                                     missing_reason=None)
+                    else:
+                        token.update(missing_reason=('mint_not_retained_in_written_clause' if not matches
+                                                     else 'ambiguous_written_individuals'),
+                                     written_candidates=sorted(matches))
         return row
     model._sentence_observation=observation; store.write_clause=writing
     try: yield captured
@@ -179,7 +192,12 @@ def grade_capture(label, captured, batch_row):
     refs={}; provenance={}
     for mention in label['mentions']:
         entries=captured.get(mention['sentence'],())
-        token=(entries[batch_row]['tokens'].get(mention['word'],{}) if batch_row<len(entries) else {})
+        token=(entries[batch_row]['tokens'].get(mention['word'],
+            dict(reference=None,missing_reason='leaf_not_admitted')) if batch_row<len(entries) else
+            dict(reference=None,missing_reason='sentence_not_observed'))
+        token=dict(token)
+        if token.get('missing_reason')=='mint_awaits_row_write':
+            token['missing_reason']='no_clause_write_observed'
         refs[mention['id']]=token.get('reference')
         provenance[mention['id']]=token
     return dict(references=refs,provenance=provenance)

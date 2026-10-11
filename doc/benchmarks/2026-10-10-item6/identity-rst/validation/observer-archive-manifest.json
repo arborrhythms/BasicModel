@@ -1,0 +1,22 @@
+{
+  "identity_model.xml": {
+    "sha256": "ebd8f6877cd5902160748d7ce6bada72a1cc9fd035c3b05a6da2883c8df34203",
+    "archive": "validation/observer-retained/identity_model.xml",
+    "bytes": 4559
+  },
+  "partial-results.json": {
+    "sha256": "bd110b52816b046b3e7ffb1146002525311ab03adf12bd3ff93459393b338894",
+    "archive": "validation/observer-retained/partial-results.json",
+    "bytes": 121556
+  },
+  "progress.json": {
+    "sha256": "1e993e11feff044aff5895f13be6f0f92849485914c2e842bad797f4b2bb0e11",
+    "archive": "validation/observer-retained/progress.json",
+    "bytes": 60
+  },
+  "result.json": {
+    "sha256": "340fc33640725ed33caceeaa58fe1dc0c92100c5b30577b0e71abd44ae6a6812",
+    "archive": "validation/observer-retained/result.json",
+    "bytes": 3778218
+  }
+}

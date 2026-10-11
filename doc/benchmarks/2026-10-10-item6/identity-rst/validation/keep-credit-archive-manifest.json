@@ -1,0 +1,17 @@
+{
+  "identity_model.xml": {
+    "sha256": "585a92a8db240910f6ad3c72f7f9bfddd2243248c914387a7afa5be3d35bb92b",
+    "archive": "validation/keep-credit/identity_model.xml",
+    "bytes": 4553
+  },
+  "result.json": {
+    "sha256": "cb57fa203e84bce1de9b60c485a5a9d7f4a25912f1c6fa414b6b0bbe0b0b3ac1",
+    "archive": "validation/keep-credit/result.json",
+    "bytes": 3344
+  },
+  "../item6-rst-keep-credit.log": {
+    "sha256": "d911b9aea64fd4861ced4f576ca89a9ca4f3ad0a22642e065a230d8b48ac4e17",
+    "archive": "validation/keep-credit/run.log",
+    "bytes": 3035
+  }
+}

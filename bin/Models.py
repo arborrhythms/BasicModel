@@ -20077,6 +20077,26 @@ class BasicModel(BaseModel):
             errors.error('reconstruction.free_bytes', reconstruction[2], math.log(256), mask=available,
                 weight=self.loss.reconstruction_scale, category='reconstruction',
                 trained=getattr(self, '_sentence_field', None) is None)
+            meaning_start = record.primed.meaning_start
+            if meaning_start is not None:
+                # A surface can be spelled from its form even after its
+                # meaning was erased. Compare the free read's meaning bands
+                # with this clause's own leaves, without trace witnesses or
+                # an inverse-definedness mask hiding discarded content.
+                # Sum each signed lane separately: orientation cannot look
+                # like content loss, and opposing leaves cannot cancel it.
+                target = record.word_values[..., meaning_start:].detach()
+                returned = reconstruction[0][..., meaning_start:]
+                owned = record.word_valid[..., None]
+                def bands(value):
+                    value = torch.where(owned, value, 0.)
+                    return torch.stack((value.clamp_min(0).sum(1),
+                                        (-value).clamp_min(0).sum(1)), -1)
+                observed_bands = bands(target)
+                content = (observed_bands - bands(returned)).abs().sum((1, 2))
+                baseline = observed_bands.sum((1, 2))
+                errors.error('reconstruction.content', content, baseline,
+                    mask=available, weight=self.loss.reconstruction_scale, category='reconstruction')
             field = getattr(self, '_sentence_field', None)
             if field is not None:
                 from Generative import reconstruction_coverage

@@ -28,6 +28,44 @@ def test_scorer_compiles_with_ordinary_parameter_gradients():
     assert layer.readout.weight.grad is not None
 
 
+def test_retained_two_word_scorer_preserves_candidate_differences():
+    from pathlib import Path
+    path = (Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-10-item6'
+            '/identity-rst/validation/retained-scorer.pt')
+    saved = torch.load(path, map_location='cpu', weights_only=True)
+    context, candidates = saved['context'], saved['candidates']
+    layer = CandidateAttention(context.shape[-1], candidates.shape[-1]).cpu()
+    layer.load_state_dict(saved['state_dict'])
+    raw = torch.cat((context[:, None].expand(-1, 2, -1), candidates), -1)
+    # The archived checkpoint reproduces the original obstruction exactly.
+    assert layer.hidden(raw).abs().eq(1).all()
+    hidden = []
+    handle = layer.hidden.register_forward_hook(lambda module, args, result: hidden.append(result))
+    try:
+        scores = layer(context, candidates)
+    finally:
+        handle.remove()
+    assert scores[:, 0].ne(scores[:, 1]).all()
+    assert hidden[0].abs().lt(1).all()
+    loss = torch.nn.functional.cross_entropy(scores, torch.zeros(len(scores), dtype=torch.long))
+    loss.backward()
+    assert layer.hidden[0].weight.grad.abs().sum() > 0
+
+
+def test_shared_context_magnitude_cannot_saturate_the_retained_scorer():
+    layer = CandidateAttention(2048, 1, hidden_width=8)
+    with torch.no_grad():
+        layer.hidden[0].weight.fill_(.1)
+        layer.hidden[0].bias.zero_()
+        layer.readout.weight.fill_(1.)
+    context = torch.ones(1, 2048)
+    candidates = torch.tensor([[[-1.], [1.]]])
+    ordinary = layer(context, candidates)
+    large = layer(1e6 * context, candidates)
+    torch.testing.assert_close(ordinary, large)
+    assert large[0, 1] > large[0, 0]
+
+
 def test_support_admits_negative_evidence_and_zero_has_no_pathwise_choice_gradient():
     lanes = torch.tensor([[[[0., .7], [0., 0.]], [[.4, 0.], [0., 0.]]]], requires_grad=True)
     spans = torch.tensor([[[0., 1.], [1., 2.]]])

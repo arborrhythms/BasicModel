@@ -60,7 +60,7 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert calls == ['greedy', 'explore', 'greedy', 'explore']
         reconstruction = {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')}
         assert reconstruction - {'reconstruction.compose_score_function'} == {
-            'reconstruction.free_bytes', 'reconstruction.decomposition',
+            'reconstruction.free_bytes', 'reconstruction.content', 'reconstruction.decomposition',
             'reconstruction.walk_policy'}
         terms = model._sentence_cost_registry._terms
         # XOR_grammar uses the mixing architecture, without native PS/WS
@@ -68,6 +68,7 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert model.concept_binding == 'mixing'
         assert model._last_sentence_field is None
         assert terms['reconstruction.free_bytes']['trained']
+        assert terms['reconstruction.content']['trained']
         # Round 2 credits the single departure only when its owner-step total
         # differs. The inverse's byte objective above remains witness-free.
         if model._last_compose_score_function['advantage'].ne(0).any():

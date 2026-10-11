@@ -1,0 +1,167 @@
+[BasicModel] Weights loaded from output/item6-identity-two-word-checkpoint/two-word.ckpt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=42.637s)
+{"step": 1, "ce": [0.3448334336280823, 0.3453671634197235, 0.34504538774490356, 0.34514960646629333], "saturation": 0, "preactivation_min": -1.7947362661361694, "preactivation_max": 1.7885631322860718}
+batch = 0 (Δ=23.599s)
+{"step": 2, "ce": [0.34291788935661316, 0.3437483608722687, 0.34315025806427, 0.3434586226940155], "saturation": 0, "preactivation_min": -1.4692199230194092, "preactivation_max": 1.462251901626587}
+batch = 0 (Δ=39.506s)
+{"step": 3, "ce": [0.3397480845451355, 0.34080880880355835, 0.3398384749889374, 0.34050244092941284], "saturation": 0, "preactivation_min": -1.1515717506408691, "preactivation_max": 1.1440709829330444}
+batch = 0 (Δ=42.025s)
+{"step": 4, "ce": [0.33546045422554016, 0.33656516671180725, 0.3353089392185211, 0.3364107608795166], "saturation": 0, "preactivation_min": -0.8548964262008667, "preactivation_max": 0.8461862206459045}
+batch = 0 (Δ=44.415s)
+{"step": 5, "ce": [0.3306102752685547, 0.33163633942604065, 0.33036765456199646, 0.33171898126602173], "saturation": 0, "preactivation_min": -0.5656499862670898, "preactivation_max": 0.5565314888954163}
+batch = 0 (Δ=44.386s)
+{"step": 6, "ce": [0.32639408111572266, 0.3274437189102173, 0.3264153003692627, 0.32745641469955444], "saturation": 0, "preactivation_min": -0.3690851330757141, "preactivation_max": 0.37496963143348694}
+batch = 0 (Δ=26.435s)
+{"step": 7, "ce": [0.324010968208313, 0.3250007629394531, 0.32430148124694824, 0.32502809166908264], "saturation": 0, "preactivation_min": -0.40285179018974304, "preactivation_max": 0.4021831750869751}
+batch = 0 (Δ=44.458s)
+{"step": 8, "ce": [0.32172271609306335, 0.3225269019603729, 0.3222957253456116, 0.32236385345458984], "saturation": 0, "preactivation_min": -0.41947633028030396, "preactivation_max": 0.41412705183029175}
+batch = 0 (Δ=26.901s)
+{"step": 9, "ce": [0.3178527355194092, 0.31854134798049927, 0.31889232993125916, 0.31786516308784485], "saturation": 0, "preactivation_min": -0.4139196276664734, "preactivation_max": 0.4089277982711792}
+batch = 0 (Δ=43.702s)
+{"step": 10, "ce": [0.31270632147789, 0.3133416473865509, 0.3143261969089508, 0.3119572401046753], "saturation": 0, "preactivation_min": -0.3536030352115631, "preactivation_max": 0.3432121276855469}
+batch = 0 (Δ=40.306s)
+{"step": 11, "ce": [0.30736321210861206, 0.30794036388397217, 0.30949366092681885, 0.3058830499649048], "saturation": 0, "preactivation_min": -0.23256738483905792, "preactivation_max": 0.23894882202148438}
+batch = 0 (Δ=44.271s)
+{"step": 12, "ce": [0.3027329742908478, 0.30318236351013184, 0.3049626648426056, 0.3008522391319275], "saturation": 0, "preactivation_min": -0.23767830431461334, "preactivation_max": 0.24547097086906433}
+batch = 0 (Δ=44.544s)
+{"step": 13, "ce": [0.298615425825119, 0.29879650473594666, 0.30036622285842896, 0.296766996383667], "saturation": 0, "preactivation_min": -0.2502465546131134, "preactivation_max": 0.25108784437179565}
+batch = 0 (Δ=44.394s)
+{"step": 14, "ce": [0.2938539683818817, 0.29360899329185486, 0.29480111598968506, 0.29226499795913696], "saturation": 0, "preactivation_min": -0.25330638885498047, "preactivation_max": 0.25490519404411316}
+batch = 0 (Δ=44.745s)
+{"step": 15, "ce": [0.2880052924156189, 0.28729143738746643, 0.2881697118282318, 0.2867682874202728], "saturation": 0, "preactivation_min": -0.24675264954566956, "preactivation_max": 0.24805112183094025}
+batch = 0 (Δ=44.794s)
+{"step": 16, "ce": [0.28169095516204834, 0.28066131472587585, 0.28123652935028076, 0.28098466992378235], "saturation": 0, "preactivation_min": -0.18989631533622742, "preactivation_max": 0.1929502934217453}
+batch = 0 (Δ=44.705s)
+{"step": 17, "ce": [0.2755938172340393, 0.27452194690704346, 0.27466291189193726, 0.2756871283054352], "saturation": 0, "preactivation_min": -0.19553589820861816, "preactivation_max": 0.19941478967666626}
+batch = 0 (Δ=44.482s)
+{"step": 18, "ce": [0.26956653594970703, 0.2686896026134491, 0.2682657241821289, 0.27051883935928345], "saturation": 0, "preactivation_min": -0.1984943002462387, "preactivation_max": 0.1950441151857376}
+batch = 0 (Δ=44.859s)
+{"step": 19, "ce": [0.2629238963127136, 0.26236456632614136, 0.26140084862709045, 0.2644522190093994], "saturation": 0, "preactivation_min": -0.2050500065088272, "preactivation_max": 0.20736917853355408}
+batch = 0 (Δ=44.537s)
+{"step": 20, "ce": [0.25562670826911926, 0.25543567538261414, 0.2540775537490845, 0.2573278248310089], "saturation": 0, "preactivation_min": -0.18803879618644714, "preactivation_max": 0.17910951375961304}
+batch = 0 (Δ=44.898s)
+{"step": 21, "ce": [0.24833178520202637, 0.24851670861244202, 0.24697893857955933, 0.24985763430595398], "saturation": 0, "preactivation_min": -0.15697163343429565, "preactivation_max": 0.15792031586170197}
+batch = 0 (Δ=26.867s)
+{"step": 22, "ce": [0.24138832092285156, 0.24187256395816803, 0.24055235087871552, 0.2424323409795761], "saturation": 0, "preactivation_min": -0.169657364487648, "preactivation_max": 0.17037810385227203}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-10-item6/identity-rst/probe_attention.py", line 64, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-10-item6/identity-rst/probe_attention.py", line 46, in main
+    result=present(model,STAGES[0],train=True,optimizer=optimizer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/attention_curriculum_gates.py", line 51, in present
+    model.runBatch(train=train,optimizer=optimizer,batchSize=B,split='train',
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13774, in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13920, in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14302, in _run_batch_once
+    _what_answers = self._what_or_think(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8868, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10321, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8553, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8331, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23953, in _forward_per_stage
+    body_result = self._forward_body(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17393, in _forward_body
+    return self._forward_body_per_word(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22487, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22039, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21150, in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20564, in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtClosing.py", line 105, in close
+    absence(model, row, field.meaning, None if images is None else images.get(row))
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtClosing.py", line 96, in absence
+    return write(model, value, row=row)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtStream.py", line 254, in write
+    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 9444, in append_meaning
+    terms, complete = self._meaning_leaf_terms(meaning, order=order, stream=None if stream < 0 else stream)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py", line 93, in _meaning_leaf_terms
+    return visit(meaning, order)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py", line 80, in visit
+    recovered = self._index_unfold(value.roles[role].detach(), allowance,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py", line 546, in unfold
+    result = unfold_idea(language, _basis(space), value, limit, work=work,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 34, in read
+    return function(language, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py", line 418, in unfold_idea
+    lefts, rights, legal = inverse_menu(language, top, gate,
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 199, in inverse_menu
+    left, right, unavailable = language.reverse_binary_step(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13658, in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13643, in apply
+    a, b, available = self._reverse_of_binary_op(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13689, in _reverse_of_binary_op
+    return self._bounded_binary_reconstruction(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13855, in _bounded_binary_reconstruction
+    folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3653, in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3777, in forward
+    return self.apply_adverb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3528, in apply_adverb
+    return self._verb_rail_transform(vp_content, gain, shift)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3579, in _verb_rail_transform
+    interior = _bounded_atanh(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 97, in bounded_atanh
+    return torch.atanh(x.clamp(-1 + eps, 1 - eps))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

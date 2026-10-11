@@ -1,0 +1,872 @@
+{
+  "previous": {
+    "reading_two": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": [
+        0.3465735912322998,
+        0.3465735912322998,
+        0.3465735912322998,
+        0.3465735912322998
+      ],
+      "trace_readbacks": [
+        "red blue",
+        "blue red",
+        "green gold",
+        "gold green"
+      ],
+      "free_readbacks": [
+        "blue",
+        "red",
+        "gold",
+        "green"
+      ],
+      "orders": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "reading_four": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": [
+        0.794513463973999,
+        0.794513463973999,
+        0.794513463973999,
+        0.794513463973999
+      ],
+      "trace_readbacks": [
+        "red blue green gold",
+        "gold green blue red",
+        "blue gold red green",
+        "green red gold blue"
+      ],
+      "free_readbacks": [
+        "gold",
+        "red",
+        "green",
+        "blue"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ]
+      ]
+    },
+    "identities": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is animal",
+        "dog is animal",
+        "x is three",
+        "y is four"
+      ],
+      "free_readbacks": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "identities_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 4,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is animal",
+        "dog is animal",
+        "x is three",
+        "y is four"
+      ],
+      "free_readbacks": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_phrase": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the red ball",
+        "the blue box",
+        "the green ball",
+        "the gold box"
+      ],
+      "free_readbacks": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_phrase_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 4,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the red ball",
+        "the blue box",
+        "the green ball",
+        "the gold box"
+      ],
+      "free_readbacks": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_verb": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the cat sleeps",
+        "the dog runs",
+        "the dog sleeps",
+        "the cat runs"
+      ],
+      "free_readbacks": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_verb_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 0,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the cat sleeps",
+        "the dog runs",
+        "the dog sleeps",
+        "the cat runs"
+      ],
+      "free_readbacks": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "relations": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is on mat",
+        "dog is on rug",
+        "x is bigger than y",
+        "y is bigger than x"
+      ],
+      "free_readbacks": [
+        "mat",
+        "rug",
+        "y",
+        "x"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      ]
+    },
+    "relations_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 1,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is on mat",
+        "dog is on rug",
+        "x is bigger than y",
+        "y is bigger than x"
+      ],
+      "free_readbacks": [
+        "mat",
+        "rug",
+        "y",
+        "x"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      ]
+    }
+  },
+  "current": {
+    "reading_two": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": [
+        0.03199881315231323,
+        0.032066572457551956,
+        0.032043930143117905,
+        0.03202279657125473
+      ],
+      "trace_readbacks": [
+        "red blue",
+        "blue red",
+        "green gold",
+        "gold green"
+      ],
+      "free_readbacks": [
+        "blue",
+        "red",
+        "gold",
+        "green"
+      ],
+      "orders": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "reading_four": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": [
+        0.016607195138931274,
+        0.016526123508810997,
+        0.016628265380859375,
+        0.016705982387065887
+      ],
+      "trace_readbacks": [
+        "red blue green gold",
+        "gold green blue red",
+        "blue gold red green",
+        "green red gold blue"
+      ],
+      "free_readbacks": [
+        "gold",
+        "red",
+        "green",
+        "blue"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ]
+      ]
+    },
+    "identities": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is animal",
+        "dog is animal",
+        "x is three",
+        "y is four"
+      ],
+      "free_readbacks": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "identities_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 4,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is animal",
+        "dog is animal",
+        "x is three",
+        "y is four"
+      ],
+      "free_readbacks": [
+        "animal",
+        "animal",
+        "three",
+        "four"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_phrase": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the red ball",
+        "the blue box",
+        "the green ball",
+        "the gold box"
+      ],
+      "free_readbacks": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_phrase_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 4,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the red ball",
+        "the blue box",
+        "the green ball",
+        "the gold box"
+      ],
+      "free_readbacks": [
+        "ball",
+        "box",
+        "ball",
+        "box"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_verb": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the cat sleeps",
+        "the dog runs",
+        "the dog sleeps",
+        "the cat runs"
+      ],
+      "free_readbacks": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "noun_verb_answer": {
+      "trace_exact": 4,
+      "free_exact": 0,
+      "answer_exact": 0,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "the cat sleeps",
+        "the dog runs",
+        "the dog sleeps",
+        "the cat runs"
+      ],
+      "free_readbacks": [
+        "sleeps",
+        "runs",
+        "sleeps",
+        "runs"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "relations": {
+      "trace_exact": 2,
+      "free_exact": 0,
+      "answer_exact": null,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is on mat",
+        "dog is on rug",
+        "x is bigger y than",
+        "y is bigger x than"
+      ],
+      "free_readbacks": [
+        "mat",
+        "rug",
+        "than",
+        "than"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          4,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          4,
+          3
+        ]
+      ]
+    },
+    "relations_answer": {
+      "trace_exact": 2,
+      "free_exact": 0,
+      "answer_exact": 1,
+      "last_training_ce": null,
+      "trace_readbacks": [
+        "cat is on mat",
+        "dog is on rug",
+        "x is bigger y than",
+        "y is bigger x than"
+      ],
+      "free_readbacks": [
+        "mat",
+        "rug",
+        "than",
+        "than"
+      ],
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          4,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          4,
+          3
+        ]
+      ]
+    }
+  },
+  "new_adverse_results": [
+    {
+      "stage": "relations",
+      "metric": "trace_exact",
+      "previous": 4,
+      "current": 2
+    },
+    {
+      "stage": "relations_answer",
+      "metric": "trace_exact",
+      "previous": 4,
+      "current": 2
+    }
+  ],
+  "previous_checkpoint": {
+    "sha256": "c479e513ee6690a887e4a2e3eb5e5c1ad899c7eeeb0de507919d844b380bc01d",
+    "note": "Fixed-budget warm-up, not a certificate that stages 3/4 passed; no fresh disabled training control."
+  },
+  "current_checkpoint": {
+    "sha256": "bba628e5d634372d61f72929571dfc89f866deeb75d42de273816a0b6889da61",
+    "note": "Fixed-budget warm-up, not a certificate that stages 3/4 passed; no fresh disabled training control."
+  }
+}

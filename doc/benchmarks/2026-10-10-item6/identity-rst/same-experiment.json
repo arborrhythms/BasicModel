@@ -1,0 +1,23 @@
+{
+  "identical_non_source_plan": true,
+  "revision_3_corpus_matches": true,
+  "seed": 20261010,
+  "order_presentations": 64,
+  "sentence_presentations": 8,
+  "identity_budgets": {
+    "prediction_vocabulary": 16,
+    "pronoun": 32,
+    "determiner": 80,
+    "same_kind": 8
+  },
+  "branches": [
+    "recovery-factorial-on",
+    "recovery-factorial-off",
+    "recovery-confounded-on",
+    "recovery-confounded-off",
+    "identity-balanced-on",
+    "identity-balanced-off",
+    "identity-biased-on",
+    "identity-biased-off"
+  ]
+}

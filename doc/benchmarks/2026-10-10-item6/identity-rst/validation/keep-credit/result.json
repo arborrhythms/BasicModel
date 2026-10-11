@@ -1,0 +1,174 @@
+{
+  "protocol": "One native paired walk on four retained clauses, with zero learning rate.\n\nThis is a discarded diagnostic copy, not an additional experiment branch.\nConceptual admission is frozen and trainable parameters must remain identical.\nThe training path is used only because evaluation visits the greedy reading.\n",
+  "checkpoint_sha256": "437c8c511180caaedc41d702686bc47d3efe2be84c0f1c86f4e42df079e347c8",
+  "script_sha256": "add03613c0128455e15e2597a23c7db77e3bc4b2ac8dfbe975024cbc260b0421",
+  "native_loader_drift": {
+    "conceptualSpaces.0.layers.3.W": {
+      "elements": 6,
+      "max_difference": 0.00032216310501098633
+    }
+  },
+  "parameter_changes": [],
+  "trials": [
+    {
+      "trial": "exploit",
+      "sentence": 0,
+      "reconstruction": [
+        1.8499999046325684,
+        1.8499999046325684,
+        1.8499999046325684,
+        1.8499999046325684
+      ],
+      "content": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "reconstruction",
+        "count": 1,
+        "kind": "relative",
+        "objective": "reconstruction",
+        "trained": true,
+        "context_weight": 1.0,
+        "row_values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "raw": 1.0392305850982666,
+        "baseline": 1.0392305850982666,
+        "active_entries": 4.0
+      },
+      "closed_meaning_norm": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "trial": "explore",
+      "sentence": 0,
+      "reconstruction": [
+        1.8499999046325684,
+        1.8499999046325684,
+        2.049999952316284,
+        1.8499999046325684
+      ],
+      "content": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "reconstruction",
+        "count": 1,
+        "kind": "relative",
+        "objective": "reconstruction",
+        "trained": true,
+        "context_weight": 1.0,
+        "row_values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "raw": 1.0392305850982666,
+        "baseline": 1.0392305850982666,
+        "active_entries": 4.0
+      },
+      "closed_meaning_norm": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "keep_costs": [
+    [
+      1.8499999046325684,
+      1.8499999046325684
+    ],
+    [
+      1.8499999046325684,
+      1.8499999046325684
+    ],
+    [
+      1.8499999046325684,
+      2.049999952316284
+    ],
+    [
+      1.8499999046325684,
+      1.8499999046325684
+    ]
+  ],
+  "keep_decision": [
+    "tie:greedy",
+    "tie:greedy",
+    "greedy",
+    "tie:greedy"
+  ],
+  "advantage": [
+    0.0,
+    0.0,
+    0.20000004768371582,
+    0.0
+  ],
+  "departure": {
+    "round": [
+      8,
+      2,
+      44,
+      42
+    ],
+    "rounds": [
+      21,
+      23,
+      22,
+      23
+    ],
+    "walk": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "walk_count": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "walk_rounds": [
+      10,
+      12,
+      7,
+      7
+    ],
+    "narrowing": [
+      true,
+      true,
+      false,
+      false
+    ],
+    "attention_round": [
+      8,
+      2,
+      -1,
+      -1
+    ],
+    "compose_round": [
+      -1,
+      -1,
+      12,
+      10
+    ],
+    "candidate_round": [
+      -1,
+      -1,
+      -1,
+      -1
+    ]
+  }
+}
