@@ -1182,3 +1182,114 @@ rerun passes with the unchanged assertion and no seed pin, recording just
 one differentiable chooser call; this does not establish the original cause
 or replace the failed sweep. The extra skip is the existing spawn-method
 guard in the data-loader pickling test. The cleared-cache overlap stays XFAIL.
+
+## 9. Review of R2 (Claude, 2026-10-12) — not accepted: the charge is mis-scoped and an accepted certificate was weakened to fit it
+
+Reviewed `0cd221d74` + `62f20eec0` (branch `codex/item6-r2-forward-discard`),
+the [receipt](../benchmarks/2026-10-10-item6/identity-r2/README.md), the
+diagnostics, `SentenceCredit.forward_discard` and the test changes. The
+scope correction was honoured (two branches, no archives, a short receipt).
+
+### 9.1 The regression
+
+`forward_discard` charges **every** selected operation for any reduction in
+meaning mass between its inputs and its output, "irrespective of operator
+names or the inverse's defined coordinates". That is not what §8.4 asked
+for. The hand-off reconciled 6.1's κ = 0 rule by moving the charge for
+*undefined* coordinates from the inverse to the forward; it did not charge
+operations whose reduction is their meaning and whose inverse is exact —
+OR's removal of counterevidence, a narrowing intersection, `lower`'s
+projection of the marker. Under the new charge those pay too, so the
+accepted operators certificate (operators-update landing, R ≡ 0 on exact
+reconstruction) no longer holds, and `test_operators_final_b.py` was changed
+from `read['R'] == [0.]*4` to `read['R'] == read['forward_discard']`, with
+a paired-trial certificate switched from "zero cost" to "same context
+object". An accepted certificate rewritten to fit a new cost is the
+regression; it is not acceptable, and it hides a real design error: the
+charge as built would push the policy away from correct, exactly invertible
+readings as well as from `non`.
+
+The scoped rule is exact and already computable: the derivation
+reconstruction (`DerivationReconstruction.reconstruct`) determines, per
+step, which coordinates a step's inverse leaves undefined (that is the
+κ = 0 set). **The forward pays, at that step, the meaning mass it removes
+on exactly those coordinates; defined coordinates are charged by the
+inverse's error as before.** `non` (no inverse: all coordinates undefined)
+pays all it removes; OR with an exact inverse pays nothing; the operators
+certificate's R ≡ 0 holds unchanged; the 4/4 local-credit result should
+survive, since it concerns `non`.
+
+### 9.2 What the diagnostics established (keep these)
+
+- The old objective strictly prefers the empty reading: 1.85 versus 2.13
+  for a meaning-retaining witness, through two terms — coverage (.8 vs 1:
+  form decodes perfectly without meaning, so count-based coverage rewards
+  the empty reading) and the field term (0 vs .08: with κ = 0 an undefined
+  inverse is free while a defined but imperfect one is charged). The second
+  is what the scoped forward charge repairs. The first means the
+  reconstruction objective is form-first; `reconstruction.content` is the
+  only meaning term, and it ties between empty readings.
+- The `non` preference is learned (initial: loses by .0005; after warm-up:
+  unique maximum by .25). Not an initialization tie-break.
+- Local credit works: a departure skipping one `non` is kept 4/4.
+- The mis-scoped charge did not retain meaning anyway: 0/48 in both
+  branches; the policy moved to other `non` configurations (factorial
+  `lower`/`verb`, confounded `adverb` 48/48), which is what a charge on
+  everything should be expected to do.
+
+### 9.3 Open
+
+- New sweep failure `test_review17_measurement_wiring_on_one_ordinary_batch`
+  (`KeyError: '1'`: chooser 1 never called in a one-batch run); passed once
+  in isolation; cause unresolved. Not to be carried silently.
+- The explore suffix re-applies `non` after the departure, so even the
+  kept explore reading closes at zero; credit arrives one step at a time.
+  With the scoped charge the field term no longer rewards emptiness, so
+  this may resolve; if not, the single-departure explore needs the
+  §7.5-era question reopened (departure at the lossy step and a suffix
+  without it).
+
+### 9.4 Hand-off to Codex (Alec confirmed, 2026-10-12)
+
+> R2 not accepted (plan §9). (1) Revert the certificate changes in
+> `test_operators_final_b.py` and the paired-trial certificate: R ≡ 0 on
+> exact reconstruction stands. (2) Scope `forward_discard` to the
+> coordinates each step's inverse leaves undefined — the κ = 0 set the
+> derivation reconstruction already computes per step — so the forward
+> pays there and only there; defined coordinates keep the inverse's error.
+> Regressions: operators certificate R ≡ 0 unchanged; the four retained
+> clauses still keep the explore that skips one `non` (4/4); an exact OR
+> pays zero. (3) Resolve the review17 `KeyError: '1'` failure. (4) The two
+> gate-on recovery branches again from the accepted warm-up; measure
+> held-out closed meaning norm and the kept programs; one sweep at the
+> end; no archives. Same scope rules as before.
+
+## 10. R2 inverse-domain repair (Codex, 2026-10-13)
+
+Alec authorized the reviewed repair after the October 12 assessment. The
+[receipt](../benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)
+records unchanged certificate assertions, the shared local inverse-domain
+calculation, and the deterministic observer regression. The field inverse
+keeps its propagated κ = 0 masks; the forward evaluates the same domain
+rules on each operation's actual output, without inherited undefinedness.
+The denominator is the whole step's detached input mass.
+
+A necessary path distinction: searched operators have no field derivation
+inverse. The accepted OR certificate uses the free-byte objective, which
+has no κ = 0 exemption; its new forward surcharge is zero. The field-only
+charge therefore preserves that certificate without inventing an analytic
+OR inverse or declaring exceptions by operator name. The operator test file
+is restored to the accepted R/S/T version, including the paired-trial
+zero-cost assertion. The four native clauses still keep explore, now at
+3.85 versus greedy's 4.85; all final meanings remain zero in this probe.
+
+The observer failure is a logging-domain error: detached compose logits
+were omitted even when the chooser ran in a training epoch. Native compose
+policy gradients are enabled only at sampled compose departures. The
+regression reproduces `KeyError: '1'` with `policy_grad=False`, then passes
+after counting all training calls and tracking gradient calls separately.
+The existing one-ordinary-batch certificate passes unchanged.
+
+The same two gate-on recovery branches and one final sweep are pending.
+Candidate commits replace source archives and integrity checks. No identity
+branch or rule retirement is authorized by these mechanism certificates.

@@ -2,32 +2,36 @@
 import torch
 
 
-def forward_discard(programs, meaning_start, like):
-    """Sum meaning mass removed at each selected forward operation.
+def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
+    """Pay for forward loss on the local field inverse's undefined coordinates.
 
-    Each step pays its own removed L1 mass relative to its detached input
-    mass. Zero-meaning steps pay zero and cannot dilute earlier losses.
-    A binary input is the coordinate-wise coverage of its two operands:
-    shared evidence counts once, so an idempotent union does not discard
-    meaning merely by combining overlapping values. A unary has one. A change
-    of evidence pole preserves mass. This reads actual forward values,
-    irrespective of operator names or the inverse's defined coordinates.
+    The denominator is the step's whole detached input meaning mass, never
+    the masked subset. Binary overlap counts once. Domain masks are evaluated
+    at each step's actual output, without inherited undefinedness. Defined
+    coordinates retain the inverse's existing error and receive no surcharge.
     """
+    from DerivationReconstruction import inverse_step
     costs = []
     for program in programs:
         if program is None or program.operation_values is None:
             costs.append(like.new_zeros(()))
             continue
-        kind = program.actions[:, 0]
-        frames = program.operation_values[..., meaning_start:]
-        inputs = frames[:, 0].detach().abs()
-        inputs = torch.where((kind == 1)[:, None],
-            torch.maximum(inputs, frames[:, 1].detach().abs()), inputs).sum(-1)
-        output = frames[:, 2].abs().sum(-1)
-        removed = (inputs - output).relu()
-        denominator = torch.where(inputs > 0, inputs, 1.)
-        costs.append(torch.where(((kind == 1) | (kind == 2)) & (inputs > 0),
-                                 removed / denominator, 0.).sum())
+        steps = []
+        for index, (kind, operation, _word) in enumerate(program.actions.tolist()):
+            if kind not in (1, 2):
+                continue
+            frame = program.operation_values[index]
+            with torch.no_grad():
+                children = inverse_step(language, kind, operation, frame[2:3].detach(),
+                    frame.detach(), case_bank=case_bank)
+                undefined = torch.cat([~domain[:, meaning_start:] for _, domain in children])
+                inputs = frame[:len(children), meaning_start:].detach().abs()
+                whole_mass = inputs.amax(0).sum()
+                uncovered = torch.where(undefined, inputs, 0.).amax(0)
+            returned = torch.where(undefined.any(0), frame[2, meaning_start:].abs(), 0.)
+            removed = (uncovered - returned).relu().sum()
+            steps.append(removed / torch.where(whole_mass > 0, whole_mass, 1.))
+        costs.append(torch.stack(steps).sum() if steps else like.new_zeros(()))
     return torch.stack(costs)
 
 

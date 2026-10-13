@@ -6,6 +6,7 @@ inputs are the chooser parameters at the actual reconstruction-owner step.
 from contextlib import contextmanager, ExitStack
 from unittest.mock import patch
 import torch
+from chooser_logit_observer import record_logits
 def frozen(value):
     if isinstance(value,torch.nn.Parameter): return value
     if torch.is_tensor(value): return value.detach().clone()
@@ -60,17 +61,7 @@ def observe_score_function(result):
         finally:
             if capture: current.pop()
         route = value[2]
-        if route['logits'].requires_grad:
-            finite = route['logits'].detach()[torch.isfinite(route['logits'])]
-            if finite.numel():
-                epoch = str(result.get('_active_epoch', 0))
-                row = ranges.setdefault(epoch, dict(minimum=float('inf'), maximum=-float('inf'), calls=0,
-                                                    nan_count=0, positive_infinity_count=0))
-                row['minimum'] = min(row['minimum'], float(finite.min()))
-                row['maximum'] = max(row['maximum'], float(finite.max()))
-                row['calls'] += 1
-                row['nan_count'] += int(torch.isnan(route['logits']).sum())
-                row['positive_infinity_count'] += int(torch.isposinf(route['logits']).sum())
+        record_logits(ranges, str(result.get('_active_epoch', 0)), route['logits'])
         if capture:
             entry.update(logits=route['logits'], actions=route['action'].detach(),
                          original=route['logits'].detach().clone(),
@@ -82,14 +73,7 @@ def observe_score_function(result):
         value=attend(module,keys,legal,space,**kwargs)
         if not kwargs.get('return_details'): return value
         logits=value[3]['logits']
-        if logits.requires_grad:
-            finite=logits.detach()[torch.isfinite(logits)]
-            if finite.numel():
-                epoch=str(result.get('_active_epoch',0))
-                row=ranges.setdefault('narrowing:'+epoch,dict(minimum=float('inf'),maximum=-float('inf'),calls=0))
-                row['minimum']=min(row['minimum'],float(finite.min()))
-                row['maximum']=max(row['maximum'],float(finite.max()))
-                row['calls']+=1
+        record_logits(ranges, 'narrowing:'+str(result.get('_active_epoch', 0)), logits)
         mask=kwargs.get('masked_action')
         if torch.is_tensor(mask) and bool(mask.ge(0).any()):
             eligible=torch.isfinite(logits)&(torch.arange(logits.shape[-1],device=logits.device)[None]!=mask[:,None])

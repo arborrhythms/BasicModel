@@ -7,11 +7,60 @@ used to choose a child. A retained co-operand is a detached inverse witness.
 import torch
 
 
+def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, case_bank=None):
+    """Invert one step and return each child's value and defined coordinates.
+
+    Omit coordinates to measure this operation's own inverse domain at its
+    actual output. Reconstruction instead carries the domain inherited from
+    the parent. A later undefined inverse must not make an earlier operation
+    responsible for loss it did not cause.
+    """
+    coordinates = (torch.isfinite(parent) if coordinates is None else
+                   coordinates & torch.isfinite(parent))
+    op_index = torch.tensor([operation], device=parent.device)
+    live = torch.ones(1, dtype=torch.bool, device=parent.device)
+    if kind == 2:
+        child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
+        wrapped = language._tree_layer(1).unary_ops[operation]
+        op = getattr(wrapped, 'gl', wrapped)
+        if getattr(op, 'inverse_kind', None) == 'unary':
+            coordinates = op.reverse(coordinates.to(parent)).bool()
+        return ((child, coordinates & ~bad[:, None]),)
+    wrapped = language._tree_layer(2).ops[operation]
+    op = getattr(wrapped, 'gl', wrapped)
+    inverse = getattr(op, 'inverse_kind', None)
+    side = 'left' if inverse == 'right' else 'right'
+    witness = frame[0 if side == 'left' else 1].detach()[None]
+    if inverse == 'search':
+        # No derivation inverse: a free search or occurrence target must not
+        # invent an expectation. Free-byte reconstruction is a separate path.
+        child = torch.zeros_like(parent)
+        defined = torch.zeros_like(coordinates)
+        return ((child, defined), (child, defined))
+    left, right, bad = language.reverse_binary_step(parent, op_index, live,
+        reference=witness, reference_side=side, return_status=True, case_bank=case_bank)
+    if inverse == 'product':
+        remainder_defined = coordinates & (witness.abs() > 1e-8)
+        left_defined, right_defined = ((remainder_defined, coordinates)
+            if side == 'right' else (coordinates, remainder_defined))
+    else:
+        if inverse == 'fold':
+            inner = getattr(op, '_sigma', None)
+            if inner is None:
+                inner = getattr(op, '_pi', None)
+            if bool(getattr(inner, 'nonlinear', False)):
+                coordinates = coordinates & parent.abs().lt(1) & witness.abs().lt(1)
+        # Dense maps mix coordinates; upstream undefinedness propagates.
+        if inverse not in ('residual', 'left', 'right'):
+            coordinates = coordinates.all(-1, keepdim=True).expand_as(coordinates)
+        left_defined = right_defined = coordinates & ~bad[:, None]
+    return ((left, left_defined), (right, right_defined))
+
+
 def reconstruct(language, record, programs, positions):
     B, W, D = record.word_values.shape
     recovered = torch.zeros_like(record.word_values)
     defined = torch.zeros_like(recovered, dtype=torch.bool)
-    binary = list(language._tree_layer(2).ops)
     for b, program in enumerate(programs):
         if program is None:
             continue
@@ -49,52 +98,10 @@ def reconstruct(language, record, programs, positions):
                 # live result before applying its numerical inverse. The
                 # address code itself is not a concept value to invert.
                 parent = program.operation_values[index, 2:3]
-            op_index = torch.tensor([operation], device=parent.device)
-            live = torch.ones(1, dtype=torch.bool, device=parent.device)
-            if kind == 2:
-                child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
-                unary = language._tree_layer(1)
-                wrapped = unary.unary_ops[operation]
-                op = getattr(wrapped, 'gl', wrapped)
-                if getattr(op, 'inverse_kind', None) == 'unary':
-                    # The native unary inverse is the evidence-pole exchange.
-                    coordinates = op.reverse(coordinates.to(parent)).bool()
-                pending.append((node[3], child, coordinates & ~bad[:, None]))
-                continue
-            op = getattr(binary[operation], 'gl', binary[operation])
-            side = 'left' if getattr(op, 'inverse_kind', None) == 'right' else 'right'
-            frame = program.operation_values[index]
-            witness = frame[0 if side == 'left' else 1].detach()[None]
-            inverse = getattr(op, 'inverse_kind', None)
-            if inverse == 'search':
-                # There is no derivation inverse here. A free bank search or
-                # an occurrence target must not invent an expectation.
-                left = right = torch.zeros_like(parent)
-                left_defined = right_defined = torch.zeros_like(coordinates)
-            else:
-                left, right, bad = language.reverse_binary_step(parent, op_index, live,
-                    reference=witness, reference_side=side, return_status=True,
-                    case_bank=record.primed.case_bank)
-                if inverse == 'product':
-                    # Match the native inverse's domain coordinate by
-                    # coordinate; its row-wide status loses this information.
-                    remainder_defined = coordinates & (witness.abs() > 1e-8)
-                    left_defined, right_defined = ((remainder_defined, coordinates)
-                        if side == 'right' else (coordinates, remainder_defined))
-                else:
-                    if inverse == 'fold':
-                        inner = getattr(op, '_sigma', None)
-                        if inner is None:
-                            inner = getattr(op, '_pi', None)
-                        if bool(getattr(inner, 'nonlinear', False)):
-                            # Clamping atanh makes its implementation finite,
-                            # but cannot define an inverse at a saturated edge.
-                            coordinates = coordinates & parent.abs().lt(1) & witness.abs().lt(1)
-                    # Dense maps mix coordinates. If a parent coordinate was
-                    # undefined upstream, the mixed child has no expectation.
-                    if inverse not in ('residual', 'left', 'right'):
-                        coordinates = coordinates.all(-1, keepdim=True).expand_as(coordinates)
-                    left_defined = right_defined = coordinates & ~bad[:, None]
-            pending.extend(((node[3], left, left_defined), (node[4], right, right_defined)))
+            children = inverse_step(language, kind, operation, parent,
+                program.operation_values[index], coordinates=coordinates,
+                case_bank=getattr(getattr(record, 'primed', None), 'case_bank', None))
+            pending.extend((child_node, value, domain)
+                for child_node, (value, domain) in zip(node[3:], children, strict=True))
     unavailable = record.word_valid & ~defined.all(-1)
     return recovered, unavailable, defined

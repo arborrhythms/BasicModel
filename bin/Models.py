@@ -20078,13 +20078,18 @@ class BasicModel(BaseModel):
                 weight=self.loss.reconstruction_scale, category='reconstruction',
                 trained=getattr(self, '_sentence_field', None) is None)
             meaning_start = record.primed.meaning_start
+            field = getattr(self, '_sentence_field', None)
             if meaning_start is not None:
                 from SentenceCredit import forward_discard
                 # Undefined inverse coordinates keep kappa=0. Their forward
                 # owner pays, at each operation, for the meaning it removes.
                 # These step-relative charges are summed, never averaged over
                 # later empty operations or hidden by inverse definedness.
-                discarded = forward_discard(observation['entries'], meaning_start, root)
+                # Only the field objective exempts undefined coordinates.
+                # The free-byte objective already charges its failed reads.
+                discarded = (root.new_zeros(B) if field is None else
+                    forward_discard(self.languageSpace, observation['entries'], meaning_start,
+                        root, case_bank=record.primed.case_bank))
                 errors.add('reconstruction.forward_discard',
                     torch.where(available, discarded, 0.),
                     weight=self.loss.reconstruction_scale, category='reconstruction')
@@ -20106,7 +20111,6 @@ class BasicModel(BaseModel):
                 baseline = observed_bands.sum((1, 2))
                 errors.error('reconstruction.content', content, baseline,
                     mask=available, weight=self.loss.reconstruction_scale, category='reconstruction')
-            field = getattr(self, '_sentence_field', None)
             if field is not None:
                 from Generative import reconstruction_coverage
                 expected = record.word_valid.sum(-1)

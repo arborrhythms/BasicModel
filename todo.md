@@ -271,7 +271,13 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   neither forms a measured kind/property merged pair. Confounded selects mint
   on 136/192 observed commits versus factorial's 192/192; the off contrast is
   unmeasured. All 96 kept readings still use `non`. No learning gain or rule
-  retirement is claimed. The parts-of-speech pass in plan §6 follows R2.
+  retirement is claimed. This candidate was rejected in plan §9. The
+  [inverse-domain repair](doc/benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)
+  restores the accepted zero-cost certificates and scopes the forward charge
+  to the local field inverse's undefined coordinates. The observer's missing
+  epoch is repaired by counting detached training calls separately from
+  gradient calls. Its two gate-on measurements and one final sweep are pending.
+  The parts-of-speech pass in plan §6 follows this repair.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
