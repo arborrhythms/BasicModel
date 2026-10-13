@@ -1290,6 +1290,26 @@ regression reproduces `KeyError: '1'` with `policy_grad=False`, then passes
 after counting all training calls and tracking gradient calls separately.
 The existing one-ordinary-batch certificate passes unchanged.
 
-The same two gate-on recovery branches and one final sweep are pending.
-Candidate commits replace source archives and integrity checks. No identity
-branch or rule retirement is authorized by these mechanism certificates.
+Candidate `348fb86c7` ran the same two gate-on recovery branches once, from
+the accepted R/S/T warm-up. Factorial closes with nonzero meaning on 44/48
+held-out rows (norm min/mean/max 0/.643407/.75); confounded on 4/48
+(0/.016667/.2), versus 0/48 on both previous runs. Identification remains
+0/240 in each branch; neither mints a column or forms a merged pair, with
+58 columns total and no atom-aligned column. Both keep three `verb`-only
+programs (4, 8 or 12 applications, 16 rows each), omitting `non` on every
+held-out row. The four retained cat clauses still close at zero.
+
+Both select mint on 37/192 observed commits, including the frozen held-out
+calls. The gate-off contrast remains unmeasured; this is no certificate for
+admission-gate or identity-rule retirement. Meaning retention improves but
+active-column identification does not. The single final sweep completes
+all 5,790 cases: 5,502 passed, 287 skipped, one XFAIL and no failures in
+858.7 seconds. All restored certificates and both observer checks pass.
+There are no new ordinary failures against accepted 6.1 or rejected R2.
+The previous math-chain answer failure also passes this run, without a
+claim of causal repair. Cleared-cache overlap remains XFAIL (adverse to
+6.1's XPASS). The receipt records the changed selection and existing
+data-loader spawn-method skip. Candidate commits replace source archives
+and integrity checks. Relation trace 2/4, 43 unadmitted leaves, both order
+gates and free readback 0/4 remain carried. No rule is retired; plan §6's
+parts-of-speech pass follows this repair.

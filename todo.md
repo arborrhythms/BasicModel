@@ -276,7 +276,15 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   restores the accepted zero-cost certificates and scopes the forward charge
   to the local field inverse's undefined coordinates. The observer's missing
   epoch is repaired by counting detached training calls separately from
-  gradient calls. Its two gate-on measurements and one final sweep are pending.
+  gradient calls. Candidate `348fb86c7` retains nonzero closed meaning on
+  44/48 factorial and 4/48 confounded held-out rows (previously 0/48 each),
+  but identification remains 0/240 on both. No new columns or merged pairs;
+  all kept programs use `verb` and omit `non`. The retained four cat clauses
+  still close at zero. Both branches select mint on 37/192 observed commits;
+  the off contrast and identity lessons remain unmeasured. The one final
+  sweep completes all 5,790 cases: 5,502 pass, 287 skip, one XFAIL, no failures.
+  No new ordinary failures versus accepted 6.1 or rejected R2; cleared-cache
+  overlap remains adverse to 6.1's XPASS. No rule is retired.
   The parts-of-speech pass in plan §6 follows this repair.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an

@@ -1,5 +1,9 @@
 # Item 6 R2: forward discarded-meaning charge
 
+Rejected in plan §9: the charge was mis-scoped and accepted certificates
+were changed. The [inverse-domain repair](../identity-r2-inverse-domain/README.md)
+restores those certificates; this receipt preserves the rejected measurement.
+
 R/S/T landed as BasicModel `e38a19fbd`, WikiOracle `64a06d3`, with no
 learning claim. R2 mechanism and driver: `0cd221d74` on
 `codex/item6-r2-forward-discard`. No rule is retired.
