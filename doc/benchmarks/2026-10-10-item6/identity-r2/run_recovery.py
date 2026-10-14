@@ -1,7 +1,8 @@
-"""R2's two recovery branches from the accepted R/S/T warm-up.
+"""Matched recovery branches from the accepted R/S/T warm-up.
 
 Same seed, revision-3 corpus, optimizer and presentation budgets. The selected-
-mint gate stays on. Observe closed meaning during the existing held-out pass;
+mint gate defaults on; --gate off is the explicit admission ablation.
+Observe closed meaning during the existing held-out pass;
 do not repeat warm-up, replay held-out rows, or run identity branches.
 """
 import argparse
@@ -13,8 +14,10 @@ import warnings
 
 import pytest
 import torch
+from torch.nn import functional as F
 
 import Models
+from identity_corpus import KINDS
 from identity_experiment import (
     admission_ablation, component_signal, make_model, present_documents,
     recovery_data, recovery_summary, restore_warmup, save,
@@ -59,6 +62,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('corpus', choices=('factorial', 'confounded'))
     parser.add_argument('out', type=Path)
+    parser.add_argument('--gate', choices=('on', 'off'), default='on')
     parser.add_argument('--warmup', type=Path,
         default=Path('output/item6-identity-rst/warmup/warmup.ckpt'))
     args = parser.parse_args()
@@ -77,7 +81,7 @@ def main():
             component = model._concept_owner().components
             before = set(component.nouns.ids)
             optimizer = model.getOptimizer(lr=.003)
-            with admission_ablation(model, off=False) as admission:
+            with admission_ablation(model, off=args.gate == 'off') as admission:
                 present_documents(model, streams[args.corpus], optimizer=optimizer, log=args.out)
                 minted = set(component.nouns.ids) - before
                 model._concept_owner()._online_learning_frozen = True
@@ -88,12 +92,23 @@ def main():
                 norms = [r['closed_meaning_norm'] for r in readings]
                 programs = Counter(tuple(a['method'] for a in r['program'] if a['method'])
                                    for r in readings)
-                report.update(branch=f'recovery-{args.corpus}-on', gate='on',
+                names = list(atoms)
+                matrix = component.nouns.matrix().detach()
+                atom_matrix = torch.stack([atoms[name] for name in names])
+                cosines = (F.normalize(matrix, dim=-1) @ F.normalize(atom_matrix, dim=-1).T).abs()
+                alignment = [dict(column=cid, minted=cid in minted,
+                    abs_cos=dict(zip(names, row.tolist())),
+                    nearest_atom=names[int(row.argmax())], nearest_abs_cos=float(row.max()))
+                    for cid, row in zip(component.nouns.ids, cosines)]
+                report.update(branch=f'recovery-{args.corpus}-{args.gate}', gate=args.gate,
                     warmup=str(args.warmup), warmup_landing='e38a19fbd', seed=20261010,
                     corpus_revision=3, learning_rate=.003,
                     training_documents=len(streams[args.corpus]),
                     heldout_documents=len(streams['heldout']),
                     columns_minted=len(minted), admission=dict(admission),
+                    by_kind={name: report['by_atom'][name] for name in KINDS},
+                    column_alignment=alignment,
+                    atom_norms={name: float(atoms[name].norm()) for name in names},
                     admission_drops=component.admission_drops,
                     closed_meaning=dict(rows=len(norms), nonzero=sum(n > 0 for n in norms),
                         minimum=min(norms), maximum=max(norms), mean=sum(norms)/len(norms)),
