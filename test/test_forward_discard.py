@@ -56,3 +56,27 @@ def test_exact_or_reading_pays_zero_forward_discard(monkeypatch):
     assert report['reads'][1]['meaning_norm'] > 0
     assert all(read['multisets'] == 4 and read['R'] == [0.]*4 for read in report['reads'])
     assert charges and all(not value.any() for value in charges)
+
+
+def test_search_inverse_is_exempt_while_field_coordinates_stay_undefined():
+    from DerivationReconstruction import inverse_step
+    from Interpret import activate_code
+    from Language import DisjunctionLayer, LanguageSpace
+    op = DisjunctionLayer()
+    op.meaning_layout = (2, 6)
+    codes = torch.tensor([[[1., 0., 1., 0., 0., 0.], [0., 1., 0., 1., 0., 0.]]])
+    left = activate_code(codes[:, 0], torch.ones(1), 2, evidence=torch.tensor([[.7, .8]]))
+    right = activate_code(codes[:, 1], torch.ones(1), 2, evidence=torch.tensor([[.3, .9]]))
+    parent = op.compose(left, right)
+    flag = torch.zeros(1, dtype=torch.bool)
+    recovered_left, recovered_right, ready = LanguageSpace._bounded_binary_reconstruction(
+        op, parent, torch.zeros_like(parent), flag, flag, codes, torch.ones(1, 2, dtype=torch.bool), 2)
+    assert ready.all()
+    torch.testing.assert_close(op.compose(recovered_left, recovered_right), parent, rtol=0, atol=0)
+    frame = torch.stack((left[0], right[0], parent[0]))
+    language = SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace(ops=[op]))
+    children = inverse_step(language, 1, 0, parent, frame)
+    assert all(not domain.any() for _, domain in children)
+    program = SimpleNamespace(actions=torch.tensor([[1, 0, -1]]), operation_values=frame[None])
+    torch.testing.assert_close(forward_discard(language, [program], 2, parent.new_zeros(1)),
+                               parent.new_zeros(1), rtol=0, atol=0)

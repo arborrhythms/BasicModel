@@ -3,12 +3,14 @@ import torch
 
 
 def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
-    """Pay for forward loss on the local field inverse's undefined coordinates.
+    """Pay for meaning lost where a local inverse does not exist.
 
     The denominator is the step's whole detached input meaning mass, never
     the masked subset. Binary overlap counts once. Domain masks are evaluated
     at each step's actual output, without inherited undefinedness. Defined
     coordinates retain the inverse's existing error and receive no surcharge.
+    Search-kind inverses are recoverable by bank search and are exempt even
+    though the field derivation reader leaves their coordinates undefined.
     """
     from DerivationReconstruction import inverse_step
     costs = []
@@ -19,6 +21,11 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
         steps = []
         for index, (kind, operation, _word) in enumerate(program.actions.tolist()):
             if kind not in (1, 2):
+                continue
+            tree = language._tree_layer(1 if kind == 2 else 2)
+            wrapped = (tree.unary_ops if kind == 2 else tree.ops)[operation]
+            op = getattr(wrapped, 'gl', wrapped)
+            if getattr(op, 'inverse_kind', None) == 'search':
                 continue
             frame = program.operation_values[index]
             with torch.no_grad():

@@ -196,8 +196,10 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
 - The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
   adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
   failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
-  logit entry (`KeyError: '1'`). One isolated unchanged-assertion rerun passes
-  with one differentiable chooser call; the original cause remains unresolved.
+  logit entry (`KeyError: '1'`). The accepted inverse-domain repair resolves
+  the cause: the observer dropped detached training calls on narrowing-only
+  departures. It now counts those separately from gradient calls; the native
+  regression and unchanged ordinary-batch certificate pass.
 - Per-position cleared-cache overlap remains 0.000 against .800. The
   [follow-up bisection](doc/benchmarks/2026-10-10-item6/followup/README.md)
   separates the initial self-pair obstruction (repaired in part 1) from the
@@ -276,7 +278,8 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   restores the accepted zero-cost certificates and scopes the forward charge
   to the local field inverse's undefined coordinates. The observer's missing
   epoch is repaired by counting detached training calls separately from
-  gradient calls. Candidate `348fb86c7` retains nonzero closed meaning on
+  gradient calls. Accepted `348fb86c7` + `90ef40a42` landed on main, pushed
+  October 14 with WikiOracle bump `066fb5d`. It retains nonzero closed meaning on
   44/48 factorial and 4/48 confounded held-out rows (previously 0/48 each),
   but identification remains 0/240 on both. No new columns or merged pairs;
   all kept programs use `verb` and omit `non`. The retained four cat clauses
@@ -285,7 +288,21 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   sweep completes all 5,790 cases: 5,502 pass, 287 skip, one XFAIL, no failures.
   No new ordinary failures versus accepted 6.1 or rejected R2; cleared-cache
   overlap remains adverse to 6.1's XPASS. No rule is retired.
-  The parts-of-speech pass in plan §6 follows this repair.
+  The [scoped gate-off measurement](doc/benchmarks/2026-10-14-item6-gate-off/README.md)
+  reuses the same R/S/T warm-up, seed and revision-3 corpus. Factorial off
+  mints two columns (60 total); confounded off mints four (62 total), versus
+  zero new columns on. Both still identify 0/240 atoms and 0/24 for each
+  kind, with no measured merged pairs. Programs and norms match gate-on:
+  `verb` only, 44/48 and 4/48 nonzero closed meanings. The admission contrast
+  is no longer vacuous, but its retirement lesson fails; the gate stays.
+  The frozen singleton audit finds 16/24 zero stored meanings despite
+  nonzero word vectors, and 0/58 warm-up columns aligned at |cos| ≥ .9.
+  The confounded trace loses nonzero word meaning at each `verb` fold from
+  a zero `the` accumulator. The separately applied search-kind exemption
+  makes exact field OR pay zero forward discard while keeping κ = 0 in
+  the field reader; it does not change the preceding learning comparison.
+  Its final sweep is pending. The parts-of-speech pass in plan §6 waits
+  for a reading with NP structure; no rule is retired.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
@@ -596,7 +613,8 @@ Everything that is decided in direction but not on this path is in
 ### Done (newest first)
 
 - Item 6 part-2 M/N/O/I preparation and first eight-branch native experiment: `af634ed35` ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)); reviewed in plan §7, no learning claim. R/S/T and all failed learning gates remain open.
-- Item 6 R/S/T mechanism and matched measurement: `e38a19fbd`, WikiOracle `64a06d3` ([receipt](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)); reviewed in plan §8.4, no learning claim. R2 and all failed learning gates remain open.
+- Item 6 R2 inverse-domain repair: `348fb86c7` + `90ef40a42`, pushed on main, WikiOracle `066fb5d` ([receipt](doc/benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)); accepted in plan §10. Reconstruction certificates and observer repaired; no learning claim, and part 2's lessons remain open.
+- Item 6 R/S/T mechanism and matched measurement: `e38a19fbd`, WikiOracle `64a06d3` ([receipt](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)); reviewed in plan §8.4, no learning claim. All failed learning gates remain open.
 - Item 6 part-2 corpus and measurement preparation: `06f6e2b88` ([receipt](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)); M/N/O/I and the first experiment are accepted as preparation by plan §7, with no learning claim.
 
 - **Item 6 H/I follow-up** (`9cc5f6e327`): unavailable reconstruction coverage is zero; I’s empty-inverse and remaining orientation causes are bisected, with learned order still open ([receipt](doc/benchmarks/2026-10-10-item6/followup/README.md)).
