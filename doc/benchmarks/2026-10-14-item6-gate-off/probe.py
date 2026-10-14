@@ -103,6 +103,9 @@ def trace(model):
             words = model._tensor_pushed_ideas[0].detach()
             isp = model.inputSpace
             positions = (isp._word_active_mask[0] & (isp._packed_sentence_ids[0] == sid)).nonzero().flatten()
+            source_tokens = dict(zip(positions.tolist(), docs[0]['sentences'][0].split(), strict=True))
+            read_positions = model._derivation_program(int(sid))[0][0].tolist()
+            read_positions = [position for position in read_positions if position >= 0]
             grammar = getattr(isp, '_ar_grammar_object_atoms', None)
             tokens = []
             for token, position in zip(docs[0]['sentences'][0].split(), positions.tolist(), strict=True):
@@ -117,11 +120,19 @@ def trace(model):
                 values = program.operation_values[index, :, start:end].detach()
                 steps.append(dict(step=index, kind=kind, operation=operation, word=word,
                     method=rules[operation].method_name if rules else None,
-                    meaning_norms=values.norm(dim=-1).tolist(), meaning_values=values.tolist()))
+                    # Leaves have no operation journal entry; its padding is
+                    # not an observed zero word. Read their native source row.
+                    leaf_position=read_positions[word] if kind == 0 else None,
+                    leaf_token=source_tokens[read_positions[word]] if kind == 0 else None,
+                    leaf_meaning_norm=(float(words[read_positions[word], start:end].norm())
+                                       if kind == 0 else None),
+                    meaning_norms=values.norm(dim=-1).tolist() if kind else None,
+                    meaning_values=values.tolist() if kind else None))
             methods = [step['method'] for step in steps if step['method']]
             if methods != ['verb'] * 4:
                 raise RuntimeError(f'the retained verb program changed: {methods}')
             captures.append(dict(id=docs[0]['id'], text=docs[0]['sentences'][0], tokens=tokens,
+                read_order=[source_tokens[position] for position in read_positions],
                 steps=steps, closed_meaning_norm=float(state[1][9][0, sid, start:end].norm())))
         return result
     model._sentence_observation = observed
