@@ -8,7 +8,8 @@ accepted R/S/T warm-up, seed 20261010, revision-3 corpus, learning rate .003,
 
 The search-inverse exemption is applied separately after measurement so
 the gate-on/off comparison has only one changed factor. Its production
-change receives one final sweep. The commit is the source archive.
+change receives one final sweep. Candidate `c647e1506` is the source archive
+on `codex/item6-gate-off-measurement`.
 
 ## Does removing the selected-mint gate pass its retirement lesson?
 
@@ -180,13 +181,30 @@ Other local inverse domains and accepted certificates are unchanged.
 | Field OR, exact bank-search recomposition: forward charge | .629629672 | 0 |
 | Field OR inverse coordinates | Undefined | Undefined |
 | Retained clauses keep the trial skipping one `non` | 4/4 | 4/4 |
-| Exact reconstruction certificates | R = 0 | Pending final sweep |
-| Full sweep | 5,502 passed / 287 skipped / 1 XFAIL / 0 failed | Pending |
+| Exact reconstruction certificates | R = 0 | R = 0, unchanged assertions pass |
+| Full sweep | 5,502 passed / 287 skipped / 1 XFAIL / 0 failed | 5,503 passed / 287 skipped / 1 XFAIL / 3 failed |
 
-One final sweep follows this production correction. The learning results
-above predate the correction, preserving the single-factor gate contrast;
-there is no learning claim about the corrected objective. No POS change
-is made; that pass waits for an NP reading.
+The one final sweep completes **5,794/5,794** cases in **875.7 s**.
+[Summary](full/summary.json), [baseline comparison](full/baseline-comparison.json),
+[failure details](full/failures.json), [repaired checks](full/repaired-checks.json),
+[run log](full/run.log). All three failures are **new relative to accepted
+R2's passing sweep**. One is also **new relative to accepted 6.1**:
+`test_forced_ordinary_bound_declaratives_open_no_episode` passes its
+no-open-slot/no-episode assertion but observes only compose departure 6,
+failing the requirement for more than one distinct departure. Its cause
+has not been bisected in this scoped pass.
+
+The other two recur from accepted 6.1: the eight-sentence fork certificate
+observes only departure 24, and the supplied-answer certificate closes its
+slot but does not recover `five`. Both assertions remain unchanged. The
+ordinary-batch observer and all reconstruction/forward-charge certificates
+pass. Cleared-cache overlap remains XFAIL, still adverse to 6.1's XPASS.
+Four added selections are the search regression and three document-link
+checks, including the two pre-existing POS toy documents; none is removed.
+
+The learning results above predate the correction, preserving the
+single-factor gate contrast; there is no learning claim about the corrected
+objective. No POS change is made; that pass waits for an NP reading.
 
 Carried, not remeasured: relation trace **2/4**, **43** unadmitted leaves,
 two-word CE **.031999–.032067**, four-word CE **.016526–.016706** (both gates

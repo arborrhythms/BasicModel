@@ -1,0 +1,52 @@
+{
+  "baseline_6_1_commit": "7c9aeac67840165fc1ac116eca8a528ca716c30e",
+  "baseline_6_1_counts": {
+    "passed": 5428,
+    "skipped": 286,
+    "failed": 4,
+    "xpassed": 1
+  },
+  "accepted_R2_commit": "90ef40a42",
+  "accepted_R2_counts": {
+    "passed": 5502,
+    "skipped": 287,
+    "xfailed": 1
+  },
+  "current_counts": {
+    "passed": 5503,
+    "skipped": 287,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "new_vs_accepted_R2": [
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode"
+  ],
+  "new_vs_accepted_6_1": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode"
+  ],
+  "recurring_6_1_failures": [
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode"
+  ],
+  "baseline_6_1_failure_outcomes": {
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm": "passed",
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "failed",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "passed"
+  },
+  "overlap_outcomes": {
+    "accepted_6_1": "xpassed",
+    "accepted_R2": "xfailed",
+    "current": "xfailed"
+  },
+  "selected_added_vs_accepted_R2": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-13-pos-participation-toy/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-13-pos-participation-toy/results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-14-item6-gate-off/README.md]",
+    "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined"
+  ],
+  "selected_absent_vs_accepted_R2": [],
+  "note": "Selection includes the new search regression, this receipt and two pre-existing POS toy document-link checks. The user-owned POS files and plan edits are not part of the candidate commit. Passing a historical failure does not establish its causal repair."
+}

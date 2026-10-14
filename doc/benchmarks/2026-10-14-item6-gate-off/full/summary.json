@@ -1,0 +1,34 @@
+{
+  "candidate_commit": "c647e1506",
+  "selected": 5794,
+  "completed": 5794,
+  "outcomes": {
+    "passed": 5503,
+    "skipped": 287,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "exit_code": 1,
+  "reason": "test_failure",
+  "elapsed_seconds": 875.6739612498786,
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 4,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 10800.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "peak_aggregate_memory_bytes": 9131898464,
+  "failure_nodes": [
+    "test/test_math_chain_repair2.py::test_eight_corpus_sentences_train_at_distinct_fork_rounds",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode"
+  ],
+  "warnings": [
+    "Latest weekly slow-test record is 12.8 days old (over seven days)."
+  ],
+  "note": "Each selected node is counted once; test_flags_match_expected emits four identical passing reports."
+}

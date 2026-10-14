@@ -188,6 +188,13 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   warm-up: noun–verb answers are 0/4 and relations 1/4; the earlier 4/4
   identity and noun-phrase scores match a last-word baseline
   ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)).
+- The [October 14 sweep](doc/benchmarks/2026-10-14-item6-gate-off/README.md)
+  has three failures new relative to accepted R2's passing sweep. The
+  supplied-answer failure and eight-sentence fork failure (now only round
+  24) recur from 6.1. `test_forced_ordinary_bound_declaratives_open_no_episode`
+  is new relative to 6.1 too: no open slots or episodes appear, but every
+  recorded compose departure is 6, failing the diversity assertion. Its
+  cause is unbisected; no assertion is relaxed and no causal repair is claimed.
 - b's initial binding-distribution bound remains flaky after construction-based
   coverage of 32 documents, histories 1–4 and four names. Development maximum
   1.153045 and the [first part-2 sweep's](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
@@ -301,8 +308,11 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   a zero `the` accumulator. The separately applied search-kind exemption
   makes exact field OR pay zero forward discard while keeping κ = 0 in
   the field reader; it does not change the preceding learning comparison.
-  Its final sweep is pending. The parts-of-speech pass in plan §6 waits
-  for a reading with NP structure; no rule is retired.
+  Candidate `c647e1506` completes the one full sweep: 5,503 pass, 287 skip,
+  one XFAIL and three failures, with the new/recurring failures named above.
+  Accepted zero-cost certificates, the observer and the 4/4 retained-clause
+  keep regression pass. The parts-of-speech pass in plan §6 waits for a
+  reading with NP structure; no rule is retired.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
