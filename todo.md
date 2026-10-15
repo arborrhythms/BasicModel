@@ -193,8 +193,17 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   supplied-answer failure and eight-sentence fork failure (now only round
   24) recur from 6.1. `test_forced_ordinary_bound_declaratives_open_no_episode`
   is new relative to 6.1 too: no open slots or episodes appear, but every
-  recorded compose departure is 6, failing the diversity assertion. Its
-  cause is unbisected; no assertion is relaxed and no causal repair is claimed.
+  recorded compose departure is 6, failing the diversity assertion.
+  The [October 15 source-boundary replay](doc/benchmarks/2026-10-15-item6-corrected-warmup/README.md)
+  finds no exemption effect: the shared fixture has an empty meaning slice,
+  so both implementations charge zero and produce identical departures and
+  keep decisions under matched initialization. The two diversity assertions
+  demand more than the independent reservoir/walk sampler guarantees; on the
+  recorded menus their failure probabilities are 2.15% and 26.21% respectively.
+  Those are conditional probabilities, not full-test failure rates. c's
+  immediate failure is different: its filled reference points to an order-one
+  child associated with `the`, with no lexical path to `five`. All assertions
+  remain unchanged; no repair or learning claim is made.
 - b's initial binding-distribution bound remains flaky after construction-based
   coverage of 32 documents, histories 1–4 and four names. Development maximum
   1.153045 and the [first part-2 sweep's](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
@@ -313,6 +322,18 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   Accepted zero-cost certificates, the observer and the 4/4 retained-clause
   keep regression pass. The parts-of-speech pass in plan §6 waits for a
   reading with NP structure; no rule is retired.
+  The [fresh corrected-objective warm-up](doc/benchmarks/2026-10-15-item6-corrected-warmup/README.md)
+  completes the same stages 1–4 budgets with seed 20261010: **8/24** singleton
+  rows carry their atoms, below the required 20; 16 remain zero despite word
+  meaning norms of .2. It mints **zero A columns**, confirmed in the saved
+  checkpoint. The native `black` trace loses .2 → 0 at `non` before closing.
+  All 76 singleton presentations are observation-only, with one greedy trial
+  per batch, so the corrected keep charge never compares an alternative on
+  those writes. Both order CE gates still fail (.032051/.016668 versus .01),
+  and all four final stage-4 supplied-answer readbacks are 0/4. Under the
+  identity-per-order amendment, balanced order-1 identity is not run because
+  the singleton gate fails; kind recovery is deferred to order 2. No
+  production change, new sweep, learning claim or rule retirement in this pass.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
@@ -338,6 +359,15 @@ Their original failing evidence remains in the receipts.
    positional bind path, mode/cosine resolver and mode-gated admission only
    when its lesson passes without it; otherwise retain it and report the failure.
    No parallel learned and declared replacement; no further declared modes.
+   [Orders.md](doc/Orders.md) and plan §12 refine the measurement order:
+   A's columns are order-1 individuals, and recurrence stays as their admission
+   evidence. After the fresh corrected-objective warm-up, require at least
+   20/24 singleton rows to carry their atoms before running balanced identity,
+   gate on, reporting witnesses, bindings, row pairs and kept programs.
+   Factorial/confounded kind recovery is deferred to order 2; whether its pi
+   uses a second dictionary or taxonomy computation remains undecided.
+   Word classes collect words by operand participation, never phrase heads;
+   no new order ceiling or lexical count/mass declaration is introduced.
    The [corpus and measurement preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
    landed as `06f6e2b88`: 740 documents, separate grading labels,
    native reference observation and both control datasets. Its native outcomes
@@ -622,6 +652,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 6 gate-off measurement and search-inverse exemption: `f1dbd12a2` (including `c647e1506`), pushed on main, WikiOracle `27a60da` ([receipt](doc/benchmarks/2026-10-14-item6-gate-off/README.md)); accepted in plan §11. No learning claim; the fresh corrected-objective warm-up and its singleton gate are measured separately.
 - Item 6 part-2 M/N/O/I preparation and first eight-branch native experiment: `af634ed35` ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)); reviewed in plan §7, no learning claim. R/S/T and all failed learning gates remain open.
 - Item 6 R2 inverse-domain repair: `348fb86c7` + `90ef40a42`, pushed on main, WikiOracle `066fb5d` ([receipt](doc/benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)); accepted in plan §10. Reconstruction certificates and observer repaired; no learning claim, and part 2's lessons remain open.
 - Item 6 R/S/T mechanism and matched measurement: `e38a19fbd`, WikiOracle `64a06d3` ([receipt](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)); reviewed in plan §8.4, no learning claim. All failed learning gates remain open.

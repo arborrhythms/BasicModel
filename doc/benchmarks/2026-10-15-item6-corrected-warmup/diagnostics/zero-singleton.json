@@ -1,0 +1,277 @@
+{
+  "source": "Last native black singleton presentation in the unchanged stages 1\u20132 protocol; no replay",
+  "presentation_index": 68,
+  "presentation_count": 76,
+  "stored_row": {
+    "index": 93,
+    "row": 250122216054017279,
+    "word": "black",
+    "concept": 44,
+    "witnesses": 4,
+    "closed_meaning_norm": 0.0,
+    "word_meaning_norm": 0.20000003278255463,
+    "cosine": null,
+    "undefined_reason": "zero closed meaning"
+  },
+  "word": "black",
+  "training": false,
+  "steps": [
+    {
+      "step": 0,
+      "kind": 0,
+      "operation": -1,
+      "method": null,
+      "leaf_position": 0,
+      "leaf_meaning_norm": 0.20000000298023224,
+      "meaning_norms": null
+    },
+    {
+      "step": 1,
+      "kind": 2,
+      "operation": 2,
+      "method": "non",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.20000000298023224,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 2,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 3,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 4,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 5,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 6,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 7,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 8,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 9,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 10,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 11,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 12,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 13,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 14,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 15,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 16,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 17,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 18,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 19,
+      "kind": 2,
+      "operation": 0,
+      "method": "generic",
+      "leaf_position": null,
+      "leaf_meaning_norm": null,
+      "meaning_norms": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "closed_meaning_norm": 0.0
+}
