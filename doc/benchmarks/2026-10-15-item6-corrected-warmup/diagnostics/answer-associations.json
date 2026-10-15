@@ -1,0 +1,3390 @@
+{
+  "certificate": "answer",
+  "charge": "new",
+  "seed": 20261015,
+  "source_before": "90ef40a42",
+  "source_after": "f1dbd12a2",
+  "passed": false,
+  "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-15-item6-corrected-warmup/bisect_departures.py\", line 180, in main\n    certificate(args.out, None)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py\", line 244, in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/math_chain_ordinary.py\", line 80, in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py\", line 52, in present\n    after_batch(model, split, rows, result)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/math_chain_ordinary.py\", line 77, in record\n    after(model, split, rows, result, observations, observer)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py\", line 241, in after\n    assert not open_slots(value) and matches(model,value,'five')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+  "forward_charges": [
+    {
+      "selected": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "alternate": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "meaning_start": 104,
+      "content_width": 104,
+      "input_meaning_mass": 0.0,
+      "maximum_difference": 0.0
+    },
+    {
+      "selected": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "alternate": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "meaning_start": 104,
+      "content_width": 104,
+      "input_meaning_mass": 0.0,
+      "maximum_difference": 0.0
+    },
+    {
+      "selected": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "alternate": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "meaning_start": 104,
+      "content_width": 104,
+      "input_meaning_mass": 0.0,
+      "maximum_difference": 0.0
+    },
+    {
+      "selected": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "alternate": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "meaning_start": 104,
+      "content_width": 104,
+      "input_meaning_mass": 0.0,
+      "maximum_difference": 0.0
+    }
+  ],
+  "departures": [
+    {
+      "round": [
+        6,
+        44,
+        -1,
+        51,
+        1,
+        -1,
+        50,
+        2
+      ],
+      "rounds": [
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17
+      ],
+      "walk": [
+        0,
+        1,
+        2,
+        1,
+        0,
+        2,
+        1,
+        0
+      ],
+      "walk_count": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "walk_rounds": [
+        9,
+        5,
+        3,
+        5,
+        9,
+        3,
+        5,
+        9
+      ],
+      "narrowing": [
+        true,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "attention_round": [
+        6,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        2
+      ],
+      "compose_round": [
+        -1,
+        12,
+        -1,
+        19,
+        -1,
+        -1,
+        18,
+        -1
+      ],
+      "candidate_round": [
+        -1,
+        -1,
+        0,
+        -1,
+        -1,
+        1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "round": [
+        -1,
+        8,
+        50,
+        5,
+        9,
+        -1,
+        44,
+        10
+      ],
+      "rounds": [
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23
+      ],
+      "walk": [
+        2,
+        0,
+        1,
+        0,
+        0,
+        2,
+        1,
+        0
+      ],
+      "walk_count": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "walk_rounds": [
+        4,
+        11,
+        8,
+        11,
+        11,
+        4,
+        8,
+        11
+      ],
+      "narrowing": [
+        false,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true
+      ],
+      "attention_round": [
+        -1,
+        8,
+        -1,
+        5,
+        9,
+        -1,
+        -1,
+        10
+      ],
+      "compose_round": [
+        -1,
+        -1,
+        18,
+        -1,
+        -1,
+        -1,
+        12,
+        -1
+      ],
+      "candidate_round": [
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1
+      ]
+    }
+  ],
+  "reservoirs": [
+    {
+      "eligible": {
+        "0": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "1": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "2": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "3": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "4": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "5": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "6": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ],
+        "7": [
+          6,
+          12,
+          18,
+          19,
+          20
+        ]
+      },
+      "replacements": {
+        "0": [
+          6,
+          12,
+          18
+        ],
+        "1": [
+          6,
+          12
+        ],
+        "2": [
+          6,
+          18
+        ],
+        "3": [
+          6,
+          12,
+          19
+        ],
+        "4": [
+          6,
+          12,
+          20
+        ],
+        "5": [
+          6,
+          12
+        ],
+        "6": [
+          6,
+          18
+        ],
+        "7": [
+          6,
+          18,
+          20
+        ]
+      }
+    },
+    {
+      "eligible": {
+        "0": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "1": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "2": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "3": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "4": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "5": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "6": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ],
+        "7": [
+          12,
+          18,
+          6,
+          0,
+          48,
+          49,
+          50,
+          51
+        ]
+      },
+      "replacements": {
+        "0": [
+          12,
+          49
+        ],
+        "1": [
+          12,
+          18,
+          6
+        ],
+        "2": [
+          12,
+          18
+        ],
+        "3": [
+          12,
+          18,
+          51
+        ],
+        "4": [
+          12
+        ],
+        "5": [
+          12,
+          18
+        ],
+        "6": [
+          12
+        ],
+        "7": [
+          12,
+          18,
+          48
+        ]
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "costs": [
+        [
+          2.1710734367370605,
+          2.1710734367370605
+        ],
+        [
+          2.1710734367370605,
+          1.756257176399231
+        ],
+        [
+          2.1500332355499268,
+          1.150473952293396
+        ],
+        [
+          2.1710734367370605,
+          1.9805446863174438
+        ],
+        [
+          2.1710734367370605,
+          2.119431734085083
+        ],
+        [
+          2.1710734367370605,
+          1.756257176399231
+        ],
+        [
+          2.1710734367370605,
+          2.1710734367370605
+        ],
+        [
+          2.1710734367370605,
+          2.1710734367370605
+        ]
+      ],
+      "keep_costs": [
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ],
+        [
+          0.10765371471643448,
+          0.10765371471643448
+        ]
+      ],
+      "components": [
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            1.6486034393310547
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.04237961769104
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            1.0428202152252197
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            1.8728909492492676
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            2.0117781162261963
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            1.6486034393310547
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ]
+        ],
+        [
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ],
+          [
+            0.10765371471643448,
+            0.0,
+            2.063419818878174
+          ]
+        ]
+      ],
+      "delta": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -0.41481637954711914
+        ],
+        [
+          0.0,
+          0.0,
+          -0.9995594024658203
+        ],
+        [
+          0.0,
+          0.0,
+          -0.19052886962890625
+        ],
+        [
+          0.0,
+          0.0,
+          -0.05164170265197754
+        ],
+        [
+          0.0,
+          0.0,
+          -0.41481637954711914
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "wins": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "deciding": [
+        "tie:greedy",
+        "answer",
+        "answer",
+        "answer",
+        "answer",
+        "answer",
+        "tie:greedy",
+        "tie:greedy"
+      ],
+      "keep_decision": [
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy"
+      ],
+      "advantage": [
+        0.0,
+        -0.4148162603378296,
+        -0.9995592832565308,
+        -0.1905287504196167,
+        -0.05164170265197754,
+        -0.4148162603378296,
+        0.0,
+        0.0
+      ],
+      "advantage_sign": [
+        0.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "policy_against_keep": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "answer_against_keep": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "costs": [
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ]
+      ],
+      "keep_costs": [
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ],
+        [
+          0.10760447382926941,
+          0.10760447382926941
+        ]
+      ],
+      "components": [
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.3686540722846985,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.12853237986564636,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.12853237986564636,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.12853237986564636,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.12853237986564636,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.12853237986564636,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.11990480870008469,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.10760447382926941,
+            0.16895192861557007,
+            0.0
+          ],
+          [
+            0.10760447382926941,
+            0.12853237986564636,
+            0.0
+          ]
+        ]
+      ],
+      "delta": [
+        [
+          0.0,
+          0.19970214366912842,
+          0.0
+        ],
+        [
+          0.0,
+          -0.040419548749923706,
+          0.0
+        ],
+        [
+          0.0,
+          -0.040419548749923706,
+          0.0
+        ],
+        [
+          0.0,
+          -0.040419548749923706,
+          0.0
+        ],
+        [
+          0.0,
+          -0.040419548749923706,
+          0.0
+        ],
+        [
+          0.0,
+          -0.040419548749923706,
+          0.0
+        ],
+        [
+          0.0,
+          -0.04904711991548538,
+          0.0
+        ],
+        [
+          0.0,
+          -0.040419548749923706,
+          0.0
+        ]
+      ],
+      "wins": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "deciding": [
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy"
+      ],
+      "keep_decision": [
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy",
+        "tie:greedy"
+      ],
+      "advantage": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "advantage_sign": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "policy_against_keep": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "answer_against_keep": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "target": "five",
+      "correct": false,
+      "open": [],
+      "role_refs": [
+        [
+          "ltm",
+          "address-v1",
+          105404931102302912
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          2199348736190765983
+        ]
+      ],
+      "known": [
+        -9163253523698750655,
+        -7571171477408051674,
+        -648843078902309398,
+        25,
+        26,
+        367223276097289574,
+        2120305211313557308,
+        2405523212231343698,
+        6642441603465247619,
+        9027839700504145837
+      ],
+      "chain": [
+        {
+          "reference": [
+            "ltm",
+            "address-v1",
+            105404931102302912
+          ],
+          "row_id": 105404931102302912,
+          "physical_refs": [
+            -1,
+            -1,
+            -1
+          ],
+          "kind": "unverified",
+          "order": 1,
+          "role_mask": [
+            true,
+            false,
+            false
+          ],
+          "role_refs": [
+            null,
+            null,
+            null
+          ],
+          "role_norms": [
+            4.054433822631836,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "bindings": {
+        "_forward_references": [],
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_open_references": [
+          [
+            "referent",
+            0
+          ]
+        ]
+      }
+    },
+    {
+      "target": "five",
+      "correct": false,
+      "open": [],
+      "role_refs": [
+        [
+          "ltm",
+          "address-v1",
+          105404931102302912
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          2199348736190765983
+        ]
+      ],
+      "known": [
+        -9163253523698750655,
+        -7571171477408051674,
+        -648843078902309398,
+        25,
+        26,
+        367223276097289574,
+        2120305211313557308,
+        2405523212231343698,
+        6642441603465247619,
+        9027839700504145837
+      ],
+      "chain": [
+        {
+          "reference": [
+            "ltm",
+            "address-v1",
+            105404931102302912
+          ],
+          "row_id": 105404931102302912,
+          "physical_refs": [
+            -1,
+            -1,
+            -1
+          ],
+          "kind": "unverified",
+          "order": 1,
+          "role_mask": [
+            true,
+            false,
+            false
+          ],
+          "role_refs": [
+            null,
+            null,
+            null
+          ],
+          "role_norms": [
+            4.054433822631836,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "bindings": {
+        "_forward_references": [],
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_open_references": [
+          [
+            "referent",
+            0
+          ]
+        ]
+      }
+    }
+  ],
+  "lexical_associations": [
+    {
+      "row_id": 2199348736190765983,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": 1369951362255785138,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1580241294866295036,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -5464019968121533103,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": -2723735607145333071,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 1025741473663814408,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -5645045365876597260,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": 6431968224721448972,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -2572155963935752022,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 6347338170895726919,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": -4840471384163205086,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 8343998268079593601,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -6497341258031638739,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": -83095560399000478,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3956411463576405691,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 530608680535697653,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": -2414152875052551310,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 8613115152941793797,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 6992379730843893932,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": 4234967929312127560,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -9032511334703845966,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 4359432265546876544,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 17,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "y"
+      ]
+    },
+    {
+      "row_id": -8150198197627690169,
+      "slots": 3,
+      "refs": [
+        -1,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -5357278811015838167,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -1
+      ],
+      "subject_word_id": 11,
+      "open": [
+        [
+          "referent",
+          2
+        ],
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 3724435811033987969,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": 2405523212231343698,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": 105404931102302912,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": -8159496100224800857,
+      "slots": 3,
+      "refs": [
+        -2890683879039495532,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 3024884254312127435,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -2890683879039495532
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -9204326084770011964,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 2585752397104189750,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -6817434695640512141,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 4255239842385096793,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 1949539438730621313,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": 2120305211313557308,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": -4264806185880315799,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": 955737349519663358,
+      "slots": 3,
+      "refs": [
+        -5315473699146681536,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -7824178705032400097,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -5315473699146681536
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3550037126495650250,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 8523484064208306666,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 2991525062827609889,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 5076032730018273064,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1608352721427461301,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": -648843078902309398,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": -133867757632527941,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": 5300017069798701447,
+      "slots": 3,
+      "refs": [
+        -4758924913080479328,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -128929981401325587,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -4758924913080479328
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -2791811940346101012,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 4642370996297258251,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3519469138509192271,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 5721937735618554061,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -5291907521899161267,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": -9163253523698750655,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": 5298109144359982326,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": 3824456632524221592,
+      "slots": 3,
+      "refs": [
+        -2693794280711766182,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -6041852737091283134,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -2693794280711766182
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 1600232516025724177,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -288106121142629747,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -7545528131564372958,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1710855369417796072,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -5619773747971712064,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": -7571171477408051674,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": -3787438406199143050,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": -1619801076398906403,
+      "slots": 3,
+      "refs": [
+        -190852807705313879,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 4304244870435798352,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -190852807705313879
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -4630968915256865843,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 913491774341754197,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 2966745495491565439,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1538932397416375346,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3377472441512545154,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": 367223276097289574,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": 2850649425967633249,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": -6641523877159031270,
+      "slots": 3,
+      "refs": [
+        -6011874756538027196,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3821521410978315607,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -6011874756538027196
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 2255396615340508053,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -6600661822218036442,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 5555657097611319381,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1988554483378416709,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -2108959364369836227,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": 6642441603465247619,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": 5612568170002865870,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": -2067240825771727181,
+      "slots": 3,
+      "refs": [
+        -8372627607190370231,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1828322467639368083,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -8372627607190370231
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3952468655098522717,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 1723456095191421960,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 2791737944637162594,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -6097246690419725397,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -3456032627890002454,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 27,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "."
+      ]
+    },
+    {
+      "row_id": 9027839700504145837,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 25,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "five"
+      ]
+    },
+    {
+      "row_id": 7665260003408028790,
+      "slots": 1,
+      "refs": [
+        -1,
+        -1,
+        -1
+      ],
+      "subject_word_id": 21,
+      "open": [],
+      "source_forms": {},
+      "inherited_forms": [
+        "the"
+      ]
+    },
+    {
+      "row_id": -363939224162522415,
+      "slots": 3,
+      "refs": [
+        -2324103152970093208,
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -9076248693961851817,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        -2324103152970093208
+      ],
+      "subject_word_id": 23,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -6806296284293606580,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -4041448139620662333,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 25,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": -1164646451695781604,
+      "slots": 3,
+      "refs": [
+        "('clause', 0)",
+        4010033338316264258,
+        "('clause', 1)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    },
+    {
+      "row_id": 8356637030053954742,
+      "slots": 3,
+      "refs": [
+        "('clause', 1)",
+        4010033338316264258,
+        "('clause', 0)"
+      ],
+      "subject_word_id": 27,
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "source_forms": {},
+      "inherited_forms": []
+    }
+  ]
+}

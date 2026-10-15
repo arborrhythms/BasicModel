@@ -1,0 +1,28 @@
+{
+  "valid_warmup": "output/item6-corrected-warmup-seeded-20261015",
+  "seed": 20261010,
+  "excluded_warmup": {
+    "directory": "output/item6-corrected-warmup-20261015",
+    "reason": "Direct helper bypassed the entry-point RNG initialization. Interrupted before stage-3 learning; not used for any measurement."
+  },
+  "excluded_replays": [
+    {
+      "directories": [
+        "bound-old",
+        "bound-new"
+      ],
+      "reason": "BASIC_SEED environment alone does not seed direct from_config fixtures."
+    },
+    {
+      "directories": [
+        "bound-old-seeded",
+        "bound-new-seeded"
+      ],
+      "reason": "Diagnostic observer incorrectly converted a batched closing slot to a scalar; observer ValueError, not a production test failure."
+    }
+  ],
+  "valid_paired_replays": "*-paired, seed 20261015 explicitly applied to Python, NumPy and Torch",
+  "additional_answer_replays": "Same selected new implementation and seed; observational metadata only, locating the terminal reference and its inherited forms.",
+  "production_changes": false,
+  "sweep": "Not run: this pass changes measurement code and documentation only."
+}

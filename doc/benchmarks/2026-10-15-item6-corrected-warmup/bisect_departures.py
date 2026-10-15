@@ -57,7 +57,7 @@ def main():
     functions = dict(old=namespace['forward_discard'], new=SentenceCredit.forward_discard)
     selected = functions[args.charge]
     other = functions['new' if args.charge == 'old' else 'old']
-    costs, draws, comparisons, reservoirs, matches = [], [], [], [], []
+    costs, draws, comparisons, reservoirs, matches, associations = [], [], [], [], [], []
     current_candidates = defaultdict(list)
     current_takes = defaultdict(list)
     record = SentenceFork.record
@@ -67,7 +67,10 @@ def main():
         result = selected(*values, **kwargs)
         with torch.no_grad():
             alternate = other(*values, **kwargs)
+        frames = [p.operation_values for p in values[1] if p is not None and p.operation_values is not None]
         costs.append(dict(selected=serial(result), alternate=serial(alternate),
+                          meaning_start=int(values[2]), content_width=int(frames[0].shape[-1]) if frames else None,
+                          input_meaning_mass=sum(float(f[:, :2, values[2]:].detach().abs().sum()) for f in frames),
                           maximum_difference=float((result.detach()-alternate).abs().max())))
         return result
 
@@ -75,7 +78,7 @@ def main():
         eligible = fork.current_rows & choice.valid & (choice.alternative_count > 0)
         if not fork.explore:
             for row in eligible.nonzero().flatten().tolist():
-                current_candidates[row].append(int(slot))
+                current_candidates[row].append(int(slot[row]) if torch.is_tensor(slot) and slot.numel() > 1 else int(slot))
         before = fork.slot.clone()
         result = record(fork, choice, slot, state, **kwargs)
         if not fork.explore:
@@ -96,12 +99,63 @@ def main():
         return result
 
     import BindingAnswers
+    from ConceptIndex import ClauseTaxonomyPlan
+    native_particular = ClauseTaxonomyPlan.bind_particular
+    def associated(plan, clause, row_id):
+        from ThoughtReferences import open_slots
+        sources = {clause.refs[0]} if type(clause.refs[0]) is int else set()
+        if clause.subject_word_id > 0:
+            sources.add(clause.subject_word_id)
+        before = {form: sorted(ids.intersection(sources)) for form, ids in plan.alloc.word_forms.items()
+                  if ids.intersection(sources)}
+        result = native_particular(plan, clause, row_id)
+        associations.append(dict(row_id=int(row_id), slots=int(clause.slots.shape[0]),
+            refs=[ref if type(ref) is int else repr(ref) for ref in clause.refs],
+            subject_word_id=int(clause.subject_word_id), open=serial(open_slots(clause.meaning)),
+            source_forms=before,
+            inherited_forms=sorted(form for form, ids in plan.alloc.word_forms.items() if row_id in ids)))
+        return result
+
     native_matches = BindingAnswers.matches
     def matched(model, value, target):
         result = native_matches(model, value, target)
         from ThoughtReferences import open_slots, bindings
+        metadata = bindings(value)
+        chain = []
+        current = value
+        references = BindingAnswers.references(value)
+        reference = references[0][0] if len(references) == 1 else None
+        seen = set()
+        store = model.symbolSpace.ltm_store
+        while reference is not None and reference not in seen and len(chain) < 64:
+            seen.add(reference)
+            chain.append(dict(reference=serial(reference)))
+            if reference[0] == 'sym':
+                break
+            if reference[0] == 'ltm':
+                index = store._index_occurrences.get(reference)
+                if index is None:
+                    chain[-1]['missing'] = True
+                    break
+                chain[-1].update(row_id=int(store.row_ids[index]), physical_refs=serial(store.refs[index]),
+                    kind=store.KINDS[int(store.record_kind[index])], order=int(store.order[index]))
+                current = store.meaning_of(index)
+            elif reference[0] == 'constituent':
+                current = current.constituents[reference[1]]
+            else:
+                break
+            if current is None:
+                break
+            chain[-1].update(role_mask=serial(current.role_mask), role_refs=serial(current.role_refs),
+                                role_norms=serial(current.roles.norm(dim=-1)))
+            if int(current.role_mask.sum()) != 1:
+                break
+            reference = current.role_refs[int(current.role_mask.nonzero()[0])]
         matches.append(dict(target=target, correct=result, open=serial(open_slots(value)),
-                            role_refs=serial(value.role_refs), bindings=serial(bindings(value))))
+                            role_refs=serial(value.role_refs),
+                            known=list(model._concept_owner().word_concepts(target)), chain=chain,
+                            bindings={key:serial(metadata.get(key)) for key in
+                                ('_forward_references', '_bound_roles', '_open_references')}))
         return result
 
     error = None
@@ -114,6 +168,7 @@ def main():
         patch.setattr(SentenceCredit, 'departure', departed)
         patch.setattr(SentenceCredit, 'comparison', compared)
         patch.setattr(BindingAnswers, 'matches', matched)
+        patch.setattr(ClauseTaxonomyPlan, 'bind_particular', associated)
         module, name = TESTS[args.certificate]
         certificate = getattr(importlib.import_module(module), name)
         # These fixtures call from_config directly, bypassing the training
@@ -128,7 +183,7 @@ def main():
     result = dict(certificate=args.certificate, charge=args.charge, seed=args.seed,
         source_before='90ef40a42', source_after='f1dbd12a2', passed=error is None, error=error,
         forward_charges=costs, departures=draws, reservoirs=reservoirs,
-        comparisons=comparisons, answers=matches)
+        comparisons=comparisons, answers=matches, lexical_associations=associations)
     save(args.out/'result.json', result)
     print(json.dumps(dict(certificate=args.certificate, charge=args.charge, passed=error is None,
         charge_calls=len(costs), changed_charge_calls=sum(row['maximum_difference'] > 0 for row in costs),
