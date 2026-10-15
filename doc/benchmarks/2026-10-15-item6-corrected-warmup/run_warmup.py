@@ -5,8 +5,10 @@ singleton programs during their original presentations, without extra exposure.
 """
 import argparse
 from pathlib import Path
+import random
 import warnings
 
+import numpy as np
 import pytest
 import torch
 from torch.nn import functional as F
@@ -148,6 +150,9 @@ def main():
         patch.setattr(experiment, 'save', save)
         patch.setattr(experiment, 'model_hashes', lambda model: None)
         patch.setattr(experiment, 'digest', lambda path: None)
+        random.seed(20261010)
+        np.random.seed(20261010)
+        torch.manual_seed(20261010)
         experiment.warmup(args.out, 64, 8)
         model = models[0]
         with torch.no_grad():
