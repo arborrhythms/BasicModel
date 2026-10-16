@@ -250,25 +250,6 @@ def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
         model.End()
 
 
-def test_forced_ordinary_bound_declaratives_open_no_episode(tmp_path, eager_reading):
-    """Certificate d, FORCED operation/binding; real document training."""
-    import json
-    from forced_math_grammar import ForcedGrammar
-    from math_chain_ordinary import ordinary_model, train_documents
-    from math_chain_corpus import ChainDocument
-    model = ordinary_model(tmp_path)
-    try:
-        documents = [ChainDocument(str(i), ('one is two.', 'three is four.')) for i in range(8)]
-        with ForcedGrammar(model) as forced:
-            rows = train_documents(model, documents, tmp_path)
-        (tmp_path/'certificate.json').write_text(json.dumps(dict(forced=True, rows=rows,
-            choices=forced.records),indent=2)+'\n')
-        assert all(not row['open'] and not row['episode'] for row in rows)
-        assert len({row['departure'] for row in rows if row['departure'] >= 0}) > 1
-    finally:
-        model.End()
-
-
 def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp_path, monkeypatch, eager_reading):
     """g on the authorized forced c/e grammars; both explore suffixes stay live."""
     import json

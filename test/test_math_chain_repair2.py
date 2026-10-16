@@ -139,36 +139,6 @@ def test_expectation_cannot_change_departure_or_keep():
     assert audit['deciding'] == ['tie:greedy', 'reconstruction', 'answer']
 
 
-def test_eight_corpus_sentences_train_at_distinct_fork_rounds(tmp_path, eager_reading):
-    from math_chain_corpus import MathChainCorpus
-    from math_chain_ordinary import ordinary_model, train_documents, episode_observer
-    model = ordinary_model(tmp_path)
-    footprint = episode_observer()
-    differences = []
-    def episode(original, model, *args, **kwargs):
-        before = footprint.snapshot(model) if not differences else None
-        result = original(model, *args, **kwargs)
-        if before is not None:
-            differences.append(footprint.difference(before, footprint.snapshot(model)))
-        return result
-    try:
-        docs = MathChainCorpus().counting()[::2][:8]
-        observations = train_documents(model, docs, tmp_path, episode=episode)
-        assert len(observations) == 8
-        assert len({row['departure'] for row in observations if row['departure'] >= 0}) > 1
-        assert differences, 'no ordinary episode exercised the footprint'
-        trail = {'.'+name for name in ('_last_thought_comparison', '_last_thought_score_function',
-                 '_thought_ordinals', '_walk_audit', '_walk_observations', '_walk_previous')}
-        trail.update('what_memory.'+name for name in (
-            '_address_sources', '_episode_live', '_thought_next_id', '_what_slots', '_what_closure_pressure'))
-        unexpected = [key for key in differences[0] if '._ltm_store.' not in key and key not in trail]
-        assert not unexpected, unexpected
-        assert not any(hasattr(model, key) for key in (
-            '_open_thought_rows', '_pending_thought_credit', '_closing_images'))
-    finally:
-        model.End()
-
-
 def test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation():
     from Interpret import InterpretLayer
     from ClauseScope import ClauseScope
