@@ -1,0 +1,103 @@
+.F...                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_forced_ordinary_answer_fills_committed_question_without_its_own_episode _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6157/test_forced_ordinary_answer_fi0')
+eager_reading = None
+
+    def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode(tmp_path, eager_reading):
+        """Certificate c, FORCED operation/binding; actual paired suffix and costs."""
+        import json
+        from BindingAnswers import matches
+        from forced_math_grammar import ForcedGrammar
+        from math_chain_ordinary import ordinary_model, train_documents
+        from math_chain_corpus import ChainDocument
+        model = ordinary_model(tmp_path)
+        questions, report = [], []
+        documents = [ChainDocument(str(i), ('what is y ?', 'the answer is five.'),
+                                  question=0, answer='five') for i in range(8)]
+        def after(model, split, rows, result, observed, observer):
+            store = model.symbolSpace.ltm_store
+            if not questions:
+                for field in model._sentence_fields[0]:
+                    index = store.index_of_row(field.row_id)
+                    assert ('referent',0) in open_slots(store.meaning_of(index))
+                    questions.append((index,store.occurrence_of(index)))
+            else:
+                assert not model._last_closing_thoughts
+                for index, address in questions:
+                    value = store.meaning_of(index)
+                    report.append(dict(occurrence=address, open=open_slots(value),
+                                       correct=matches(model,value,'five')))
+                    assert store.occurrence_of(index) == address
+                    assert not open_slots(value) and matches(model,value,'five')
+        try:
+            with ForcedGrammar(model, open_names=('what',)) as forced:
+>               rows = train_documents(model, documents, tmp_path, after=after)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_math_chain_section14.py:244:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=104, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)
+)
+split = 'train', rows = [1, 3, 5, 7, 9, 11, ...]
+result = BatchResult(outputPred=tensor([[[-0.0270]],
+
+        [[-0.0260]],
+
+        [[-0.0249]],
+
+        [[-0.0242]],
+
+       ...000, 0.0000, 0.0000,  ..., 0.0000, 0.0000, 0.0000],
+         [0.0000, 0.0000, 0.0000,  ..., 0.0000, 0.0000, 0.0000]]]))
+observed = [{'epoch': 1, 'source': 0, 'row_id': 2637323218820511612, 'address': ('ltm', 'address-v1', 2637323218820511612), ...},...och': 1, 'source': 10, 'row_id': 5954994503788373955, 'address': ('ltm', 'address-v1', 5954994503788373955), ...}, ...]
+observer = <frozen_math_observer.Observer object at 0x123762090>
+
+    def after(model, split, rows, result, observed, observer):
+        store = model.symbolSpace.ltm_store
+        if not questions:
+            for field in model._sentence_fields[0]:
+                index = store.index_of_row(field.row_id)
+                assert ('referent',0) in open_slots(store.meaning_of(index))
+                questions.append((index,store.occurrence_of(index)))
+        else:
+            assert not model._last_closing_thoughts
+            for index, address in questions:
+                value = store.meaning_of(index)
+                report.append(dict(occurrence=address, open=open_slots(value),
+                                   correct=matches(model,value,'five')))
+                assert store.occurrence_of(index) == address
+>               assert not open_slots(value) and matches(model,value,'five')
+E               AssertionError: assert (not () and False)
+E                +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 7083388139881826964), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 7083388139881826964),))), scope=(), sentence_kind='relation'))
+E                +  and   False = <function matches at 0x12378bd80>(BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=104, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 7083388139881826964), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 7083388139881826964),))), scope=(), sentence_kind='relation'), 'five')
+
+test/test_math_chain_section14.py:241: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=24.842s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
+1 failed, 4 passed, 8 deselected, 1 warning in 260.47s (0:04:20)

@@ -1,0 +1,628 @@
+{
+  "training_documents": 136,
+  "evaluation_documents": 166,
+  "process_exit_code": 0,
+  "columns_minted": 0,
+  "columns_total": 0,
+  "admission": {
+    "committed_rows": 940,
+    "selected_individual": 0,
+    "selected_mint": 0
+  },
+  "annotated_references": 690,
+  "missing_reasons": {
+    "no_individual_request": 690
+  },
+  "phases": {
+    "identity-evaluation": {
+      "clauses": 556,
+      "nonzero_meanings": 0,
+      "program_counts": [
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal"
+          ],
+          "clauses": 228
+        },
+        {
+          "program": [
+            "equal",
+            "equal"
+          ],
+          "clauses": 138
+        },
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal",
+            "equal",
+            "equal"
+          ],
+          "clauses": 134
+        },
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal",
+            "equal"
+          ],
+          "clauses": 56
+        }
+      ]
+    },
+    "identity-training": {
+      "clauses": 384,
+      "nonzero_meanings": 43,
+      "program_counts": [
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal",
+            "equal"
+          ],
+          "clauses": 175
+        },
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal"
+          ],
+          "clauses": 113
+        },
+        {
+          "program": [
+            "equal",
+            "equal"
+          ],
+          "clauses": 20
+        },
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal",
+            "equal",
+            "equal"
+          ],
+          "clauses": 16
+        },
+        {
+          "program": [
+            "verb",
+            "verb",
+            "verb",
+            "verb",
+            "verb"
+          ],
+          "clauses": 13
+        },
+        {
+          "program": [
+            "verb",
+            "verb",
+            "verb"
+          ],
+          "clauses": 13
+        },
+        {
+          "program": [
+            "verb",
+            "verb"
+          ],
+          "clauses": 12
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "conjunction",
+            "generic",
+            "generic",
+            "whole",
+            "generic",
+            "generic",
+            "equal",
+            "generic",
+            "generic",
+            "lower",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 3
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "equal",
+            "generic",
+            "generic",
+            "equal",
+            "generic",
+            "generic",
+            "equal",
+            "generic",
+            "generic",
+            "lower",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 2
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "tense",
+            "tense",
+            "tense",
+            "equal",
+            "equal",
+            "lower",
+            "generic",
+            "generic",
+            "part",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 2
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "lower",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 2
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "product",
+            "generic",
+            "generic",
+            "whole",
+            "lower",
+            "equal",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "intersection",
+            "tense",
+            "tense",
+            "verb",
+            "tense",
+            "tense",
+            "verb",
+            "tense",
+            "tense",
+            "surface",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense",
+            "tense"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "intersection",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "disjunction",
+            "generic",
+            "generic",
+            "part",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "conjunction",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "intersection",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "part",
+            "generic",
+            "generic",
+            "equal",
+            "generic",
+            "generic",
+            "equal",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "lower",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "part",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "conjunction",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "verb",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "generic",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "verb",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic",
+            "generic"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "verb",
+            "intersection",
+            "verb"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "verb",
+            "verb",
+            "verb",
+            "verb",
+            "equal"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "verb",
+            "verb",
+            "verb",
+            "equal",
+            "verb"
+          ],
+          "clauses": 1
+        },
+        {
+          "program": [
+            "equal",
+            "equal",
+            "equal",
+            "lower"
+          ],
+          "clauses": 1
+        }
+      ]
+    }
+  }
+}

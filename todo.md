@@ -334,6 +334,22 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   identity-per-order amendment, balanced order-1 identity is not run because
   the singleton gate fails; kind recovery is deferred to order 2. No
   production change, new sweep, learning claim or rule retirement in this pass.
+  The [positional-operands and paired-warm-up candidate](doc/benchmarks/2026-10-15-item6-orders-paired/README.md)
+  (`6a14ba151` measured source) removes the name-to-order table and carries
+  actual operand stamps through `argin1`, `argin2`, `argout1`; the order-3
+  regression passes and operation-owned mint/bind/kind behavior stays.
+  Its paired stages 1–2 retain **20/24** singleton atoms, so the balanced
+  gate-on identity branch runs: 136 training and 166 held-out documents,
+  **zero columns minted, 0/146 bindings and 0/20 row pairs resolved**.
+  All 556 held-out clauses have zero closed meaning under `equal`-only
+  programs; all 690 annotated references report `no_individual_request`.
+  None reports an unadmitted leaf in this run; the earlier 43-leaf artifact
+  is not retested. The bounded trained-artifact certificate covers **80/80**
+  eligible rounds; the two batch-diversity tests leave the default suite.
+  The one full sweep has ten failures, with subsequent targeted repairs
+  leaving c's carried `five` structure failure; the paired zero-cost
+  counterexample reproduces on accepted main. No clean final sweep or
+  identity-learning claim is made, and no identity rule is retired.
 
 The cleared-cache empty inverse was **new with the item-6 candidate**, not an
 unchanged 6.1 failure. Part 1 repairs the candidate-search self-pair obstruction
@@ -361,9 +377,10 @@ Their original failing evidence remains in the receipts.
    No parallel learned and declared replacement; no further declared modes.
    [Orders.md](doc/Orders.md) and plan §12 refine the measurement order:
    A's columns are order-1 individuals, and recurrence stays as their admission
-   evidence. After the fresh corrected-objective warm-up, require at least
-   20/24 singleton rows to carry their atoms before running balanced identity,
-   gate on, reporting witnesses, bindings, row pairs and kept programs.
+   evidence. The paired stages 1–2 pass carries 20/24 singleton atoms and
+   completes balanced gate-on identity, with zero minted columns and no
+   resolved bindings or row pairs (candidate receipt above). The identity
+   lesson remains open; it has not reached usable NP readings.
    Factorial/confounded kind recovery is deferred to order 2; whether its pi
    uses a second dictionary or taxonomy computation remains undecided.
    Word classes collect words by operand participation, never phrase heads;
@@ -655,6 +672,7 @@ Everything that is decided in direction but not on this path is in
 - Item 6 gate-off measurement and search-inverse exemption: `f1dbd12a2` (including `c647e1506`), pushed on main, WikiOracle `27a60da` ([receipt](doc/benchmarks/2026-10-14-item6-gate-off/README.md)); accepted in plan §11. No learning claim; the fresh corrected-objective warm-up and its singleton gate are measured separately.
 - Item 6 part-2 M/N/O/I preparation and first eight-branch native experiment: `af634ed35` ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)); reviewed in plan §7, no learning claim. R/S/T and all failed learning gates remain open.
 - Item 6 R2 inverse-domain repair: `348fb86c7` + `90ef40a42`, pushed on main, WikiOracle `066fb5d` ([receipt](doc/benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)); accepted in plan §10. Reconstruction certificates and observer repaired; no learning claim, and part 2's lessons remain open.
+- Item 6 corrected-objective warm-up: accepted `345734c38`…`d5d300aed` is pushed on main, with WikiOracle bump `7bf96de` ([receipt](doc/benchmarks/2026-10-15-item6-corrected-warmup/README.md)); accepted in plan §13 as a measurement, with no learning claim. The observation-only singleton gate was 8/24; paired training is measured separately in part 2.
 - Item 6 R/S/T mechanism and matched measurement: `e38a19fbd`, WikiOracle `64a06d3` ([receipt](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)); reviewed in plan §8.4, no learning claim. All failed learning gates remain open.
 - Item 6 part-2 corpus and measurement preparation: `06f6e2b88` ([receipt](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)); M/N/O/I and the first experiment are accepted as preparation by plan §7, with no learning claim.
 
