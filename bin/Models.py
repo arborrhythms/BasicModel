@@ -4688,11 +4688,12 @@ class BaseModel(Mereology, nn.Module):
         # Materialize admitted columns before strict key/shape preflight.
         # Their native identities are restored by the structural sidecar.
         from IndependentComponents import SparseDictionary, IndependentComponents
+        from ReferenceClose import ReferenceClose
         component_metadata = set()
         for name, module in self.named_modules(remove_duplicate=False):
             if isinstance(module, SparseDictionary):
                 module.prepare_checkpoint(state, name + '.')
-            if isinstance(module, (SparseDictionary, IndependentComponents)):
+            if isinstance(module, (SparseDictionary, IndependentComponents, ReferenceClose)):
                 component_metadata.add(name + '._extra_state')
         model_state = dict(self.state_dict())
         for name in tuple(state):
@@ -12999,6 +13000,7 @@ class BasicModel(BaseModel):
                 operation_relations=(None if relations is None else
                                      relations[b, columns[b, :L].clamp_min(0)]),
                 binding_choices=bool(getattr(self, '_component_reading', False)),
+                close_references=bool(getattr(self, '_component_reading', False)),
                 operation_probabilities=None if probabilities is None else probabilities[b, :L],
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
@@ -19879,9 +19881,20 @@ class BasicModel(BaseModel):
         meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
             self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
             structured=getattr(disc, 'expectation_scope', None) == 'structured', clauses=clauses)
-        return dict(payloads=payloads, depths=depth_list, mask=mask, entries=entries,
+        result = dict(payloads=payloads, depths=depth_list, mask=mask, entries=entries,
                     meanings=meanings, observed=observed, observed_depths=observed_depths,
                     layout=layout, roles=roles, clauses=clauses)
+        if getattr(self, '_component_reading', False):
+            resolver = self._concept_owner().components.reference_close
+            from Occurrence import source_at
+            plans = []
+            for b, clause in enumerate(clauses):
+                document, position = source_at(self, b, int(sid))
+                plans.append(resolver.preview(clause,
+                    () if disc is None else tuple(disc.situation_references(b)),
+                    document=document, position=position))
+            result['reference_plans'] = plans
+        return result
 
     def _trial_understanding(self, state, sid, active):
         from SentenceUnderstanding import SentenceUnderstanding
@@ -20199,13 +20212,16 @@ class BasicModel(BaseModel):
                              prefix='expectation.', weight=self.inter_contrastive_weight)
         if getattr(self, '_component_reading', False):
             components = self._concept_owner().components
+            reference_cost = torch.stack([plan['cost'] for plan in observation['reference_plans']])
+            errors.add('expectation.reference', reference_cost, weight=components.weight,
+                       category='expectation')
             estimates = (None if pending is None else [
                 None if item is None else item.prediction for item in pending[0]])
             component_cost = components.cost(observation['meanings'], estimates, active,
                                               clauses=observation['clauses'])
             errors.add('expectation.components', component_cost, weight=components.weight,
                        category='expectation')
-            cost = component_cost * components.weight
+            cost = (component_cost + reference_cost) * components.weight
             self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
                 else self._sentence_expectation_comparison + cost)
         word_inputs = getattr(self, '_word_expectation_input', None)
@@ -20531,6 +20547,20 @@ class BasicModel(BaseModel):
                 else:
                     content = native_content_key(view['clauses'][b].meaning)
                 clause = view['clauses'][b]
+                reference_plan = None
+                if getattr(self, '_component_reading', False):
+                    resolver = self._concept_owner().components.reference_close
+                    # Reattach the scored decisions to the admitted copies of
+                    # those same kept constituents. No post-update re-choice.
+                    from ReferenceClose import constituents
+                    scored = chosen[b]['reference_plans'][b]
+                    nodes = constituents(clause)
+                    if len(nodes) != len(scored['items']):
+                        raise RuntimeError('admission changed reference constituents')
+                    reference_plan = dict(scored, items=[dict(item, node=node)
+                        for item, node in zip(scored['items'], nodes)])
+                    clause = resolver.prepare(clause, reference_plan)
+                    view['clauses'][b] = clause
                 encoding = getattr(self, 'when_encoding', None)
                 if encoding is not None:
                     clause = replace(clause, eternal=False,
@@ -20545,11 +20575,12 @@ class BasicModel(BaseModel):
                     row_ids[b] = int(store.row_ids[row])
                     store.witness_adjacency(row, identified_codes)
                     if getattr(self, '_component_reading', False):
-                        from ReferenceContext import selected_individual_references
+                        resolver.commit(reference_plan, row, written_clauses[b],
+                            document=document, position=position,
+                            training=bool(self._sentence_training))
+                        self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
                         self._concept_owner().components.commit(row, view['meanings'][b],
-                            None if comparison is None else comparison.estimate,
-                            individual_references=selected_individual_references(
-                                self.languageSpace, entries[b]))
+                            None if comparison is None else comparison.estimate)
                 if row >= 0 and retain:
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
         fields = []
@@ -20771,7 +20802,8 @@ class BasicModel(BaseModel):
                 pairs.update((source, target) for source in sources for target in targets)
             associations = ids.new_tensor(sorted(pairs)).reshape(-1, 2)
         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
-                             types, cases, inventory, interpreter, associations, orders)
+                             types, cases, inventory, interpreter, associations, orders,
+                             close_references=bool(getattr(self, '_component_reading', False)))
 
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word):

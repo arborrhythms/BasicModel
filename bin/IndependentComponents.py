@@ -1,8 +1,9 @@
-"""Gradient sparse coding of event coordinates, with recurrence-gated columns.
+"""Gradient sparse coding of event coordinates and occurrence identities.
 
 The dictionaries contain order-one concepts. Their addresses name columns;
 addresses and word spellings never enter a numerical score. The same sparse
 coding objective trains the columns and the current source coordinates.
+A individuals are admitted at a kept close; B retains recurring innovations.
 """
 from dataclasses import dataclass
 import io
@@ -311,6 +312,8 @@ class IndependentComponents(nn.Module):
         self._population = None
         self._population_limits = None
         self.admission_drops = 0
+        from ReferenceClose import ReferenceClose
+        self.reference_close = ReferenceClose(self)
 
     @property
     def source_capacity(self):
@@ -486,8 +489,7 @@ class IndependentComponents(nn.Module):
         return identity
 
     @torch.no_grad()
-    def commit(self, row, meaning, prediction=None, *, individual_references=(),
-               require_selected_mint=True):
+    def commit(self, row, meaning, prediction=None):
         if getattr(self.owner, '_online_learning_frozen', False):
             return
         chart = self._ready()
@@ -499,18 +501,9 @@ class IndependentComponents(nn.Module):
         before = {id(p) for p in self.parameters()}
         stored = store.meaning_of(row)
         observed = chart.project(stored.roles.detach())
-        # Grammar chooses whether an individual is present and whether it
-        # is new. Extension/kind readings supply no individual choice; bind
-        # can re-witness existing columns but cannot start a mint recurrence.
-        # The default preserves the reviewed admission rule. The explicit
-        # ablation permits its lesson to be measured without changing the
-        # selected grammar, references, or any binding decision.
-        if individual_references or not require_selected_mint:
-            self.nouns.observe(chart.expand(noun_frame(observed)), witness=witness,
-                allocate=self._allocate, max_sources=self.source_limit(store=store, row=row),
-                allow_mint=not require_selected_mint or -1 in individual_references,
-                prediction=(None if prediction is None else
-                    chart.expand(noun_frame(chart.project(prediction.roles.detach())))))
+        # A's individuals were admitted from the kept NP occurrences at this
+        # close. Whole-row residual recurrence is not individual identity.
+        # The deferred order-two mechanism owns cross-document recurrence.
         if prediction is not None and self.nouns.ids:
             residual = self.innovation(meaning.roles.detach(), prediction.roles.detach())
             self._innovations[identity] = residual.detach().cpu()
@@ -526,13 +519,21 @@ class IndependentComponents(nn.Module):
         if not self.nouns.ids:
             return ()
         result = {}
+        store = self.owner._closed_clause_store()
         for frame in frames:
-            codes = self._identified(frame.roles.detach())
-            active = noun_frame(codes).detach().ne(0)
-            for identity, used in zip(self.nouns.ids, active.tolist()):
-                if used:
-                    result.pop(identity, None)
-                    result[identity] = frame
+            row = store.index_of_row(frame.row_id) if store is not None else None
+            if row is None:
+                continue
+            for reference in self.reference_close.occurrences(row):
+                address = self.reference_close.address(reference)
+                if address is None:
+                    continue
+                index = store.index_of_row(address)
+                if index is not None and int(store.order[index]) == 1:
+                    identity = int(store.refs[index, 0])
+                    if identity in self.nouns.ids:
+                        result.pop(identity, None)
+                        result[identity] = frame
         return tuple(result.items())[-self.source_capacity:]
 
     def candidates(self, frames):

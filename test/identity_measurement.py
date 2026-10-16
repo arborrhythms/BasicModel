@@ -117,6 +117,8 @@ def native_observer(model):
     import torch
     from ReferenceContext import reference_requests
     captured={}; current_sid=[None]
+    model._reference_close_audit = {}
+    source_leaves = {}
     observe=model._sentence_observation
     store=model.symbolSpace.ltm_store
     write=store.write_clause
@@ -138,6 +140,7 @@ def native_observer(model):
                     if position<0 or leaf>=len(program.word_rows) or position not in source:
                         continue
                     word=source.index(position)
+                    source_leaves[int(sid), b, leaf] = word
                     request=requests.get(leaf)
                     reference=(request[2] if request is not None and request[0]==1 else None)
                     reason = (None if valid_reference(reference) else
@@ -186,6 +189,22 @@ def native_observer(model):
     model._sentence_observation=observation; store.write_clause=writing
     try: yield captured
     finally:
+        # Grade after the document closes. Revision may have re-tied an
+        # earlier occurrence; its address, not the initial choice, is final.
+        for (sid, b), records in getattr(model, '_reference_close_audit', {}).items():
+            for record in records:
+                index = store.index_of_row(record['occurrence'])
+                reference = None if index is None else int(store.refs[index, 0])
+                for leaf in record['leaves']:
+                    word = source_leaves.get((sid, b, leaf))
+                    if word is None or sid not in captured or b >= len(captured[sid]):
+                        continue
+                    token = captured[sid][b]['tokens'].get(word)
+                    if token is not None:
+                        token.update(reference=reference if valid_reference(reference) else None,
+                            occurrence=record['occurrence'], source='document close',
+                            missing_reason=(None if valid_reference(reference) else
+                                'occurrence_no_longer_accessible' if index is None else record['missing_reason']))
         model._sentence_observation=observe; store.write_clause=write
 
 

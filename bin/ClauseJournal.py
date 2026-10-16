@@ -96,6 +96,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     rule, 'argin'+str(role+1), operand['order'], implicit=True)
                 binding = (binding_order is not None and binding_order >= 0
                            and binding_mode not in ('kind', 'generic'))
+                if (getattr(program, 'close_references', False) and binding_order == 1
+                        and mode in ('mint', 'bind', 'pronoun')):
+                    # The selected operator supplies a request, not a trial
+                    # reference. Keep the constituent and its meaning intact.
+                    continue
                 if (getattr(program, 'binding_choices', False) and binding
                         and program.operation_probabilities is not None):
                     formation = dict(choice='open' if reference == 0 else 'mint' if reference == -1 else 'bind',
@@ -136,12 +141,24 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     # looking up its head must not flatten the whole field.
                     operand['has_point'] = (operand['has_point']
                         and reference_has_point(reference, True))
-        stack.append(dict(value=frames[action, 2], local=local, ref=-1,
+        parent = dict(value=frames[action, 2], local=local, ref=-1,
                           order=result_order(catalog[local], tuple(child['order'] for child in operands)),
                           rule=catalog[local], children=operands,
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
                           leaves=tuple(i for child in operands for i in child['leaves']),
-                          has_point=not relation_rule and all(child['has_point'] for child in operands)))
+                          has_point=not relation_rule and all(child['has_point'] for child in operands))
+        if getattr(program, 'close_references', False):
+            rule = catalog[local]
+            for role in getattr(rule, 'reference_roles', ()):
+                index = int(role[5:]) - 1
+                order, mode = binding_spec(rule, role, operands[index]['order'])
+                if order == 1 and mode in ('mint', 'bind', 'pronoun'):
+                    description = operands[index]
+                    cue = operands[1-index] if arity == 2 else None
+                    parent['close_request'] = dict(mode=mode, leaves=description['leaves'],
+                        cue=None if cue is None else cue['value'],
+                        content=description['value'] if mode == 'pronoun' else parent['value'])
+        stack.append(parent)
     if len(stack) not in (1, 3):
         raise ValueError('a completed field must have one or three slots')
 
@@ -240,6 +257,30 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         polarity = True
         excluded = False
         mode = 'assertive'
+        def close_member(item):
+            current = item
+            request = current.get('close_request')
+            while request is None and current['children']:
+                rule = current['rule']
+                if getattr(rule, 'clause_form', None) in ('S', 'VP'):
+                    break
+                role = getattr(rule, 'head_role', 0)
+                if not role and len(current['children']) == 1 and getattr(rule, 'scope_transparent', False):
+                    role = 1
+                if not role:
+                    break
+                current = current['children'][role - 1]
+                request = current.get('close_request')
+            if request is None:
+                return None
+            point = request['content'] if current is item else item['value']
+            return Clause(ConceptualMeaning.from_description(point), point=point,
+                subject_word_id=subject_word_id(item), order=1,
+                evidence=metadata(item['leaves'])['evidence'], **bands(item),
+                reference_request=request)
+        standalone = close_member(root)
+        if standalone is not None:
+            return standalone
         node = head(root, clause=True)
         while len(node['children']) == 1:
             if getattr(node['rule'], 'polarity_effect', None) == 'invert':
@@ -273,6 +314,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             return max(0, item['order'])
 
         def member(item):
+            ended = close_member(item)
+            if ended is not None:
+                return ended
             mode = getattr(item['rule'], 'determiner_mode', None)
             if mode != 'mint' and not item.get('mint_reference'):
                 return None
@@ -288,6 +332,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                           subject_word_id=subject_word_id(description), **bands(item), **meta)
 
         def operand(item, *, sentence=False):
+            ended = close_member(item)
+            if ended is not None:
+                ref = ('clause', len(children))
+                children.append(ended)
+                owned.add(id(item))
+                return ended.point, ref
             if item.get('open_reference') or head(item).get('open_reference'):
                 return value(item), -1
             if sentence or is_clause(item):
@@ -385,6 +435,21 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 references = tuple(previous if isinstance(previous, tuple) else
                     ref if ref not in (-1, 0) else -1
                     for previous, ref in zip(references, node['operand_refs'])) + (-1,)
+            # The predicate comes from the kept structure. Equality's
+            # grammar predicate is a copula, so its complement supplies the
+            # content; a lexical VP contributes its actual head instead.
+            context_predicate = (right if operator == 'equal' else
+                                 predicate if operator is None else None)
+            contextual = []
+            for child in children:
+                request = child.reference_request
+                if request is not None:
+                    index = children.index(child)
+                    role = 2 if right_ref == ('clause', index) else 0
+                    child = replace(child, reference_request=dict(request, role=role,
+                        predicate=context_predicate))
+                contextual.append(child)
+            children = contextual
         else:
             described = replace(ConceptualMeaning.from_description(value(root)),
                                 mode=mode, polarity=polarity)

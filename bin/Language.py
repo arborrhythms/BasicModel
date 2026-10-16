@@ -3900,7 +3900,7 @@ class PrepositionLayer(GrammarLayer):
         return self.reverse(parent)
 
 class ContextualBindLayer(GrammarLayer):
-    """Resolve a contextual BIND marker to a prior participant when available."""
+    """Carry a binding marker; individual selection belongs to the close."""
     inverse_kind = 'left'
     head_role = 2
     reference_modes = (('argin2', 'pronoun'),)
@@ -3911,33 +3911,8 @@ class ContextualBindLayer(GrammarLayer):
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
-        object.__setattr__(self, '_bind_context', None)
-    def set_bind_context(self, *, slab=None, participants=None, licensing=None):
-        object.__setattr__(self, '_bind_context',
-                           {'slab': slab, 'participants': participants, 'licensing': licensing})
-    def clear_bind_context(self):
-        object.__setattr__(self, '_bind_context', None)
     def forward(self, left, right):
-        ctx = self._bind_context
-        if ctx and ctx.get('slab') is not None:
-            slab = ctx['slab']                              # [B, N, D] live constituents
-            # nearest-left participant for each pair p: constituent p-1;
-            # position 0 keeps itself (no left context -> passthrough).
-            prior = torch.cat([slab[:, :1, :], slab[:, :-1, :]], dim=1)  # [B, N, D]
-            return prior[:, :-1, :]                          # [B, N-1, D], aligned to pairs
-        if ctx and ctx.get('participants'):
-            from bind_resolver import resolve_bind
-            vec, _chosen = resolve_bind(ctx['participants'], licensing=ctx.get('licensing'))
-            if vec is not None:
-                return vec.expand_as(left) if vec.shape != left.shape else vec
         return left
-    def compose_with_context(self, left, right, slab):
-        """Pure BIND using the live constituent slab as a tensor input."""
-        if slab is None or slab.dim() != 3:
-            return left
-        prior = torch.cat(
-            [slab[:, :1, :], slab[:, :-1, :]], dim=1)
-        return prior[:, :-1, :]
     def reverse(self, parent):
         # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
         self.raise_no_inverse("contextual binding is not recoverable")
@@ -7416,11 +7391,6 @@ class OperationSelectionLayer(nn.Module):
         positions = torch.arange(N, device=x.device)[None, :]
         live = positions < depth[:, None]
         x = torch.where(live[..., None], x, 0.)
-        if not torch.compiler.is_compiling():
-            for op in self.ops:
-                grammar_op = getattr(op, 'gl', op)
-                if hasattr(grammar_op, 'set_bind_context'):
-                    grammar_op.set_bind_context(slab=x)
         binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
         unary = self._stacked_applied(x, grammar_context, reference_data)
         binary_ops = (tuple(range(self.r_reduce)) if reference_data is None
@@ -13129,8 +13099,8 @@ class LanguageSpace(nn.Module):
                 continue
             if order == 1:
                 # The selected operation carries its column reference. A
-                # dictionary association cannot decide individual identity or
-                # bypass the component recurrence gate at this closing.
+                # dictionary association cannot decide individual identity;
+                # the kept close resolves its constituent's request.
                 columns = getattr(getattr(owner, 'components', None), 'nouns', None)
                 if columns is None or int(refs[leaf]) not in columns.ids:
                     refs[leaf] = -1
