@@ -198,8 +198,8 @@ def test_identity_candidates_share_the_operation_softmax_and_live_credit():
     class Identity(torch.nn.Module):
         def forward(self, x):
             return x
-    rule = SimpleNamespace(reference_orders=(('I1', 1),),
-                           reference_kinds=(('I1', 'particular'),))
+    rule = SimpleNamespace(reference_roles=('argin1',),
+                           reference_modes=(('argin1', 'particular'),))
     word = torch.tensor([[[0., 0., 1., 0.]]])
     columns = torch.eye(4)[:2][None]
     bank = ReferenceBank(torch.tensor([[11, 12]]), columns,
@@ -207,7 +207,7 @@ def test_identity_candidates_share_the_operation_softmax_and_live_credit():
                          torch.zeros(1, 2, dtype=torch.bool), word[:, 0], torch.tensor([True]))
     live = (word, torch.tensor([[3]]), torch.tensor([[0]]),
             torch.tensor([[False]]), torch.tensor([[0]]))
-    args = dict(rules=(), unary_rules=(rule,), bank=bank, live=live,
+    args = dict(orders=torch.tensor([[1]]), rules=(), unary_rules=(rule,), bank=bank, live=live,
                 active=torch.tensor([[True]]))
     candidates = prepare_operands(word, torch.tensor([[3]]), torch.tensor([[0]]),
                                   torch.tensor([[0]]), **args)
@@ -227,7 +227,7 @@ def test_identity_candidates_share_the_operation_softmax_and_live_credit():
         assert any(g is not None and bool(g.abs().sum() > 0) for g in grads)
     # A pronoun has precisely the bounded noun columns, with no dictionary
     # decision or mint fallback. Selection remains the same global action.
-    rule.reference_kinds = (('I1', 'pronoun'),)
+    rule.reference_modes = (('argin1', 'pronoun'),)
     pronoun = prepare_operands(word, torch.tensor([[3]]), torch.tensor([[0]]),
                                torch.tensor([[0]]), **args)
     assert set(pronoun['unary_refs'][0, 0, pronoun['unary_valid'][0, 0], 0].tolist()) == {11, 12}
@@ -356,7 +356,9 @@ def test_selected_grammar_controls_admission_without_word_lookup(monkeypatch, mo
         actions = program.actions.clone()
         actions[-1, 1] = next(i for i, rule in enumerate(fixture.binary)
                               if rule.determiner_mode == selected_mode)
-        return record_reading(fixture.language, replace(program, actions=actions))
+        stamps = torch.zeros(len(program.leaves), dtype=torch.long)
+        stamps[-1] = 2  # Supplied description of a kind; the operation lowers it.
+        return record_reading(fixture.language, replace(program, actions=actions, leaf_orders=stamps))
     program = determined(('lower', 'marker', 'description'), mode)
     refs = program.operation_refs.clone()
     refs[-1, 1] = reference

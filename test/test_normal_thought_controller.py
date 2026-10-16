@@ -371,7 +371,7 @@ def test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit():
         changed = replace(question, roles=roles)
         assert not torch.equal(first, chooser.thought_logits(question, (question, changed)))
         assert not torch.equal(first, chooser.thought_logits(changed, (question, question)))
-    unary = registry.form('isPart', whole, open_roles=('I1',))
+    unary = registry.form('isPart', whole, open_roles=('argin1',))
     padding = unary.roles.clone()
     padding[0].fill_(99.)
     torch.testing.assert_close(chooser.thought_logits(unary, (unary,)),

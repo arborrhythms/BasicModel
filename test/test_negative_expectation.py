@@ -322,7 +322,7 @@ def test_open_question_and_nested_what_spare_the_same_role():
     model, discourse, meaning = _anticipating_model()
     registry = model.grammatical_thoughts
     source, whole = meaning.role_refs[0], meaning.role_refs[2]
-    question = registry.form("isPart", whole, open_roles=("I1",))
+    question = registry.form("isPart", whole, open_roles=("argin1",))
     observe(discourse, meaning.roles)
     model.expectation_gain = 1.
     store = model.symbolSpace.ltm_store
@@ -363,7 +363,7 @@ def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
     model, discourse, meaning = _anticipating_model()
     observe(discourse, meaning.roles)
     registry = model.grammatical_thoughts
-    question = registry.form("isPart", meaning.role_refs[2], open_roles=("I1",))
+    question = registry.form("isPart", meaning.role_refs[2], open_roles=("argin1",))
     memory = model._what_memory()
     memory.begin_thought_episode(meaning, work_budget=8)
     memory.commit_thought(question, operation="part")

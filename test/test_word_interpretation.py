@@ -234,10 +234,11 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     entry = make_program(values=leaves, refs=tuple(('sym', obj) for obj in objects))
     rules = list(language._compose_binary_rules)
     selected = int(entry.actions[-1, 1])
-    rules[selected] = rules[selected]._replace(reference_orders=(('I1', 2), ('I2', 2)))
+    rules[selected] = rules[selected]._replace(reference_roles=('argin1', 'argin2'))
     language._compose_binary_rules = rules
     word_rows = torch.tensor([cs._csw_row_of(obj) for obj in objects])
-    refs, orders = language.resolve_lexical_references(cs, word_rows, entry.concept_ids, entry.actions)
+    refs, orders = language.resolve_lexical_references(cs, word_rows, entry.concept_ids, entry.actions,
+                                                     leaf_orders=torch.tensor([2, 2]))
     assert orders.tolist() == [2, 2]
     assert refs.tolist() == [cs.interpret.forward(word, order=2) for word in words]
     assert all(int(kind) != particular for kind, particular in zip(refs, objects))

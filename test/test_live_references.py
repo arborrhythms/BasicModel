@@ -51,8 +51,8 @@ def test_grammar_order_resolution_survives_the_numerical_journal():
     from reading_fixtures import record_reading
     from test_sentence_references import language_and_program
     language, entry = language_and_program()
-    language._compose_binary_rules[0].reference_orders = (('I1', 2),)
-    language._compose_binary_rules[0].reference_kinds = (('I1', 'generic'),)
+    language._compose_binary_rules[0].reference_roles=('argin1',)
+    language._compose_binary_rules[0].reference_modes = (('argin1', 'generic'),)
     entry = record_reading(language, entry)
     entry = replace(entry, reference_ids=torch.tensor([7, 3]),
                     reference_orders=torch.tensor([2, -1]))
@@ -68,11 +68,14 @@ def test_existing_kind_point_is_resolved_before_the_operator():
     types = SimpleNamespace(sources=torch.tensor([[1]]),
                             orders=torch.tensor([2]), identities=torch.tensor([[[7]]]),
                             values=kind.reshape(1, 1, 1, 4))
-    bank = SimpleNamespace(types=types)
-    rule = SimpleNamespace(reference_orders=(('I1', 2),),
-                           reference_kinds=(('I1', 'generic'),))
+    bank = ReferenceBank(torch.empty(1, 0, dtype=torch.long), value[:, :0],
+        torch.empty(1, 0, dtype=torch.bool), torch.empty(1, 0, dtype=torch.bool),
+        value[:, 0], torch.tensor([False]), types=types, column_ids=torch.empty(0, dtype=torch.long))
+    rule = SimpleNamespace(reference_roles=('argin1',),
+                           reference_modes=(('argin1', 'generic'),))
     result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
-                              torch.tensor([[0]]), rules=(), unary_rules=(rule,), bank=bank, live=None,
+                              torch.tensor([[0]]), orders=torch.tensor([[2]]),
+                              rules=(), unary_rules=(rule,), bank=bank, live=None,
                               active=torch.tensor([[True]]))
     torch.testing.assert_close(result['unary'][0, 0, 0], kind, rtol=0, atol=0)
     assert result['unary_refs'][0, 0, 0, 0] == 7
@@ -129,8 +132,7 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
     prior = torch.tensor([.2, .3, .4, .5])
     query = torch.nn.Parameter(prior.clone())
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
-                            _compose_binary_rules=(SimpleNamespace(reference_orders=(
-                                ('I1', 1),), reference_kinds=(('I1', 'particular'),)),),
+                            _compose_binary_rules=(SimpleNamespace(reference_roles=('argin1',), reference_modes=(('argin1', 'particular'),)),),
                             _compose_unary_rules=(), _structural_context=lambda **kw: None,
                             _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
                                                           torch.tensor([[False]]), query[None], torch.tensor([True])))
@@ -179,8 +181,8 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     language = model.languageSpace
     rules = list(language._compose_binary_rules)
     op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
-    rules[op] = rules[op]._replace(reference_orders=(
-        ('I1', 1),), reference_kinds=(('I1', 'particular'),))
+    rules[op] = rules[op]._replace(reference_roles=('argin1',),
+        reference_modes=(('argin1', 'particular'),), order_delta=1)
     language._compose_binary_rules = tuple(rules)
     layer = language._tree_layer(2)
     original = layer.forward

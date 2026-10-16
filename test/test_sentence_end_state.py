@@ -59,7 +59,7 @@ def test_finishing_uses_actual_operands_and_result_without_running_an_operator()
 
     language = SimpleNamespace(
         _compose_binary_rules=[SimpleNamespace(method_name='lift', clause_form='S',
-            head_role=0, reference_kinds=(), lhs='S')], _compose_unary_rules=[],
+            head_role=0, reference_modes=(), lhs='S')], _compose_unary_rules=[],
         forward_binary_step=forbidden, forward_unary_step=forbidden)
     left, right, result = torch.tensor([[1., 2., 3., 4.], [5., 6., 7., 8.],
                                       [-4., -3., -2., -1.]])
@@ -158,7 +158,7 @@ def test_idea_caches_the_operand_addresses_recorded_before_fusion():
     from Understanding import AnswerProgram
 
     language = SimpleNamespace(_compose_binary_rules=[SimpleNamespace(method_name='lift',
-        clause_form='S', head_role=0, reference_kinds=(), lhs='S')], _compose_unary_rules=[])
+        clause_form='S', head_role=0, reference_modes=(), lhs='S')], _compose_unary_rules=[])
     left, right, result = torch.arange(12, dtype=torch.float32).reshape(3, 4)
     frames = torch.zeros(3, 3, 4)
     frames[2] = torch.stack((left, right, result))

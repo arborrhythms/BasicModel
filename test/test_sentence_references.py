@@ -16,7 +16,7 @@ from test_sentence_expectation import layer, observe
 
 def language_and_program(mode='particular'):
     rule = SimpleNamespace(method_name='sum', lhs='S',
-        reference_orders=(('I1', 1),), reference_kinds=(('I1', mode),))
+        reference_roles=('argin1',), reference_modes=(('argin1', mode),))
     language = SimpleNamespace(_compose_binary_rules=(rule,), _compose_unary_rules=(),
         forward_binary_step=lambda a, b, *_: (a + b) * .5)
     leaves = torch.eye(4)[[0, 2]]
@@ -25,7 +25,8 @@ def language_and_program(mode='particular'):
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]),
         targets=torch.tensor([0, 1, 1]),
         end_state=torch.stack((leaves.mean(0), torch.zeros(4), torch.zeros(4))),
-        concept_ids=torch.tensor([1, 3]), reference_orders=torch.tensor([1, -1]))
+        concept_ids=torch.tensor([1, 3]), leaf_orders=torch.tensor([1, 1]),
+        reference_orders=torch.tensor([1, -1]))
     return language, program
 
 
@@ -67,7 +68,7 @@ def test_pronoun_requires_a_particular_and_never_uses_its_type():
 def test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator():
     language, program = language_and_program('pronoun')
     rule = language._compose_binary_rules[0]
-    rule.reference_orders, rule.reference_kinds = (('I2', 1),), (('I2', 'pronoun'),)
+    rule.reference_roles, rule.reference_modes = ('argin2',), (('argin2', 'pronoun'),)
     program = replace(program, reference_orders=torch.tensor([1, 1]))
     got = resolve_occurrences(language, program, forced={1: 1})
     assert got.reference_ids.tolist() == [1, 1]
@@ -115,13 +116,13 @@ def test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate():
 
 def test_reference_request_follows_the_head_and_outer_particular_scope():
     from ReferenceContext import reference_requests
-    generic = SimpleNamespace(reference_orders=(('I1', 2),),
-        reference_kinds=(('I1', 'generic'),), head_role=1)
-    lower = SimpleNamespace(reference_orders=(('I2', 1),),
-        reference_kinds=(('I2', 'particular'),), head_role=2)
+    generic = SimpleNamespace(reference_roles=('argin1',),
+        reference_modes=(('argin1', 'generic'),), head_role=1)
+    lower = SimpleNamespace(reference_roles=('argin2',),
+        reference_modes=(('argin2', 'particular'),), head_role=2, order_delta=-1)
     language = SimpleNamespace(_compose_binary_rules=(lower,), _compose_unary_rules=(generic,))
     actions = torch.tensor([[0, -1, 0], [0, -1, 1], [2, 0, -1], [1, 0, -1]])
-    assert reference_requests(language, actions) == {1: (1, 'particular')}
+    assert reference_requests(language, actions, leaf_orders=torch.tensor([0, 2])) == {1: (1, 'particular')}
 
 
 def test_hard_reference_value_is_bit_exact_at_every_softmax_score(monkeypatch):

@@ -10,7 +10,7 @@ def pair(value=None, positive=0., negative=0., *, witnesses=(), **metadata):
 def part(context, arguments):
     from Queries import _vector
     from Layers import Ops
-    left, right = (_vector(context, arguments[role]) for role in ('I1', 'I2'))
+    left, right = (_vector(context, arguments[role]) for role in ('argin1', 'argin2'))
     residual = Ops.part(left, right).detach()
     support = float(Ops.part(left, right, scalar=True))
     return pair(residual, support, result_kind='concept', evidence_kind='meronymy')
@@ -20,7 +20,7 @@ def is_part(context, arguments):
     if len(arguments) == 1:
         role, reference = next(iter(arguments.items()))
         found = dict(context.taxonomy.neighbors(reference,
-            direction='up' if role == 'I1' else 'down', max_nodes=context.max_nodes,
+            direction='up' if role == 'argin1' else 'down', max_nodes=context.max_nodes,
             max_records=context.max_records, max_expansions=context.max_expansions,
             work=context.work))
         values = found.get('value', ())
@@ -32,7 +32,7 @@ def is_part(context, arguments):
                     binding_value=None if best is None else best['value'],
                     witnesses=() if best is None else (best['source'].owner,),
                     evidence_kind='taxonomy', result_kind='set')
-    left, right = arguments['I1'], arguments['I2']
+    left, right = arguments['argin1'], arguments['argin2']
     result = context.ltm.relation_evidence('part', left, right,
         max_records=context.max_records, work=context.work)
     if result['support_true'] or result['support_false']:
@@ -42,19 +42,19 @@ def is_part(context, arguments):
         max_steps=context.max_steps, max_expansions=context.max_expansions,
         work=context.work))
     evidence['witnesses'] = tuple(edge.owner for edge in evidence.get('path', ()))
-    evidence['value'] = dict(context.operand_values).get('I1')
+    evidence['value'] = dict(context.operand_values).get('argin1')
     return evidence
 
 
 def equal(context, arguments):
     from Queries import _vector
-    left, right = (_vector(context, arguments[role]) for role in ('I1', 'I2'))
+    left, right = (_vector(context, arguments[role]) for role in ('argin1', 'argin2'))
     score = context.conceptual_space.equal(left, right)
     return pair(left.detach().clone(), score, operands=(left, right), result_kind='concept')
 
 
 def is_equal(context, arguments):
-    return context.ltm.relation_evidence('equal', arguments['I1'], arguments['I2'],
+    return context.ltm.relation_evidence('equal', arguments['argin1'], arguments['argin2'],
         max_records=context.max_records, work=context.work)
 
 
@@ -64,9 +64,9 @@ def implies(context, arguments):
 
 
 def is_implied(context, arguments):
-    link = context.ltm.relation_evidence('implies', arguments['I1'], arguments['I2'],
+    link = context.ltm.relation_evidence('implies', arguments['argin1'], arguments['argin2'],
         max_records=context.max_records, work=context.work)
-    premise = context.ltm.premise_evidence(arguments['I1'],
+    premise = context.ltm.premise_evidence(arguments['argin1'],
         max_records=context.max_records, work=context.work)
     return pair(link.get('value'), min(link['support_true'], premise['support_true']),
         min(link['support_false'], premise['support_true']),
@@ -81,26 +81,26 @@ def is_true(context, arguments):
     if references:
         return context.ltm.end_evidence(references[0], max_records=context.max_records,
                                         work=context.work)
-    return context.ltm.truth_evidence(arguments['I1'],
+    return context.ltm.truth_evidence(arguments['argin1'],
         max_records=context.max_records, work=context.work)
 
 
 def exist(context, arguments):
     from Queries import _vector
-    value = _vector(context, arguments['I1'])
+    value = _vector(context, arguments['argin1'])
     extent = context.conceptual_space.extent(value)
     return dict(extent, result_kind='concept', evidence_kind='conceptual-presence', witnesses=())
 
 
 def query(context, arguments):
     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
-    return context.ltm.best_match(arguments['I1'],
+    return context.ltm.best_match(arguments['argin1'],
         max_records=context.max_records, work=context.work, references=references)
 
 
 def ask(context, arguments):
     from ThoughtReferences import needs_episode
-    requested = arguments['I1']
+    requested = arguments['argin1']
     if needs_episode(requested) and callable(context.continuation):
         return returned_subgoal(context.continuation(requested))
     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
@@ -120,7 +120,7 @@ def negate(context, arguments):
     from Queries import _vector
     from Meaning import ConceptualMeaning
     from ThoughtReferences import bindings, evidence_pair, with_slots, open_slots
-    value = arguments['I1']
+    value = arguments['argin1']
     if isinstance(value, tuple) and len(value) == 2 and all(isinstance(v, (int, float)) for v in value):
         return pair(None, value[1], value[0], evidence_kind='inference')
     if isinstance(value, ConceptualMeaning):
@@ -139,7 +139,7 @@ def negate(context, arguments):
 
 def gain(context, arguments):
     from Queries import _vector
-    value = _vector(context, arguments['I1']).detach()
+    value = _vector(context, arguments['argin1']).detach()
     magnitude = value.norm().clamp(0, 1)
     return pair(value, float(magnitude), gain=float(magnitude),
                 evidence_kind='gain', result_kind='concept')

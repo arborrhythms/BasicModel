@@ -28,7 +28,7 @@
       fidelity without establishing an event time.
 
 
-  Naming: op_I[n] = input role n, op_O1 = output. forward: inputs->output;
+  Naming: op_argin[n] = input role n, op_argout1 = output. forward: inputs->output;
   reverse: output->inputs. POS membership is LEARNED from participation.
 
   POS <-> operator <-> math:
@@ -89,13 +89,13 @@
 
   <Symbolic>
     <!-- The dimensional start states, in operator-role form (no POS tokens):
-         absolute_truth = exist_O1, the EXISTS no-op output (a thing exists,
+         absolute_truth = exist_argout1, the EXISTS no-op output (a thing exists,
          the minimal event); relative_truth = the relation family part / whole
          / equal, each a Relation(RI_1, RI_2) output over two ideas. -->
     <start name="absolute_truth">S</start>
-    <start name="relative_truth">part_O1</start>
-    <start name="relative_truth">whole_O1</start>
-    <start name="relative_truth">equal_O1</start>
+    <start name="relative_truth">part_argout1</start>
+    <start name="relative_truth">whole_argout1</start>
+    <start name="relative_truth">equal_argout1</start>
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
@@ -111,9 +111,9 @@
            selected explicitly in the `<thought>` allow-list and execute only
            after a completed boundary. whole is part's converse structural form; no
            structural application establishes a fact. -->
-      <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
-      <rule family="part" permutation="I2,I1">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
-      <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
+      <rule>part_argout1 = part.forward(part_argin1, part_argin2)</rule>
+      <rule family="part" permutation="argin2,argin1">whole_argout1 = whole.forward(whole_argin1, whole_argin2)</rule>
+      <rule>equal_argout1 = equal.forward(equal_argin1, equal_argin2)</rule>
 
       <!-- Pure existence composition. The numerical wrapper roots the
            grammatical unary relation without an LTM read. Its selected thought
@@ -122,8 +122,8 @@
 
 
       <!-- Negation: not = pole swap; non = non-affirming complement. -->
-      <rule>not_O1 = not.forward(not_I1)</rule>
-      <rule>non_O1 = non.forward(non_I1)</rule>
+      <rule>not_argout1 = not.forward(not_argin1)</rule>
+      <rule>non_argout1 = non.forward(non_argin1)</rule>
 
       <!-- Boolean / lattice connectives. The lattice pair on the bivector
            cone: intersection = RadMin / lattice-min (ADJ mask / meet on NP,
@@ -131,99 +131,99 @@
            its dual (renamed from "join" 2026-07-05). and/or = conjunction /
            disjunction (the SS scalar-activation lattice). The reverse uses the
            codebook recommender (Ops._binary_op_recommend). -->
-      <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
-      <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
-      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
-      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)</rule>
+      <rule>disjunction_argout1 = disjunction.forward(disjunction_argin1, disjunction_argin2)</rule>
+      <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>
+      <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
 
       <!-- Arithmetic concept ops (2026-07-05): element-wise sum (a+b) and
            product (a*b) over two concepts. product is the multiplicative dual
            of sum; difference is retired (it is sum of a negated operand). -->
-      <rule>sum_O1 = sum.forward(sum_I1, sum_I2)</rule>
-      <rule>product_O1 = product.forward(product_I1, product_I2)</rule>
+      <rule>sum_argout1 = sum.forward(sum_argin1, sum_argin2)</rule>
+      <rule>product_argout1 = product.forward(product_argin1, product_argin2)</rule>
 
       <!-- The ladder grammar (doc/plans/2026-09-10-meronomy-fold-ladder.md,
            Phase 2b): chunk is a chooser candidate on the reduce pass, the
            structural sum of two adjacent constituents that the analysis
            tiling places in one coarser whole. Admission of the chunked
            phrase as a concept is gated by recurrence and category utility. -->
-      <rule>synthesize_O1 = synthesize.forward(synthesize_I1, synthesize_I2)</rule>
+      <rule>synthesize_argout1 = synthesize.forward(synthesize_argin1, synthesize_argin2)</rule>
       <!-- The null operation: the unary identity a unit contributes when it
            carries no meaning of its own (a whitespace unit); folds it away. -->
-      <rule>null_O1 = null.forward(null_I1)</rule>
+      <rule>null_argout1 = null.forward(null_argin1)</rule>
 
       <!-- Composition / projection. verb = VP spectral operator; adverb =
            VP eigenmodifier; lift remains the generic order-raising fold;
            lower = DET. -->
-      <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
-      <rule>verb_O1 = verb.forward(verb_I1, verb_I2)</rule>
-      <rule>compound_O1 = compound.forward(compound_I1, compound_I2)</rule>
-      <rule>adverb_O1 = adverb.forward(adverb_I1, adverb_I2)</rule>
-      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+      <rule>lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
+      <rule>verb_argout1 = verb.forward(verb_argin1, verb_argin2)</rule>
+      <rule>compound_argout1 = compound.forward(compound_argin1, compound_argin2)</rule>
+      <rule>adverb_argout1 = adverb.forward(adverb_argin1, adverb_argin2)</rule>
+      <rule>lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation.
            Bind: contextual missing/controlled-NP resolution (control/raising). -->
-      <rule>preposition_O1 = preposition.forward(preposition_I1, preposition_I2)</rule>
-      <rule>bind_O1 = bind.forward(bind_I1, bind_I2)</rule>
+      <rule>preposition_argout1 = preposition.forward(preposition_argin1, preposition_argin2)</rule>
+      <rule>bind_argout1 = bind.forward(bind_argin1, bind_argin2)</rule>
 
       <!-- .when / surface ops: tense (phase rotation of the .when key);
            morphology (surface inflection -> .when). aspect is REPURPOSED as
            rewrite() - a PLANNED surface-inflection MLP (lemma + tense ->
            ran / will run / ...); not a live rule until RewriteLayer exists. -->
-      <rule>tense_O1 = tense.forward(tense_I1)</rule>
-      <rule>morphology_O1 = morphology.forward(morphology_I1)</rule>
+      <rule>tense_argout1 = tense.forward(tense_argin1)</rule>
+      <rule>morphology_argout1 = morphology.forward(morphology_argin1)</rule>
     </compose>
 
     <!-- Boundary thoughts are an explicit model policy. Negation and the
          other structural folds below do not become thought actions merely
          by appearing in compose/generate. -->
 <thought>
-      <rule>ask_O1 = ask.thought(ask_I1)</rule>
-      <rule>query_O1 = query.thought(query_I1)</rule>
-      <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
-      <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
-      <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
-      <rule>not_O1 = not.thought(not_I1)</rule>
-      <rule>isTrue_O1 = isTrue.thought(isTrue_I1)</rule>
-      <rule>exist_O1 = exist.thought(exist_I1)</rule>
-      <rule>isPart_O1 = isPart.thought(isPart_I1, isPart_I2)</rule>
-      <rule>isEqual_O1 = isEqual.thought(isEqual_I1, isEqual_I2)</rule>
-      <rule>isImplied_O1 = isImplied.thought(isImplied_I1, isImplied_I2)</rule>
-      <rule>implies_O1 = implies.thought(implies_I1, implies_I2)</rule>
-      <rule>gain_O1 = gain.thought(gain_I1)</rule>
+      <rule>ask_argout1 = ask.thought(ask_argin1)</rule>
+      <rule>query_argout1 = query.thought(query_argin1)</rule>
+      <rule>part_argout1 = part.thought(part_argin1, part_argin2)</rule>
+      <rule family="part" permutation="argin2,argin1">whole_argout1 = whole.thought(whole_argin1, whole_argin2)</rule>
+      <rule>equal_argout1 = equal.thought(equal_argin1, equal_argin2)</rule>
+      <rule>not_argout1 = not.thought(not_argin1)</rule>
+      <rule>isTrue_argout1 = isTrue.thought(isTrue_argin1)</rule>
+      <rule>exist_argout1 = exist.thought(exist_argin1)</rule>
+      <rule>isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)</rule>
+      <rule>isEqual_argout1 = isEqual.thought(isEqual_argin1, isEqual_argin2)</rule>
+      <rule>isImplied_argout1 = isImplied.thought(isImplied_argin1, isImplied_argin2)</rule>
+      <rule>implies_argout1 = implies.thought(implies_argin1, implies_argin2)</rule>
+      <rule>gain_argout1 = gain.thought(gain_argin1)</rule>
     </thought>
 
     <generate>
       <!-- Reverse rules: output -> inputs. -->
-      <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
-      <rule family="part" permutation="I2,I1">whole_I1, whole_I2 = whole.reverse(whole_O1)</rule>
-      <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+      <rule>part_argin1, part_argin2 = part.reverse(part_argout1)</rule>
+      <rule family="part" permutation="argin2,argin1">whole_argin1, whole_argin2 = whole.reverse(whole_argout1)</rule>
+      <rule>equal_argin1, equal_argin2 = equal.reverse(equal_argout1)</rule>
 
 
-      <rule>not_I1 = not.reverse(not_O1)</rule>
-      <rule>non_I1 = non.reverse(non_O1)</rule>
+      <rule>not_argin1 = not.reverse(not_argout1)</rule>
+      <rule>non_argin1 = non.reverse(non_argout1)</rule>
 
-      <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
-      <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
-      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
-      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>conjunction_argin1, conjunction_argin2 = conjunction.reverse(conjunction_argout1)</rule>
+      <rule>disjunction_argin1, disjunction_argin2 = disjunction.reverse(disjunction_argout1)</rule>
+      <rule>intersection_argin1, intersection_argin2 = intersection.reverse(intersection_argout1)</rule>
+      <rule>union_argin1, union_argin2 = union.reverse(union_argout1)</rule>
 
-      <rule>sum_I1, sum_I2 = sum.reverse(sum_O1)</rule>
-      <rule>product_I1, product_I2 = product.reverse(product_O1)</rule>
-      <rule>synthesize_I1, synthesize_I2 = synthesize.analyze(synthesize_O1)</rule>
-      <rule>null_I1 = null.reverse(null_O1)</rule>
+      <rule>sum_argin1, sum_argin2 = sum.reverse(sum_argout1)</rule>
+      <rule>product_argin1, product_argin2 = product.reverse(product_argout1)</rule>
+      <rule>synthesize_argin1, synthesize_argin2 = synthesize.analyze(synthesize_argout1)</rule>
+      <rule>null_argin1 = null.reverse(null_argout1)</rule>
 
-      <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
-      <rule>verb_I1, verb_I2 = verb.reverse(verb_O1)</rule>
-      <rule>compound_I1, compound_I2 = compound.reverse(compound_O1)</rule>
-      <rule>adverb_I1, adverb_I2 = adverb.reverse(adverb_O1)</rule>
-      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+      <rule>lift_argin1, lift_argin2 = lift.reverse(lift_argout1)</rule>
+      <rule>verb_argin1, verb_argin2 = verb.reverse(verb_argout1)</rule>
+      <rule>compound_argin1, compound_argin2 = compound.reverse(compound_argout1)</rule>
+      <rule>adverb_argin1, adverb_argin2 = adverb.reverse(adverb_argout1)</rule>
+      <rule>lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
 
-      <rule>preposition_I1, preposition_I2 = preposition.reverse(preposition_O1)</rule>
-      <rule>bind_I1, bind_I2 = bind.reverse(bind_O1)</rule>
+      <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>
+      <rule>bind_argin1, bind_argin2 = bind.reverse(bind_argout1)</rule>
 
-      <rule>tense_I1 = tense.reverse(tense_O1)</rule>
-      <rule>morphology_I1 = morphology.reverse(morphology_O1)</rule>
+      <rule>tense_argin1 = tense.reverse(tense_argout1)</rule>
+      <rule>morphology_argin1 = morphology.reverse(morphology_argout1)</rule>
     </generate>
   </Symbolic>
 

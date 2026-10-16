@@ -2446,6 +2446,7 @@ class GrammarLayer(Layer):
     meaning_rule = None
     meaning_head_role = 0
     determiner_mode = None
+    reference_modes = ()
     thought_predicate_identity = None
     substrate = False
     mandatory = False
@@ -5804,8 +5805,10 @@ class ConceptAllocator:
         return int(self._order_cap()) if self._order_cap else 0
 
     def order_of(self, cid, _seen=None):
-        """Ramsified order: 0 for all-raw constituents, else 1 + max order
-        of the sym-ref constituents, capped at S. Cycle-guarded."""
+        """Ramsified order: 0 for raw constituents, else 1 + max symbol order.
+
+        Storage capacity does not cap a symbol's semantic order. Cycle-guarded.
+        """
         cid = int(cid)
         _seen = _seen if _seen is not None else set()
         if cid in _seen:
@@ -5817,7 +5820,7 @@ class ConceptAllocator:
             if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
                 subs.append(self.order_of(x[1], _seen))
         return max(self.reference_orders.get(cid, 0),
-                   0 if not subs else min(self.cap(), 1 + max(subs)))
+                   0 if not subs else 1 + max(subs))
 
     def settle(self, cid):
         """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows

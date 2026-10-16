@@ -78,14 +78,14 @@ def test_declared_implementation_and_predicate_survive_rule_rename():
     from ClauseScope import ClauseScope
     grammar = Grammar()
     rules = []
-    grammar._fill_rule_list(rules, {'rule': {'_': 'r_O1 = r.forward(r_I1, r_I2)',
-        'implementation': 'verb', 'clause': 'VP', 'head': 'I1',
+    grammar._fill_rule_list(rules, {'rule': {'_': 'r_argout1 = r.forward(r_argin1, r_argin2)',
+        'implementation': 'verb', 'clause': 'VP', 'head': 'argin1',
         'predicate': 'activity'}})
     rule = rules[0]
     assert rule.method_name == 'verb'
     assert rule.surface_name == 'r'
     assert rule.predicate_identity == 'activity'
-    assert grammar._thought_contract_from_rule(rule,'forward') == ('verb', ('I1','I2'), 'O1')
+    assert grammar._thought_contract_from_rule(rule,'forward') == ('verb', ('argin1','argin2'), 'argout1')
     table = ClauseScope(rules, []).binary
     assert table[0, :4].tolist() == [0, 0, 1, 1]
 
@@ -93,7 +93,7 @@ def test_declared_implementation_and_predicate_survive_rule_rename():
 def test_explicit_effects_and_operand_kinds_are_checked_at_load():
     from Language import Grammar
     grammar = Grammar()
-    base = dict(_='x_O1 = x.forward(x_I1, x_I2)', implementation='verb')
+    base = dict(_='x_argout1 = x.forward(x_argin1, x_argin2)', implementation='verb')
     with pytest.raises(ValueError, match='field'):
         grammar._fill_rule_list([], {'rule': base | {'operands': 'field,field'}})
     with pytest.raises(ValueError, match='writes'):
@@ -163,14 +163,14 @@ def test_retired_operators_are_absent_from_shipped_grammars(filename):
 def test_retired_operator_declarations_fail_loudly(name):
     from Language import Grammar
     with pytest.raises(ValueError, match='retired'):
-        Grammar().configure({'thought': {'rule': f'{name}_O1 = {name}.thought({name}_I1)'}})
+        Grammar().configure({'thought': {'rule': f'{name}_argout1 = {name}.thought({name}_argin1)'}})
 
 
 def test_equality_returns_conceptual_content_with_its_evidence():
     from test_query_vp_boundaries import _context, _signature
     from test_cs_symbol_table import _cs
     idea = torch.arange(8, dtype=torch.float32) / 10
-    result = _signature('equal', 'I1', 'I2').invoke(_context(_cs()), idea, idea)
+    result = _signature('equal', 'argin1', 'argin2').invoke(_context(_cs()), idea, idea)
     assert result['result_kind'] == 'concept'
     torch.testing.assert_close(result['value'], idea)
     assert result['support_true'] == pytest.approx(1.)

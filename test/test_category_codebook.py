@@ -38,9 +38,9 @@ class _G:
 
 def _grammar():
     return _G([
-        _Rule("isEqual", ["isEqual_I1", "isEqual_I2"]),
-        _Rule("lift", ["lift_I1", "lift_I2"]),
-        _Rule("exist", ["exist_I1"]),
+        _Rule("isEqual", ["isEqual_argin1", "isEqual_argin2"]),
+        _Rule("lift", ["lift_argin1", "lift_argin2"]),
+        _Rule("exist", ["exist_argin1"]),
     ])
 
 
@@ -128,7 +128,7 @@ def test_disabled_methods_are_safe_noops():
 def test_pending_meta_symbol_commits_to_single_category():
     ss = _whole_space()
     ss.enable_category_codebook(_grammar())
-    col = ss._category_role_index["isEqual_I1"]
+    col = ss._category_role_index["isEqual_argin1"]
     vec = torch.zeros(ss._category_n_roles)
     vec[col] = 1.0
     meta_pos = 123
@@ -226,9 +226,9 @@ def test_category_learning_vocab_extras_roundtrip_is_exact_and_json_safe():
     learner.prototype_ema = 0.23
 
     committed_vec = torch.zeros(source._category_n_roles)
-    committed_vec[source._category_role_index["isEqual_I1"]] = 1.0
+    committed_vec[source._category_role_index["isEqual_argin1"]] = 1.0
     pending_vec = torch.zeros(source._category_n_roles)
-    pending_vec[source._category_role_index["lift_I1"]] = 1.0
+    pending_vec[source._category_role_index["lift_argin1"]] = 1.0
     for _ in range(3):
         committed = source.observe_category_roles(101, committed_vec)
     assert committed is not None

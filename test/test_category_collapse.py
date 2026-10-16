@@ -53,7 +53,7 @@ def test_live_grammar_collapses_determiner_alias_roles_without_conflict():
     collapse = g.category_collapse()
     assert collapse_conflicts(grammar_rules(g), collapse) == 0
     assert len(set(collapse.values())) == len(collapse) - 4
-    for role in ('I1', 'I2'):
+    for role in ('argin1', 'argin2'):
         assert collapse['lower_'+role] == collapse['definite_'+role] == collapse['universal_'+role]
 
 
@@ -94,9 +94,9 @@ from Language import _build_collapse_pool, _collapsed_cat_ctx  # noqa: E402
 
 
 def test_pooling_matrix_sums_merged_role_columns():
-    # a_I1 and b_I1 collapse to one category; c_I1, d_O1 stay singletons.
-    role_index = {"a_I1": 0, "b_I1": 1, "c_I1": 2, "d_O1": 3}
-    collapse = {"a_I1": 0, "b_I1": 0, "c_I1": 1, "d_O1": 2}
+    # a_argin1 and b_argin1 collapse to one category; c_argin1, d_argout1 stay singletons.
+    role_index = {"a_argin1": 0, "b_argin1": 1, "c_argin1": 2, "d_argout1": 3}
+    collapse = {"a_argin1": 0, "b_argin1": 0, "c_argin1": 1, "d_argout1": 2}
     P = _build_collapse_pool(role_index, collapse, 4)
     x = torch.tensor([[[1.0, 2.0, 4.0, 8.0]]])
     pooled = x @ P
@@ -105,8 +105,8 @@ def test_pooling_matrix_sums_merged_role_columns():
 
 
 def test_pooling_matrix_is_none_for_identity_collapse():
-    role_index = {"a_I1": 0, "b_I1": 1}
-    identity = {"a_I1": 0, "b_I1": 1}
+    role_index = {"a_argin1": 0, "b_argin1": 1}
+    identity = {"a_argin1": 0, "b_argin1": 1}
     assert _build_collapse_pool(role_index, identity, 2) is None
 
 

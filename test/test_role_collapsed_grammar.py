@@ -2,7 +2,7 @@
 
 doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
 §4 + §10. Live grammars declare ONLY operator roles (``op_I<n>`` inputs,
-``op_O1`` output) -- no parts of speech, no surface markers, no
+``op_argout1`` output) -- no parts of speech, no surface markers, no
 category-rename projection rules. The retired standalone role-collapse file
 was absorbed into ``complete.grammar``; these tests validate that contract on
 the broad live grammar and sweep the remaining data grammars.
@@ -88,7 +88,7 @@ def test_symbolicspace_owns_its_starts():
     # relative-truth start; S is the absolute-truth start, without a truth-reducing wrapper.
     assert "S" in ws_syms, ws_syms
     assert g.ws_relative_starts == frozenset({
-        'part_O1', 'whole_O1', 'equal_O1', 'implies_O1', 'operator_O1'})
+        'part_argout1', 'whole_argout1', 'equal_argout1', 'implies_argout1', 'operator_argout1'})
     assert "S" in g.ws_absolute_starts
 
 

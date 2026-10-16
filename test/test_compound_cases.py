@@ -104,14 +104,14 @@ def test_compound_candidate_is_masked_when_no_native_case_is_available():
     from Language import Grammar
     bank=_bank()
     language=Grammar();rules=[]
-    language._fill_rule_list(rules,{'rule':'compound_O1 = compound.forward(compound_I1, compound_I2)'})
+    language._fill_rule_list(rules,{'rule':'compound_argout1 = compound.forward(compound_argin1, compound_argin2)'})
     refs=ReferenceBank(torch.full((2,1),-1),torch.zeros(2,1,2),torch.zeros(2,1,dtype=torch.bool),
         torch.zeros(2,1,dtype=torch.bool),torch.zeros(2,2),torch.zeros(2,dtype=torch.bool),cases=bank)
     window=torch.zeros(2,2,2)
     ids=torch.tensor([[40,10],[-1,10]])
     flags=torch.zeros_like(ids)
     positions=torch.tensor([[0,1],[0,1]])
-    prepared=prepare_operands(window,ids,flags,positions,rules=rules,unary_rules=(),bank=refs,
+    prepared=prepare_operands(window,ids,flags,positions,orders=flags,rules=rules,unary_rules=(),bank=refs,
         live=(window,ids,flags,flags.bool(),positions),active=torch.ones_like(ids,dtype=torch.bool))
     assert prepared['binary_valid'][:,0,0].tolist() == [True,False]
     torch.testing.assert_close(prepared['case_weights'][0,0,0],select_cases(bank,ids[0,0],ids[0,1]).weights)
@@ -160,7 +160,7 @@ def test_compound_choice_runs_in_the_shared_compiled_chooser():
     from Queries import StructuralGrammarContext,ConceptualSpaceCapability
     bank=_bank()
     grammar=Grammar();rules=[]
-    grammar._fill_rule_list(rules,{'rule':'compound_O1 = compound.forward(compound_I1, compound_I2)'})
+    grammar._fill_rule_list(rules,{'rule':'compound_argout1 = compound.forward(compound_argin1, compound_argin2)'})
     layer=OperationSelectionLayer(d_model=2,ops=[_BinaryGrammarOpAdapter(CompoundLayer())])
     context=StructuralGrammarContext((),ConceptualSpaceCapability(2),None,'compose')
     refs=ReferenceBank(torch.full((1,1),-1),torch.zeros(1,1,2),torch.zeros(1,1,dtype=torch.bool),
@@ -169,7 +169,7 @@ def test_compound_choice_runs_in_the_shared_compiled_chooser():
         ids=torch.tensor([[40,10]],device=window.device)
         flags=torch.zeros_like(ids)
         positions=torch.tensor([[0,1]],device=window.device)
-        data=prepare_operands(window,ids,flags,positions,rules=rules,unary_rules=(),bank=refs,
+        data=prepare_operands(window,ids,flags,positions,orders=flags,rules=rules,unary_rules=(),bank=refs,
             live=(window,ids,flags,flags.bool(),positions),active=torch.ones_like(ids,dtype=torch.bool))
         value,_,route=layer(window,depth=torch.tensor([2],device=window.device),slots=1,
             sample=False,grammar_context=context,reference_data=data)

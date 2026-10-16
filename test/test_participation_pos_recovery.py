@@ -103,12 +103,12 @@ def test_single_role_categories_recover_the_collapsed_op_role():
     input 0) correctly unify -- the role-collapse insight."""
     from participation import single_role_symbols
     sr = single_role_symbols(_complete())
-    assert sr["CONJ_L3"] == "conjunction_I1"
-    assert sr["CONJ_R3"] == "conjunction_I2"
-    assert sr["DISJ_L3"] == "disjunction_I1"
-    assert sr["DISJ_R3"] == "disjunction_I2"
-    assert sr["NP_EQ3"] == "equal_I1"
-    assert sr["QLEFT_NP3"] == "equal_I1"   # same role as NP_EQ -> unified
+    assert sr["CONJ_L3"] == "conjunction_argin1"
+    assert sr["CONJ_R3"] == "conjunction_argin2"
+    assert sr["DISJ_L3"] == "disjunction_argin1"
+    assert sr["DISJ_R3"] == "disjunction_argin2"
+    assert sr["NP_EQ3"] == "equal_argin1"
+    assert sr["QLEFT_NP3"] == "equal_argin1"   # same role as NP_EQ -> unified
 
 
 def test_recovers_operand_order_from_participation():

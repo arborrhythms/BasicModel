@@ -59,7 +59,7 @@ def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
     meaning = question(ConceptualMeaning.from_description(torch.eye(8)[:3]), (('evidence', -1),))
     meter = QueryWorkBudget(2)
     context = _context(_cs(), work=meter)
-    query = _signature('ask', 'I1')
+    query = _signature('ask', 'argin1')
     context = replace(context, continuation=lambda value: query.invoke(context, value))
     result = query.invoke(context, meaning)
     assert result['support_true'] == 0 and 'work_budget' in result['incomplete']
@@ -90,6 +90,6 @@ def test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures():
     del c
     cs.add_whole(a, _ref(b))
     context = _context(cs, work=QueryWorkBudget(5))
-    result = _signature('isPart', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+    result = _signature('isPart', 'argin1', 'argin2').invoke(context, _ref(a), _ref(b))
     assert result["support_true"] == 1, "capture must leave work for the direct proof"
     assert context.work.spent <= 5 and result["edges_expanded"] == 1

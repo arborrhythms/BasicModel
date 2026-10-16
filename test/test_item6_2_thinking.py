@@ -77,7 +77,7 @@ def test_chain_two_queries_one_conclusion_and_both_witnesses(monkeypatch):
     assert saved['meaning'].role_refs[0]==a and saved['meaning'].role_refs[2]==c
 
 
-def test_open_reference_kinds_and_bound_surface():
+def test_open_reference_modes_and_bound_surface():
     model,registry,store,(a,b,c)=world()
     q=registry.form('isPart',a,c)
     assert open_slots(q)==() and needs_episode(q)
@@ -86,7 +86,7 @@ def test_open_reference_kinds_and_bound_surface():
     assert not run(model,bound).records
     relation=question(replace(q,role_refs=(a,None,c)),(('relation',1),))
     assert open_slots(relation)==(('relation',1),)
-    referent=registry.form('isPart',a,open_roles=('I2',))
+    referent=registry.form('isPart',a,open_roles=('argin2',))
     assert open_slots(referent)==(('referent',2),)
 
 
@@ -403,7 +403,7 @@ def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known
 def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):
     model,registry,store,(a,b,c)=world()
     model.conceptualSpace.add_whole(a[1],b)
-    goal=registry.form('isPart',a,open_roles=('I2',))
+    goal=registry.form('isPart',a,open_roles=('argin2',))
     assert not any(action.semantic_id=='isPart' and action.open_roles
                    for action in registry.controller_candidates(goal,goal,goal))
     from QueryWork import QueryWorkBudget
@@ -416,7 +416,7 @@ def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_r
     assert evidence_pair(resolved)==(1.,0.)
     assert bindings(resolved)['_thought_witnesses']
     with pytest.raises(ValueError,match='open'):
-        registry.form('part',a,open_roles=('I2',))
+        registry.form('part',a,open_roles=('argin2',))
     descriptor=THOUGHT_EXECUTORS['part']
     assert not any(name in ('ltm','taxonomy') for name,_ in descriptor.method_grants)
 
@@ -434,7 +434,7 @@ def test_null_binder_candidate_survives_native_journal_and_closing(mode):
         torch.zeros(1,0,dtype=torch.bool),torch.zeros(1,0,dtype=torch.bool),
         window[:,0],torch.zeros(1,dtype=torch.bool),column_ids=ids.new_empty(0))
     proposed=prepare_operands(window,ids,torch.zeros_like(ids),torch.arange(2)[None],
-        rules=language._compose_binary_rules,unary_rules=(),bank=bank,live=None,
+        orders=entry.leaf_orders[None], rules=language._compose_binary_rules,unary_rules=(),bank=bank,live=None,
         active=torch.ones(1,2,dtype=torch.bool))
     assert proposed['binary_valid'][0,0,0]
     assert proposed['binary_refs'][0,0,0,0] == -1

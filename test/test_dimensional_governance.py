@@ -82,7 +82,7 @@ def test_converted_grammars_load_role_collapsed():
         gr.load_from_grammar_file(g)
         assert len(gr.rules) > 0, g
         assert gr.ps_start_symbol == "U", (g, gr.ps_start_symbol)
-        assert any("_O1" in (r.lhs or "") for r in gr.rules), g  # role form
+        assert any("_argout1" in (r.lhs or "") for r in gr.rules), g  # role form
 
 
 # ---------------------------------------------------------------------------

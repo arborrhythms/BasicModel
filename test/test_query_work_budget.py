@@ -54,8 +54,8 @@ def test_selected_operation_is_charged_before_its_executor():
         executor=lambda context, arguments: calls.append(arguments) or {"value": None},
     )
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='what', operand_roles=('I1',)),
-        descriptor, ('I1',))
+        SimpleNamespace(semantic_id='what', operand_roles=('argin1',)),
+        descriptor, ('argin1',))
     question = ConceptualMeaning.from_description(torch.ones(8))
     context = _context(_cs(), work=budget(0))
     result = signature.invoke(context, question)
@@ -70,8 +70,8 @@ def test_invalid_call_spends_no_work_and_never_executes():
         executor=lambda context, arguments: calls.append(arguments) or {},
     )
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='part', operand_roles=('I1', 'I2')),
-        descriptor, ('I1', 'I2'))
+        SimpleNamespace(semantic_id='part', operand_roles=('argin1', 'argin2')),
+        descriptor, ('argin1', 'argin2'))
     meter = budget(5)
     context = _context(_cs(), work=meter)
     with pytest.raises(TypeError):
@@ -109,7 +109,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
         ltm=ThoughtLTMCapability(store=reader.reasoning_store,
             equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
     from test_query_vp_boundaries import _signature
-    result = _signature('query', 'I1').invoke(
+    result = _signature('query', 'argin1').invoke(
         context, replace(meaning, mode='interrogative'))
     assert read == [0] and result["records_scanned"] == 1
     assert result["value"][0]["trust"] == pytest.approx(.6)
@@ -130,7 +130,7 @@ def test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances():
         work=meter,
     )
     from test_query_vp_boundaries import _signature
-    result = _signature('isPart', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+    result = _signature('isPart', 'argin1', 'argin2').invoke(context, _ref(a), _ref(b))
     assert (result["nodes_scanned"] + result["records_scanned"]
             + result["edges_expanded"] == 2)
     assert result["support_true"] == 0 and meter.spent == 3

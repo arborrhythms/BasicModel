@@ -22,7 +22,7 @@ def test_binary_symbolize_is_rejected_in_every_face(face):
     direction = {'compose': 'forward', 'generate': 'reverse', 'thought': 'thought'}[face]
     with pytest.raises(ValueError, match='retired'):
         Grammar()._fill_rule_list([], {'rule':
-            f'symbolize_O1 = symbolize.{direction}(symbolize_I1, symbolize_I2)'},
+            f'symbolize_argout1 = symbolize.{direction}(symbolize_argin1, symbolize_argin2)'},
             face='thought' if face == 'thought' else None)
 
 
@@ -44,14 +44,14 @@ def test_implementation_alias_cannot_restore_retired_carrier():
     from Language import Grammar
     with pytest.raises(ValueError, match='retired'):
         Grammar()._fill_rule_list([], {'rule': {
-            '_': 'r_O1 = r.forward(r_I1, r_I2)', 'implementation': 'symbolize'}})
+            '_': 'r_argout1 = r.forward(r_argin1, r_argin2)', 'implementation': 'symbolize'}})
 
 
 def test_quantization_is_removed_from_declared_thought_capabilities():
     from Language import Grammar,GRAMMAR_LAYER_CLASSES
     from Queries import THOUGHT_EXECUTORS
     with pytest.raises(ValueError,match='retired'):
-        Grammar()._fill_rule_list([],{'rule':'quantize_O1 = quantize.thought(quantize_I1)'},face='thought')
+        Grammar()._fill_rule_list([],{'rule':'quantize_argout1 = quantize.thought(quantize_argin1)'},face='thought')
     assert 'quantize' not in THOUGHT_EXECUTORS and 'quantize' not in GRAMMAR_LAYER_CLASSES
 
 

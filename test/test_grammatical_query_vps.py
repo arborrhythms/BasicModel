@@ -72,8 +72,8 @@ def test_assertive_or_unrecognized_vp_does_not_execute_a_query(monkeypatch):
 def test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand():
     cs, registry, a, b, context = _world()
     bound = registry.form('isPart', a, b)
-    parts = registry.form('isPart', b, open_roles=('I1',))
-    wholes = registry.form('isPart', a, open_roles=('I2',))
+    parts = registry.form('isPart', b, open_roles=('argin1',))
+    wholes = registry.form('isPart', a, open_roles=('argin2',))
     assert parts.role_mask.tolist() == [False, True, True]
     assert wholes.role_mask.tolist() == [True, True, False]
     assert parts.role_refs[1] == wholes.role_refs[1] == bound.role_refs[1]
@@ -90,7 +90,7 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
     records = tuple(cs._concept_allocator._layers[0].constituents(a[1]))
     registry.form('part', a, b)
     registry.form('whole', b, a)
-    registry.form('isPart', b, open_roles=('I1',))
+    registry.form('isPart', b, open_roles=('argin1',))
     assert cs._concept_allocator.placement == placement
     assert cs._frozen_named == named
     assert tuple(cs._concept_allocator._layers[0].constituents(a[1])) == records

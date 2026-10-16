@@ -1,4 +1,4 @@
-"""O1 regression: the per-batch compute is actually torch.compiled
+"""argout1 regression: the per-batch compute is actually torch.compiled
 (dynamo traces >=1 frame). Device-independent -- torch.compile dispatch
 is the same on CPU/MPS/CUDA, so this runs in normal CPU CI.
 
@@ -13,10 +13,10 @@ from pathlib import Path
 
 os.environ.setdefault("MODEL_DEBUG", "0")
 os.environ["MODEL_COMPILE"] = "eager"  # always-succeeds backend
-# Force CPU: O1 (does dynamo trace?) is device-independent, and
+# Force CPU: argout1 (does dynamo trace?) is device-independent, and
 # torch.compile's MPS fake-tensor device propagation is incomplete
 # (enable_compiled_step falls back to eager on MPS by design). CPU
-# both compiles and is bug-free here, so it's the valid O1 net.
+# both compiles and is bug-free here, so it's the valid argout1 net.
 os.environ["BASICMODEL_DEVICE"] = "cpu"
 
 _p = Path(__file__).resolve().parent.parent
@@ -37,7 +37,7 @@ def test_compiled_step_is_invoked():
     # import-time env): in a shared pytest process a prior test can
     # leave TheDevice=MPS, and enable_compiled_step() checks
     # TheDevice.get().type (MPS -> eager fallback by design). Order-
-    # independent so this O1 net is reliable in the full suite.
+    # independent so this argout1 net is reliable in the full suite.
     init_device("cpu")
     cfg = str(_p / "data" / "MM_xor.xml")
     init_config(path=cfg, defaults_path=str(_p / "data" / "model.xml"))

@@ -21,12 +21,12 @@ def _part_grammar(query_attr=None):
         <?xml version="1.0"?>
         <grammar name="part_probe">
           <Symbolic>
-            <start name="relative_truth">part_O1</start>
+            <start name="relative_truth">part_argout1</start>
             <compose>
-              <rule%s>part_O1 = part.forward(part_I1, part_I2)</rule>
+              <rule%s>part_argout1 = part.forward(part_argin1, part_argin2)</rule>
             </compose>
             <generate>
-              <rule%s>part_I1, part_I2 = part.reverse(part_O1)</rule>
+              <rule%s>part_argin1, part_argin2 = part.reverse(part_argout1)</rule>
             </generate>
           </Symbolic>
         </grammar>

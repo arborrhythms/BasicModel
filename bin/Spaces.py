@@ -71,8 +71,8 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count",
-    defaults=(None, None, None))
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order",
+    defaults=(None, None, None, None))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
 
 
@@ -12677,11 +12677,11 @@ def _stash_category_roles(ws, pid_host, B, N):
     if role_obs and n_roles > 0:
         for b in range(min(len(role_obs), B)):
             # Accumulate this row's per-position role vector: each
-            # round-0 reduce gives its left operand op_I1 and right
-            # operand op_I2 of the firing method.
+            # round-0 reduce gives its left operand op_argin1 and right
+            # operand op_argin2 of the firing method.
             acc = {}
             for (lp, rp, method) in role_obs[b]:
-                for pos, suffix in ((lp, 'I1'), (rp, 'I2')):
+                for pos, suffix in ((lp, 'argin1'), (rp, 'argin2')):
                     col = role_index.get(f"{method}_{suffix}")
                     if col is None:
                         continue
@@ -13418,10 +13418,13 @@ class ConceptualSpace(Space):
         out_grammar = torch.where(rewrite & (grammar >= 0), grammar + 1, grammar)
         out_rows = torch.where(rewrite, -1, rows)
         out_activations = torch.where(rewrite, 0., activations)
-        out_orders = orders
+        out_orders = (orders if choice.order is None else
+                      torch.where(rewrite, choice.order[:, None], orders))
         if K >= 2:
             parent_order = torch.where((orders[:, 0] >= 0) & (orders[:, 1] >= 0),
                                        orders[:, :2].amax(1), -1)
+            if choice.order is not None:
+                parent_order = choice.order
             parent_grammar = torch.where((grammar[:, 0] >= 0) & (grammar[:, 1] >= 0),
                                          grammar[:, :2].amax(1) + 1, -1)
             def fold(slab, parent, fill):
@@ -13429,7 +13432,7 @@ class ConceptualSpace(Space):
                 gate = binary.reshape(B, *([1] * (slab.ndim - 1)))
                 return torch.where(gate, shifted, slab)
             out = fold(out, choice.candidate, 0)
-            out_orders = fold(orders, parent_order, -1)
+            out_orders = fold(out_orders, parent_order, -1)
             out_grammar = fold(out_grammar, parent_grammar, -1)
             out_rows = fold(out_rows, torch.full_like(rows[:, 0], -1), -1)
             out_activations = fold(out_activations, torch.zeros_like(activations[:, 0]), 0)
@@ -15965,17 +15968,15 @@ class ConceptualSpace(Space):
 
     def _concept_source_order(self, concept_id, _seen=None):
         """Ramsified order of a concept: 0 when its constituents are all raw
-        PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents,
-        capped at the configured symbolic order. (Symbols ARE concepts of the
+        PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents.
+        (Symbols ARE concepts of the
         previous order -- this is the ramsified recursion.) Cycle-guarded."""
         alloc = _concept_alloc_of(self)
         if int(concept_id) not in alloc.placement:
             store = self._closed_clause_store()
             row = None if store is None else store.index_of_row(concept_id)
             if row is not None:
-                # Preserve the particular-reference order; the row's own
-                # abstraction stamp separately governs decoding its point.
-                return int(int(store.rel_type[row]) == store.REL_NONE)
+                return int(store.order[row])
         return alloc.order_of(concept_id, _seen)
 
     @property

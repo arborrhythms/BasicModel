@@ -473,14 +473,14 @@ def _concept_space(context):
 def _argument(arguments, role):
     """Read a canonical thought role or its legacy numeric slot.
 
-    New executor descriptors receive grammar role labels (``I1`` / ``I2``).
+    New executor descriptors receive grammar role labels (``argin1`` / ``argin2``).
     The old query registry remains below during migration and still supplies
     the historical ``0`` / ``2`` slots, so this small bridge keeps one
     executor body without reintroducing aliases into the new catalogue.
     """
     if role in arguments:
         return arguments[role]
-    slot = {'I1': 0, 'I2': 2}.get(role)
+    slot = {'argin1': 0, 'argin2': 2}.get(role)
     if slot is None or slot not in arguments:
         raise ValueError(f'query argument {role!r} is unavailable')
     return arguments[slot]
@@ -1197,17 +1197,17 @@ def _part(context, arguments):
     if isinstance(context, ThoughtGrammarContext):
         if len(arguments) == 1:
             role, reference = next(iter(arguments.items()))
-            if role not in ('I1', 'I2'):
+            if role not in ('argin1', 'argin2'):
                 raise ValueError('thought open part role is invalid')
             neighbors = getattr(context.taxonomy, 'neighbors', None)
             if not callable(neighbors):
                 raise ValueError('thought taxonomy capability does not admit neighbors')
             return dict(neighbors(
-                reference, direction='up' if role == 'I1' else 'down',
+                reference, direction='up' if role == 'argin1' else 'down',
                 max_nodes=context.max_nodes, max_records=context.max_records,
                 max_expansions=context.max_expansions, work=context.work),
                 evidence_kind='taxonomy', write_target=Mind.KNOWING.value)
-        left, right = (_argument(arguments, role) for role in ('I1', 'I2'))
+        left, right = (_argument(arguments, role) for role in ('argin1', 'argin2'))
         order = getattr(context.conceptual_space, 'order', None)
         conceptual = (torch.is_tensor(left) or torch.is_tensor(right)
                       or (callable(order) and max(order(left), order(right)) == 0))
@@ -1229,8 +1229,8 @@ def _part(context, arguments):
         # because taxonomy required its references for the proof.
         held = dict(context.operand_values)
         try:
-            part_value = held['I1'] if 'I1' in held else _vector(context, left)
-            whole_value = held['I2'] if 'I2' in held else _vector(context, right)
+            part_value = held['argin1'] if 'argin1' in held else _vector(context, left)
+            whole_value = held['argin2'] if 'argin2' in held else _vector(context, right)
         except QueryWorkExhausted:
             # Preserve an already completed bounded proof when the remaining
             # allowance cannot also read its content. No extra read is free.
@@ -1278,7 +1278,7 @@ def _neighbors(context, arguments):
 
 def _equal(context, arguments):
     left, right = (_vector(context, _argument(arguments, role))
-                   for role in ('I1', 'I2'))
+                   for role in ('argin1', 'argin2'))
     if left.shape != right.shape:
         raise ValueError('query equality requires equal full concept width')
     if isinstance(context, ThoughtGrammarContext):
@@ -1308,9 +1308,9 @@ def _arma(*args, **kwargs):
 
 
 def _ask(context, arguments):
-    question = _argument(arguments, 'I1')
+    question = _argument(arguments, 'argin1')
     references = tuple(reference for role, reference in context.operand_references
-                       if role == 'I1' and reference and reference[0] == 'ltm') if isinstance(
+                       if role == 'argin1' and reference and reference[0] == 'ltm') if isinstance(
                            context, ThoughtGrammarContext) else ()
     if references:
         question = replace(question, mode='interrogative')
@@ -1944,7 +1944,7 @@ class GrammaticalThoughtRegistry:
 
     @staticmethod
     def _slot_for_operand(role):
-        slots = {'I1': 0, 'I2': 2}
+        slots = {'argin1': 0, 'argin2': 2}
         if role not in slots:
             raise ValueError(
                 f'thought operation role {role!r} cannot fit the three-role meaning')
@@ -1956,7 +1956,7 @@ class GrammaticalThoughtRegistry:
         """Form a canonical thought request without executing or allocating.
 
         Open roles are explicit structural role labels.  Thus a one-argument
-        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        ``part`` call with ``open_roles=('argin1',)`` is the former ``parts``
         behavior, but it retains the same semantic identity and VP.
         """
         retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
@@ -2058,7 +2058,7 @@ class GrammaticalThoughtRegistry:
                 raise ValueError('thought operand must have the full conceptual width')
             payloads[self._slot_for_operand(role)] = value.to(vp_payload)
         mask = torch.tensor(
-            [bool('I1' in occupied_roles), True, bool('I2' in occupied_roles)],
+            [bool('argin1' in occupied_roles), True, bool('argin2' in occupied_roles)],
             dtype=torch.bool, device=vp_payload.device)
         result = ConceptualMeaning(torch.stack(payloads), mask, mode=mode,
             polarity=polarity, role_refs=tuple(references), bindings=bindings,
@@ -2152,9 +2152,9 @@ class GrammaticalThoughtRegistry:
             # exists, but ``execute`` uses its full-width signed value.
             references[slot] = reference
         mask = torch.tensor(
-            [bool('I1' in operation.operand_roles and 'I1' not in open_roles),
+            [bool('argin1' in operation.operand_roles and 'argin1' not in open_roles),
              True,
-             bool('I2' in operation.operand_roles and 'I2' not in open_roles)],
+             bool('argin2' in operation.operand_roles and 'argin2' not in open_roles)],
             dtype=torch.bool, device=vp_payload.device)
         return ConceptualMeaning(
             torch.stack(payloads), mask, mode=source.mode,

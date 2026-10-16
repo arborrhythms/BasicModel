@@ -51,7 +51,7 @@ def test_thought_ops_derive_from_structural_families():
     part = next(operation for operation in G.thought_operations
                 if operation.semantic_id == 'part')
     whole = next(form for form in part.forms if form.structural_id == 'whole')
-    assert whole.permutation == ('I2', 'I1')
+    assert whole.permutation == ('argin2', 'argin1')
 
 
 def test_symbolic_is_the_canonical_section_name():

@@ -83,8 +83,8 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         layer.set_sigma(0)
         W     = layer.compute_W()
         W_inv = layer.compute_Winverse()
-        I5    = torch.eye(5, device=W.device, dtype=W.dtype)
-        err   = (W @ W_inv - I5).norm().item()
+        argin5    = torch.eye(5, device=W.device, dtype=W.dtype)
+        err   = (W @ W_inv - argin5).norm().item()
         self.assertLess(err, 1e-4, f"W@W_inv identity err={err:.2e}")
 
     def _check_ergodic(self, nIn, nOut, naive, stable, tol):

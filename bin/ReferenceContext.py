@@ -62,22 +62,53 @@ class SituationFrame:
         return cls(int(meaning.role_mask.sum()), meaning.roles.detach().clone(),
                    meaning.role_mask, row['row_id'],
                    row['np1'].detach().clone() if row['rel_type'] == 0 else None,
+                   order=int(row.get('order', -1)),
                    where=row.get('where'), when=row.get('when'))
 
 
-def reference_requests(language, actions, *, operation_refs=None):
+def shifted_order(stamp, delta):
+    """Apply an operation's order change; unknown stays unknown, field is zero."""
+    if torch.is_tensor(stamp):
+        return torch.where(stamp >= 0, (stamp + delta).clamp_min(0), -1)
+    return max(0, stamp + delta) if stamp >= 0 else -1
+
+
+def result_order(rule, operands):
+    """The head's stamp, or the joined operands' stamp, followed by the operation."""
+    head = getattr(rule, 'head_role', 0)
+    if head:
+        stamp = operands[head - 1]
+    elif torch.is_tensor(operands[0]):
+        stamps = torch.stack(operands, -1)
+        stamp = torch.where((stamps >= 0).all(-1), stamps.amax(-1), -1)
+    else:
+        stamp = max(operands) if min(operands) >= 0 else -1
+    return shifted_order(stamp, getattr(rule, 'order_delta', 0))
+
+
+def operation_modes(rule):
+    """Temporary reference behaviour belongs to operations, never role names."""
+    modes = dict(getattr(rule, 'reference_modes', ()))
+    determiner = getattr(rule, 'determiner_mode', None)
+    if determiner is not None:
+        modes['argin' + str(rule.head_role)] = determiner
+    return modes
+
+
+def reference_requests(language, actions, *, leaf_orders=None, operation_refs=None):
     """Resolve a selected role at its head; the enclosing scope owns its kind.
 
     A kept numerical journal optionally adds the selected native reference
     to each request. No identity is inferred from a word or its coordinates.
     """
     requests, stack = {}, []
+    stamps = None if leaf_orders is None else leaf_orders.detach().cpu().tolist()
     references = None if operation_refs is None else operation_refs.detach().cpu().tolist()
     for action, (kind, local, word) in enumerate(actions.detach().cpu().tolist()):
         if kind < 0:
             break
         if kind == 0:
-            stack.append((word,))
+            stack.append(((word,), -1 if stamps is None else int(stamps[word])))
             continue
         arity = 2 if kind == 1 else 1
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
@@ -85,19 +116,19 @@ def reference_requests(language, actions, *, operation_refs=None):
             raise ValueError('invalid selected reference rule')
         operands = stack[-arity:]
         del stack[-arity:]
-        modes = dict(getattr(rules[local], 'reference_kinds', ()))
-        determiner = getattr(rules[local], 'determiner_mode', None)
-        if determiner is not None:
-            modes['I' + str(rules[local].head_role)] = determiner
-        for role, order in getattr(rules[local], 'reference_orders', ()):
-            for leaf in operands[int(role[1:]) - 1]:
-                request = order, modes.get(role)
+        rule = rules[local]
+        for role in getattr(rule, 'reference_roles', ()):
+            index = int(role[5:]) - 1
+            order, mode = binding_spec(rule, role, operands[index][1])
+            for leaf in operands[index][0]:
+                request = order, mode
                 if references is not None:
-                    request = (*request, int(references[action][int(role[1:]) - 1]))
+                    request = (*request, int(references[action][index]))
                 requests[leaf] = request
-        head = getattr(rules[local], 'head_role', 0)
-        stack.append(operands[head - 1]
-                     if head else tuple(leaf for operand in operands for leaf in operand))
+        head = getattr(rule, 'head_role', 0)
+        leaves = (operands[head - 1][0] if head else
+                  tuple(leaf for operand, _ in operands for leaf in operand))
+        stack.append((leaves, result_order(rule, tuple(stamp for _, stamp in operands))))
     return requests
 
 
@@ -106,6 +137,7 @@ def selected_individual_references(language, program):
     if program is None or program.operation_refs is None:
         return ()
     requests = reference_requests(language, program.actions,
+                                  leaf_orders=program.leaf_orders,
                                   operation_refs=program.operation_refs)
     return tuple(dict.fromkeys(reference for order, mode, reference in requests.values()
                                if order == 1 and mode != 'kind'))
@@ -131,6 +163,7 @@ class ReferenceBank(NamedTuple):
     column_ids: object = None
     interpreter: object = None
     associations: object = None
+    orders: object = None
 
     def detached(self):
         """Freeze the rebuilt situation at a compose fork, retaining its API."""
@@ -146,21 +179,18 @@ class ReferenceBank(NamedTuple):
         return freeze(self)
 
 
-def binding_spec(rule, role, *, implicit=False):
+def binding_spec(rule, role, stamp, *, implicit=False):
     """The grammatical operand's reference contract, independent of its word."""
-    order = dict(getattr(rule, 'reference_orders', ())).get(role)
-    mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
-    determiner = getattr(rule, 'determiner_mode', None)
-    if determiner is not None and role == 'I' + str(rule.head_role):
-        order, mode = 1, determiner
-    if implicit and order is None:
+    requested = role in getattr(rule, 'reference_roles', ())
+    mode = operation_modes(rule).get(role)
+    if implicit and not requested:
         clause = getattr(rule, 'clause_form', None)
         relation = getattr(rule, 'relation_kind', None)
-        if ((clause == 'S' and role == 'I1') or
-                (clause == 'VP' and role == 'I2') or
-                (relation in ('part', 'whole', 'equal') and role in ('I1', 'I2'))):
-            order = 1
-    return order, mode
+        if ((clause == 'S' and role == 'argin1') or
+                (clause == 'VP' and role == 'argin2') or
+                (relation in ('part', 'whole', 'equal') and role in ('argin1', 'argin2'))):
+            requested = True
+    return (shifted_order(stamp, getattr(rule, 'order_delta', 0)) if requested else None), mode
 
 
 def resolve_order(value, identity, order, types):
@@ -176,7 +206,8 @@ def resolve_order(value, identity, order, types):
     source = identity[:, :, None] == types.sources[:, None, :]
     associated = (identity[:, :, None, None] == types.identities[:, None]).any(-1)
     matching = ((source | associated) & (identity > 0)[:, :, None])[:, :, :, None]
-    matching = matching & (types.orders == order)[None, None, None, :]
+    requested = torch.as_tensor(order, device=value.device).expand(batch, positions)
+    matching = matching & (types.orders[None, None, None, :] == requested[:, :, None, None])
     matching = matching & (types.identities[:, None] > 0)
     matching = matching.reshape(batch, positions, words * orders)
     found = matching.any(-1)
@@ -192,7 +223,7 @@ def resolve_order(value, identity, order, types):
             torch.where(found, ids, identity))
 
 
-def resolve_operand(value, identity, position, *, mode, bank, live, active, forced_reference=None,
+def resolve_operand(value, identity, position, *, mode, bank, live, active, order=None, forced_reference=None,
                     local=None):
     """A hard reference proposal before its numerical grammar operation.
 
@@ -204,6 +235,8 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, forc
     live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
     local = torch.zeros_like(identity, dtype=torch.bool) if local is None else local
     B, P, D = value.shape
+    requested = (torch.full_like(identity, -1) if order is None else
+                 torch.as_tensor(order, device=identity.device).expand_as(identity))
     C = bank.ids.shape[1]
     K = live_ids.shape[1]
     if mode == 'mint':
@@ -212,13 +245,17 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, forc
     own_valid = ((identity != -1) & (identity != 0)) & ~local & (mode not in ('pronoun', 'bind'))
     held = bank.valid if mode == 'bind' else bank.valid & bank.predicted[:, None]
     earlier = (live_positions[:, None, :] < position[:, :, None])
-    earlier &= ((live_ids[:, None, :] != -1) & (live_ids[:, None, :] != 0)) & (live_orders[:, None, :] == 1)
+    earlier &= ((live_ids[:, None, :] != -1) & (live_ids[:, None, :] != 0))
+    earlier &= live_orders[:, None, :] == requested[:, :, None]
     earlier &= ~live_local[:, None, :]
     ids = torch.cat((identity[:, :, None], bank.ids[:, None].expand(B, P, C),
                      live_ids[:, None].expand(B, P, K)), -1)
     values = torch.cat((value[:, :, None], bank.values[:, None].expand(B, P, C, D),
                         live_values[:, None].expand(B, P, K, D)), -2)
-    valid = torch.cat((own_valid[:, :, None], held[:, None].expand(B, P, C), earlier), -1)
+    held = held[:, None].expand(B, P, C)
+    if bank.orders is not None:
+        held = held & (bank.orders[:, None] == requested[:, :, None])
+    valid = torch.cat((own_valid[:, :, None], held, earlier), -1)
     relations = torch.cat((torch.zeros_like(own_valid[:, :, None]),
                           bank.relations[:, None].expand(B, P, C),
                           live_relations[:, None].expand(B, P, K)), -1)
@@ -255,7 +292,7 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, forc
             torch.where(used, refs, identity), relative & used, available | ~active)
 
 
-def prepare_operands(window, identities, flags, positions, *, rules, unary_rules,
+def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
                      bank, live, active):
     """Enumerate reference variants of each operation for one global softmax.
 
@@ -265,21 +302,33 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
     B, N, D = window.shape
     interpreter = getattr(bank, 'interpreter', None)
 
-    def propose(value, ids, scope, pos, rule, role, valid):
-        order, mode = binding_spec(rule, role, implicit=interpreter is not None)
+    def propose(value, ids, scope, pos, stamp, rule, role, valid):
+        order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
+        if order is None:
+            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+        value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
         if mode == 'kind':
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+        individual = order == 1
+        original_valid = valid
+        def alternatives(options):
+            # The first variant carries non-individual typed operands. Keep
+            # the existing individual menu and its learned scoring rows.
+            point, ref, relative, available, *extra = options[0]
+            options[0] = (torch.where(individual[..., None], point, value),
+                torch.where(individual, ref, ids),
+                torch.where(individual, relative, scope.bitwise_and(1) != 0),
+                available | (~individual & original_valid),
+                *(item & individual for item in extra))
+            return options
+        valid = valid & individual
         if mode == 'mint' and interpreter is None:
-            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid))]
-        if order is not None and order != 1:
-            value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
-        if order != 1:
-            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+            return alternatives([(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)])
         inventory = getattr(bank, 'column_ids', None)
         if interpreter is None and inventory is not None and inventory.numel() == 0:
             # A binder with no referent leaves an open slot. The sentence
             # can still close; its closing will ask on this same reference.
-            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)]
+            return alternatives([(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)])
         from ClauseScope import ClauseScope
         P, C = value.shape[1], bank.ids.shape[1]
         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
@@ -300,7 +349,10 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         candidate_relations = torch.cat(((scope.bitwise_and(1) != 0)[:, :, None],
                                          bank.relations.flip(1)[:, None].expand(B, P, C),
                                          live_relations[:, None].expand(B, P, -1)), -1)
-        available = torch.cat((own[:, :, None], bank.valid.flip(1)[:, None].expand(B, P, C), earlier), -1)
+        held = bank.valid
+        if bank.orders is not None:
+            held = held & (bank.orders == 1)
+        available = torch.cat((own[:, :, None], held.flip(1)[:, None].expand(B, P, C), earlier), -1)
         size = candidate_ids.shape[-1]
         preceding = torch.arange(size, device=ids.device)[None] < torch.arange(size, device=ids.device)[:, None]
         duplicate = ((candidate_ids[..., :, None] == candidate_ids[..., None, :])
@@ -321,25 +373,26 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         if interpreter is not None:
             # Retain by each row's recency before interpret enumerates its
             # fixed masked variants. Another row cannot alter this layout.
-            return interpreter(value, binding=dict(identity=ids, scope=scope,
+            options = interpreter(value, binding=dict(identity=ids, scope=scope,
                 candidate_ids=candidate_ids, candidate_values=candidate_values,
                 candidate_relations=candidate_relations, available=available,
                 associations=bank.associations, mode=mode, active=valid))
-        options = [(candidate_values[:, :, c], candidate_ids[:, :, c],
-                    candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
-        if mode not in ('pronoun', 'bind'):
-            options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid), valid))
         else:
-            options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid),
-                            valid & ~available.any(-1)))
-        return options
+            options = [(candidate_values[:, :, c], candidate_ids[:, :, c],
+                        candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
+            if mode not in ('pronoun', 'bind'):
+                options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid), valid))
+            else:
+                options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid),
+                                valid & ~available.any(-1)))
+        return alternatives(options)
 
-    def choice_tag(refs, rule, role):
-        order, mode = binding_spec(rule, role, implicit=interpreter is not None)
-        if order != 1 or mode == 'kind':
+    def choice_tag(refs, rule, role, stamp):
+        order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
+        if order is None or mode == 'kind':
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
-        return torch.where(refs == -1, -2, refs)
+        return torch.where(order == 1, torch.where(refs == -1, -2, refs), -1)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
     bchoices, uchoices, bfound, ufound = [], [], [], []
@@ -350,17 +403,17 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
     case_count = 1 if case_bank is None else len(case_bank.ids)
     for operation, rule in enumerate(rules):
         left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
-                       rule, 'I1', active[:, :-1] & active[:, 1:])
+                       orders[:, :-1], rule, 'argin1', active[:, :-1] & active[:, 1:])
         right_options = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
-                        rule, 'I2', active[:, :-1] & active[:, 1:])
+                        orders[:, 1:], rule, 'argin2', active[:, :-1] & active[:, 1:])
         for left in left_options:
             for right in right_options:
                 binary_ops.append(operation)
                 lefts.append(left[0])
                 rights.append(right[0])
                 brefs.append(torch.stack((left[1], right[1]), -1))
-                bchoices.append(torch.stack((choice_tag(left[1], rule, 'I1'),
-                                             choice_tag(right[1], rule, 'I2')), -1))
+                bchoices.append(torch.stack((choice_tag(left[1], rule, 'argin1', orders[:, :-1]),
+                                             choice_tag(right[1], rule, 'argin2', orders[:, 1:])), -1))
                 bfound.append(torch.stack((found(left), found(right)), -1))
                 brels.append(torch.stack((left[2], right[2]), -1))
                 valid = left[3] & right[3]
@@ -379,11 +432,11 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
                 bvalid.append(valid)
     values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
     for operation, rule in enumerate(unary_rules):
-        for operand in propose(window, identities, flags, positions, rule, 'I1', active):
+        for operand in propose(window, identities, flags, positions, orders, rule, 'argin1', active):
             unary_ops.append(operation)
             values.append(operand[0])
             urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
-            uchoices.append(torch.stack((choice_tag(operand[1], rule, 'I1'),
+            uchoices.append(torch.stack((choice_tag(operand[1], rule, 'argin1', orders),
                                          torch.full_like(operand[1], -1)), -1))
             ufound.append(torch.stack((found(operand), torch.zeros_like(operand[3])), -1))
             urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))

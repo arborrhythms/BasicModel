@@ -30,7 +30,7 @@ def resolve_reading_references(language, entry, *, frames=(), prediction=None,
         torch.tensor([[frame.point is None for frame in anchors]], dtype=torch.bool),
         (entry.leaves[0] if prediction is None else prediction.roles[0])[None],
         torch.tensor([prediction is not None]))
-    requests = reference_requests(language, entry.actions)
+    requests = reference_requests(language, entry.actions, leaf_orders=entry.leaf_orders)
     for leaf, (order, mode) in sorted(requests.items()):
         if order != 1:
             continue
@@ -39,7 +39,7 @@ def resolve_reading_references(language, entry, *, frames=(), prediction=None,
             live_orders[index] = requested
         value, identity, relative, available = resolve_operand(
             values[leaf][None, None], ids[leaf].reshape(1, 1), ids.new_tensor([[leaf]]),
-            mode=mode, bank=bank,
+            mode=mode, bank=bank, order=order,
             live=(torch.stack(values)[None], ids[None], live_orders[None],
                   relations[None], torch.arange(len(values))[None]),
             active=torch.ones(1, 1, dtype=torch.bool),

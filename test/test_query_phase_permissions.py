@@ -55,8 +55,8 @@ def _fixture():
         },
     )
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
-        descriptor, ('I1', 'I2'))
+        SimpleNamespace(semantic_id='equal', operand_roles=('argin1', 'argin2')),
+        descriptor, ('argin1', 'argin2'))
     context = _context(
         model.conceptualSpace, model=model,
         boundary=model._assert_query_boundary)
@@ -191,8 +191,8 @@ def test_every_input_execution_entry_masks_checked_queries(monkeypatch, entry):
         THOUGHT_EXECUTORS["equal"], executor=lambda *args: calls.append(args) or {}
     )
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
-        descriptor, ('I1', 'I2'))
+        SimpleNamespace(semantic_id='equal', operand_roles=('argin1', 'argin2')),
+        descriptor, ('argin1', 'argin2'))
     context = _context(
         model.conceptualSpace, model=model,
         boundary=model._assert_query_boundary)
@@ -226,8 +226,8 @@ def test_operand_occurrence_reads_require_permission_before_preparation(monkeypa
     model = _model()
     grammar = __import__('Language').Grammar()
     grammar.configure({'compose': {'rule': [
-        'ask_O1 = ask.forward(ask_I1)']},
-        'thought': {'rule': ['ask_O1 = ask.thought(ask_I1)']}})
+        'ask_argout1 = ask.forward(ask_argin1)']},
+        'thought': {'rule': ['ask_argout1 = ask.thought(ask_argin1)']}})
     registry = GrammaticalThoughtRegistry.install(model.conceptualSpace, grammar)
     vp = registry._reference(("conceptual-subgoal", "ask"))
     meaning = ConceptualMeaning(
@@ -273,8 +273,8 @@ def test_reconstruction_completion_keeps_query_executors_masked(monkeypatch):
         executor=lambda *args: calls.append(args) or {},
     )
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
-        descriptor, ('I1', 'I2'))
+        SimpleNamespace(semantic_id='equal', operand_roles=('argin1', 'argin2')),
+        descriptor, ('argin1', 'argin2'))
     context = _context(
         model.conceptualSpace, model=model,
         boundary=model._assert_query_boundary)
@@ -367,8 +367,8 @@ def test_compiled_input_cannot_execute_queries_during_trace_or_eager_island(
         THOUGHT_EXECUTORS["equal"], executor=lambda *args: calls.append(args) or {},
     )
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='equal', operand_roles=('I1', 'I2')),
-        descriptor, ('I1', 'I2'))
+        SimpleNamespace(semantic_id='equal', operand_roles=('argin1', 'argin2')),
+        descriptor, ('argin1', 'argin2'))
     context = _context(
         model.conceptualSpace, model=model,
         boundary=model._assert_query_boundary)

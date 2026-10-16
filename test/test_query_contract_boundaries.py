@@ -25,7 +25,7 @@ def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatc
         rows.append(index)
         return original(index)
     monkeypatch.setattr(store, 'row', read)
-    result = _signature('query', 'I1').invoke(
+    result = _signature('query', 'argin1').invoke(
         _context(_cs(), store=store, max_records=1), replace(meaning, mode='interrogative'))
     assert rows == [0]
     assert result['value'][0]['trust'] == pytest.approx(0.2)
@@ -38,7 +38,7 @@ def test_zero_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
     cs=_cs()
     concept=cs.mint_frozen_concept('zero-budget-native-read')
     monkeypatch.setattr(cs.similarity_codebook,'active_prototypes',lambda:pytest.fail('zero budget read'))
-    result=_signature('exist','I1').invoke(_context(cs,work=QueryWorkBudget(0)),('sym',concept))
+    result=_signature('exist','argin1').invoke(_context(cs,work=QueryWorkBudget(0)),('sym',concept))
     assert result['value'] is None and result['support_true']==result['support_false']==0.
     assert 'work_budget' in result['incomplete']
 
@@ -50,7 +50,7 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
         cs.similarity_codebook.getW()[cs._csw_row_of(concept)].fill_(float('nan'))
     context = _context(cs)
     with pytest.raises(FloatingPointError, match='finite'):
-        _signature('equal', 'I1', 'I2').invoke(
+        _signature('equal', 'argin1', 'argin2').invoke(
             context, ('sym', concept), ('sym', concept))
 
 
@@ -61,7 +61,7 @@ def test_unified_query_returns_complete_record_and_does_not_admit_observation():
     meaning = ConceptualMeaning.from_description(roles)
     row = store.append_meaning(meaning, kind='observation', trust=0.9, sentence_index=len(store))
     context = _context(_cs(), store=store)
-    found = _signature('query', 'I1').invoke(context, replace(meaning, mode='interrogative'))
+    found = _signature('query', 'argin1').invoke(context, replace(meaning, mode='interrogative'))
     assert found['result_kind'] == 'set'
     assert found['evidence_kind'] == 'retrieval'
     assert len(found['value']) == 1
@@ -77,7 +77,7 @@ def test_unified_query_returns_complete_record_and_does_not_admit_observation():
 def test_retired_query_catalogue_is_rejected_without_mutating_grammar(declarations):
     grammar = Grammar()
     grammar.configure({'Symbolic': {'compose': {
-        'rule': ['part_O1 = part.forward(part_I1, part_I2)']}}})
+        'rule': ['part_argout1 = part.forward(part_argin1, part_argin2)']}}})
     original_rules = tuple(grammar.rules)
     original_operations = grammar.thought_operations
     with pytest.raises(ValueError, match='Queries|retired'):

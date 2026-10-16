@@ -42,9 +42,9 @@ class TestPrepositionGrammarRules(unittest.TestCase):
         dn = [r for r in g.rules_downward if r.method_name == "preposition"]
         self.assertTrue(up, "no forward preposition rule")
         self.assertTrue(dn, "no reverse preposition rule")
-        self.assertEqual(up[0].lhs, "preposition_O1")
+        self.assertEqual(up[0].lhs, "preposition_argout1")
         self.assertEqual(up[0].rhs_symbols,
-                         ("preposition_I1", "preposition_I2"))
+                         ("preposition_argin1", "preposition_argin2"))
 
 
 class TestBindGrammarRules(unittest.TestCase):
@@ -63,8 +63,8 @@ class TestBindGrammarRules(unittest.TestCase):
         dn = [r for r in g.rules_downward if r.method_name == "bind"]
         self.assertTrue(up, "no forward bind rule")
         self.assertTrue(dn, "no reverse bind rule")
-        self.assertEqual(up[0].lhs, "bind_O1")
-        self.assertEqual(up[0].rhs_symbols, ("bind_I1", "bind_I2"))
+        self.assertEqual(up[0].lhs, "bind_argout1")
+        self.assertEqual(up[0].rhs_symbols, ("bind_argin1", "bind_argin2"))
 
 
 class TestTenseGrammarRules(unittest.TestCase):
@@ -87,8 +87,8 @@ class TestTenseGrammarRules(unittest.TestCase):
         dn = [r for r in g.rules_downward if r.method_name == "tense"]
         self.assertTrue(up, "no forward tense rule")
         self.assertTrue(dn, "no reverse tense rule")
-        self.assertEqual(up[0].lhs, "tense_O1")
-        self.assertEqual(up[0].rhs_symbols, ("tense_I1",))   # UNARY: one input
+        self.assertEqual(up[0].lhs, "tense_argout1")
+        self.assertEqual(up[0].rhs_symbols, ("tense_argin1",))   # UNARY: one input
 
 class TestPrepositionSignalRouterBinding(unittest.TestCase):
     """Task 1.4: the auto-wiring contract -- ``_wire_signal_router_grammar

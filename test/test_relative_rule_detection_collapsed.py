@@ -28,17 +28,17 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="rel_collapse_probe">
       <Symbolic>
-        <start name="relative_truth">equal_O1</start>
-        <start name="relative_truth">part_O1</start>
+        <start name="relative_truth">equal_argout1</start>
+        <start name="relative_truth">part_argout1</start>
         <start name="absolute_truth">S</start>
         <compose>
-          <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
-          <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
+          <rule>equal_argout1 = equal.forward(equal_argin1, equal_argin2)</rule>
+          <rule>part_argout1 = part.forward(part_argin1, part_argin2)</rule>
           <rule>S = S</rule>
         </compose>
         <generate>
-          <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
-          <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
+          <rule>equal_argin1, equal_argin2 = equal.reverse(equal_argout1)</rule>
+          <rule>part_argin1, part_argin2 = part.reverse(part_argout1)</rule>
           <rule>S = S</rule>
         </generate>
       </Symbolic>
@@ -67,7 +67,7 @@ def test_relative_start_categories_from_named_starts(monkeypatch, tmp_path):
     """The ``relative_truth``-named SS starts are the relative start set;
     the ``absolute_truth`` start is excluded."""
     g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
-    assert g._relative_start_categories() == {"equal_O1", "part_O1"}
+    assert g._relative_start_categories() == {"equal_argout1", "part_argout1"}
 
 
 def test_equal_and_part_forward_rules_are_relative(monkeypatch, tmp_path):
@@ -75,8 +75,8 @@ def test_equal_and_part_forward_rules_are_relative(monkeypatch, tmp_path):
     identity rule does not."""
     g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
     by_lhs = {r.lhs: i for i, r in enumerate(g.rules_upward)}
-    assert g.is_relative_rule(by_lhs["equal_O1"])
-    assert g.is_relative_rule(by_lhs["part_O1"])
+    assert g.is_relative_rule(by_lhs["equal_argout1"])
+    assert g.is_relative_rule(by_lhs["part_argout1"])
     assert not g.is_relative_rule(by_lhs["S"])
 
 

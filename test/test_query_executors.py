@@ -31,7 +31,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     second = store.append_meaning(idea, kind="fact", trust=-0.4, sentence_index=len(store))
     store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
     store.set_origin(second, store.ORIGIN_USER, text="witness")
-    result = _signature('query', 'I1').invoke(
+    result = _signature('query', 'argin1').invoke(
         _context(cs, store=store), replace(idea, mode='interrogative'))
     assert sorted(item['trust'] for item in result['value']) == pytest.approx([.6])
     for item in result['value']:
@@ -52,13 +52,13 @@ def test_part_and_converse_executor_read_native_taxonomy_without_writes():
     context = _context(cs)
     grammar = Grammar()
     grammar.configure({'compose': {'rule': [
-        'isPart_O1 = isPart.forward(isPart_I1, isPart_I2)',
-        {'_': 'whole_O1 = whole.forward(whole_I1, whole_I2)',
-         'family': 'isPart', 'permutation': 'I2,I1'},
+        'isPart_argout1 = isPart.forward(isPart_argin1, isPart_argin2)',
+        {'_': 'whole_argout1 = whole.forward(whole_argin1, whole_argin2)',
+         'family': 'isPart', 'permutation': 'argin2,argin1'},
     ]}, 'thought': {'rule': [
-        'isPart_O1 = isPart.thought(isPart_I1, isPart_I2)',
-        {'_': 'whole_O1 = whole.thought(whole_I1, whole_I2)',
-         'family': 'isPart', 'permutation': 'I2,I1'},
+        'isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)',
+        {'_': 'whole_argout1 = whole.thought(whole_argin1, whole_argin2)',
+         'family': 'isPart', 'permutation': 'argin2,argin1'},
     ]}})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     result = registry.execute(registry.form('isPart', ('sym', a), ('sym', b)), context)
@@ -68,9 +68,9 @@ def test_part_and_converse_executor_read_native_taxonomy_without_writes():
     assert registry.execute(
         registry.form('whole', ('sym', b), ('sym', a)), context).support_true == 1
     parts = registry.execute(
-        registry.form('isPart', ('sym', b), open_roles=('I1',)), context)
+        registry.form('isPart', ('sym', b), open_roles=('argin1',)), context)
     wholes = registry.execute(
-        registry.form('isPart', ('sym', a), open_roles=('I2',)), context)
+        registry.form('isPart', ('sym', a), open_roles=('argin2',)), context)
     assert parts.value[0]["reference"] == ("sym", a)
     assert wholes.value[0]["reference"] == ("sym", b)
 
@@ -81,7 +81,7 @@ def test_removed_quantize_raises_without_symbol_snapping():
     cs.new_concept()
     before=dict(cs._concept_allocator.placement)
     with pytest.raises(ValueError,match='retired'):
-        Grammar().configure({'thought':{'rule':'quantize_O1 = quantize.thought(quantize_I1)'}})
+        Grammar().configure({'thought':{'rule':'quantize_argout1 = quantize.thought(quantize_argin1)'}})
     assert cs._concept_allocator.placement==before
 
 
@@ -89,13 +89,13 @@ def test_ask_preserves_the_complete_open_question_and_schedules_same_controller(
     from ThoughtReferences import question as opened
     question=opened(_meaning(),(('evidence',-1),))
     calls=[]
-    result=_signature('ask','I1').invoke(_context(_cs(),continuation=lambda value:
+    result=_signature('ask','argin1').invoke(_context(_cs(),continuation=lambda value:
         calls.append(value) or dict(value=value,meaning=value,support_true=0.,support_false=0.,result_kind='subgoal')),question)
     assert len(calls)==1
     torch.testing.assert_close(calls[0].roles,question.roles)
     torch.testing.assert_close(result['value'].roles,question.roles)
     assert result['result_kind']=='subgoal'
-    empty=_signature('ask','I1').invoke(_context(_cs()),question)
+    empty=_signature('ask','argin1').invoke(_context(_cs()),question)
     assert empty['frames']==() and empty['support_true']==empty['support_false']==0.
 
 
@@ -105,8 +105,8 @@ def test_wrong_domain_and_types_fail_before_execution():
     descriptor = replace(
         THOUGHT_EXECUTORS['part'], executor=lambda *args: calls.append(args))
     signature = ThoughtSignature(
-        SimpleNamespace(semantic_id='part', operand_roles=('I1', 'I2')),
-        descriptor, ('I1', 'I2'))
+        SimpleNamespace(semantic_id='part', operand_roles=('argin1', 'argin2')),
+        descriptor, ('argin1', 'argin2'))
     # The structural operation fixes its descriptor domain; callers cannot
     # select another one. Invalid operands fail before the executor.
     with pytest.raises(TypeError, match="reference|argument"):
@@ -116,14 +116,14 @@ def test_wrong_domain_and_types_fail_before_execution():
 
 def test_equality_executor_rejects_width_truncation_and_nonfinite_values():
     context = _context(_cs())
-    result = _signature('equal', 'I1', 'I2').invoke(
+    result = _signature('equal', 'argin1', 'argin2').invoke(
         context, torch.ones(8), torch.ones(8))
     assert result["support_true"] == 1
     with pytest.raises(ValueError, match="width"):
-        _signature('equal', 'I1', 'I2').invoke(
+        _signature('equal', 'argin1', 'argin2').invoke(
             context, torch.ones(8), torch.ones(4))
     with pytest.raises((ValueError, FloatingPointError), match="finite"):
-        _signature('equal', 'I1', 'I2').invoke(
+        _signature('equal', 'argin1', 'argin2').invoke(
             context, torch.ones(8), torch.full((8,), float("nan")))
 
 

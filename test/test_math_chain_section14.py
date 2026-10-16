@@ -73,7 +73,7 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
 def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypatch, supported):
     from test_item6_2_thinking import world, run
     model, registry, store, (a,b,c) = world()
-    root = registry.form('isPart', a, open_roles=('I2',))
+    root = registry.form('isPart', a, open_roles=('argin2',))
     root = with_slots(replace(root, mode='assertive' if supported else 'interrogative',
         bindings={'_formation_records': ({'role':2, 'choice':'open', 'probability':.25},),
                   '_source_evidence':(1.,0.) if supported else (0.,0.)}),

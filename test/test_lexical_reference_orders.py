@@ -32,14 +32,16 @@ def test_selected_grammar_context_selects_order(context, order):
     cs, ids, row = vocabulary()
     grammar = Language.Grammar()
     grammar.configure({'compose': {'rule': {
-        '_': 'lower_O1 = lower.forward(lower_I1, lower_I2)',
-        'reference': f'I2:{context}'}}})
+        '_': 'lower_argout1 = lower.forward(lower_argin1, lower_argin2)',
+        'reference': 'argin2'}}})
     # This fixture tests order resolution without determiner admission.
-    rules = [r._replace(determiner_mode=None) for r in grammar.rules if r.method_name == 'lower']
+    rules = [r._replace(determiner_mode=None, reference_modes=(('argin2', context),))
+             for r in grammar.rules if r.method_name == 'lower']
     language = SimpleNamespace(_compose_binary_rules=rules, _compose_unary_rules=[])
     actions = torch.tensor([[0, 0, 0], [0, 0, 1], [1, 0, -1]])
     got, orders = Language.LanguageSpace.resolve_lexical_references(
-        language, cs, torch.tensor([-1, row]), torch.tensor([-1, ids[0]]), actions)
+        language, cs, torch.tensor([-1, row]), torch.tensor([-1, ids[0]]), actions,
+        leaf_orders=torch.tensor([0, order+1]))
     # Individual identity is chosen by the global operation, not this
     # dictionary-order staging helper. Types/events retain their lookup.
     assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
@@ -49,11 +51,12 @@ def test_selected_grammar_context_selects_order(context, order):
 
 def test_capture_owns_grammar_resolution_without_changing_reconstruction():
     cs, ids, row = vocabulary()
-    rule = SimpleNamespace(reference_orders=(('I2', 1),))
+    rule = SimpleNamespace(reference_roles=('argin2',))
     language = SimpleNamespace(_compose_binary_rules=[rule], _compose_unary_rules=[])
-    language.resolve_lexical_references = lambda *args: Language.LanguageSpace.resolve_lexical_references(language, *args)
+    language.resolve_lexical_references = lambda *args, **kwargs: Language.LanguageSpace.resolve_lexical_references(language, *args, **kwargs)
     host = SimpleNamespace(languageSpace=language, _concept_owner=lambda: cs,
-                           symbolSpace=SimpleNamespace(), _reconstruction_stack=lambda: None)
+                           symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0, 1]])),
+                           _reconstruction_stack=lambda: None)
     leaves = torch.randn(1, 2, 8)
     actions = torch.tensor([[[0, 0, 0], [0, 0, 1], [1, 0, -1]]])
     entry, = BasicModel._program_entries(host,
@@ -66,6 +69,40 @@ def test_capture_owns_grammar_resolution_without_changing_reconstruction():
     torch.testing.assert_close(entry.leaves, leaves[0])
     assert entry.concept_ids.tolist() == [-1, ids[0]]
     assert entry.detached().reference_ids.tolist() == [-1, -1]
+
+
+def test_order_three_relation_over_kinds_is_read_from_its_stamp():
+    """Operand positions and the configured storage rung impose no order ceiling."""
+    from ReferenceContext import reference_requests, result_order
+    cs = _cs(nS=256, order=1)
+    word, raw = cs.interpret_word([7], [], key='statement')
+    individual = cs.new_concept()
+    cs.add_part(individual, ('sym', raw))
+    kinds = [cs.new_concept(), cs.new_concept()]
+    for kind in kinds:
+        cs.add_part(kind, ('sym', individual))
+    relation = cs.new_concept()
+    for kind in kinds:
+        cs.add_part(relation, ('sym', kind))
+    assert [cs._concept_source_order(kind) for kind in kinds] == [2, 2]
+    assert cs._concept_source_order(relation) == 3
+    cs._csw_concept_row(3, relation)
+    cs.interpret.define(word, relation)
+    cs.bind_word_concept('statement', relation)
+    grammar = Language.Grammar()
+    grammar.configure({'compose': {'rule': {
+        '_': 'generic_argout1 = generic.forward(generic_argin1)',
+        'reference': 'argin1'}}})
+    rule = next(rule for rule in grammar.rules if rule.method_name == 'generic')
+    language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
+    actions = torch.tensor([[0, -1, 0], [2, 0, -1]])
+    stamps = torch.tensor([cs._concept_source_order(relation)])
+    refs, orders = Language.LanguageSpace.resolve_lexical_references(language, cs,
+        torch.tensor([cs._csw_row_of(raw)]), torch.tensor([relation]), actions, leaf_orders=stamps)
+    assert refs.tolist() == [relation] and orders.tolist() == [3]
+    assert reference_requests(language, actions, leaf_orders=stamps) == {0: (3, 'generic')}
+    assert result_order(rule, (3,)) == 3
+    assert result_order(rule, (17,)) == 17
 
 
 def test_form_sets_survive_checkpoint_and_missing_order_stays_unknown():

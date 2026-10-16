@@ -166,7 +166,7 @@ def test_part_thought_writes_detached_vector_residual_without_memory_read(monkey
     monkeypatch.setattr(ThoughtTaxonomyCapability, 'evidence', lambda *a, **k: pytest.fail('taxonomy read'))
     left, right = torch.rand(8, requires_grad=True), torch.rand(8, requires_grad=True)
     context = _context(_cs())
-    result = _signature('part', 'I1', 'I2').invoke(context, left, right)
+    result = _signature('part', 'argin1', 'argin2').invoke(context, left, right)
     torch.testing.assert_close(result['value'], Ops.part(left, right))
     assert result['support_true'] == pytest.approx(float(Ops.part(left, right, scalar=True)))
     assert result['result_kind'] == 'concept' and not result['value'].requires_grad
@@ -187,7 +187,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     context = _context(_cs(), store=store)
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
                   role_refs=(fact.role_refs[0], None, None), mode='interrogative')
-    found = _signature('query', 'I1').invoke(context, cue)
+    found = _signature('query', 'argin1').invoke(context, cue)
     assert len(found['frames']) == 1
     assert {frame['occurrence'] for frame in found['frames']} == {
         store.occurrence_of(oldest)}
@@ -195,7 +195,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     assert context.ltm.held_frames() == ()
     assert found['result_kind'] == 'set'
     with pytest.raises((TypeError, ValueError)):
-        __import__('Language').Grammar().configure({'thought': {'rule': 'quantize_O1 = quantize.thought(quantize_I1)'}})
+        __import__('Language').Grammar().configure({'thought': {'rule': 'quantize_argout1 = quantize.thought(quantize_argin1)'}})
 
 
 def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
@@ -206,7 +206,7 @@ def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
     higher = cs.synthesize_higher_order([('sym', a)])
     for cid in (a, b, higher):
         cs._csw_concept_row(0, cid)
-    result = _signature('isPart', 'I1', 'I2').invoke(_context(cs), ('sym', higher), ('sym', b))
+    result = _signature('isPart', 'argin1', 'argin2').invoke(_context(cs), ('sym', higher), ('sym', b))
     assert result['support_true'] == 0.
     assert result['result_kind'] == 'concept' and result['evidence_kind'] == 'taxonomy'
     assert result['value'] is None and result['witnesses']==()
@@ -357,7 +357,7 @@ def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
             context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(64), continuation=None)
             # Isolate the native priming cue from numerical generation.
             store._index_unfold=lambda *_a,**_k:((),0,True)
-            return _signature('query', 'I1').invoke(context, cue)['frames']
+            return _signature('query', 'argin1').invoke(context, cue)['frames']
     assert not retrieve()
     priming[0, 50] = 1.5
     assert len(retrieve()) == 1
@@ -446,7 +446,7 @@ def test_executor_cannot_emit_outside_its_declared_write_scope():
     from AccessibleMind import Subsystem as S
     from test_query_vp_boundaries import _signature, _context
     from test_cs_symbol_table import _cs
-    signature = _signature('equal', 'I1', 'I2')
+    signature = _signature('equal', 'argin1', 'argin2')
     signature = replace(signature, descriptor=replace(signature.descriptor,
         executor=lambda *args: {'write_target': S.PERCEPT.value}))
     with pytest.raises(ValueError, match='write scope'):
@@ -462,4 +462,4 @@ def test_unnamed_vectors_cannot_offer_open_taxonomy_candidates():
     assert not any(candidate.semantic_id == 'part' and candidate.open_roles
                    for candidate in candidates)
     with pytest.raises((TypeError, ValueError), match='reference'):
-        registry.form('isPart', torch.ones(8), open_roles=('I2',))
+        registry.form('isPart', torch.ones(8), open_roles=('argin2',))

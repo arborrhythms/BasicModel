@@ -37,14 +37,14 @@ _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
         </Analyze>
       </PartSpace>
       <Symbolic>
-        <start name="relative_truth">isEqual_O1</start>
+        <start name="relative_truth">isEqual_argout1</start>
         <start name="absolute_truth">S</start>
         <compose>
-          <rule>isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+          <rule>isEqual_argout1 = isEqual.forward(isEqual_argin1, isEqual_argin2)</rule>
           <rule>S = S</rule>
         </compose>
         <generate>
-          <rule>isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+          <rule>isEqual_argin1, isEqual_argin2 = isEqual.reverse(isEqual_argout1)</rule>
           <rule>S = S</rule>
         </generate>
       </Symbolic>
@@ -89,8 +89,8 @@ def test_ws_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
     """``<start>`` under ``<WholeSpace>`` configures SS starts; the PS
     root ``U`` does NOT leak into the symbolic start set."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
-    assert g.ws_start_symbol == "isEqual_O1"
-    assert ("isEqual_O1",) in g.ws_start_patterns
+    assert g.ws_start_symbol == "isEqual_argout1"
+    assert ("isEqual_argout1",) in g.ws_start_patterns
     assert ("S",) in g.ws_start_patterns
     assert ("U",) not in g.ws_start_patterns
 
@@ -99,7 +99,7 @@ def test_global_start_aliases_symbolic_space(monkeypatch, tmp_path):
     """The back-compat global ``start_symbol`` / ``start_patterns`` mirror
     the WholeSpace starts (the symbolic parse), not the PS root."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
-    assert g.start_symbol == g.ws_start_symbol == "isEqual_O1"
+    assert g.start_symbol == g.ws_start_symbol == "isEqual_argout1"
     assert tuple(g.start_patterns) == tuple(g.ws_start_patterns)
     flat = {sym for pat in g.start_patterns for sym in pat}
     assert "U" not in flat
@@ -109,7 +109,7 @@ def test_relative_and_absolute_starts_from_name_attribute(monkeypatch, tmp_path)
     """The ``name`` attribute distinguishes relative-truth from
     absolute-truth SS starts (used by relative-rule detection, R1.3)."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
-    assert g.ws_relative_starts == frozenset({"isEqual_O1"})
+    assert g.ws_relative_starts == frozenset({"isEqual_argout1"})
     assert g.ws_absolute_starts == frozenset({"S"})
 
 
@@ -119,8 +119,8 @@ def test_identity_rule_uses_symbolic_start(monkeypatch, tmp_path):
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.id_SS is not None
     rd = g.rules[g.id_SS]
-    assert rd.lhs == "isEqual_O1"
-    assert rd.rhs_symbols == ("isEqual_O1",)
+    assert rd.lhs == "isEqual_argout1"
+    assert rd.rhs_symbols == ("isEqual_argout1",)
     assert rd.arity == 1
     assert rd.method_name is None
 

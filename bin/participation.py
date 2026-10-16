@@ -14,8 +14,8 @@ declared categories spread across (the D1 gate).
 
 def role_name(method, pos):
     """Role-collapsed role name for operator ``method`` operand ``pos``
-    (0-based): ``op_I<n>`` with 1-based ``n`` (matching Section 4.1)."""
-    return f"{method}_I{int(pos) + 1}"
+    (0-based): ``op_argin<n>`` with 1-based ``n`` (matching Section 4.1)."""
+    return f"{method}_argin{int(pos) + 1}"
 
 
 def role_participation(grammar, direction="compose"):

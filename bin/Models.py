@@ -7930,7 +7930,7 @@ class BasicModel(BaseModel):
     def enable_compiled_step(self):
         """Compile the per-batch forward and route runBatch through it.
 
-        O1 fix: ``ModelFactory.run`` used to ``compile(m)`` the whole
+        argout1 fix: ``ModelFactory.run`` used to ``compile(m)`` the whole
         module and then call ``m.run()``, which delegates to the eager
         ``_orig_mod`` -- so the compiled callable was never invoked
         (dynamo traced 0 frames; every "compiled" run was eager).
@@ -8299,7 +8299,7 @@ class BasicModel(BaseModel):
         components = getattr(self._concept_owner(), 'components', None)
         language = getattr(self, 'languageSpace', None)
         eligible = any(getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
-            any(order == 1 for _, order in getattr(rule, 'reference_orders', ())) for rule in (
+            bool(getattr(rule, 'reference_roles', ())) for rule in (
             *getattr(language, '_compose_binary_rules', ()),
             *getattr(language, '_compose_unary_rules', ())))
         self._component_reading = bool(components is not None and eligible)
@@ -12967,13 +12967,16 @@ class BasicModel(BaseModel):
             selected_words = word_rows[b].index_select(0, pos.to(word_rows.device))
             selected_ids = (concept_ids[b].index_select(0, pos.to(concept_ids.device))
                             if torch.is_tensor(concept_ids) else None)
+            source_orders = reference_columns[0][1]
+            selected_leaf_orders = (None if source_orders is None else
+                                   source_orders[b].index_select(0, pos.to(source_orders.device)))
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)
             owner = getattr(self, '_concept_owner', None)
             if callable(resolve) and callable(owner) and selected_ids is not None:
                 args = (owner(), selected_words, selected_ids, acts[:L])
-                reference_ids, reference_orders = resolve(*args) if admit else resolve(*args, admit=False)
+                reference_ids, reference_orders = resolve(*args, leaf_orders=selected_leaf_orders, admit=admit)
                 if not bool((reference_orders >= 0).any()):
                     reference_ids = reference_orders = None
             entry = AnswerProgram(
@@ -14130,7 +14133,7 @@ class BasicModel(BaseModel):
                 torch.compiler.cudagraph_mark_step_begin()
             except (AttributeError, RuntimeError):
                 pass
-            # O1: route the per-batch compute through the compiled
+            # argout1: route the per-batch compute through the compiled
             # callable when enabled (else eager). runEpoch/runBatch stay
             # eager Python; only this forward+loss+backward unit is
             # torch.compiled. See doc/plans/2026-05-16-compiled-step-
@@ -20619,23 +20622,26 @@ class BasicModel(BaseModel):
     def _sentence_reference_types(self, like):
         """Stage existing typed dictionary points for this open reading only."""
         from ReferenceContext import ReferenceTypes
-        language = self.languageSpace
-        orders = sorted({order for rule in (*language._compose_binary_rules,
-                                            *language._compose_unary_rules)
-                         for _role, order in getattr(rule, 'reference_orders', ()) if order != 1})
         sources = self._word_symbol_concept_ids()
         words = getattr(self.inputSpace, '_ar_word_concept_rows', None)
-        if not orders or not torch.is_tensor(sources) or not torch.is_tensor(words):
+        if not torch.is_tensor(sources) or not torch.is_tensor(words):
             return None
         batch, count = sources.shape
         owner = self._concept_owner()
+        surfaces = [[owner.word_surface_for_row(int(word)) for word in row] for row in words]
+        orders = sorted({owner._concept_source_order(identity)
+                         for row in surfaces for surface in row if surface is not None
+                         for identity in owner.word_concepts(surface)
+                         if owner._concept_source_order(identity) >= 0})
+        if not orders:
+            return None
         basis = owner.similarity_codebook.getW()
         identities = torch.full((batch, count, len(orders)), -1,
                                 device=like.device, dtype=torch.long)
         values = like.new_zeros(batch, count, len(orders), like.shape[-1])
         for b in range(batch):
             for w in range(count):
-                surface = owner.word_surface_for_row(int(words[b, w]))
+                surface = surfaces[b][w]
                 if surface is None:
                     continue
                 for index, order in enumerate(orders):
@@ -20661,6 +20667,7 @@ class BasicModel(BaseModel):
         values = like.new_zeros(B, C, D)
         valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
         relations = torch.zeros_like(valid)
+        orders = torch.full_like(ids, -1)
         predicted = torch.zeros(B, device=like.device, dtype=torch.bool)
         components = getattr(self._concept_owner(), 'components', None)
         queries = []
@@ -20685,6 +20692,7 @@ class BasicModel(BaseModel):
                         ids[b, i] = identity
                         valid[b, i] = True
                         values[b, i] = point.detach().to(like)
+                        orders[b, i] = 1  # A columns collect individual occurrences.
             for i, frame in enumerate(frames, start=window):
                 # This bank supplies numerical NP operands. A relational
                 # row has no fusible point; its typed description remains
@@ -20695,6 +20703,7 @@ class BasicModel(BaseModel):
                 valid[b, i] = True
                 values[b, i] = (frame.roles[0] if frame.point is None else frame.point).detach().to(like)
                 relations[b, i] = frame.point is None
+                orders[b, i] = frame.order
             # A cued frame's referent columns are candidates too. An open
             # column uses (row, role); a filled column uses its actual native
             # referent. Both share the existing bounded recency bank.
@@ -20702,7 +20711,7 @@ class BasicModel(BaseModel):
             if store is not None:
                 from Occurrence import slot_key
                 from ThoughtReferences import open_slots
-                entries = [(int(ids[b, i]), values[b, i].clone(), bool(relations[b, i]))
+                entries = [(int(ids[b, i]), values[b, i].clone(), bool(relations[b, i]), int(orders[b, i]))
                            for i in range(C) if bool(valid[b, i])]
                 for frame in frames:
                     index = store.index_of_row(frame.row_id)
@@ -20713,18 +20722,22 @@ class BasicModel(BaseModel):
                     for role in (0, 2):
                         if ('referent', role) in opened:
                             identity = slot_key(int(store.address_keys[index]), role)
-                            entries.append((identity, current.roles[role].detach().to(like), False))
+                            entries.append((identity, current.roles[role].detach().to(like), False, -1))
                         elif current.role_refs[role] is not None and bool(current.role_mask[role]):
                             identity = int(store.refs[index, role])
                             if identity not in (-1, 0):
                                 target = store.index_of_row(identity)
                                 relative = target is not None and int(store.rel_type[target]) != store.REL_NONE
-                                entries.append((identity, current.roles[role].detach().to(like), relative))
+                                order = (int(store.order[target]) if target is not None else
+                                         self._concept_owner()._concept_source_order(identity))
+                                entries.append((identity, current.roles[role].detach().to(like), relative, order))
                 ids[b].fill_(-1)
                 valid[b].zero_()
                 relations[b].zero_()
-                for i, (identity, point, relative) in enumerate(entries[-C:]):
+                orders[b].fill_(-1)
+                for i, (identity, point, relative, order) in enumerate(entries[-C:]):
                     ids[b, i], values[b, i], valid[b, i], relations[b, i] = identity, point, True, relative
+                    orders[b, i] = order
             if store is not None:
                 from ReferenceContext import exclude_replaced_occurrences
                 from Occurrence import source_at
@@ -20758,7 +20771,7 @@ class BasicModel(BaseModel):
                 pairs.update((source, target) for source in sources for target in targets)
             associations = ids.new_tensor(sorted(pairs)).reshape(-1, 2)
         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
-                             types, cases, inventory, interpreter, associations)
+                             types, cases, inventory, interpreter, associations, orders)
 
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word):
@@ -23227,7 +23240,7 @@ class BasicModel(BaseModel):
             if query.domain not in (None, "conceptual-taxonomy"):
                 raise ValueError("part requires the conceptual taxonomy domain")
             opened = tuple(role for role, value in (
-                ("I1", query.left), ("I2", query.right)) if value is None)
+                ("argin1", query.left), ("argin2", query.right)) if value is None)
             arguments = tuple(value for value in (query.left, query.right)
                               if value is not None)
             return registry.form("isPart", *arguments, open_roles=opened,
@@ -25045,7 +25058,7 @@ class ModelFactory:
         # before the profiled pass.
         pf_warmup, pf_profile = 4, 2
         opt = m.getOptimizer(lr=lr)
-        # O1: ModelFactory.run now calls m.enable_compiled_step() before
+        # argout1: ModelFactory.run now calls m.enable_compiled_step() before
         # this, so runBatch routes through the torch.compiled callable.
         # This pre-flight therefore profiles the COMPILED step. (Prior
         # 58/430 cudaMemcpyDtoH figures were measured fully eager --
@@ -25182,7 +25195,7 @@ class ModelFactory:
             m, _ = BaseModel.from_config(config_path, data=TheData)
         TheMessage(f"Device: {TheDevice}")
 
-        # O1: `compile(m)` on the module is a no-op here -- `m.run()`
+        # argout1: `compile(m)` on the module is a no-op here -- `m.run()`
         # delegates to the eager `_orig_mod`, so the compiled callable
         # never ran. Compile the per-batch forward callable and invoke
         # it from runBatch instead (eager streaming stays outside).

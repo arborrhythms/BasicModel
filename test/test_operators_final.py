@@ -138,7 +138,8 @@ def test_determiner_mints_distinct_occurrence_and_universal_stays_high(monkeypat
     assert first is not None and second is not None
     torch.testing.assert_close(f.store.slots[first], f.store.slots[second])
     universal = next(r for r in f.grammar.rules_upward if r.determiner_mode == 'kind')
-    assert universal.order_delta == 0 and dict(universal.reference_orders)['I2'] == 2
+    from ReferenceContext import binding_spec
+    assert universal.order_delta == 0 and binding_spec(universal, 'argin2', 2) == (2, 'kind')
     renamed = universal._replace(method_name='opaque')
     assert renamed.determiner_mode == 'kind'
 
@@ -194,7 +195,8 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
     program = f.program(('lift', ('lower', 'a', 'cat'), 'sleeps'))
     before = len(f.cs.definitions._store())
     refs, orders = LanguageSpace.resolve_lexical_references(f.language, f.cs,
-        program.word_rows, program.concept_ids, program.actions, admit=True)
+        program.word_rows, program.concept_ids, program.actions,
+        leaf_orders=torch.tensor([0, 2, 0]), admit=True)
     assert len(f.cs.definitions._store()) == before
     # The selected mint carries no existing column. Dictionary capture may
     # not substitute the noun's concept for that individual choice.

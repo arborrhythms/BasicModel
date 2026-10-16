@@ -66,7 +66,7 @@ def test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating()
     cs._csw_concept_row(0, a[1])
     cs.add_whole(a[1], b)
     registry = model.grammatical_thoughts
-    query = registry.form("isPart", a, open_roles=("I2",))
+    query = registry.form("isPart", a, open_roles=("argin2",))
     from Queries import _existing_row
     with pytest.raises(ValueError, match="no allocated payload"):
         _existing_row(cs, b)

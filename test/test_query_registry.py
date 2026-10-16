@@ -31,8 +31,8 @@ def test_checked_operations_share_grammar_owned_identity_and_explicit_roles():
     part = registry.operation_spec('part')
     whole = next(form for form in part.forms if form.structural_id == 'whole')
     assert part.semantic_id == 'part'
-    assert part.operand_roles == ('I1', 'I2')
-    assert whole.permutation == ('I2', 'I1')
+    assert part.operand_roles == ('argin1', 'argin2')
+    assert whole.permutation == ('argin2', 'argin1')
     assert registry.descriptors['part'].domain == 'conceptual-containment'
     assert registry.descriptors['part'].result_kind == 'concept'
     assert registry.descriptors['part'].write_target is Mind.SERIAL

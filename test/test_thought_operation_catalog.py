@@ -12,19 +12,19 @@ from test_cs_symbol_table import _cs
 
 
 def _family(*, compose=True, generate=True, thought=True,
-            reverse_inputs=("I1", "I2")):
+            reverse_inputs=("argin1", "argin2")):
     """Return one minimal structural family, optionally selected for thought."""
     config = {}
     if compose:
         config["compose"] = {
-            "rule": ["part_O1 = part.forward(part_I1, part_I2)"]}
+            "rule": ["part_argout1 = part.forward(part_argin1, part_argin2)"]}
     if thought:
         config["thought"] = {
-            "rule": ["part_O1 = part.thought(part_I1, part_I2)"]}
+            "rule": ["part_argout1 = part.thought(part_argin1, part_argin2)"]}
     if generate:
         lhs = ", ".join("part_" + role for role in reverse_inputs)
         config["generate"] = {
-            "rule": [lhs + " = part.reverse(part_O1)"]}
+            "rule": [lhs + " = part.reverse(part_argout1)"]}
     return config
 
 
@@ -42,8 +42,8 @@ def test_structural_pair_derives_one_immutable_thought_operation_without_queries
 
     operation = _only_operation(grammar)
     assert operation.semantic_id == "part"
-    assert operation.operand_roles == ("I1", "I2")
-    assert operation.result_role == "O1"
+    assert operation.operand_roles == ("argin1", "argin2")
+    assert operation.result_role == "argout1"
     assert operation.forward_rule_ids
     assert operation.reverse_rule_ids
 
@@ -67,7 +67,7 @@ def test_a_structural_face_in_either_section_enters_the_same_boundary_catalog(
 def test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration():
     grammar = Grammar()
     with pytest.raises(ValueError, match="part|role|contract"):
-        grammar.configure(_family(reverse_inputs=("I1",)))
+        grammar.configure(_family(reverse_inputs=("argin1",)))
 
 
 def test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules():
@@ -75,15 +75,15 @@ def test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": [
-            "part_O1 = part.forward(part_I1, part_I2)",
-            "equal_O1 = equal.forward(equal_I1, equal_I2)",
+            "part_argout1 = part.forward(part_argin1, part_argin2)",
+            "equal_argout1 = equal.forward(equal_argin1, equal_argin2)",
         ]},
         "thought": {"rule": [
-            "equal_O1 = equal.thought(equal_I1, equal_I2)",
+            "equal_argout1 = equal.thought(equal_argin1, equal_argin2)",
         ]},
         "generate": {"rule": [
-            "part_I1, part_I2 = part.reverse(part_O1)",
-            "equal_I1, equal_I2 = equal.reverse(equal_O1)",
+            "part_argin1, part_argin2 = part.reverse(part_argout1)",
+            "equal_argin1, equal_argin2 = equal.reverse(equal_argout1)",
         ]},
     })
 
@@ -104,10 +104,10 @@ def test_thought_role_contract_must_match_its_structural_operator():
     with pytest.raises(ValueError, match="part|role|contract"):
         grammar.configure({
             "compose": {"rule": [
-                "part_O1 = part.forward(part_I1, part_I2)",
+                "part_argout1 = part.forward(part_argin1, part_argin2)",
             ]},
             "thought": {"rule": [
-                "part_O1 = part.thought(part_I2, part_I1)",
+                "part_argout1 = part.thought(part_argin2, part_argin1)",
             ]},
         })
 
@@ -119,7 +119,7 @@ def test_thought_only_operator_is_available_without_speech_or_understanding_face
     grammar = Grammar()
     grammar.configure({
         "thought": {"rule": [
-            "part_O1 = part.thought(part_I1, part_I2)",
+            "part_argout1 = part.thought(part_argin1, part_argin2)",
         ]},
     })
 
@@ -139,10 +139,10 @@ def test_ispart_can_have_structural_and_thought_faces_under_one_exact_name():
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": [
-            "isPart_O1 = isPart.forward(isPart_I1, isPart_I2)",
+            "isPart_argout1 = isPart.forward(isPart_argin1, isPart_argin2)",
         ]},
         "thought": {"rule": [
-            "isPart_O1 = isPart.thought(isPart_I1, isPart_I2)",
+            "isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)",
         ]},
     })
 
@@ -159,10 +159,10 @@ def test_thought_selection_requires_a_checked_executor_at_registry_install():
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": [
-            "union_O1 = union.forward(union_I1, union_I2)",
+            "union_argout1 = union.forward(union_argin1, union_argin2)",
         ]},
         "thought": {"rule": [
-            "union_O1 = union.thought(union_I1, union_I2)",
+            "union_argout1 = union.thought(union_argin1, union_argin2)",
         ]},
     })
 
@@ -212,14 +212,14 @@ def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
     space.nVectors = 2
     grammar = Grammar()
     grammar.configure({"compose": {"rule": [
-        "part_O1 = part.forward(part_I1, part_I2)",
-        "equal_O1 = equal.forward(equal_I1, equal_I2)",
+        "part_argout1 = part.forward(part_argin1, part_argin2)",
+        "equal_argout1 = equal.forward(equal_argin1, equal_argin2)",
 
     ]}, "thought": {"rule": [
-        "part_O1 = part.thought(part_I1, part_I2)",
-        "equal_O1 = equal.thought(equal_I1, equal_I2)",
-        "exist_O1 = exist.thought(exist_I1)",
-        "ask_O1 = ask.thought(ask_I1)",
+        "part_argout1 = part.thought(part_argin1, part_argin2)",
+        "equal_argout1 = equal.thought(equal_argin1, equal_argin2)",
+        "exist_argout1 = exist.thought(exist_argin1)",
+        "ask_argout1 = ask.thought(ask_argin1)",
     ]}})
 
     registry = GrammaticalThoughtRegistry.install(space, grammar)
@@ -246,7 +246,7 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure({'thought': {'rule': ['isPart_O1 = isPart.thought(isPart_I1, isPart_I2)']}})
+    grammar.configure({'thought': {'rule': ['isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)']}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
     whole = ("sym", space.new_concept())
@@ -254,7 +254,7 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
         space._csw_concept_row(0, reference[1])
 
     closed = registry.form("isPart", part, whole)
-    open_part = registry.form("isPart", whole, open_roles=("I1",))
+    open_part = registry.form("isPart", whole, open_roles=("argin1",))
     assert closed.mode == "interrogative"
     assert closed.role_mask.tolist() == [True, True, True]
     assert closed.role_refs[0] == part and closed.role_refs[2] == whole
@@ -276,14 +276,14 @@ def test_open_part_form_executes_a_taxonomy_set_without_an_alias():
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure({'thought': {'rule': ['isPart_O1 = isPart.thought(isPart_I1, isPart_I2)']}})
+    grammar.configure({'thought': {'rule': ['isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)']}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
     for reference in (part, whole):
         space._csw_concept_row(0, reference[1])
     space.add_whole(part[1], whole)
-    # I1 is the unknown part; I2 carries the known whole.
-    request = registry.form("isPart", whole, open_roles=("I1",))
+    # argin1 is the unknown part; argin2 carries the known whole.
+    request = registry.form("isPart", whole, open_roles=("argin1",))
     context = ThoughtGrammarContext(
         word_stream=(), conceptual_space=ThoughtConceptualCapability(
             space, lambda left, right: float(torch.allclose(left, right))),
@@ -305,11 +305,11 @@ def test_catalog_forms_unparsed_executable_candidates_without_a_reader_call():
     space = _cs()
     grammar = Grammar()
     grammar.configure({"compose": {"rule": [
-        "part_O1 = part.forward(part_I1, part_I2)",
-        "equal_O1 = equal.forward(equal_I1, equal_I2)",
+        "part_argout1 = part.forward(part_argin1, part_argin2)",
+        "equal_argout1 = equal.forward(equal_argin1, equal_argin2)",
     ]}, "thought": {"rule": [
-        "part_O1 = part.thought(part_I1, part_I2)",
-        "equal_O1 = equal.thought(equal_I1, equal_I2)",
+        "part_argout1 = part.thought(part_argin1, part_argin2)",
+        "equal_argout1 = equal.thought(equal_argin1, equal_argin2)",
     ]}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
@@ -349,7 +349,7 @@ def test_thought_execution_receives_the_common_context_and_only_capability_views
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure({"thought": {"rule": ["isPart_O1 = isPart.thought(isPart_I1, isPart_I2)"]}})
+    grammar.configure({"thought": {"rule": ["isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)"]}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
     whole = ("sym", space.new_concept())
@@ -390,14 +390,14 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
     captured = []
 
     def execute(_context, arguments):
-        captured.append(arguments["I1"])
+        captured.append(arguments["argin1"])
         return {"support_true": 1.0, "support_false": 0.0}
 
     descriptor = ThoughtExecutorDescriptor(
         "probe", "probe-domain", ("concept",), Mind.SERIAL,
         (Mind.KNOWING,), (Mind.SERIAL,), "probe", execute)
-    operation = SimpleNamespace(semantic_id="probe", operand_roles=("I1",))
-    signature = ThoughtSignature(operation, descriptor, ("I1",))
+    operation = SimpleNamespace(semantic_id="probe", operand_roles=("argin1",))
+    signature = ThoughtSignature(operation, descriptor, ("argin1",))
     value = torch.ones(8, requires_grad=True)
     stream = torch.ones(1, 8, requires_grad=True)
     primed = torch.ones(1, requires_grad=True)
@@ -418,9 +418,9 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": [
-            "equal_O1 = equal.forward(equal_I1, equal_I2)"]},
+            "equal_argout1 = equal.forward(equal_argin1, equal_argin2)"]},
         "thought": {"rule": [
-            "equal_O1 = equal.thought(equal_I1, equal_I2)"]},
+            "equal_argout1 = equal.thought(equal_argin1, equal_argin2)"]},
     })
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     request = registry.form("equal", value, value)
@@ -450,7 +450,7 @@ def test_production_grammars_load_from_structural_thought_faces(filename, requir
                     if item.semantic_id == "part")
         whole = next(form for form in part.forms
                      if form.structural_id == "whole")
-        assert whole.permutation == ("I2", "I1")
+        assert whole.permutation == ("argin2", "argin1")
 
 
 def test_thought_only_operators_have_no_structural_noop_faces():
@@ -458,7 +458,7 @@ def test_thought_only_operators_have_no_structural_noop_faces():
     assert {"quantize", "arma", "lookup", "exist", "true"}.isdisjoint(GRAMMAR_LAYER_CLASSES)
     for name in ("quantize", "arma"):
         with pytest.raises(ValueError, match="retired"):
-            Grammar().configure({"compose": {"rule": f"{name}_O1 = {name}.forward({name}_I1)"}})
+            Grammar().configure({"compose": {"rule": f"{name}_argout1 = {name}.forward({name}_argin1)"}})
 
 
 def test_structural_dispatch_receives_only_the_common_owned_context():
@@ -813,10 +813,10 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         primed_symbols=(), ltm=LTMRead(), taxonomy=object(), work=QueryWorkBudget(64),
         continuation=None, boundary=lambda row:None, row=0)
     value = torch.ones(4)
-    arguments = {name: {'I1': ('sym',1), 'I2': ('sym',2)} for name in ('isPart','isEqual','isImplied')}
-    arguments.update({name: {'I1':value, 'I2':value} for name in ('part','equal','implies')})
-    arguments.update({name: {'I1':meaning} for name in ('isTrue','ask','query','not')})
-    arguments.update({name: {'I1':value} for name in ('exist','gain')})
+    arguments = {name: {'argin1': ('sym',1), 'argin2': ('sym',2)} for name in ('isPart','isEqual','isImplied')}
+    arguments.update({name: {'argin1':value, 'argin2':value} for name in ('part','equal','implies')})
+    arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not')})
+    arguments.update({name: {'argin1':value} for name in ('exist','gain')})
     assert set(arguments) == set(THOUGHT_EXECUTORS)
     assert {'what','lookup','quantize','arma','expect','true'}.isdisjoint(THOUGHT_EXECUTORS)
     results = {name:THOUGHT_EXECUTORS[name].executor(context,args) for name,args in arguments.items()}
@@ -849,8 +849,8 @@ def test_descriptor_scopes_hide_undeclared_capability_methods_at_execution():
         "probe", "ltm-frames", ("concept",), Mind.SERIAL,
         (Mind.LTM,), (Mind.SERIAL,), "probe", execute)
     operation = SimpleNamespace(
-        semantic_id="probe", operand_roles=("I1",), result_role="O1")
-    signature = ThoughtSignature(operation, descriptor, ("I1",))
+        semantic_id="probe", operand_roles=("argin1",), result_role="argout1")
+    signature = ThoughtSignature(operation, descriptor, ("argin1",))
 
     class LTM:
         def retrieve(self, *_args, **_kwargs):
@@ -880,8 +880,8 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
 
     grammar = Grammar()
     grammar.configure({
-        "compose": {"rule": ["ask_O1 = ask.forward(ask_I1)"]},
-        "thought": {"rule": ["ask_O1 = ask.thought(ask_I1)"]},
+        "compose": {"rule": ["ask_argout1 = ask.forward(ask_argin1)"]},
+        "thought": {"rule": ["ask_argout1 = ask.thought(ask_argin1)"]},
     })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
@@ -929,19 +929,19 @@ def test_grammar_declares_whole_as_one_part_family_with_a_role_permutation():
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": [
-            "part_O1 = part.forward(part_I1, part_I2)",
-            {"_": "whole_O1 = whole.forward(whole_I1, whole_I2)",
-             "family": "part", "permutation": "I2,I1"},
+            "part_argout1 = part.forward(part_argin1, part_argin2)",
+            {"_": "whole_argout1 = whole.forward(whole_argin1, whole_argin2)",
+             "family": "part", "permutation": "argin2,argin1"},
         ]},
         "thought": {"rule": [
-            "part_O1 = part.thought(part_I1, part_I2)",
-            {"_": "whole_O1 = whole.thought(whole_I1, whole_I2)",
-             "family": "part", "permutation": "I2,I1"},
+            "part_argout1 = part.thought(part_argin1, part_argin2)",
+            {"_": "whole_argout1 = whole.thought(whole_argin1, whole_argin2)",
+             "family": "part", "permutation": "argin2,argin1"},
         ]},
         "generate": {"rule": [
-            "part_I1, part_I2 = part.reverse(part_O1)",
-            {"_": "whole_I1, whole_I2 = whole.reverse(whole_O1)",
-             "family": "part", "permutation": "I2,I1"},
+            "part_argin1, part_argin2 = part.reverse(part_argout1)",
+            {"_": "whole_argin1, whole_argin2 = whole.reverse(whole_argout1)",
+             "family": "part", "permutation": "argin2,argin1"},
         ]},
     })
     assert tuple(item.semantic_id for item in grammar.thought_operations) == ("part",)
@@ -1004,8 +1004,8 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
 
     grammar = Grammar()
     grammar.configure({
-        "compose": {"rule": ["part_O1 = part.forward(part_I1, part_I2)"]},
-        "thought": {"rule": ["isPart_O1 = isPart.thought(isPart_I1, isPart_I2)"]},
+        "compose": {"rule": ["part_argout1 = part.forward(part_argin1, part_argin2)"]},
+        "thought": {"rule": ["isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)"]},
     })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
@@ -1051,16 +1051,16 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": [
-            "part_O1 = part.forward(part_I1, part_I2)",
-            {"_": "whole_O1 = whole.forward(whole_I1, whole_I2)",
-             "family": "part", "permutation": "I2,I1"},
-            "ask_O1 = ask.forward(ask_I1)",
+            "part_argout1 = part.forward(part_argin1, part_argin2)",
+            {"_": "whole_argout1 = whole.forward(whole_argin1, whole_argin2)",
+             "family": "part", "permutation": "argin2,argin1"},
+            "ask_argout1 = ask.forward(ask_argin1)",
         ]},
         "thought": {"rule": [
-            "part_O1 = part.thought(part_I1, part_I2)",
-            {"_": "whole_O1 = whole.thought(whole_I1, whole_I2)",
-             "family": "part", "permutation": "I2,I1"},
-            "ask_O1 = ask.thought(ask_I1)",
+            "part_argout1 = part.thought(part_argin1, part_argin2)",
+            {"_": "whole_argout1 = whole.thought(whole_argin1, whole_argin2)",
+             "family": "part", "permutation": "argin2,argin1"},
+            "ask_argout1 = ask.thought(ask_argin1)",
         ]},
     })
     space = _cs()

@@ -749,7 +749,7 @@ class Grammar:
         'RuleDef',
         ['space_role', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
          'width_min', 'width_max', 'query', 'thought_family',
-         'thought_permutation', 'reference_orders', 'reference_kinds',
+         'thought_permutation', 'reference_roles', 'reference_modes',
          'clause_form', 'head_role', 'surface_name', 'predicate_identity',
          'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
          'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
@@ -770,7 +770,7 @@ class Grammar:
         implementation = implementation or {'pi': PiLayer, 'sigma': SigmaLayer}.get(rule.method_name, GrammarLayer)
         fields = ('clause_form', 'head_role', 'relation_kind', 'scope_transparent',
                   'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
-                  'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role', 'determiner_mode', 'substrate', 'mandatory')
+                  'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory')
         from Queries import THOUGHT_EXECUTORS
         from AccessibleMind import OperatorEffects, OperatorFootprint
         descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
@@ -786,6 +786,7 @@ class Grammar:
             implementation.footprint_writes).check_effects(effects)
         return rule._replace(
             **{name: getattr(implementation, name, None) for name in fields},
+            reference_roles=tuple(role for role, _ in implementation.reference_modes),
             operand_kinds=(('field' if getattr(implementation, 'field_only', False) else 'symbol'),) * rule.arity,
             effect_reads=tuple(s.name.lower() for s in effects.reads),
             effect_writes=tuple(s.name.lower() for s in effects.writes),
@@ -797,7 +798,7 @@ class Grammar:
 
         ``structural_id`` is the method actually called by compose/generate.
         ``permutation`` maps canonical operand order to this form's role
-        labels: ``('I2', 'I1')`` makes ``whole(A, B)`` mean ``part(B, A)``.
+        labels: ``('argin2', 'argin1')`` makes ``whole(A, B)`` mean ``part(B, A)``.
         It is grammar metadata, never a second executor alias or learned
         numeric feature.
         """
@@ -815,14 +816,14 @@ class Grammar:
                 raise ValueError('thought operation form requires a valid structural id')
             roles = tuple(self.operand_roles)
             if (not roles or len(set(roles)) != len(roles)
-                    or any(re.fullmatch(r'I[1-9]\d*', role, re.ASCII) is None
+                    or any(re.fullmatch(r'argin[1-9]\d*', role, re.ASCII) is None
                            for role in roles)):
                 raise ValueError('thought operation form has invalid operand roles')
             if (not isinstance(self.permutation, tuple)
                     or len(self.permutation) != len(roles)
                     or set(self.permutation) != set(roles)):
                 raise ValueError('thought operation form has an invalid role permutation')
-            if re.fullmatch(r'O[1-9]\d*', self.result_role, re.ASCII) is None:
+            if re.fullmatch(r'argout[1-9]\d*', self.result_role, re.ASCII) is None:
                 raise ValueError('thought operation form has an invalid result role')
             for ids in (self.forward_rule_ids, self.reverse_rule_ids):
                 if (not isinstance(ids, tuple)
@@ -856,11 +857,11 @@ class Grammar:
                 raise ValueError('thought operation requires a valid semantic id')
             roles = tuple(self.operand_roles)
             if (not roles or len(set(roles)) != len(roles)
-                    or tuple(sorted(roles, key=lambda role: int(role[1:]))) != roles
-                    or any(re.fullmatch(r'I[1-9]\d*', role, re.ASCII) is None
+                    or tuple(sorted(roles, key=lambda role: int(role[5:]))) != roles
+                    or any(re.fullmatch(r'argin[1-9]\d*', role, re.ASCII) is None
                            for role in roles)):
                 raise ValueError('thought operation has invalid operand roles')
-            if re.fullmatch(r'O[1-9]\d*', self.result_role, re.ASCII) is None:
+            if re.fullmatch(r'argout[1-9]\d*', self.result_role, re.ASCII) is None:
                 raise ValueError('thought operation has an invalid result role')
             for ids in (self.forward_rule_ids, self.reverse_rule_ids):
                 if (not isinstance(ids, tuple)
@@ -1279,7 +1280,7 @@ class Grammar:
 
         A normal category rule is not a thought operation merely because it
         has a method name.  Role-labelled operation faces use exactly
-        ``<method>_I1 … <method>_In`` and ``<method>_O1``.  Seeing any
+        ``<method>_argin1 … <method>_arginN`` and ``<method>_argout1``. Seeing any
         same-method suffix therefore makes a malformed role spelling a load
         error rather than silently omitting a boundary action.
         """
@@ -1298,7 +1299,7 @@ class Grammar:
             labels.append(kind + match.group(1))
         if not labels or len(set(labels)) != len(labels):
             raise ValueError(f'thought operation {method!r} has ambiguous {kind}-roles')
-        ordered = tuple(sorted(labels, key=lambda role: int(role[1:])))
+        ordered = tuple(sorted(labels, key=lambda role: int(role[len(kind):])))
         if tuple(labels) != ordered:
             raise ValueError(
                 f'thought operation {method!r} must declare {kind}-roles in canonical order')
@@ -1313,11 +1314,11 @@ class Grammar:
         rhs = tuple(rule.rhs_symbols or ())
         spelling = rule.surface_name or method
         if direction in ('forward', 'thought'):
-            inputs = self._thought_role_tokens(spelling, rhs, 'I')
-            outputs = self._thought_role_tokens(spelling, lhs, 'O')
+            inputs = self._thought_role_tokens(spelling, rhs, 'argin')
+            outputs = self._thought_role_tokens(spelling, lhs, 'argout')
         elif direction == 'reverse':
-            inputs = self._thought_role_tokens(spelling, lhs, 'I')
-            outputs = self._thought_role_tokens(spelling, rhs, 'O')
+            inputs = self._thought_role_tokens(spelling, lhs, 'argin')
+            outputs = self._thought_role_tokens(spelling, rhs, 'argout')
         else:
             raise ValueError(f'unknown structural direction {direction!r}')
         if inputs is None and outputs is None:
@@ -1328,13 +1329,13 @@ class Grammar:
         if len(outputs) != 1:
             raise ValueError(
                 f'thought operation {method!r} requires exactly one result role')
-        expected = tuple('I' + str(index) for index in range(1, len(inputs) + 1))
+        expected = tuple('argin' + str(index) for index in range(1, len(inputs) + 1))
         if inputs != expected:
             raise ValueError(
                 f'thought operation {method!r} has non-contiguous operand roles')
-        if outputs != ('O1',):
+        if outputs != ('argout1',):
             raise ValueError(
-                f'thought operation {method!r} requires canonical result role O1')
+                f'thought operation {method!r} requires canonical result role argout1')
         return method, inputs, outputs[0]
 
     def _derive_thought_operations(self):
@@ -1591,7 +1592,7 @@ class Grammar:
                     r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
                 if face == 'thought' and not is_thought_face:
                     raise ValueError(
-                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                        '<thought> rules require op.thought(op_argin1, ...) syntax')
                 if face != 'thought' and is_thought_face:
                     raise ValueError(
                         'op.thought(...) is valid only inside <thought>')
@@ -1660,10 +1661,10 @@ class Grammar:
                         raise ValueError('a predicate or implication requires two inputs')
                     rule = rule._replace(clause_form=clause_raw)
                 if head_raw is not None:
-                    if (re.fullmatch(r'I[1-9]\d*', str(head_raw)) is None
-                            or int(str(head_raw)[1:]) > rule.arity):
+                    if (re.fullmatch(r'argin[1-9]\d*', str(head_raw)) is None
+                            or int(str(head_raw)[5:]) > rule.arity):
                         raise ValueError('head requires one declared input role')
-                    rule = rule._replace(head_role=int(str(head_raw)[1:]))
+                    rule = rule._replace(head_role=int(str(head_raw)[5:]))
                 # Apply width gate if specified.
                 if width_raw is not None:
                     w_min, w_max = self._parse_width_attr(str(width_raw))
@@ -1678,23 +1679,12 @@ class Grammar:
                     rule = rule._replace(
                         thought_family=family, thought_permutation=permutation)
                 if reference_raw is not None:
-                    orders = {'event': 0, 'particular': 1, 'name': 1,
-                              'pronoun': 1, 'kind': 2, 'generic': 2}
-                    references, reference_kinds = [], []
-                    for item in str(reference_raw).split(','):
-                        role, separator, context = item.strip().partition(':')
-                        if (not separator or re.fullmatch(r'I[1-9]\d*', role) is None
-                                or int(role[1:]) > rule.arity):
-                            raise ValueError('reference requires a declared input role and order')
-                        order = orders.get(context)
-                        if order is None and context.isdigit():
-                            order = int(context)
-                        if order is None or any(r == role for r, _ in references):
-                            raise ValueError('reference has an unknown order or repeated role')
-                        references.append((role, order))
-                        reference_kinds.append((role, context))
-                    rule = rule._replace(reference_orders=tuple(references),
-                                         reference_kinds=tuple(reference_kinds))
+                    references = tuple(item.strip() for item in str(reference_raw).split(','))
+                    if (len(set(references)) != len(references) or any(
+                            re.fullmatch(r'argin[1-9]\d*', role) is None
+                            or int(role[5:]) > rule.arity for role in references)):
+                        raise ValueError('reference requires distinct positional input roles')
+                    rule = rule._replace(reference_roles=references)
                 target.append(rule)
 
         # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
@@ -1781,7 +1771,7 @@ class Grammar:
 
         A converse remains an ordinary structural operator in compose and
         generate.  Its ``family`` names the one canonical boundary identity;
-        ``permutation`` lists the source role for canonical ``I1 … In``.
+        ``permutation`` lists the source role for canonical ``argin1 … arginN``.
         Requiring both attributes avoids a silent alias convention hidden in
         Python or an executor table.
         """
@@ -1798,10 +1788,10 @@ class Grammar:
                 value.strip() for value in str(permutation_raw).split(',')
                 if value.strip())
         if not values or any(
-                re.fullmatch(r'I[1-9]\d*', value, re.ASCII) is None
+                re.fullmatch(r'argin[1-9]\d*', value, re.ASCII) is None
                 for value in values):
             raise ValueError(
-                'thought permutation attribute requires comma-separated I roles')
+                'thought permutation attribute requires comma-separated argin roles')
         return family, values
 
     @staticmethod
@@ -1832,6 +1822,10 @@ class Grammar:
         s = str(token).strip()
         if not s:
             raise ValueError(f"Cannot parse category: {token!r}")
+        if re.fullmatch(r'(?:[A-Za-z_]\w*_)?arg(?:in|out)[1-9]\d*', s):
+            # The trailing number is an operand position, never its order.
+            return Grammar.ParsedCategory(
+                name=s, order=Grammar.OrderExpr(kind='variable', delta=0))
         i = 0
         while i < len(s) and (s[i].isalpha() or s[i] == '_'):
             i += 1
@@ -3691,7 +3685,7 @@ class CompoundLayer(GrammarLayer):
 
 
 class VerbLayer(LiftLayer):
-    """Subtype a verb (I1) by its object (I2), using the object's learned gain.
+    """Subtype a verb (argin1) by its object (argin2), using the object's learned gain.
 
     The first operand is the verb head; its object is retained by reference
     when the phrase closes. This is the catalogue §5.6 gain implementation.
@@ -3793,6 +3787,7 @@ class LowerLayer(GrammarLayer):
     head_role = 2
     meaning_head_role = 1
     determiner_mode = 'mint'
+    reference_modes = (('argin2', 'particular'),)
     rule_name = 'lower'
     predicate_identity = 'lower'
     arity = 2
@@ -3908,6 +3903,7 @@ class ContextualBindLayer(GrammarLayer):
     """Resolve a contextual BIND marker to a prior participant when available."""
     inverse_kind = 'left'
     head_role = 2
+    reference_modes = (('argin2', 'pronoun'),)
     reconstructs_left = True
     rule_name = "bind"; arity = 2
     predicate_identity = 'bind'
@@ -4568,6 +4564,7 @@ class GenericLayer(NullLayer):
     rule_name = 'generic'
     predicate_identity = 'part'
     head_role = 1
+    reference_modes = (('argin1', 'generic'),)
     space_role = 'CS'
 
 
@@ -5466,7 +5463,7 @@ class LanguageLayer(Layer):
                 if anch is not None and last_concepts is None:
                     _op = anch.get(pid)
                     if _op is not None:
-                        _ri = role_index.get(f"{_op}_O1")
+                        _ri = role_index.get(f"{_op}_argout1")
                         if _ri is not None:
                             ctx[b, n, int(_ri)] = 1.0
                             continue
@@ -6988,7 +6985,7 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
             hidden=hidden or None, depth=depth, ordered_binary=ordered_binary,
             binding_choices=ordered_binary and any(
                 getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
-                any(order == 1 for _, order in getattr(rule, 'reference_orders', ()))
+                bool(getattr(rule, 'reference_roles', ()))
                 for rule in (getattr(TheGrammar, 'rules_upward', None) or ())))
     # Accept exactly the values the <transformChooser> XSD enum allows, so
     # the factory and schema validation agree on the legal set.
@@ -7004,8 +7001,8 @@ def compute_role_vocabulary(grammar):
     the Chooser's Syntactic-Category Context").
 
     A ROLE is one operator argument slot. Input role ``(method, pos)`` renders
-    ``<method>_I<pos+1>`` (operand position ``pos`` fed INTO the operator);
-    output role ``(method,)`` renders ``<method>_O1`` (the result produced BY
+    ``<method>_argin<pos+1>`` (operand position ``pos`` fed INTO the operator);
+    output role ``(method,)`` renders ``<method>_argout1`` (the result produced BY
     the operator) -- the same naming as ``bin/participation.py``. Roles are
     read off the live UPWARD (compose) rules; a rule with no ``method_name``
     (epsilon / passthrough projection) declares no role and is skipped.
@@ -7030,8 +7027,8 @@ def compute_role_vocabulary(grammar):
         for pos in range(len(rhs)):
             in_roles.add((method, pos))
         out_roles.add(method)
-    roles = [f"{m}_I{pos + 1}" for (m, pos) in sorted(in_roles)]
-    roles += [f"{m}_O1" for m in sorted(out_roles)]
+    roles = [f"{m}_argin{pos + 1}" for (m, pos) in sorted(in_roles)]
+    roles += [f"{m}_argout1" for m in sorted(out_roles)]
     role_index = {name: i for i, name in enumerate(roles)}
     return roles, role_index, len(roles)
 
@@ -7655,15 +7652,15 @@ class OperationSelectionLayer(nn.Module):
         right = cat_ctx[:, 1:, :]
         priors = []
         for name in self.op_names:
-            c1 = _role_column(role_index, name, "I1")
-            c2 = _role_column(role_index, name, "I2")
-            o1 = _role_column(role_index, name, "O1")
+            c1 = _role_column(role_index, name, "argin1")
+            c2 = _role_column(role_index, name, "argin2")
+            o1 = _role_column(role_index, name, "argout1")
             score = left.new_zeros(left.shape[0], left.shape[1])
             if c1 is not None and c1 < left.shape[-1]:
                 score = score + left[..., c1]
             if c2 is not None and c2 < right.shape[-1]:
                 score = score + right[..., c2]
-            # Anchored slots carry the operator's OUTPUT role (<op>_O1,
+            # Anchored slots carry the operator's OUTPUT role (<op>_argout1,
             # the syntactic-anchor short-circuit): credit pairs touching
             # such a slot toward the operator's own rule.
             if o1 is not None and o1 < left.shape[-1]:
@@ -7767,7 +7764,7 @@ class OperationSelectionLayer(nn.Module):
         cat_ctx = _collapsed_cat_ctx(cat_ctx)
         priors = []
         for name in self.unary_names:
-            col = _role_column(role_index, name, "I1")
+            col = _role_column(role_index, name, "argin1")
             if col is None or col >= cat_ctx.shape[-1]:
                 priors.append(cat_ctx.new_zeros(cat_ctx.shape[0], cat_ctx.shape[1]))
             else:
@@ -13047,6 +13044,7 @@ class LanguageSpace(nn.Module):
             live_positions = depth[:, None] - 1 - torch.arange(K, device=buffer.device)[None]
             orders = torch.where(live_positions >= 0, state[2], -1)
             references = prepare_operands(window, scopes[..., 1], scopes[..., 0], positions,
+                                          orders=orders.gather(1, source),
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
                                           bank=self._reference_bank,
                                           live=(buffer, reference_scope[..., 1], orders,
@@ -13064,6 +13062,19 @@ class LanguageSpace(nn.Module):
             op_prior=op_prior, grammar_context=self._structural_context(
                 phase='compose', input_stream=buffer), reference_data=references)
         position = (window_depth - 1 - route['position']).clamp_min(0)
+        from ReferenceContext import result_order
+        window_orders = state[2].gather(1, source)
+        selected_order = state[2].gather(1, position[:, None]).squeeze(1)
+        def selected_stamp(rules, operands):
+            stamps = [result_order(rule, operands) for rule in rules]
+            fallback = torch.stack(operands, -1)
+            fallback = torch.where((fallback >= 0).all(-1), fallback.amax(-1), -1)
+            table = torch.stack(stamps, -1) if stamps else fallback[:, None]
+            return table.gather(1, route['op'].clamp(0, table.shape[1]-1)[:, None]).squeeze(1)
+        binary_order = selected_stamp(getattr(self, '_compose_binary_rules', ()),
+            (window_orders[:, 0], window_orders[:, min(1, n-1)]))
+        unary_order = selected_stamp(getattr(self, '_compose_unary_rules', ()), (selected_order,))
+        output_order = torch.where(route['kind'] == 1, binary_order, unary_order)
         choice = LanguageOperationChoice(
             route['candidate'], route['kind'], position, route['op'],
             route['valid'] & (route['kind'] != 0), route['probability'],
@@ -13072,7 +13083,7 @@ class LanguageSpace(nn.Module):
                 torch.log_softmax(torch.where(route['valid'][:, None],
                     route['logits'], torch.zeros_like(route['logits'])), -1)
                 .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
-            route['departure_eligible'].sum(-1))
+            route['departure_eligible'].sum(-1), output_order)
         if reference_scope is None:
             return choice
         return choice, route['refs'], route['relations'], route['operands']
@@ -13097,11 +13108,10 @@ class LanguageSpace(nn.Module):
 
 
     @torch.compiler.disable
-    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, admit=True):
+    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, leaf_orders=None, admit=True):
         """Resolve the selected grammar's reference orders at capture time.
 
-        Operator-role metadata supplies the order, never a token list or a
-        perceptual depth. Inner reference phrases retain their chosen order.
+        Each operand's stamp and operation supply the order, never its name.
         Existing associations are resolved first; an unassociated word can
         acquire testimony through interpret. Ambiguous associations stay unknown.
         """
@@ -13109,30 +13119,14 @@ class LanguageSpace(nn.Module):
         orders = refs.new_full(refs.shape, -1)
         if owner is None or not callable(getattr(owner, 'resolve_word_concept', None)):
             return refs, orders
-        stack = []
-        requests = {}
         from ReferenceContext import reference_requests
-        selected_requests = reference_requests(self, actions)
-        for kind, local, word in actions.detach().to('cpu').tolist():
-            if kind < 0:
-                break
-            if kind == 0:
-                if not 0 <= word < refs.numel():
-                    raise ValueError('reference program leaf is out of bounds')
-                stack.append((word,))
+        if leaf_orders is None:
+            leaf_orders = concept_ids.new_tensor([
+                owner._concept_source_order(int(identity)) for identity in concept_ids])
+        selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders)
+        for leaf, (order, mode) in selected_requests.items():
+            if order < 0:
                 continue
-            rules = self._compose_binary_rules if kind == 1 else self._compose_unary_rules
-            arity = 2 if kind == 1 else 1
-            if kind not in (1, 2) or not 0 <= local < len(rules) or len(stack) < arity:
-                raise ValueError('reference program has an invalid selected rule')
-            operands = stack[-arity:]
-            del stack[-arity:]
-            for role, order in getattr(rules[local], 'reference_orders', ()):
-                for leaf in operands[int(role[1:]) - 1]:
-                    requests.setdefault(leaf, order)
-            stack.append(tuple(leaf for operand in operands for leaf in operand))
-        for leaf, order in requests.items():
-            mode = selected_requests.get(leaf, (None, None))[1]
             if order == 1:
                 # The selected operation carries its column reference. A
                 # dictionary association cannot decide individual identity or
@@ -13287,8 +13281,8 @@ class LanguageSpace(nn.Module):
                     canonical = registry.form(
                         face, left_ref, right_ref, mode=mode, polarity=polarity)
                 else:
-                    supplied = {'I1': (leaves[left_index], left_ref),
-                                'I2': (leaves[right_index], right_ref)}
+                    supplied = {'argin1': (leaves[left_index], left_ref),
+                                'argin2': (leaves[right_index], right_ref)}
                     source = ConceptualMeaning.from_payload(leaves[left_index][None],
                         depth=1, layout='infix', mode=mode, polarity=polarity)
                     canonical = registry._form_candidate(operation,
@@ -13310,7 +13304,7 @@ class LanguageSpace(nn.Module):
                     "grammatical thought registry returned no conceptual meaning")
             if expected_vp is not None and canonical.role_refs[1] != expected_vp:
                 return None
-            surface_values = {"I1": leaves[left_index], "I2": leaves[right_index]}
+            surface_values = {"argin1": leaves[left_index], "argin2": leaves[right_index]}
             source_by_canonical_role = dict(zip(
                 operation.operand_roles, form.permutation))
             live_by_role = {
@@ -13322,9 +13316,9 @@ class LanguageSpace(nn.Module):
                 return None
             roles = list(canonical.roles.unbind(0))
             for role, value in live_by_role.items():
-                if role == "I1":
+                if role == "argin1":
                     roles[0] = value
-                elif role == "I2":
+                elif role == "argin2":
                     roles[2] = value
                 else:
                     return None
@@ -13393,7 +13387,7 @@ class LanguageSpace(nn.Module):
             if tuple(getattr(signature, "argument_kinds", ())) != ("concept",):
                 return None
             role = operation.operand_roles[0]
-            slot = {"I1": 0, "I2": 2}.get(role)
+            slot = {"argin1": 0, "argin2": 2}.get(role)
             if slot is None or not bool(canonical.role_mask[slot]):
                 return None
             roles = list(canonical.roles.unbind(0))
@@ -13541,7 +13535,7 @@ class LanguageSpace(nn.Module):
             children = []
             for role, kind in zip(operation.operand_roles, descriptor.argument_kinds):
                 item = supplied[sources[role]]
-                slot = {"I1": 0, "I2": 2}[role]
+                slot = {"argin1": 0, "argin2": 2}[role]
                 if isinstance(item, ConceptualMeaning):
                     # The same bounded illumination summary as registry.form.
                     # The complete child, never this summary, owns its meaning.
@@ -13555,7 +13549,7 @@ class LanguageSpace(nn.Module):
                     refs[slot] = ("sym", int(native_ids[item]))
             result = ConceptualMeaning(
                 torch.stack(values), torch.tensor(
-                    ["I1" in operation.operand_roles, True, "I2" in operation.operand_roles],
+                    ["argin1" in operation.operand_roles, True, "argin2" in operation.operand_roles],
                     device=leaves.device),
                 mode=getattr(node[1], 'meaning_mode', None) or 'assertive',
                 role_refs=tuple(refs), constituents=tuple(children))
@@ -14228,7 +14222,7 @@ class LanguageSpace(nn.Module):
             for b, row in enumerate(observations):
                 accumulated = {}
                 for left, right, method in row:
-                    for position, suffix in ((left, 'I1'), (right, 'I2')):
+                    for position, suffix in ((left, 'argin1'), (right, 'argin2')):
                         column = role_index.get(f'{method}_{suffix}')
                         if column is None or not 0 <= position < len(grid[b]):
                             continue

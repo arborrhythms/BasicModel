@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <!--
   XOR grammar, role-only format. Declares ONLY operator roles: each operand's
-  input role (op_I[n]) and the operator's output role (op_O1). Forward maps inputs to output
-  (O1 = op.forward(I1, I2)); reverse maps output back to inputs
-  (I1, I2 = op.reverse(O1)).
+  input role (op_argin[n]) and the operator's output role (op_argout1). Forward maps inputs to output
+  (argout1 = op.forward(argin1, argin2)); reverse maps output back to inputs
+  (argin1, argin2 = op.reverse(argout1)).
 -->
 <grammar name="xor">
 
@@ -29,12 +29,12 @@
 
   <Symbolic>
     <!-- Minimal XOR symbolic grammar: each connective declares its input
-         roles (op_I[n]) and output role (op_O1); the operator outputs are
+         roles (op_argin[n]) and output role (op_argout1); the operator outputs are
          the start states. Tier / arity / invertibility derive from each
          operator's GrammarLayer subclass. -->
-    <start name="connective">not_O1</start>
-    <start name="connective">intersection_O1</start>
-    <start name="connective">union_O1</start>
+    <start name="connective">not_argout1</start>
+    <start name="connective">intersection_argout1</start>
+    <start name="connective">union_argout1</start>
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
@@ -44,16 +44,16 @@
       <rule operands="field">F = and.forward(F)</rule>
       <rule operands="field">F = or.forward(F)</rule>
 
-      <rule>not_O1 = not.forward(not_I1)</rule>
-      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
-      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>not_argout1 = not.forward(not_argin1)</rule>
+      <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>
+      <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
     </compose>
 
     <generate>
       <!-- Mirror of compose: output role back to input roles. -->
-      <rule>not_I1 = not.reverse(not_O1)</rule>
-      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
-      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>not_argin1 = not.reverse(not_argout1)</rule>
+      <rule>intersection_argin1, intersection_argin2 = intersection.reverse(intersection_argout1)</rule>
+      <rule>union_argin1, union_argin2 = union.reverse(union_argout1)</rule>
     </generate>
   </Symbolic>
 

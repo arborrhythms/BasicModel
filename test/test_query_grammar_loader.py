@@ -21,5 +21,5 @@ def test_full_file_loading_preserves_structural_thought_contracts(filename):
     operations = {operation.semantic_id: operation
                   for operation in grammar.thought_operations}
     assert {'part', 'equal'}.issubset(operations)
-    assert operations['part'].operand_roles == ('I1', 'I2')
-    assert operations['equal'].result_role == 'O1'
+    assert operations['part'].operand_roles == ('argin1', 'argin2')
+    assert operations['equal'].result_role == 'argout1'

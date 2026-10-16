@@ -23,6 +23,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     if program is None:
         raise ValueError('cannot finish a reading that is not open')
     from Language import TheGrammar
+    from ReferenceContext import binding_spec, operation_modes, result_order
     refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
     native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
@@ -65,6 +66,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             has_point = reference_has_point(int(refs[word]),
                 program.reference_relations is None or not bool(program.reference_relations[word]))
             stack.append(dict(value=values[word], ref=int(refs[word]), rule=None,
+                              order=-1 if program.leaf_orders is None else int(program.leaf_orders[word]),
                               children=(), leaves=(word,), has_point=has_point))
             continue
         arity = 2 if kind == 1 else 1
@@ -89,11 +91,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     selected = selected['children'][headed-1]
                 reference = int(program.operation_refs[action, role])
                 rule = catalog[local]
-                mode = dict(getattr(rule, 'reference_kinds', ())).get('I'+str(role+1))
-                if getattr(rule, 'head_role', 0) == role+1:
-                    mode = getattr(rule, 'determiner_mode', None) or mode
-                from ReferenceContext import binding_spec
-                binding_order, binding_mode = binding_spec(rule, 'I'+str(role+1), implicit=True)
+                mode = operation_modes(rule).get('argin'+str(role+1))
+                binding_order, binding_mode = binding_spec(
+                    rule, 'argin'+str(role+1), operand['order'], implicit=True)
                 if (getattr(program, 'binding_choices', False) and binding_order == 1
                         and binding_mode != 'kind' and program.operation_probabilities is not None):
                     formation = dict(choice='open' if reference == 0 else 'mint' if reference == -1 else 'bind',
@@ -105,9 +105,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     operand['open_reference'] = True
                     selected['forward_identity'] = int(program.concept_ids[selected['leaves'][0]])
                 elif reference == -1 and getattr(program, 'binding_choices', False):
-                    from ReferenceContext import binding_spec
-                    order, binding_mode = binding_spec(rule, 'I'+str(role+1), implicit=True)
-                    if order == 1 and binding_mode != 'kind' and not operand.get('open_reference'):
+                    if binding_order == 1 and binding_mode != 'kind' and not operand.get('open_reference'):
                         selected['mint_reference'] = operand['mint_reference'] = True
                 # A trial's newly requested singleton still had its source
                 # address. Resolve that alias to the winning host's admitted
@@ -136,6 +134,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     operand['has_point'] = (operand['has_point']
                         and reference_has_point(reference, True))
         stack.append(dict(value=frames[action, 2], local=local, ref=-1,
+                          order=result_order(catalog[local], tuple(child['order'] for child in operands)),
                           rule=catalog[local], children=operands,
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
                           leaves=tuple(i for child in operands for i in child['leaves']),
@@ -190,7 +189,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             determiner = getattr(node['rule'], 'determiner_mode', None)
             if determiner is not None:
                 return determiner == 'kind'
-            requests = dict(getattr(node['rule'], 'reference_kinds', ()))
+            requests = operation_modes(node['rule'])
             if any(mode in ('generic', 'kind') for mode in requests.values()):
                 return True
             if any(mode in ('particular', 'name', 'pronoun') for mode in requests.values()):
@@ -268,7 +267,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 selected = orders[list(description['leaves'])]
                 if bool((selected >= 0).any()):
                     return int(selected.max())
-            return max(0, metadata(description['leaves'])['order'] - 1)
+            return max(0, item['order'])
 
         def member(item):
             mode = getattr(item['rule'], 'determiner_mode', None)

@@ -165,13 +165,13 @@ def test_grammar_marks_relative_rules():
 
     # Grammar-driven primary signal: a relative start category exists. In
     # complete.grammar that is {'REL_T'}; the role-collapsed default heads its
-    # relative rules with operator output roles (isEqual_O1 / isPart_O1).
+    # relative rules with operator output roles (isEqual_argout1 / isPart_argout1).
     rel_starts = g._relative_start_categories()
     assert rel_starts, "expected a non-empty relative start-category set"
     rel_set = g._relative_rule_id_set()
     assert rel_set, "expected a non-empty relative rule set"
     # Every relative-set rule carries a relative signal: it either heads a
-    # relative start category (REL_T in complete.grammar; isEqual_O1 / isPart_O1
+    # relative start category (REL_T in complete.grammar; isEqual_argout1 / isPart_argout1
     # in the role-collapsed default, including the bare output projections) or
     # is itself a relative operator.
     for rid in rel_set:
@@ -273,19 +273,19 @@ def test_relative_mask_sees_cs_role_rules():
 
 def test_category_prior_scores_anchored_operator_slot():
     """The syntactic-anchor short-circuit labels a closed-class relation
-    slot with the operator's OUTPUT role (``<op>_O1``); the reduce prior
+    slot with the operator's OUTPUT role (``<op>_argout1``); the reduce prior
     must credit pairs touching that slot toward the operator's own rule.
-    Pre-fix it read only I1/I2 and the anchored slot scored exactly 0
+    Pre-fix it read only argin1/argin2 and the anchored slot scored exactly 0
     (the depth-3 campaign's no-flip cause, 2026-07-13)."""
     from types import SimpleNamespace
 
-    role_index = {'part_I1': 0, 'part_I2': 1, 'part_O1': 2}
+    role_index = {'part_argin1': 0, 'part_argin2': 1, 'part_argout1': 2}
     orig = Language._role_index_for_categories
     Language._role_index_for_categories = lambda: role_index
     try:
         duck = SimpleNamespace(op_names=['part'])
         cat_ctx = torch.zeros(1, 3, 3)
-        cat_ctx[0, 1, 2] = 1.0             # middle slot anchored part_O1
+        cat_ctx[0, 1, 2] = 1.0             # middle slot anchored part_argout1
         prior = Language.OperationSelectionLayer \
             ._category_reduce_prior(duck, cat_ctx)
         assert prior is not None and tuple(prior.shape) == (1, 2, 1)

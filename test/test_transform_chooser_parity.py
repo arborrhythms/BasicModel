@@ -116,7 +116,7 @@ def test_layers_use_a_stateless_chooser_no_state_dict_keys():
 def test_anchordot_unary_uses_category_role_prior(monkeypatch):
     monkeypatch.setattr(
         Language, "compute_role_vocabulary",
-        lambda _grammar: (["negate_I1"], {"negate_I1": 0}, 1))
+        lambda _grammar: (["negate_argin1"], {"negate_argin1": 0}, 1))
 
     class _Neg(nn.Module):
         def forward(self, x):
@@ -140,8 +140,8 @@ def test_anchordot_binary_uses_labelled_left_right_category_prior(monkeypatch):
     monkeypatch.setattr(
         Language, "compute_role_vocabulary",
         lambda _grammar: (
-            ["lift_I1", "lift_I2"],
-            {"lift_I1": 0, "lift_I2": 1},
+            ["lift_argin1", "lift_argin2"],
+            {"lift_argin1": 0, "lift_argin2": 1},
             2,
         ))
 

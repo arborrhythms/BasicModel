@@ -20,8 +20,8 @@ def test_aliases_and_faces_inherit_one_complete_contract():
     from Language import Grammar
     from AccessibleMind import OperatorEffects, Subsystem as S
     grammar=Grammar(); rules=[]
-    for body in ('r.forward(r_I1, r_I2)', 'r.reverse(r_O1)'):
-        grammar._fill_rule_list(rules, {'rule': {'_': 'r_O1 = '+body, 'implementation': 'part'}})
+    for body in ('r.forward(r_argin1, r_argin2)', 'r.reverse(r_argout1)'):
+        grammar._fill_rule_list(rules, {'rule': {'_': 'r_argout1 = '+body, 'implementation': 'part'}})
     assert rules[0].effect_writes == rules[1].effect_writes
     effects=OperatorEffects(rules[0].effect_reads, rules[0].effect_writes)
     assert S.SERIAL in effects.for_face('compose').writes
@@ -35,7 +35,7 @@ def test_an_explicit_write_list_cannot_omit_add_or_repeat_effects(writes):
     from Language import Grammar
     with pytest.raises(ValueError, match='writes'):
         Grammar()._fill_rule_list([], {'rule': {
-            '_': 'x_O1 = x.forward(x_I1, x_I2)', 'implementation': 'sum', 'writes': writes}})
+            '_': 'x_argout1 = x.forward(x_argin1, x_argin2)', 'implementation': 'sum', 'writes': writes}})
 
 
 def test_field_eligibility_belongs_to_the_implementation_property():
@@ -46,7 +46,7 @@ def test_field_eligibility_belongs_to_the_implementation_property():
     try:
         with pytest.raises(ValueError, match='field'):
             Grammar()._fill_rule_list([], {'rule': {
-                '_': 'x_O1 = x.forward(x_I1, x_I2)',
+                '_': 'x_argout1 = x.forward(x_argin1, x_argin2)',
                 'implementation': 'opaque_extension', 'operands': 'field,field'}})
     finally:
         del GRAMMAR_LAYER_CLASSES['opaque_extension']
@@ -74,7 +74,7 @@ def test_mean_bundling_is_not_a_field_operation():
     from Language import Grammar
     with pytest.raises(ValueError, match='field'):
         Grammar()._fill_rule_list([], {'rule': {
-            '_':'bundle_O1 = bundle.forward(bundle_I1, bundle_I2)',
+            '_':'bundle_argout1 = bundle.forward(bundle_argin1, bundle_argin2)',
             'implementation':'disjunction', 'operands':'field,field'}})
 
 

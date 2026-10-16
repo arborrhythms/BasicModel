@@ -23,7 +23,8 @@ class ClauseScope(nn.Module):
                 sentence = relative or form == 'S'
                 predicate = form == 'VP'
                 head = getattr(rule, 'head_role', 0)
-                modes = dict(getattr(rule, 'reference_kinds', ()))
+                from ReferenceContext import operation_modes
+                modes = operation_modes(rule)
                 generic = any(mode in ('generic', 'kind') for mode in modes.values())
                 particular = any(mode in ('particular', 'name', 'pronoun')
                                  for mode in modes.values())

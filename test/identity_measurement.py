@@ -132,7 +132,8 @@ def native_observer(model):
             tokens={}
             if program is not None:
                 source=(isp._word_active_mask[b] & (isp._packed_sentence_ids[b]==sid)).nonzero().flatten().tolist()
-                requests=reference_requests(model.languageSpace,program.actions,operation_refs=program.operation_refs)
+                requests=reference_requests(model.languageSpace,program.actions,
+                    leaf_orders=program.leaf_orders,operation_refs=program.operation_refs)
                 for leaf,position in enumerate(positions[b].tolist()):
                     if position<0 or leaf>=len(program.word_rows) or position not in source:
                         continue

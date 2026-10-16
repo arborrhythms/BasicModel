@@ -93,14 +93,14 @@ def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
     cs = _cs()
     context = _context(cs, continuation=lambda value: calls.append(value) or dict(
         value=value, meaning=value, support_true=0., support_false=0.))
-    _signature('ask', 'I1').invoke(context, content)
+    _signature('ask', 'argin1').invoke(context, content)
     assert not calls
     requested = question(content, (('evidence', -1),))
-    result = _signature('ask', 'I1').invoke(context, requested)
+    result = _signature('ask', 'argin1').invoke(context, requested)
     assert result['value'].mode == 'interrogative' and len(calls) == 1
     torch.testing.assert_close(calls[0].roles, requested.roles)
     bound = replace(with_slots(requested, (), pair=(1., 0.)), mode='interrogative')
-    _signature('ask', 'I1').invoke(context, bound)
+    _signature('ask', 'argin1').invoke(context, bound)
     assert len(calls) == 1
 
 
@@ -158,7 +158,7 @@ def test_structure_only_compose_face_cannot_execute():
     cs, _, _, a, b, context = _world()
     grammar = Grammar()
     grammar.configure({'Symbolic': {'compose': {
-        'rule': ['union_O1 = union.forward(union_I1, union_I2)']}}})
+        'rule': ['union_argout1 = union.forward(union_argin1, union_argin2)']}}})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     with pytest.raises(ValueError, match='not registered|structural|thought'):
         registry.form('union', a, b)
@@ -170,11 +170,11 @@ def test_converse_only_interface_still_dispatches_canonical_roles():
     # The structural spelling supplies the converse metadata; the explicit
     # thought declaration selects that one form for boundary use.
     grammar.configure({'Symbolic': {'compose': {'rule': [
-        {'_': 'whole_O1 = whole.forward(whole_I1, whole_I2)',
-         'family': 'part', 'permutation': 'I2,I1'}]},
+        {'_': 'whole_argout1 = whole.forward(whole_argin1, whole_argin2)',
+         'family': 'part', 'permutation': 'argin2,argin1'}]},
         'thought': {'rule': [
-            {'_': 'whole_O1 = whole.thought(whole_I1, whole_I2)',
-             'family': 'part', 'permutation': 'I2,I1'}]}}})
+            {'_': 'whole_argout1 = whole.thought(whole_argin1, whole_argin2)',
+             'family': 'part', 'permutation': 'argin2,argin1'}]}}})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     question = registry.form('whole', b, a)
     assert question.role_refs[0] == a and question.role_refs[2] == b

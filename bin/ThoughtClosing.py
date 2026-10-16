@@ -87,7 +87,7 @@ def absence(model, row, observed, image=None):
     meaning = ConceptualMeaning(prior.roles.detach(), confidence > 0,
         sentence_kind=observed.sentence_kind)
     meaning = with_slots(meaning, (), pair=(float(confidence.max()), 0.))
-    result = negate(None, {'I1': meaning})
+    result = negate(None, {'argin1': meaning})
     value = replace(result['meaning'], polarity=False)
     data = bindings(value)
     data['_producing_operation'] = 'not'
