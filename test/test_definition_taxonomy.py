@@ -119,8 +119,12 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
 
 
 def test_closing_binds_subject_form_to_particular_without_widening_compose_access(monkeypatch):
+    from reading_fixtures import resolve_reading_references
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('lift', ('lower', 'the', 'cat'), 'runs'))
+    entry = replace(f.program(('lift', ('lower', 'the', 'cat'), 'runs')),
+                    leaf_orders=torch.tensor([0, 2, 0]))
+    entry = resolve_reading_references(f.language, entry, forced={1: -1})
+    clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause)
     cid = int(f.store.row_ids[row])
     assert cid in f.cs.word_concepts('cat')

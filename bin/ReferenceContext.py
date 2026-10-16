@@ -140,7 +140,7 @@ def selected_individual_references(language, program):
                                   leaf_orders=program.leaf_orders,
                                   operation_refs=program.operation_refs)
     return tuple(dict.fromkeys(reference for order, mode, reference in requests.values()
-                               if order == 1 and mode != 'kind'))
+                               if order == 1 and mode not in ('kind', 'generic')))
 
 
 class ReferenceTypes(NamedTuple):
@@ -307,9 +307,11 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         if order is None:
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
-        if mode == 'kind':
+        if mode in ('kind', 'generic'):
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
-        binding = ((order == 1) | ((order > 0) & (mode in ('mint', 'bind', 'pronoun', 'particular', 'name'))))
+        # The operation offers references at the operand's actual order.
+        # Only dictionary admission is specific to order-one individuals.
+        binding = order >= 0
         original_valid = valid
         def alternatives(options):
             # The first variant carries non-binding typed operands. Keep
@@ -390,10 +392,10 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
 
     def choice_tag(refs, rule, role, stamp):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
-        if order is None or mode == 'kind':
+        if order is None or mode in ('kind', 'generic'):
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
-        binding = ((order == 1) | ((order > 0) & (mode in ('mint', 'bind', 'pronoun', 'particular', 'name'))))
+        binding = order >= 0
         return torch.where(binding, torch.where(refs == -1, -2, refs), -1)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []

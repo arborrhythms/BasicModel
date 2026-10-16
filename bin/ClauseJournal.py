@@ -94,8 +94,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 mode = operation_modes(rule).get('argin'+str(role+1))
                 binding_order, binding_mode = binding_spec(
                     rule, 'argin'+str(role+1), operand['order'], implicit=True)
-                if (getattr(program, 'binding_choices', False) and binding_order == 1
-                        and binding_mode != 'kind' and program.operation_probabilities is not None):
+                binding = (binding_order is not None and binding_order >= 0
+                           and binding_mode not in ('kind', 'generic'))
+                if (getattr(program, 'binding_choices', False) and binding
+                        and program.operation_probabilities is not None):
                     formation = dict(choice='open' if reference == 0 else 'mint' if reference == -1 else 'bind',
                         probability=float(program.operation_probabilities[action]), reference=reference)
                     selected['formation'] = operand['formation'] = formation
@@ -105,8 +107,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     operand['open_reference'] = True
                     selected['forward_identity'] = int(program.concept_ids[selected['leaves'][0]])
                 elif reference == -1 and getattr(program, 'binding_choices', False):
-                    if binding_order == 1 and binding_mode != 'kind' and not operand.get('open_reference'):
+                    if binding and not operand.get('open_reference'):
                         selected['mint_reference'] = operand['mint_reference'] = True
+                        selected['mint_order'] = operand['mint_order'] = binding_order
                 # A trial's newly requested singleton still had its source
                 # address. Resolve that alias to the winning host's admitted
                 # identity; an already selected earlier occurrence is unchanged.
@@ -276,7 +279,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             description = (item['children'][item['rule'].head_role - 1]
                            if mode == 'mint' else head(item))
             meta = metadata(description['leaves'])
-            meta['order'] = determined_order(item) if mode == 'mint' else 1
+            meta['order'] = determined_order(item) if mode == 'mint' else item['mint_order']
             formed = ConceptualMeaning.from_description(value(item))
             formation = item.get('formation') or head(item).get('formation')
             if formation is not None:

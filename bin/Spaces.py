@@ -16748,6 +16748,13 @@ class ConceptualSpace(Space):
             if row is not None:
                 ly.remove_edges([(int(row), self._bias_col())])
         for (code, side) in asserted:
+            # An explicit field stamp survives testimony. Its SYM links
+            # therefore use the existing field-to-field sparse edges,
+            # instead of relying on a derived order increase to add them.
+            if (_concept_rows_exist(self) and side in ('sym_part', 'sym_whole') and alloc.order_of(c) == 0
+                    and alloc.order_of(code) == 0):
+                self.add_concept_edge(self._csw_row_of(c),
+                                      self._csw_concept_row(0, code), weight)
             self._set_concept_edge_value(c, code, side, weight)
         return c
 

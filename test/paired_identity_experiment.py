@@ -64,7 +64,10 @@ def kept_programs(model, records, current):
                         meaning_norms=frame.norm(dim=-1).tolist() if kind else None))
                 clause = result['clauses'][b]
                 value = clause.point if clause.point is not None else result['meanings'][b].roles.flatten()
+                from Occurrence import source_at
+                document, source_sentence = source_at(model, b, int(sid))
                 records.append(dict(batch=current.get('batch'), phase=current['phase'], sentence=int(sid), row=b,
+                    document=document, source_sentence=source_sentence,
                     word=current['fields'][b] if current.get('fields') else None,
                     closed_meaning_norm=float(value[start:end].detach().norm()),
                     program=[step['method'] for step in steps if step['kind']], steps=steps))
@@ -172,9 +175,10 @@ def main():
                     else:
                         save(args.out/'zero-singleton-trace.json', latest[zero])
                     save(args.out/'identity-not-run.json', dict(reason='singleton gate failed', gate=report['gate']))
-        except Exception:
+        except BaseException:
             import traceback
             save(args.out/'failure.json', dict(error=traceback.format_exc(), optimizer_steps=updates))
+            save(args.out/'kept-programs-partial.json', records)
             model.save_weights(str(args.out/'failed-state.ckpt'))
             raise
         finally:

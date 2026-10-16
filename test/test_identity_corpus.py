@@ -151,6 +151,7 @@ def test_document_context_changes_referent_with_the_same_probe_words():
 
 
 def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatch):
+    from dataclasses import replace
     from types import SimpleNamespace
     import torch
     from ClauseJournal import finish_clause
@@ -159,6 +160,7 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
     from test_clause_acceptance import SentenceFixture
     fixture=SentenceFixture(monkeypatch)
     entry=fixture.program(('lift',('lower','a','cat'),'runs'))
+    entry=replace(entry,leaf_orders=torch.tensor([0,2,0]))
     entry=record_reading(fixture.language,resolve_reading_references(
         fixture.language,entry,forced={1:-1}))
     clause=finish_clause(fixture.language,entry,registry=fixture.registry)
@@ -188,6 +190,7 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
         from identity_measurement import grade_capture, score_document
         address=token['reference']
         bound=fixture.program(('lift',('lower','the','cat'),'runs'))
+        bound=replace(bound,leaf_orders=torch.tensor([0,2,0]))
         local=next(i for i,r in enumerate(fixture.binary) if r.determiner_mode=='bind')
         bound.actions[2,1]=local
         bound=record_reading(fixture.language,resolve_reading_references(
@@ -205,6 +208,7 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
 
 
 def test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason(monkeypatch):
+    from dataclasses import replace
     from types import SimpleNamespace
     import torch
     from ClauseJournal import finish_clause
@@ -215,6 +219,7 @@ def test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason(monkeypat
     # The second projection discards the cat individual; only the final
     # word becomes the head of the written row. Never assign that row to cat.
     entry=fixture.program(('lower',('lower','a','cat'),'.'))
+    entry=replace(entry,leaf_orders=torch.tensor([0,2,2]))
     entry=record_reading(fixture.language,resolve_reading_references(
         fixture.language,entry,forced={1:-1,2:-1}))
     clause=finish_clause(fixture.language,entry,registry=fixture.registry)
