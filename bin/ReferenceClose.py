@@ -180,7 +180,7 @@ class ReferenceClose(nn.Module):
             position = position if isinstance(position, tuple) else (position, -1)
             individuals[identity] = dict(signature=self.components.nouns.directions[str(identity)],
                 role=context['role'], position=position)
-        items, cost = [], self.policy.sum() * 0
+        items, cost = [], self.policy.new_zeros(())
         for node in constituents(clause):
             request = node.reference_request
             mode, role = request['mode'], request.get('role', 0)
@@ -257,6 +257,9 @@ class ReferenceClose(nn.Module):
     @torch.no_grad()
     def prepare(self, clause, plan):
         """Prepare kept occurrence rows; allocation follows their successful write."""
+        if not plan['items']:
+            plan['prepared_root'] = clause
+            return clause
         replacements = {}
         for index, item in enumerate(plan['items']):
             reference = item['selected']
@@ -275,10 +278,14 @@ class ReferenceClose(nn.Module):
                 children = (*children, predicate_node)
             replacements[id(node)] = replace(node, children=children,
                 refs=(-1 if reference is None else reference, -1, -1))
+        rebuilt = {}
         def rewrite(node):
+            if id(node) in rebuilt:
+                return rebuilt[id(node)]
             value = replacements.get(id(node), node)
             result = replace(value, children=tuple(rewrite(c) for c in value.children),
                              companions=tuple(rewrite(c) for c in value.companions))
+            rebuilt[id(node)] = result
             if id(node) in replacements:
                 replacements[id(node)] = result
             for item in plan['items']:
@@ -325,6 +332,9 @@ class ReferenceClose(nn.Module):
 
     @torch.no_grad()
     def commit(self, plan, row, written, *, document, position, training):
+        if not plan['items']:
+            self.last_audit = ()
+            return
         store, dictionary = self.store, self.components.nouns
         from Occurrence import document_digest
         document = document_digest(document).hex()
@@ -366,11 +376,11 @@ class ReferenceClose(nn.Module):
                     'individual_capacity_exhausted' if item['mode'] == 'mint' or isinstance(item['selected'], tuple)
                     else 'no_accessible_individual')))
         self._metadata(row, '_individual_occurrences', tuple(addresses))
-        self.revise(plan['records'], document=document)
+        self.revise(plan['records'])
         self.last_audit = tuple(audit)
 
     @torch.no_grad()
-    def revise(self, records, *, document):
+    def revise(self, records):
         """Re-tie accessible occurrences when later content contradicts a group.
 
         A split is an identity revision, not an implicit mint by a binder.
@@ -380,7 +390,7 @@ class ReferenceClose(nn.Module):
         store, dictionary = self.store, self.components.nouns
         current = [(address, row, context, self.coordinates(store.point_of_row(address)))
             for address, (row, context) in records.items()
-            if context['document'] == document and int(store.refs[row, 0]) in dictionary.ids]
+            if int(store.refs[row, 0]) in dictionary.ids]
         groups = {}
         for record in current:
             groups.setdefault(int(store.refs[record[1], 0]), []).append(record)
@@ -412,7 +422,11 @@ class ReferenceClose(nn.Module):
             groups.setdefault(int(store.refs[record[1], 0]), []).append(record)
         ids = list(groups)
         for offset, left in enumerate(ids):
+            if left not in groups:
+                continue
             for right in ids[offset+1:]:
+                if right not in groups:
+                    continue
                 a, b = groups[left], groups[right]
                 initial = [r for r in (*a, *b) if r[2]['mint']]
                 initial_support = set().union(*(self.support(r[3]) for r in initial))
@@ -428,9 +442,10 @@ class ReferenceClose(nn.Module):
                     for _, row, _, _ in b:
                         store.refs[row, 0] = left
                         store._update_semantic_fingerprint(row)
+                    groups[left].extend(groups.pop(right))
         # The column is the current signature of its accessible membership.
         # Reassignment moves witnesses; old occurrence content never changes.
-        touched = {int(store.refs[row, 0]) for _, row, _, _ in current} | set(groups)
+        touched = {int(store.refs[row, 0]) for _, row, _, _ in current} | set(ids)
         for address, row, _, _ in current:
             for witnesses in dictionary._witnesses.values():
                 witnesses.difference_update(w for w in tuple(witnesses) if w[0] == address)

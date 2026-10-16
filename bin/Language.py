@@ -5110,26 +5110,14 @@ class _BinaryGrammarOpAdapter(nn.Module):
         return self.gl.compose_blocks(self.gl.compose, left, right)
 
     def forward_with_context(self, left, right, slab):
-        """Apply an op with explicit read-only parse context.
-
-        Contextual BIND used to install ``slab`` on its GrammarLayer before
-        calling forward.  That module mutation is illegal inside
-        ``torch.while_loop``; the explicit tensor input preserves the same
-        nearest-left computation without persistent state.
-        """
+        """Apply an operator's optional explicit, read-only parse context."""
         compose = getattr(self.gl, "compose_with_context", None)
         if callable(compose):
             return compose(left, right, slab)
         return self.gl.compose_blocks(self.gl.compose, left, right)
 
     def forward_with_grammar_context(self, left, right, slab, *, context):
-        """Run a routed compose face with its formal grammar context.
-
-        ``ContextualBindLayer`` is the one legacy exception whose numerical
-        kernel needs the current live slab to select the older participant.
-        That slab is an adapter-private differentiable input, not a field on
-        the public context.  Every other layer reaches the common dispatcher.
-        """
+        """Run a routed compose face with its formal grammar context."""
         _structural_face_phase(
             self.gl, (left, right), context=context, phase='compose')
         compose = getattr(self.gl, 'compose_with_context', None)

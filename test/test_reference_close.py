@@ -108,6 +108,62 @@ def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():
     assert resolver.last_audit[0]['missing_reason'] == 'no_accessible_individual'
 
 
+def test_empty_close_has_no_policy_gradient_or_store_side_effect():
+    resolver, store, atoms = fixture()
+    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=0)
+    plan = resolver.preview(clause, ())
+    assert float(plan['cost']) == 0 and not plan['cost'].requires_grad
+    kept = resolver.prepare(clause, plan)
+    assert kept is clause
+    written = {}
+    row = store.write_clause(kept, document_key='field', sentence_index=0, written_rows=written)
+    metadata = dict(store._semantic_rows)
+    required, refs = store.metadata_required.clone(), store.refs.clone()
+    resolver.commit(plan, row, written, document='field', position=0, training=True)
+    assert store._semantic_rows == metadata and resolver.last_audit == ()
+    torch.testing.assert_close(store.metadata_required, required, rtol=0, atol=0)
+    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
+    assert resolver.total == 0 and not resolver.components.nouns.ids
+
+
+def test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction():
+    from Layers import Error
+    from SentenceCredit import components, comparison, score_function
+    registry, like = Error(), torch.zeros(1)
+    registry.add('reconstruction.exact', like, category='reconstruction')
+    parts = torch.stack([components(registry, like+100, like, reference=like+1),
+                         components(registry, like+200, like, reference=like)], 1)
+    audit = comparison(parts, torch.ones(1, dtype=torch.bool))
+    assert audit['keep_costs'].tolist() == [[0., 0.]] and not bool(audit['wins'].any())
+    assert audit['advantage'].tolist() == [-1.] and audit['deciding'] == ['answer']
+    probability = torch.tensor([[.5]], requires_grad=True)
+    loss, _ = score_function(probability, torch.ones_like(probability),
+        torch.ones_like(probability, dtype=torch.bool), audit['costs'])
+    loss.sum().backward()
+    assert probability.grad.tolist() == [[-1.]]
+
+
+def test_revision_merges_three_accessible_groups_transitively_across_cued_documents():
+    resolver, store, atoms = fixture()
+    frames, addresses = [], []
+    for document in range(3):
+        first, a, _ = close(resolver, atoms[0], atoms[6], 'mint', (),
+                            document=document, sentence=0)
+        second, b, _ = close(resolver, atoms[0]+atoms[4], atoms[6], 'bind', (first,),
+                             document=document, sentence=1)
+        frames.extend((first, second)); addresses.extend((a, b))
+    _, inaccessible, _ = close(resolver, atoms[0]+atoms[4], atoms[6], 'mint', (),
+                               document='outside', sentence=0)
+    outside = int(store.refs[store.index_of_row(inaccessible), 0])
+    before = {address: store.point_of_row(address).clone() for address in addresses}
+    resolver.revise(resolver.accessible(frames))
+    assert len({int(store.refs[store.index_of_row(a), 0]) for a in addresses}) == 1
+    assert int(store.refs[store.index_of_row(inaccessible), 0]) == outside
+    assert sum(bool(w) for w in resolver.components.nouns._witnesses.values()) == 2
+    for address, point in before.items():
+        torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
+
+
 def test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues():
     resolver, store, atoms = fixture()
     frames = []

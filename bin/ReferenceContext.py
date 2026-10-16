@@ -315,7 +315,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         source_ids = ids
         typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
-        if bank.close_references:
+        at_close = bank.close_references and mode in ('mint', 'bind', 'pronoun')
+        if at_close:
             value = torch.where((order == 1)[..., None], value, typed_value)
             ids = torch.where(order == 1, ids, typed_ids)
         else:
@@ -323,12 +324,11 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         if mode in ('kind', 'generic'):
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         closing = None
-        if bank.close_references:
+        if at_close:
             # Compose selects the operation, not an individual. Its operands
             # retain their content until the completed predicate is visible.
             deferred = order == 1
-            refs = (torch.full_like(ids, -1 if mode == 'mint' else 0)
-                    if mode in ('mint', 'bind', 'pronoun') else ids)
+            refs = torch.full_like(ids, -1 if mode == 'mint' else 0)
             closing = (value, refs, scope.bitwise_and(1) != 0, valid & deferred)
             # Orders other than one retain their existing operation contracts.
             # Neither the field nor higher relations are individual columns.
@@ -346,7 +346,16 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 torch.where(binding, relative, scope.bitwise_and(1) != 0),
                 available | (~binding & original_valid),
                 *(item & binding for item in extra))
-            return options if closing is None else [closing, *options]
+            if closing is not None:
+                # Reuse the first variant for deferred rows. Appending a
+                # masked variant would change the unrelated field/higher-
+                # order menu and its sampled departures.
+                point, ref, relative, available, *extra = options[0]
+                options[0] = (torch.where(deferred[..., None], closing[0], point),
+                    torch.where(deferred, closing[1], ref),
+                    torch.where(deferred, closing[2], relative),
+                    available | closing[3], *(item & ~deferred for item in extra))
+            return options
         valid = valid & binding
         if mode == 'mint' and interpreter is None:
             return alternatives([(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)])
@@ -423,8 +432,6 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
         binding = order >= 0
-        if bank.close_references and mode not in ('mint', 'bind', 'pronoun'):
-            binding = binding & (order != 1)
         return torch.where(binding, torch.where(refs == -1, -2, refs), -1)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []

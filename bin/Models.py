@@ -20215,13 +20215,18 @@ class BasicModel(BaseModel):
             reference_cost = torch.stack([plan['cost'] for plan in observation['reference_plans']])
             errors.add('expectation.reference', reference_cost, weight=components.weight,
                        category='expectation')
+            # The resolver's weights are predictor-owned. Its observed
+            # membership error also credits the selected grammar operation
+            # at the closing, without changing reconstruction's certificate
+            # or allowing the rest of E to choose a departure.
+            observation['reference_credit'] = reference_cost * components.weight
             estimates = (None if pending is None else [
                 None if item is None else item.prediction for item in pending[0]])
             component_cost = components.cost(observation['meanings'], estimates, active,
                                               clauses=observation['clauses'])
             errors.add('expectation.components', component_cost, weight=components.weight,
                        category='expectation')
-            cost = (component_cost + reference_cost) * components.weight
+            cost = component_cost * components.weight
             self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
                 else self._sentence_expectation_comparison + cost)
         word_inputs = getattr(self, '_word_expectation_input', None)
@@ -21028,7 +21033,8 @@ class BasicModel(BaseModel):
                 from SentenceCredit import components
                 parts = components(self._sentence_cost_registry,
                     self._sentence_expectation_comparison, path[1][9][:,sid].sum(-1)*0,
-                    answer=self._sentence_answer_cost)
+                    answer=self._sentence_answer_cost,
+                    reference=observation.get('reference_credit'))
                 cost_parts.append(parts)
                 cost = parts[:, 0] + parts[:, 2]
                 observations.append(observation)
