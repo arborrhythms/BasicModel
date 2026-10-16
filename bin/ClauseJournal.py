@@ -96,10 +96,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     rule, 'argin'+str(role+1), operand['order'], implicit=True)
                 binding = (binding_order is not None and binding_order >= 0
                            and binding_mode not in ('kind', 'generic'))
-                if (getattr(program, 'close_references', False) and binding_order == 1
-                        and mode in ('mint', 'bind', 'pronoun')):
-                    # The selected operator supplies a request, not a trial
-                    # reference. Keep the constituent and its meaning intact.
+                if getattr(program, 'close_references', False) and binding_order == 1 and binding:
+                    # An enclosing operation cannot re-bind a deferred
+                    # individual. Only its mint/bind/pronoun operator supplies
+                    # the request; the close decides it with the predicate.
                     continue
                 if (getattr(program, 'binding_choices', False) and binding
                         and program.operation_probabilities is not None):

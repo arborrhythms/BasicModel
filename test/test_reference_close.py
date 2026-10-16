@@ -199,6 +199,14 @@ def test_only_order_one_defers_reference_and_higher_orders_keep_their_contract()
         active=torch.ones_like(ids, dtype=torch.bool))
     refs = [result['unary_refs'][b, 0, result['unary_valid'][b, 0], 0].tolist() for b in range(2)]
     assert refs == [[0], [200]]
+    rule.reference_modes = ()
+    ordinary = prepare_operands(values, ids, positions, positions, orders=stamps,
+        rules=(), unary_rules=(rule,), bank=bank,
+        live=(values, ids, stamps, torch.zeros_like(ids, dtype=torch.bool), positions),
+        active=torch.ones_like(ids, dtype=torch.bool))
+    selected = ordinary['unary_valid'][0, 0]
+    assert ordinary['unary_refs'][0, 0, selected, 0].tolist() == [1]
+    assert ordinary['unary_choices'][0, 0, selected, 0].tolist() == [-1]
 
 
 def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(monkeypatch):

@@ -315,7 +315,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         source_ids = ids
         typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
-        at_close = bank.close_references and mode in ('mint', 'bind', 'pronoun')
+        at_close = bank.close_references
         if at_close:
             value = torch.where((order == 1)[..., None], value, typed_value)
             ids = torch.where(order == 1, ids, typed_ids)
@@ -328,7 +328,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             # Compose selects the operation, not an individual. Its operands
             # retain their content until the completed predicate is visible.
             deferred = order == 1
-            refs = torch.full_like(ids, -1 if mode == 'mint' else 0)
+            refs = (torch.full_like(ids, -1 if mode == 'mint' else 0)
+                    if mode in ('mint', 'bind', 'pronoun') else ids)
             closing = (value, refs, scope.bitwise_and(1) != 0, valid & deferred)
             # Orders other than one retain their existing operation contracts.
             # Neither the field nor higher relations are individual columns.
@@ -432,6 +433,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
         binding = order >= 0
+        if bank.close_references and mode not in ('mint', 'bind', 'pronoun'):
+            binding = binding & (order != 1)
         return torch.where(binding, torch.where(refs == -1, -2, refs), -1)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
