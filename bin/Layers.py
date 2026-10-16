@@ -5810,6 +5810,8 @@ class ConceptAllocator:
         Storage capacity does not cap a symbol's semantic order. Cycle-guarded.
         """
         cid = int(cid)
+        if cid in self.reference_orders:
+            return self.reference_orders[cid]
         _seen = _seen if _seen is not None else set()
         if cid in _seen:
             return 0
@@ -5819,8 +5821,7 @@ class ConceptAllocator:
                   + sorted(self.refs(cid, "whole"), key=repr)):
             if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
                 subs.append(self.order_of(x[1], _seen))
-        return max(self.reference_orders.get(cid, 0),
-                   0 if not subs else 1 + max(subs))
+        return 0 if not subs else 1 + max(subs)
 
     def settle(self, cid):
         """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows
