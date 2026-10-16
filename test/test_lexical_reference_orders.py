@@ -103,6 +103,20 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     assert reference_requests(language, actions, leaf_orders=stamps) == {0: (3, 'generic')}
     assert result_order(rule, (3,)) == 3
     assert result_order(rule, (17,)) == 17
+    # A binding operation retains its mode at the same high order. An
+    # individual with identical content is not that relation's identity.
+    from ReferenceContext import ReferenceBank, prepare_operands
+    value = torch.tensor([[[.2, .3, .4, .5]]])
+    bank = ReferenceBank(torch.tensor([[relation, individual]]), value.expand(1, 2, 4),
+        torch.ones(1, 2, dtype=torch.bool), torch.tensor([[True, False]]),
+        value[:, 0], torch.tensor([True]), orders=torch.tensor([[3, 1]]))
+    binder = rule._replace(reference_modes=(('argin1', 'pronoun'),))
+    live = (value, torch.tensor([[raw]]), stamps[None], torch.tensor([[False]]), torch.tensor([[0]]))
+    proposals = prepare_operands(value, torch.tensor([[raw]]), torch.tensor([[0]]), torch.tensor([[0]]),
+        orders=stamps[None], rules=(), unary_rules=(binder,), bank=bank, live=live,
+        active=torch.tensor([[True]]))
+    valid = proposals['unary_valid'][0, 0]
+    assert set(proposals['unary_refs'][0, 0, valid, 0].tolist()) == {relation}
 
 
 def test_form_sets_survive_checkpoint_and_missing_order_stays_unknown():

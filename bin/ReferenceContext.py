@@ -254,7 +254,7 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
                         live_values[:, None].expand(B, P, K, D)), -2)
     held = held[:, None].expand(B, P, C)
     if bank.orders is not None:
-        held = held & (bank.orders[:, None] == requested[:, :, None])
+        held = held & ((bank.orders[:, None] < 0) | (bank.orders[:, None] == requested[:, :, None]))
     valid = torch.cat((own_valid[:, :, None], held, earlier), -1)
     relations = torch.cat((torch.zeros_like(own_valid[:, :, None]),
                           bank.relations[:, None].expand(B, P, C),
@@ -309,19 +309,19 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
         if mode == 'kind':
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
-        individual = order == 1
+        binding = ((order == 1) | ((order > 0) & (mode in ('mint', 'bind', 'pronoun', 'particular', 'name'))))
         original_valid = valid
         def alternatives(options):
-            # The first variant carries non-individual typed operands. Keep
-            # the existing individual menu and its learned scoring rows.
+            # The first variant carries non-binding typed operands. Keep
+            # the existing candidate menu and its learned scoring rows.
             point, ref, relative, available, *extra = options[0]
-            options[0] = (torch.where(individual[..., None], point, value),
-                torch.where(individual, ref, ids),
-                torch.where(individual, relative, scope.bitwise_and(1) != 0),
-                available | (~individual & original_valid),
-                *(item & individual for item in extra))
+            options[0] = (torch.where(binding[..., None], point, value),
+                torch.where(binding, ref, ids),
+                torch.where(binding, relative, scope.bitwise_and(1) != 0),
+                available | (~binding & original_valid),
+                *(item & binding for item in extra))
             return options
-        valid = valid & individual
+        valid = valid & binding
         if mode == 'mint' and interpreter is None:
             return alternatives([(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)])
         inventory = getattr(bank, 'column_ids', None)
@@ -333,7 +333,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         P, C = value.shape[1], bank.ids.shape[1]
         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
         live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
-        earlier = (live_positions[:, None] < pos[:, :, None]) & (live_orders[:, None] == 1)
+        earlier = (live_positions[:, None] < pos[:, :, None]) & (live_orders[:, None] == order[:, :, None])
         earlier = earlier & ~live_local[:, None]
         if inventory is not None:
             earlier = earlier & torch.isin(live_ids, inventory)[:, None]
@@ -349,10 +349,11 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         candidate_relations = torch.cat(((scope.bitwise_and(1) != 0)[:, :, None],
                                          bank.relations.flip(1)[:, None].expand(B, P, C),
                                          live_relations[:, None].expand(B, P, -1)), -1)
-        held = bank.valid
+        held = bank.valid.flip(1)[:, None].expand(B, P, C)
         if bank.orders is not None:
-            held = held & (bank.orders == 1)
-        available = torch.cat((own[:, :, None], held.flip(1)[:, None].expand(B, P, C), earlier), -1)
+            held_orders = bank.orders.flip(1)[:, None]
+            held = held & ((held_orders < 0) | (held_orders == order[:, :, None]))
+        available = torch.cat((own[:, :, None], held, earlier), -1)
         size = candidate_ids.shape[-1]
         preceding = torch.arange(size, device=ids.device)[None] < torch.arange(size, device=ids.device)[:, None]
         duplicate = ((candidate_ids[..., :, None] == candidate_ids[..., None, :])
@@ -392,7 +393,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         if order is None or mode == 'kind':
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
-        return torch.where(order == 1, torch.where(refs == -1, -2, refs), -1)
+        binding = ((order == 1) | ((order > 0) & (mode in ('mint', 'bind', 'pronoun', 'particular', 'name'))))
+        return torch.where(binding, torch.where(refs == -1, -2, refs), -1)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
     bchoices, uchoices, bfound, ufound = [], [], [], []

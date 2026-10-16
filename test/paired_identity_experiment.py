@@ -79,8 +79,6 @@ def kept_programs(model, records, current):
 def identity(model, folder, current, records):
     folder.mkdir()
     train, labels = load_split('train')
-    lessons = [doc for family in ('prediction_vocabulary', 'pronoun', 'determiner', 'same_kind')
-               for doc in train if labels[doc['id']]['family'] == family]
     # Preserve the accepted revision-3 branch's exact document order.
     lessons = ([d for d in train if labels[d['id']]['family'] == 'prediction_vocabulary']
                + [d for d in train if labels[d['id']]['family'] == 'pronoun']
@@ -168,8 +166,11 @@ def main():
                 if count >= 20:
                     identity(model, args.out/'identity-balanced-on', current, records)
                 else:
-                    zero = next(row['word'] for row in report['singleton_rows'] if row['closed_meaning_norm'] == 0)
-                    save(args.out/'zero-singleton-trace.json', latest[zero])
+                    zero = next((row['word'] for row in report['singleton_rows'] if row['closed_meaning_norm'] == 0), None)
+                    if zero is None:
+                        save(args.out/'zero-singleton-trace.json', dict(reason='no zero singleton; cosine gate failed'))
+                    else:
+                        save(args.out/'zero-singleton-trace.json', latest[zero])
                     save(args.out/'identity-not-run.json', dict(reason='singleton gate failed', gate=report['gate']))
         except Exception:
             import traceback
