@@ -243,6 +243,11 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
         # Admission belongs to the kept closing. A trial names no durable row.
         return value, torch.full_like(identity, -1), torch.zeros_like(active), torch.ones_like(active)
     own_valid = ((identity != -1) & (identity != 0)) & ~local & (mode not in ('pronoun', 'bind'))
+    if bank.orders is not None:
+        own_known = ((identity[:, :, None] == bank.ids[:, None])
+                     & (bank.orders[:, None] >= 0))
+        own_valid &= (~own_known.any(-1) |
+                      (own_known & (bank.orders[:, None] == requested[:, :, None])).any(-1))
     held = bank.valid if mode == 'bind' else bank.valid & bank.predicted[:, None]
     earlier = (live_positions[:, None, :] < position[:, :, None])
     earlier &= ((live_ids[:, None, :] != -1) & (live_ids[:, None, :] != 0))
@@ -306,6 +311,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
         if order is None:
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+        source_ids = ids
         value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
         if mode in ('kind', 'generic'):
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
@@ -342,6 +348,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         earlier = earlier & (live_ids[:, None] != -1) & (live_ids[:, None] != 0)
         own_inventory = bank.ids.flatten() if inventory is None else inventory
         own = torch.isin(ids, own_inventory) & (scope.bitwise_and(ClauseScope.LOCAL) == 0)
+        # A lowering cannot reuse the higher-order source as its own
+        # target. A changed association was selected at the requested order.
+        own = own & ((stamp == order) | (ids != source_ids))
         # Only a native column can be its own candidate. A word's dictionary
         # type is never silently promoted to an individual.
         candidate_ids = torch.cat((ids[:, :, None], bank.ids.flip(1)[:, None].expand(B, P, C),

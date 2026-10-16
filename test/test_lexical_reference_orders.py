@@ -117,6 +117,16 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
         active=torch.tensor([[True]]))
     valid = proposals['unary_valid'][0, 0]
     assert set(proposals['unary_refs'][0, 0, valid, 0].tolist()) == {relation}
+    # Choosing a member cannot keep the containing relation's own identity.
+    # Its same-content kind candidate has a different order stamp.
+    bank = bank._replace(ids=torch.tensor([[relation, kinds[0]]]),
+                         orders=torch.tensor([[3, 2]]))
+    lower = binder._replace(order_delta=-1, reference_modes=(('argin1', 'bind'),))
+    proposals = prepare_operands(value, torch.tensor([[relation]]), torch.tensor([[0]]),
+        torch.tensor([[0]]), orders=stamps[None], rules=(), unary_rules=(lower,),
+        bank=bank, live=live, active=torch.tensor([[True]]))
+    valid = proposals['unary_valid'][0, 0]
+    assert set(proposals['unary_refs'][0, 0, valid, 0].tolist()) == {kinds[0]}
 
 
 def test_form_sets_survive_checkpoint_and_missing_order_stays_unknown():
