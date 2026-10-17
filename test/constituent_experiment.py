@@ -67,6 +67,15 @@ def run(args):
                 return result
             optimizer.step = step
             rng = np.random.default_rng(SEED)
+            lesson_audits = []
+            native_lesson = model._grammar_lesson_objectives
+            def lesson_audit(*values, **kwargs):
+                result = native_lesson(*values, **kwargs)
+                if result:
+                    lesson_audits.append(dict(batch=len(progress), source=kwargs['source_rows'],
+                        terms=model._grammar_lesson_errors['compose'].breakdown()))
+                return result
+            model._grammar_lesson_objectives = lesson_audit
 
             def present(texts, indices, *, training, epoch):
                 split = 'train' if training else 'validation'
@@ -98,6 +107,7 @@ def run(args):
                 progress.append(report)
                 save(args.out/'progress.json', progress)
                 save(args.out/'kept-programs.json', records)
+                save(args.out/'lesson-audits.json', lesson_audits)
                 print(json.dumps(report), flush=True)
                 reset(model, len(batch))
 

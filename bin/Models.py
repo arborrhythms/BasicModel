@@ -13759,6 +13759,7 @@ class BasicModel(BaseModel):
                 closing = max(1, 2 * words_view.compose_capacity)
                 syntactic = int(getattr(self, 'syntacticOrder', 0) or 0)
                 words_view.compose_closing_budget = min(closing, syntactic) if syntactic > 0 else closing
+                words_view.case_bank = getattr(getattr(self.languageSpace, '_reference_bank', None), 'cases', None)
             # Guard against accidentally crediting a different staged input.
             owner = self._concept_owner()
             words = [owner.word_surface_for_row(int(value))

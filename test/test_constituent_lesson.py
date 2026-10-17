@@ -92,6 +92,38 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
                 if row['target'] >= 0] == [expected]
 
 
+def test_constituent_teacher_runs_all_constructions_with_native_meaning_bands(tmp_path, monkeypatch):
+    from identity_experiment import make_model
+    model = make_model(tmp_path, monkeypatch)
+    try:
+        from CaseSelection import CaseBank
+        capacity = int(model.conceptualSpace.stm.capacity)
+        closing = min(2*capacity, int(model.syntacticOrder)) if model.syntacticOrder else 2*capacity
+        seen = set()
+        for _, _, lesson, label in corpus():
+            key = label['family'], label['words'][0]
+            if key in seen:
+                continue
+            seen.add(key)
+            program = SimpleNamespace(leaves=torch.randn(len(label['words']), 232),
+                compose_capacity=capacity, compose_closing_budget=closing,
+                concept_ids=torch.arange(1, len(label['words'])+1))
+            count = len(program.leaves)
+            # A mechanism fixture supplies existing memberships. Their
+            # absence is reported, never replaced by a fabricated head.
+            missing = constituent_examples(model.languageSpace, program, lesson['tree'])
+            if label['family'] in ('np', 'intransitive', 'description'):
+                assert missing[-1]['unavailable'] == 'no_native_cases'
+            program.case_bank = CaseBank(program.concept_ids, program.leaves,
+                torch.ones(count, count, 2), torch.ones(count, count, 2))
+            states = constituent_examples(model.languageSpace, program, lesson['tree'])
+            assert all(state['window'].shape == (2, 232) for state in states)
+            assert states[-1]['target'] == -1 and states[-1]['depth'] == 1
+            assert torch.isfinite(compose_loss(model.languageSpace, [program], [lesson]))
+    finally:
+        model.End()
+
+
 @pytest.mark.learning_certificate
 @pytest.mark.artifact_eval
 def test_four_constituent_gates_on_trained_artifact():

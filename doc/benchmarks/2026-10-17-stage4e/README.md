@@ -26,6 +26,11 @@ including waits. The older reading-order lesson is excluded because it forces
 its target action. Brackets are sets of source positions; reading order is
 reported but is not an extra bracket gate. Dropped or duplicated words fail
 complete coverage. A noun's stamp is never supplied by the labels.
+Case-dependent operators receive only the reader's existing native case bank.
+If a required fold has no cases, that teacher trace stops at the unavailable
+target and reports it; no invented value supplies downstream teaching states.
+The whole sentence still counts in the held-out gate. The lesson audit records
+both reachable CE targets and these unavailable folds.
 
 The grader observes admitted journals and the row writer. An occurrence must
 be a written order-1 row whose description span matches the NP; binding need
@@ -45,7 +50,7 @@ Run from BasicModel:
 
 ```sh
 PYTHONPATH=bin:test DEVELOPER_DIR=/Library/Developer/CommandLineTools \
-  .venv/bin/python test/constituent_experiment.py output/stage4e-20261017-r1
+  .venv/bin/python test/constituent_experiment.py output/stage4e-20261017-r3
 ```
 
 The candidate commit is the archive. Programs, norms, stamps, per-batch CE

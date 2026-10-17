@@ -92,6 +92,36 @@ def compose_examples(language, program, tree, *, variables=()):
     return binary, unary
 
 
+def _constituent_cases(language, program, window, identities):
+    """The teacher may read existing cases, never supply new memberships."""
+    bank = getattr(program, 'case_bank', None)
+    if bank is None:
+        return None, None
+    layer = language._tree_layer(2)
+    from CaseSelection import select_cases
+    x = window[None]
+    ids = torch.tensor([identities], device=window.device)
+    r, u, d = layer.r_reduce, layer.r_apply, window.shape[-1]
+    weights = window.new_zeros(1, 1, r, len(bank.ids), 2)
+    valid = torch.ones(1, 1, r, device=window.device, dtype=torch.bool)
+    for local, rule in enumerate(language._compose_binary_rules):
+        head = getattr(rule, 'case_head_role', 0)
+        if head:
+            selection = select_cases(bank, ids[:, 2-head:3-head], ids[:, head-1:head])
+            weights[:, :, local] = selection.weights
+            valid[:, :, local] = selection.available
+    references = dict(case_bank=bank, case_weights=weights,
+        left=x[:, :1, None].expand(1, 1, r, d), right=x[:, 1:, None].expand(1, 1, r, d),
+        unary=x[:, :, None].expand(1, 2, u, d),
+        binary_refs=ids[:, None, None].expand(1, 1, r, 2),
+        unary_refs=torch.stack((ids, torch.full_like(ids, -1)), -1)[:, :, None].expand(1, 2, u, 2),
+        binary_relations=torch.zeros(1, 1, r, 2, device=x.device, dtype=torch.bool),
+        unary_relations=torch.zeros(1, 2, u, 2, device=x.device, dtype=torch.bool),
+        binary_valid=valid, unary_valid=torch.ones(1, 2, u, device=x.device, dtype=torch.bool))
+    context = language._structural_context(phase='compose', input_stream=x)
+    return references, context
+
+
 def constituent_examples(language, program, tree):
     """Explicit folds AND waits on the native three-round, two-slot window.
 
@@ -110,13 +140,15 @@ def constituent_examples(language, program, tree):
         depth = len(stack)
         if not depth:
             raise ValueError('constituent lesson has an empty compose state')
-        parent = parents.get(tuple(node for node, _ in stack[-2:])) if depth >= 2 else None
+        parent = parents.get(tuple(node for node, _, _ in stack[-2:])) if depth >= 2 else None
         arity = 2
         if parent is None:
             parent = parents.get((stack[-1][0],))
             arity = 1
         window = leaves.new_zeros(2, leaves.shape[-1])
-        window[:min(2, depth)] = torch.stack([value for _, value in stack[-2:]])
+        window[:min(2, depth)] = torch.stack([value for _, value, _ in stack[-2:]])
+        identities = [identity for _, _, identity in stack[-2:]] + ([-1] if depth == 1 else [])
+        references, context = _constituent_cases(language, program, window, identities)
         target = -1
         if parent is not None:
             local = rules[arity][parent[0]]
@@ -124,26 +156,46 @@ def constituent_examples(language, program, tree):
                       layer.r_reduce + (min(2, depth)-1)*layer.r_apply + local)
         if target < 0 and (depth > (1 if closing else capacity-1)):
             raise ValueError('constituent lesson requires an illegal wait')
-        examples.append(dict(window=window.detach(), target=target, depth=depth,
-            closing=closing, remaining=remaining))
+        example = dict(window=window.detach(), target=target, depth=depth,
+            closing=closing, remaining=remaining, references=references, context=context)
+        examples.append(example)
         if parent is None:
-            return False
+            return 'wait'
+        catalog = language._compose_binary_rules if arity == 2 else language._compose_unary_rules
+        rule = catalog[local]
+        if getattr(rule, 'case_head_role', 0) and (references is None or not bool(references['binary_valid'][0, 0, local])):
+            example['unavailable'] = 'no_native_cases'
+            return 'unavailable'
         with torch.no_grad():
-            operands = [value for _, value in stack[-arity:]]
-            value = (layer.ops[local](*operands) if arity == 2
-                     else layer.unary_ops[local](*operands))
-        stack[-arity:] = [(parent, value)]
-        return True
+            # Native grammar wrappers have a batch axis, including operators
+            # which process the form and meaning blocks separately.
+            operands = [value[None] for _, value, _ in stack[-arity:]]
+            if getattr(rule, 'case_head_role', 0):
+                value = layer._stacked_reduced(window[None], context, references)[0, 0, local]
+            else:
+                value = (layer.ops[local](*operands) if arity == 2
+                         else layer.unary_ops[local](*operands))[0]
+        head = getattr(rule, 'head_role', 0)
+        reference = stack[-arity+head-1][2] if head else -1
+        stack[-arity:] = [(parent, value, reference)]
+        return 'fold'
 
     for index, leaf in enumerate(leaves):
         if len(stack) >= capacity:
             raise ValueError('constituent annotation exceeds the live STM capacity')
-        stack.append((("leaf", index), leaf))
+        ids = getattr(program, 'concept_ids', None)
+        stack.append((("leaf", index), leaf, -1 if ids is None else int(ids[index])))
         for round_index in range(3):
-            if not step(False, 3-round_index):
+            status = step(False, 3-round_index)
+            if status == 'unavailable':
+                return examples
+            if status == 'wait':
                 break
     for round_index in range(closing_budget):
-        if not step(True, closing_budget-round_index):
+        status = step(True, closing_budget-round_index)
+        if status == 'unavailable':
+            return examples
+        if status == 'wait':
             break
     if len(stack) != 1 or stack[0][0] != root:
         raise ValueError('constituent annotation exceeds the live closing budget')
@@ -174,12 +226,16 @@ def compose_loss(language, programs, lessons, *, errors=None):
             for example in constituent_examples(language, program, lesson['tree']):
                 window, depth = example['window'], example['depth']
                 closing = example['closing']
+                if example.get('unavailable'):
+                    errors.add('compose.unavailable', window.new_ones(()), category='grammar', trained=False)
+                    break
                 _, _, route = layer(window[None],
                     depth=torch.tensor([min(2, depth)], device=window.device),
                     slots=2 if not closing or depth == 1 else 0,
                     allowance=1 if closing else program.compose_capacity-1,
                     rounds_left=example['remaining'],
                     load_depth=torch.tensor([depth], device=window.device),
+                    reference_data=example['references'], grammar_context=example['context'],
                     what_ctx=window.new_zeros(1, context_width))
                 probabilities = route['probabilities']
                 target = example['target']
