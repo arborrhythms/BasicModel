@@ -390,6 +390,14 @@ full experiment was not restarted. This preparation is landed at `89621bc61`
 no case lesson. The next pass trains the fold-pressure gain and uses the order
 lesson’s optimizer for compose lessons, with a 16-presentation CE pilot before
 a conditional rerun at the unchanged budget.
+The [intersection/pressure pass](doc/benchmarks/2026-10-17-stage4e-intersection/)
+completes that rerun after a passing 16-presentation pilot. Every teacher
+trace is available and wait/fold CE moves, but the free gate fails:
+**0/32 brackets, 10/48 NP occurrences, 0/48 lowering certificates**;
+22 unexpected occurrences, zero duplicates/collisions, 8/8 clean controls.
+Its default sweep is green (5,466 passed, 333 skipped, one XFAIL), including
+c this time; the broader carried findings remain open. **Stage 4e is not
+learned; identity and the further 5.5 mechanism round remain gated.**
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the

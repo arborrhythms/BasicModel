@@ -285,6 +285,9 @@ description's stamp without requiring it to be 2. Missing NPs still fail.
 Stop at a failed gate. The
 [stage 4e receipt](benchmarks/2026-10-17-stage4e/) records the budget and
 measurement; native identity learning waits for this gate.
+The corrected [intersection/pressure rerun](benchmarks/2026-10-17-stage4e-intersection/)
+has complete teacher traces and moving CE, but still fails free brackets
+and NP occurrences. A green mechanism sweep does not pass this learning gate.
 
     [the black cat] [runs] .
     [the dog] [chases [the cat]] .
