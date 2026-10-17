@@ -95,4 +95,32 @@ change. The corrected gates are ≥90% exact brackets, ≥95% singular-NP
 occurrences with zero duplicate writes, one order-1 occurrence at every
 lowered NP, and no occurrence for unlowered descriptions.
 
-Rerun and final default-sweep results will be recorded here once complete.
+## Rerun outcome and closing repair
+
+The one rerun on `f7edc9eee` **failed at runtime in its first batch**, after
+the paired optimizer steps and before committing that batch. This is a new
+candidate failure, not a setup abort or a failed learning gate. The source
+and [failure](failed-run-failure.json), [protocol](failed-run-protocol.json),
+[restore record](failed-run-start.json) and [log](failed-run.log) are retained.
+
+| Measurement | Result |
+|---|---|
+| Training budget | Four presentations attempted; **0 completed batches**, two optimizer steps before admission failed |
+| Held-out brackets, occurrences, lowering and controls | **Not measured: 0/40 held-out presentations reached** |
+| Closed meaning norms and held-out kept programs | Not measured |
+| Runtime failure | `admission changed the selected clause structure` |
+| Cause | `AnswerProgram.detached()` omitted `close_references`; the kept journal was rebuilt under the retired reference contract |
+| Isolated defect regression | Fails before repair; passes after preserving the flag |
+| First-batch diagnostic with the repair | Two steps, successful commit; old flag-dropping structure matches **3/4**, repaired structure **4/4** |
+| Focused tests after repair | **28 passed**, artifact gate excluded |
+
+The first-batch diagnostic used the same warm-up, seed and first four
+sentences, then stopped. Its four presentations and two updates are a
+separate correctness reproduction, not a continuation or a replacement
+learning result. [Structure and actual program diagnostic](commit-regression.json),
+[driver](commit-probe.py), [before](detachment-before.txt),
+[after](detachment-after.txt). The failure observer now records optimizer
+steps and completed presentation counts explicitly.
+
+The full experiment was **not restarted**. No identity run, 5.5 mechanism
+round, or learning claim follows. The final default-sweep result is pending.

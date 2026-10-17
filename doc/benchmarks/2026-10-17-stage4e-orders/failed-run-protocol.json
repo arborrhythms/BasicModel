@@ -1,0 +1,18 @@
+{
+  "seed": 20261010,
+  "epochs": 2,
+  "training_presentations": 144,
+  "evaluation_presentations": 40,
+  "batch_size": 4,
+  "learning_rate": 0.003,
+  "warmup": "output/item6-orders-paired-accepted-code-20261015/warmup.ckpt",
+  "candidate": "f7edc9eeed75397020fb9964201d8555c6a2904c",
+  "gates": {
+    "brackets": 0.9,
+    "occurrences": 0.95,
+    "duplicate_writes": 0,
+    "reductions": "one order-1 occurrence at every lowered NP; report description stamp",
+    "unlowered_occurrences": 0
+  },
+  "attention": "student-selected; no forced source-reading lesson"
+}

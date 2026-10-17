@@ -378,6 +378,13 @@ and **8/8** unlowered controls without an occurrence. The controls are vacuous
 with no occurrence writes anywhere. Native `compound` cases are unavailable
 in 160/288 teacher traces; all held-out referent stamps remain 0. The corpus,
 wait/fold CE path and measurement are landed preparation, not a passing learning stage.
+The [constructed-order pass](doc/benchmarks/2026-10-17-stage4e-orders/)
+repairs mint/bind/kind output stamps. Its checkpoint diagnostic finds live,
+unsaturated chooser CE gradients, but no native sigma cases for compounds.
+The one rerun stopped in its first commit because trial detachment dropped
+the close-reference flag; that defect is repaired and reproduced on the
+first batch. No held-out result or new learning claim was reached; the
+full experiment was not restarted. The grounded case lesson remains absent.
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the

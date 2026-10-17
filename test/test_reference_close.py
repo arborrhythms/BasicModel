@@ -209,6 +209,26 @@ def test_only_order_one_defers_reference_and_higher_orders_keep_their_contract()
     assert ordinary['unary_choices'][0, 0, selected, 0].tolist() == [-1]
 
 
+def test_deferred_reference_request_survives_kept_trial_detachment(monkeypatch):
+    from test_clause_acceptance import SentenceFixture
+    from reading_fixtures import record_reading
+    from ClauseJournal import finish_clause
+    from ReferenceClose import constituents
+    f = SentenceFixture(monkeypatch)
+    program = record_reading(f.language, replace(
+        f.program(('lift', ('lower', 'cue', 'object'), 'predicate')),
+        leaf_orders=torch.tensor([0, 0, 0]), close_references=True))
+    scored = finish_clause(f.language, program, registry=f.registry)
+    retained = program.detached()
+    committed = finish_clause(f.language, retained, registry=f.registry)
+    assert retained.close_references
+    before, after = constituents(scored), constituents(committed)
+    assert len(before) == len(after) == 1
+    assert before[0].reference_request['mode'] == after[0].reference_request['mode'] == 'mint'
+    assert before[0].reference_request['leaves'] == after[0].reference_request['leaves']
+    torch.testing.assert_close(before[0].point, after[0].point, rtol=0, atol=0)
+
+
 @pytest.mark.parametrize('description_order', (0, 2))
 def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(monkeypatch, description_order):
     from test_clause_acceptance import SentenceFixture

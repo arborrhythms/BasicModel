@@ -48,7 +48,7 @@ def run(args):
         attention='student-selected; no forced source-reading lesson')
     save(args.out/'protocol.json', protocol)
     started = time.monotonic()
-    records, progress, results = [], [], []
+    records, progress, results, steps = [], [], [], [0]
     with pytest.MonkeyPatch.context() as patch, warnings.catch_warnings():
         warnings.simplefilter('ignore')
         model = make_model(args.out, patch)
@@ -60,7 +60,6 @@ def run(args):
                 _annotation_tree(model.languageSpace, lesson['tree'], len(lesson['text'].split()))
             data = model.inputSpace.data
             optimizer = model.getOptimizer(lr=RATE)
-            steps = [0]
             native_step = optimizer.step
             def step(*values, **kwargs):
                 result = native_step(*values, **kwargs)
@@ -127,7 +126,9 @@ def run(args):
             print(json.dumps(dict(completed=True, gates=report['gates'], passed=report['passed'])), flush=True)
         except BaseException:
             save(args.out/'failure.json', dict(error=traceback.format_exc(),
-                completed_batches=len(progress), elapsed_seconds=time.monotonic()-started))
+                completed_batches=len(progress), optimizer_steps=steps[0],
+                completed_training_presentations=sum(row['training'] for row in records),
+                completed_evaluation_presentations=len(results), elapsed_seconds=time.monotonic()-started))
             raise
         finally:
             model.End()

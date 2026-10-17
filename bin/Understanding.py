@@ -156,6 +156,7 @@ class AnswerProgram:
                   for name in self._tensor_fields}
         values["lexical_forms"] = self.lexical_forms
         values['binding_choices'] = self.binding_choices
+        values['close_references'] = self.close_references
         return type(self)(**values)
 
 
