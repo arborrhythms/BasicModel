@@ -1,5 +1,11 @@
 # Stage 4e: constructed orders and chooser diagnostic
 
+**No learning claim. The single rerun failed during its first kept commit,
+before held-out evaluation.** The exposed detachment defect is repaired
+and checked separately; the full experiment was not restarted. Repaired
+source candidate **`6f76c081c`** passes the final default sweep except the
+carried c test, with no changed existing test outcomes.
+
 The reviewed preparation landed on BasicModel main at `d080b632d`, with
 WikiOracle bumped at `2338d9c`. No learning claim. This receipt follows the
 [first-run review](../../plans/2026-10-17-item5-5-start.md#review-of-the-first-stage-4e-run-claude-2026-10-17--gate-failed-for-a-structural-reason-fix-before-any-rerun).
@@ -123,4 +129,26 @@ learning result. [Structure and actual program diagnostic](commit-regression.jso
 steps and completed presentation counts explicitly.
 
 The full experiment was **not restarted**. No identity run, 5.5 mechanism
-round, or learning claim follows. The final default-sweep result is pending.
+round, or learning claim follows.
+
+## Final verification
+
+One default sweep on source candidate `6f76c081c`, compared with the
+accepted preparation (`d080b632d`, whose source sweep was `6fb8c2505`).
+The candidate commit is the archive. [Sweep diagnostics](sweep.json).
+
+| Check | Result |
+|---|---|
+| Default sweep | **5,798/5,798 completed: 5,463 passed, 333 skipped, 1 XFAIL, 1 failed**, 466.61 seconds |
+| Changed existing test outcomes / new failing tests | **0 / 0** |
+| Added coverage | Detachment regression, order-0 native closing, existing order-2 case and receipt links pass; the old single test ID became two parameterized cases |
+| c: `test_forced_ordinary_answer_fills_committed_question_without_its_own_episode` | **Fail, carried case.** This trace stops at an unresolved subject (`('referent', 0)`), before the `five` match. The prior receipt reached a marker-headed mismatch; the trace is not claimed unchanged. |
+| Paired zero-cost certificate | **Pass this sweep; prior counterexample remains open** |
+| Exact operator reconstruction certificates | Pass; accepted assertions unchanged |
+| Cleared-cache word overlap | Carried **XFAIL** |
+| Stage-4e artifact learning certificate | Skipped in default sweep: the aborted rerun produced no evaluated artifact |
+
+The native measurement's new admission failure is reported above even though
+its isolated repair and the default suite now pass. Held-out learning gates
+remain unmeasured for this candidate. The first-run 8/32 bracket and 0/48
+occurrence result remains the latest completed constituent measurement.
