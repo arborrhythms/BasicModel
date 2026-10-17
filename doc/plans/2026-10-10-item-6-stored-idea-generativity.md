@@ -1876,7 +1876,9 @@ vectors from temporal differences on the change lesson; (iv) word classes
 before its order is reduced.* The description ("black cat") is the
 kind-level NP at order 2 — the pi of its words' types — recognized
 compositionally, never minted by a sentence. The NP operator is the order
-reduction 2 → 1, and that reduction is the identity event: mint creates a
+reduction to a member — order 1 by construction, whatever the description's
+stamp (0 for a type, 2 for an explicitly raised kind; corrected 2026-10-17
+after the first 4e run) — and that reduction is the identity event: mint creates a
 new member, bind selects an existing one, a pronoun is a bind with an
 empty description. The occurrence row written at the mint is order 1 with
 the order-2 description's meaning as its signature, taken at the
