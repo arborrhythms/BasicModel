@@ -1,0 +1,1290 @@
+[
+  {
+    "text": "a white cat",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white cat",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small cat",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small cat",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small dog",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small dog",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large dog",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large dog",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large bird",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large bird",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black bird",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black bird",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black horse",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black horse",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a white horse",
+    "tree": [
+      "lower",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white horse",
+    "tree": [
+      "definite",
+      0,
+      [
+        "compound",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a white cat sleeps",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white cat runs",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small cat runs",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small cat sleeps",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small dog runs",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small dog sleeps",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large dog sleeps",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large dog runs",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large bird sleeps",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large bird runs",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black bird runs",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black bird sleeps",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black horse runs",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black horse sleeps",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a white horse sleeps",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white horse runs",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        [
+          "compound",
+          1,
+          2
+        ]
+      ],
+      3
+    ],
+    "waits": true
+  },
+  {
+    "text": "a cat chases the dog",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the cat sees a dog",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a cat chases the bird",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the cat sees a bird",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a dog sees the bird",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the dog chases a bird",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a dog sees the horse",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the dog chases a horse",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a bird chases the horse",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the bird sees a horse",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a bird chases the cat",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the bird sees a cat",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a horse sees the cat",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the horse chases a cat",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a horse sees the dog",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "definite",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the horse chases a dog",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "verb",
+        2,
+        [
+          "lower",
+          3,
+          4
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a cat is on the dog",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the cat is near a dog",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a cat is on the bird",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the cat is near a bird",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a dog is near the bird",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the dog is on a bird",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a dog is near the horse",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the dog is on a horse",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a bird is on the horse",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the bird is near a horse",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a bird is on the cat",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the bird is near a cat",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a horse is near the cat",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the horse is on a cat",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a horse is near the dog",
+    "tree": [
+      "lift",
+      [
+        "lower",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "definite",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the horse is on a dog",
+    "tree": [
+      "lift",
+      [
+        "definite",
+        0,
+        1
+      ],
+      [
+        "surface",
+        2,
+        [
+          "preposition",
+          3,
+          [
+            "lower",
+            4,
+            5
+          ]
+        ]
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "black cat",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "small cat",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "white dog",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "large dog",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "black bird",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "small bird",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "white horse",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "large horse",
+    "tree": [
+      "compound",
+      0,
+      1
+    ],
+    "waits": true
+  }
+]

@@ -12,29 +12,7 @@ import torch
 from torch.nn import functional as F
 
 
-def compose_examples(language, program, tree, *, variables=()):
-    """Teacher-forced states for one annotated tree, over real forward leaves.
-
-    A leaf is its zero-based ordinal; a node is [declared_form, children...].
-    Every word must occur exactly once in order. The annotation schedule
-    supplies binary and unary teacher states after each word, followed by
-    sentence endings; each target is scored by the live joint selector.
-    Targets stay on this scoring side of the completed forward boundary.
-    """
-    leaves = program.leaves.detach()
-    if variables:
-        if (len(set(variables)) != len(variables)
-                or any(type(i) is not int or not 0 <= i < len(leaves) for i in variables)):
-            raise ValueError("grammar variables must name distinct captured operand leaves")
-        # Explicitly annotated variables teach structural invariance over
-        # full concept values. Half retain the actual lexical value; half
-        # receive a fresh direction at the same activation magnitude. These
-        # are teacher states, never a replacement for the student's program.
-        leaves = leaves.clone()
-        for i in variables:
-            substitute = F.normalize(torch.randn_like(leaves[i]), dim=-1) * leaves[i].norm()
-            leaves[i] = torch.where(torch.rand((), device=leaves.device) < .5,
-                                    substitute, leaves[i])
+def _annotation_tree(language, tree, count):
     rules = {arity: {r.method_name: i for i, r in enumerate(
         language._compose_binary_rules if arity == 2 else language._compose_unary_rules)}
         for arity in (1, 2)}
@@ -57,8 +35,25 @@ def compose_examples(language, program, tree, *, variables=()):
         return result
 
     root = validate(tree)
-    if order != list(range(len(leaves))):
+    if order != list(range(count)):
         raise ValueError("grammar lesson must retain every forward word exactly once, in order")
+    return root, parents, rules
+
+
+def compose_examples(language, program, tree, *, variables=()):
+    """Legacy operator-only annotations, over real captured forward leaves."""
+    leaves = program.leaves.detach()
+    if variables:
+        if (len(set(variables)) != len(variables)
+                or any(type(i) is not int or not 0 <= i < len(leaves) for i in variables)):
+            raise ValueError("grammar variables must name distinct captured operand leaves")
+        # Explicit variable augmentation stays on the teacher side.
+        leaves = leaves.clone()
+        for i in variables:
+            substitute = F.normalize(torch.randn_like(leaves[i]), dim=-1) * leaves[i].norm()
+            leaves[i] = torch.where(torch.rand((), device=leaves.device) < .5,
+                                    substitute, leaves[i])
+    root, parents, rules = _annotation_tree(language, tree, len(leaves))
     stack, binary, unary = [], [], []
 
     def reduce(closing=False):
@@ -95,12 +90,70 @@ def compose_examples(language, program, tree, *, variables=()):
     return binary, unary
 
 
+def constituent_examples(language, program, tree):
+    """Explicit folds AND waits on the native three-round, two-slot window.
+
+    A bracket lesson permits several reductions after a word and waits when
+    the next subtree needs more input. The final closing uses its own bound.
+    Only detached teacher states are built; the student's journal is untouched.
+    """
+    leaves = program.leaves.detach()
+    root, parents, rules = _annotation_tree(language, tree, len(leaves))
+    layer = language._tree_layer(2)
+    capacity = int(program.compose_capacity)
+    closing_budget = int(program.compose_closing_budget)
+    stack, examples = [], []
+
+    def step(closing, remaining):
+        depth = len(stack)
+        if not depth:
+            raise ValueError('constituent lesson has an empty compose state')
+        parent = parents.get(tuple(node for node, _ in stack[-2:])) if depth >= 2 else None
+        arity = 2
+        if parent is None:
+            parent = parents.get((stack[-1][0],))
+            arity = 1
+        window = leaves.new_zeros(2, leaves.shape[-1])
+        window[:min(2, depth)] = torch.stack([value for _, value in stack[-2:]])
+        target = -1
+        if parent is not None:
+            local = rules[arity][parent[0]]
+            target = (local if arity == 2 else
+                      layer.r_reduce + (min(2, depth)-1)*layer.r_apply + local)
+        if target < 0 and (depth > (1 if closing else capacity-1)):
+            raise ValueError('constituent lesson requires an illegal wait')
+        examples.append(dict(window=window.detach(), target=target, depth=depth,
+            closing=closing, remaining=remaining))
+        if parent is None:
+            return False
+        with torch.no_grad():
+            operands = [value for _, value in stack[-arity:]]
+            value = (layer.ops[local](*operands) if arity == 2
+                     else layer.unary_ops[local](*operands))
+        stack[-arity:] = [(parent, value)]
+        return True
+
+    for index, leaf in enumerate(leaves):
+        if len(stack) >= capacity:
+            raise ValueError('constituent annotation exceeds the live STM capacity')
+        stack.append((("leaf", index), leaf))
+        for round_index in range(3):
+            if not step(False, 3-round_index):
+                break
+    for round_index in range(closing_budget):
+        if not step(True, closing_budget-round_index):
+            break
+    if len(stack) != 1 or stack[0][0] != root:
+        raise ValueError('constituent annotation exceeds the live closing budget')
+    return examples
+
+
 def compose_loss(language, programs, lessons, *, errors=None):
     """Supervise supplied forms in the same joint compose softmax.
 
-    A lesson's unlabelled waiting sites are not no-operation targets. Only
-    its explicitly supplied operators contribute, after the student's own
-    forward path has been captured.
+    Operator-only lessons retain their contract. A complete constituent
+    lesson explicitly sets ``waits``: its brackets also teach STOP while
+    awaiting the next word. All targets follow the student's own forward.
     """
     if len(programs) != len(lessons):
         raise ValueError("one optional grammar lesson is required per forward row")
@@ -115,6 +168,23 @@ def compose_loss(language, programs, lessons, *, errors=None):
             continue
         if program is None:
             raise ValueError("grammar supervision requires an actual captured forward program")
+        if lesson.get('waits', False):
+            for example in constituent_examples(language, program, lesson['tree']):
+                window, depth = example['window'], example['depth']
+                closing = example['closing']
+                _, _, route = layer(window[None],
+                    depth=torch.tensor([min(2, depth)], device=window.device),
+                    slots=2 if not closing or depth == 1 else 0,
+                    allowance=1 if closing else program.compose_capacity-1,
+                    rounds_left=example['remaining'],
+                    load_depth=torch.tensor([depth], device=window.device),
+                    what_ctx=window.new_zeros(1, context_width))
+                probabilities = route['probabilities']
+                target = example['target']
+                name = 'compose.wait' if target < 0 else 'compose.choice'
+                errors.error(name, -probabilities[0, target].clamp_min(1e-30).log(),
+                    math.log(probabilities.shape[-1]), category='grammar')
+            continue
         binary, unary = compose_examples(language, program, lesson["tree"],
                                          variables=lesson.get("variables", ()))
         for window, target, _closing, _depth in binary:

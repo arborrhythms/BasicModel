@@ -13754,6 +13754,11 @@ class BasicModel(BaseModel):
                 raise ValueError('grammar lesson positions do not match the captured leaves')
             words_view = SimpleNamespace(**{name: getattr(program, name).index_select(0, order)
                 for name in ('leaves', 'word_rows', 'concept_ids')})
+            if lesson.get('waits', False):
+                words_view.compose_capacity = int(self.conceptualSpace.stm.capacity)
+                closing = max(1, 2 * words_view.compose_capacity)
+                syntactic = int(getattr(self, 'syntacticOrder', 0) or 0)
+                words_view.compose_closing_budget = min(closing, syntactic) if syntactic > 0 else closing
             # Guard against accidentally crediting a different staged input.
             owner = self._concept_owner()
             words = [owner.word_surface_for_row(int(value))
