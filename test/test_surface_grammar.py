@@ -199,7 +199,7 @@ def assert_selected_wording(model, curriculum):
         assert meaning.metadata() == prior.metadata()
 
 
-@pytest.mark.slow
+@pytest.mark.learning_certificate
 @pytest.mark.artifact_eval
 def test_real_text_has_a_complete_selected_meaning(fineweb_trained_model):
     import json

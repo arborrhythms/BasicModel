@@ -14,7 +14,7 @@ import Models
 import Language, util
 from bounded_tests import source_snapshot
 from identity_experiment import restore_warmup,digest,save
-from IndependentComponents import noun_frame
+from identity_experiment import noun_frame
 from Spaces import _concept_alloc_of
 
 

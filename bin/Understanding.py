@@ -63,6 +63,7 @@ class AnswerProgram:
     operation_refs: Any = None
     operation_relations: Any = None
     binding_choices: bool = False
+    close_references: bool = False
     operation_probabilities: Any = None
     leaf_orders: Any = None
     leaf_evidence: Any = None

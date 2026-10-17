@@ -1,5 +1,7 @@
 # Independent components: identity as columns, verbs as change
 
+> *Superseded in part, 2026-10-16 ([item 6 plan §15](../plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)): `A` is no longer a learned dictionary — an individual is minted at each singular NP's order reduction with the description's meaning as its signature, and matched in a separate revisable step; §3.5's minting on recurrence and the independence term's role for nouns do not apply at order 1. `B` stands as a vector per verb, taught by the temporal difference of the individual it acts on. Kinds (order 2) remain open.*
+
 > **Status:** accepted by Alec as the **6.5 mechanism landing**, 2026-10-07,
 > after Claude's §10 review of the §9 choices. The six learning gates,
 > across seeds 0/1/2, remain pending the million-sentence checkpoint and

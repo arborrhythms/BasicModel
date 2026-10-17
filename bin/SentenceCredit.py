@@ -101,12 +101,12 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
         candidate_round=torch.where(walk == 2, candidate_round, -1))
 
 
-def components(registry, expectation, like, *, answer=None):
-    """R and A use the training registry; E is its gated comparison view."""
+def components(registry, expectation, like, *, answer=None, reference=None):
+    """Closing reference credit joins A; reconstruction and E stay separate."""
     def value(v):
         return torch.zeros_like(like) if v is None else v.detach().expand_as(like)
     return torch.stack((value(registry.total(objective='reconstruction')),
-        value(expectation), value(answer)), -1)
+        value(expectation), value(answer) + value(reference)), -1)
 
 
 def comparison(parts, active):

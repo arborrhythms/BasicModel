@@ -368,6 +368,39 @@ works: the non-object is removed and nothing is put in its place, so
 attention needs no prediction. See
 [Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
 
+### The two negations on a modifier: not-heavy and non-heavy (Alec, 2026-10-15)
+
+*A not-heavy paper weight* is a paper weight that is not heavy, and probably
+one that is light: affirming negation puts evidence **against** heavy on the
+weight dimension, which on a bipolar coordinate is evidence for light. The
+row says something about weight.
+
+*A non-heavy paper weight* sends to zero every aspect of the paper weight
+that bears on weight, positively or negatively: a magnetic paper weight,
+say, about whose weight we have no information — although a paper weight
+would typically be heavy. The row says nothing about weight.
+
+That parenthesis is the kind's prior, and it is what still distinguishes
+*a paper weight* from *a non-heavy paper weight* when both rows carry zero
+evidence on weight: for the plain one the prior is live and expectation
+would fill the dimension with *heavy*; for the non-heavy one the sentence
+has **withheld** that dimension and the prior must not fill it. So `non`
+acts on expectation as much as on evidence: it clears both lanes *and*
+blocks the prior on that dimension. The block is a per-dimension "withheld"
+mark beside the two lanes. It is the trace that lets the inverse re-emit
+*non-heavy* (the row differs from a plain paper weight exactly there), it
+is what the forward discard charge should count as retained rather than
+discarded, and it is what [4.5](specs/2026-10-08-expectation-at-every-level.md)'s
+prior must respect.
+
+`non` applies to **modifiers only**: applied to the noun it erases the
+thing entirely, which is the degenerate reading item 6 found the compose
+policy choosing when `non` was free (`cat → non` leaves no cat). Which
+position `non` takes is for exposure to the grammatical possibilities to
+teach — its operand position forms a class under the participation rule
+([item 6 plan §6](plans/2026-10-10-item-6-stored-idea-generativity.md#6-parts-of-speech-from-operand-participation-alec-2026-10-10));
+the corpus must offer negated modifiers for that.
+
 ## Truth Lattice
 
 | State | Interpretation | Examples |
@@ -859,6 +892,8 @@ discrete, the forward is always one derivation, one row — so the structure
 of thought is never a mixture; only the gradient is.
 
 ## Where Is Context: Particulars, Universals and the Two Axes (2026-09-22)
+
+*Orders as sets of symbols, membership by evidence, and the two ladders (forms and referents) are written up in [Orders](Orders.md) (2026-10-15); this section is the earlier statement it extends.*
 
 > We need to integrate the "same space and time" that creates wholes and
 > parts, and the "substitution" that creates syntactic categories and parts

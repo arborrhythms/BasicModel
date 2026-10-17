@@ -13201,6 +13201,7 @@ class ConceptualSpace(Space):
             object.__setattr__(_sim_cb, 'independent_components', components)
         self.components = components
         self.layers.append(self.components)
+        self.params += list(self.components.parameters())
         # Dual-towers rev 2: the pyramid stages its top-K winners on the
         # subspace index; the codebook is the lookup basis materialize uses.
         object.__setattr__(self.subspace, "_index_basis", _sim_cb)
@@ -15638,8 +15639,11 @@ class ConceptualSpace(Space):
         migrates optimizer moments without resetting unrelated parameters.
         """
         base = list(self.params)
-        base.extend(self.components.parameters())
-        seen = set()
+        seen = {id(p) for p in base}
+        for parameter in self.components.parameters():
+            if id(parameter) not in seen:
+                base.append(parameter)
+                seen.add(id(parameter))
         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
             for ly in (p, s, s.features):
                 if (ly is not None and ly.values is not None

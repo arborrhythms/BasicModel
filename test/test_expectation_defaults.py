@@ -220,7 +220,8 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeypatch):
+def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch):
+    import Models
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")
     model = _build_ladder_variant(tmp_path, "off_packed_memory", [
@@ -233,13 +234,30 @@ def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeyp
     model._install_unit_span_fn()
     assert not model.symbolSpace.expectation.expectation_enabled
     store = model.symbolSpace.ltm_store
+    written = []
+    append = Models._append_observed_meaning
+
+    def capture(target, clause, **kwargs):
+        row = append(target, clause, **kwargs)
+        if target is store:
+            written.append(int(store.row_ids[row]))
+        return row
+
+    monkeypatch.setattr(Models, '_append_observed_meaning', capture)
     try:
         before = len(store)
         inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
         model.runBatch(train=False, batchSize=1, split="runtime",
                        batch_override=(inputs, torch.zeros(1, 1, 0)))
         rows = [store.row(i) for i in range(before, len(store))]
-        assert sum(row['kind'] == 'observation' for row in rows) == 2
+        # An untrained reading can leave a bind unresolved and close as a
+        # question. Both external closings must survive, independently of
+        # their grammatical mode and of the expectation switch.
+        assert len(written) == len(set(written)) == 2
+        roots = [store.index_of_row(address) for address in written]
+        assert all(row is not None and row >= before for row in roots)
+        assert len({int(store.sentence_index[row]) for row in roots}) == 2
+        assert all(store.row(row)['kind'] in ('observation', 'question') for row in roots)
         assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference') for row in rows)
         assert not any(row['kind'] == 'estimate' for row in rows)
         assert all(int(store.meaning_of(i).role_mask.sum()) in (1, 3) for i in range(before, len(store)))

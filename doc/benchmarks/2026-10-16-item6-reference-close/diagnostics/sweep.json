@@ -1,0 +1,270 @@
+{
+  "source": "48093d421",
+  "accepted_main": "51f069c30",
+  "elapsed_seconds": 785.6397367499303,
+  "selected": 5808,
+  "completed": 5808,
+  "counts": {
+    "passed": 5494,
+    "skipped": 288,
+    "failed": 25,
+    "xfailed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_2_alice_wants_to_run",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00016066688112914562,
+      "message": "test/test_grammar_fixtures.py:138: in test_fixture_2_alice_wants_to_run\n    layer.set_bind_context(slab=slab)\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute 'set_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_3_the_tired_alice_wants_to_sleep",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0002624162007123232,
+      "message": "test/test_grammar_fixtures.py:165: in test_fixture_3_the_tired_alice_wants_to_sleep\n    layer.set_bind_context(slab=slab)\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute 'set_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_grammar_fixtures.py::test_fixture_4_alice_persuaded_bob_to_run",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00017737504094839096,
+      "message": "test/test_grammar_fixtures.py:187: in test_fixture_4_alice_persuaded_bob_to_run\n    layer.set_bind_context(slab=slab)\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute 'set_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 3.396535540930927,
+      "message": "test/test_negative_expectation.py:200: in test_native_unlabelled_batch_trains_the_same_chooser\n    result, _ = model.runBatch(train=True, batchNum=step, batchSize=1,\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 7.166639333823696,
+      "message": "test/test_math_chain.py:125: in test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention\n    report = present(model, split='train', optimizer=model.getOptimizer(lr=.001),\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 6.704389082966372,
+      "message": "test/test_math_chain.py:194: in test_native_worked_document_trains_unforced_without_numeric_oracles\n    report = present(model, split='train', optimizer=model.getOptimizer(lr=.001))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_reference_variant_batching_preserves_values_and_gradients",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0012642089277505875,
+      "message": "test/test_math_chain_repair2.py:115: in test_reference_variant_batching_preserves_values_and_gradients\n    a = torch.autograd.grad(grouped.square().sum(), (x, left, right), retain_graph=True)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad\n    result_tuple = handle_torch_function(\n.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function\n    result = mode.__torch_function__(public_api, types, args, kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad\n    result = _engine_run_backward(\n.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward\n    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass\nE   RuntimeError: The differentiated Tensor at index 0 appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 55.68446479109116,
+      "message": "test/test_math_chain_section14.py:244: in test_forced_ordinary_answer_fills_committed_question_without_its_own_episode\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:241: in after\n    assert not open_slots(value) and matches(model,value,'five')\nE   AssertionError: assert (not () and False)\nE    +  where () = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 8439041583391688881), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 8439041583391688881),))), scope=(), sentence_kind='relation'))\nE    +  and   False = <function matches at 0x12c1b0720>(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=104, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\\n), ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 8439041583391688881), ('sym', ..., 'equal'), ('_thought_witnesses', (('ltm', 'address-v1', 8439041583391688881),))), scope=(), sentence_kind='relation'), 'five')",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=31.077s)\r\n",
+      "classification": "carried c marker-headed answer finding: filled reference is not five"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 9.393672167090699,
+      "message": "test/test_math_chain_section14.py:294: in test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage\n    assert item['operations'] == ['query','conclude']\nE   AssertionError: assert ['query'] == ['query', 'conclude']\nE     \nE     Right contains one more item: 'conclude'\nE     Use -v to get more diff",
+      "stdout": "batch = 0 (warm-up)\r\n",
+      "classification": "new correctness defect; preparation cloned shared clause nodes even with no reference requests, changing stored rows and bounded query work; accepted-main and repaired-candidate matched-seed tests pass"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 4.73200516612269,
+      "message": "test/test_meronomy_ladder.py:143: in trained_ladder\n    m.runEpoch(optimizer=optimizer, batchSize=1, split=\"train\", max_batches=2)\nbin/Models.py:15872: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 0.00018483283929526806,
+      "message": "test/test_meronomy_ladder.py:143: in trained_ladder\n    m.runEpoch(optimizer=optimizer, batchSize=1, split=\"train\", max_batches=2)\nbin/Models.py:15872: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.9672389591578394,
+      "message": "test/test_ltm_consolidation.py:185: in test_provision_idempotent_count_via_runepoch_trigger\n    m.runEpoch(optimizer=opt, batchSize=1, split=\"train\",\nbin/Models.py:15872: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 3.47912162495777,
+      "message": "test/test_ltm_consolidation.py:762: in test_user_rows_coexist_with_conversation_rows\n    m.runEpoch(optimizer=opt, batchSize=1, split=\"train\",\nbin/Models.py:15872: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 3.153353333938867,
+      "message": "test/test_ltm_consolidation.py:884: in test_forward_grows_store_not_deque\n    m.runEpoch(optimizer=opt, batchSize=1, split=\"train\",\nbin/Models.py:15872: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    },
+    {
+      "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 23.607670415891334,
+      "message": "test/test_operators_final_b.py:165: in test_both_training_trials_share_bootstrap_snapshot\n    assert not audit['components'][..., 0].any()\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x1483990e0>()\nE    +    where <built-in method any of Tensor object at 0x1483990e0> = tensor([[0.0000, 0.0000],\\n        [0.0000, 0.0517],\\n        [0.0000, 0.0000],\\n        [0.0000, 0.0000]]).any",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 23.023s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.542s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.541s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n",
+      "classification": "carried paired-certificate counterexample: .0517327189 content charge reproduced on accepted main in the preceding receipt; assertion unchanged"
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_resolves_nearest_left_from_slab",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00024862494319677353,
+      "message": "test/test_contextual_bind.py:62: in test_resolves_nearest_left_from_slab\n    layer.set_bind_context(slab=slab)\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute 'set_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_resolves_object_control_from_participants",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00021337508223950863,
+      "message": "test/test_contextual_bind.py:72: in test_resolves_object_control_from_participants\n    layer.set_bind_context(participants=[alice, bob], licensing=\"object_control\")\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute 'set_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_clear_bind_context_reverts_to_passthrough",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00014429190196096897,
+      "message": "test/test_contextual_bind.py:85: in test_clear_bind_context_reverts_to_passthrough\n    layer.set_bind_context(slab=torch.randn(1, 3, 4))\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute 'set_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_contextual_bind.py::test_reduction_layer_stashes_live_slab_on_bind",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0012718341313302517,
+      "message": "test/test_contextual_bind.py:107: in test_reduction_layer_stashes_live_slab_on_bind\n    assert bind._bind_context is not None\n           ^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ContextualBindLayer' object has no attribute '_bind_context'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0033589578233659267,
+      "message": "test/test_sparse_concept_e2e.py:194: in test_getparameters_byte_identical_when_inactive\n    assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]\nE   assert [5065243568, ...65241808, ...] == [5065243568, ...65241808, ...]\nE     \nE     Left contains 2 more items, first extra item: 5065009712\nE     Use -v to get more diff",
+      "stdout": "",
+      "classification": "new correctness defect; closing parameters absent from the base parameter registry; unchanged test passes after repair"
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_native_column_reads_use_witness_magnitude_and_only_situation_candidates",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0016291250940412283,
+      "message": "test/test_independent_components.py:297: in test_native_column_reads_use_witness_magnitude_and_only_situation_candidates\n    assert columns.candidates((frame,)) == (columns.nouns.ids[0],)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IndependentComponents.py:540: in candidates\n    return tuple(identity for identity, _ in self.candidate_frames(frames))\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IndependentComponents.py:522: in candidate_frames\n    store = self.owner._closed_clause_store()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_closed_clause_store'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_kind_bind_and_mint_closings_obey_the_selected_choice",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002199375070631504,
+      "message": "test/test_independent_components.py:317: in test_kind_bind_and_mint_closings_obey_the_selected_choice\n    columns.commit(row, meaning, individual_references=references)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: IndependentComponents.commit() got an unexpected keyword argument 'individual_references'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_admission_ablation_keeps_recurrence_without_a_selected_mint[references0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0019813748076558113,
+      "message": "test/test_independent_components.py:340: in test_admission_ablation_keeps_recurrence_without_a_selected_mint\n    columns.commit(row, meaning, individual_references=references, require_selected_mint=False)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: IndependentComponents.commit() got an unexpected keyword argument 'individual_references'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_admission_ablation_keeps_recurrence_without_a_selected_mint[references1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002053041011095047,
+      "message": "test/test_independent_components.py:340: in test_admission_ablation_keeps_recurrence_without_a_selected_mint\n    columns.commit(row, meaning, individual_references=references, require_selected_mint=False)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: IndependentComponents.commit() got an unexpected keyword argument 'individual_references'",
+      "stdout": "",
+      "classification": "new failure of a retired-rule contract; assertion and default-suite membership unchanged pending clarification"
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.2706009580288082,
+      "message": "test/test_interleave_schedule.py:39: in test_one_native_read_retains_shared_owner\n    model.runBatch(train=training,optimizer=opt,batchNum=step,batchSize=1,\nbin/Models.py:13779: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13925: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14307: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8869: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10322: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8554: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8332: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24018: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17398: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22552: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22104: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21093: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:160: in sentence_pair\n    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21087: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19808: in _sentence_train_step\n    preflight_finite_gradients(optimizer, self.named_parameters(),\nbin/Optimizer.py:232: in preflight_finite_gradients\n    torch._amp_foreach_non_finite_check_and_unscale_(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: unsupported operation: more than one element of the written-to tensor refers to a single memory location. Please clone() the tensor before performing the operation.",
+      "stdout": "",
+      "classification": "new correctness defect; empty reference cost produced a stride-zero policy gradient; targeted checks pass after repair"
+    }
+  ],
+  "repaired_source": "a3ec07fd0",
+  "second_full_sweep": false,
+  "note": "The full sweep precedes targeted correctness repairs. It is not a clean full sweep of the repaired source.",
+  "raw_report_counts": {
+    "passed": 5497,
+    "skipped": 288,
+    "failed": 25,
+    "xfailed": 1
+  },
+  "duplicate_reports": {
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected": [
+      [
+        "worker-034.json",
+        "passed"
+      ],
+      [
+        "worker-034.json",
+        "passed"
+      ],
+      [
+        "worker-034.json",
+        "passed"
+      ],
+      [
+        "worker-034.json",
+        "passed"
+      ]
+    ]
+  },
+  "count_note": "Case counts deduplicate node IDs. One node produced four passing reports; raw_report_counts retains those executions."
+}

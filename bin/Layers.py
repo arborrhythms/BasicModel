@@ -11021,27 +11021,15 @@ class BracketExpectation(Layer):
                                       concept_dim=self.concept_dim)
 
     def _prediction_inputs(self, inputs, *, replay=False):
-        """Re-encode only the latest source with this step's live columns.
-
-        Stored context and observation targets remain detached. Replaying a
-        trial builds a fresh graph at the same parameter snapshot, without
-        carrying the previous sentence's compose graph across its update.
-        """
-        encoder = getattr(self, '_source_encoder', None)
+        """Detach older context and replay sources; keep ordinary current credit."""
         roles, occupied = inputs
-        latest = (encoder(roles[:, -1].detach()) if encoder is not None else
-                  roles[:, -1].detach() if replay else roles[:, -1])
+        latest = roles[:, -1].detach() if replay else roles[:, -1]
         return torch.cat((roles[:, :-1].detach(), latest[:, None]), 1), occupied.detach()
 
     def _prediction_versions(self):
-        source = getattr(getattr(self, '_source_encoder', None), '__self__', None)
-        columns = () if source is None else tuple(source.parameters())
-        return tuple(p._version for p in (*self._inter_predictor.parameters(), *columns))
+        return tuple(p._version for p in self._inter_predictor.parameters())
 
     def _prediction_coordinates(self, predicted, target):
-        owner = getattr(getattr(self, '_source_encoder', None), '__self__', None)
-        if owner is not None and hasattr(owner, 'prediction_coordinates'):
-            return owner.prediction_coordinates(predicted, target)
         return predicted, target.detach()
 
     @torch.compiler.disable
