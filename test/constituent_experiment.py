@@ -54,6 +54,9 @@ def run(args):
         try:
             drift = restore_warmup(model, args.warmup, restore)
             save(args.out/'start.json', dict(loader_drift=drift, lexical_orders=lexical_orders(model, forms)))
+            from GrammarLessons import _annotation_tree
+            for lesson in lessons:
+                _annotation_tree(model.languageSpace, lesson['tree'], len(lesson['text'].split()))
             data = model.inputSpace.data
             optimizer = model.getOptimizer(lr=RATE)
             steps = [0]

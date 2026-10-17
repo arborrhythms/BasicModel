@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from GrammarLessons import compose_loss, constituent_examples
+from GrammarLessons import compose_loss, compose_examples, constituent_examples
 from Language import OperationSelectionLayer
 from constituent_corpus import corpus
 from constituent_measurement import grade, summarize
@@ -72,6 +72,24 @@ def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences(
     assert failed['duplicate_writes'] and not failed['nps'][0]['reduction']
     assert not failed['nps'][0]['one_occurrence']
     assert not grade(held[-1][3], observed)['unlowered_clean']
+
+
+def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared():
+    class Head(torch.nn.Module):
+        def forward(self, left, right):
+            return right
+    names = ('lower', 'definite', 'universal')
+    layer = OperationSelectionLayer(d_model=4, ops=tuple(Head() for _ in names), chooser='mlp')
+    language = SimpleNamespace(_tree_layer=lambda _: layer,
+        _compose_binary_rules=tuple(SimpleNamespace(method_name='lower', surface_name=name) for name in names),
+        _compose_unary_rules=())
+    program = SimpleNamespace(leaves=torch.eye(4)[:2], compose_capacity=8, compose_closing_budget=16)
+    for expected, name in enumerate(names):
+        tree = [name, 0, 1]
+        binary, _ = compose_examples(language, program, tree)
+        assert [target for _, target, _, _ in binary if target >= 0] == [expected]
+        assert [row['target'] for row in constituent_examples(language, program, tree)
+                if row['target'] >= 0] == [expected]
 
 
 @pytest.mark.learning_certificate

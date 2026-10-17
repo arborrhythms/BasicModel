@@ -31,7 +31,8 @@ def reading(language, program, source_positions, meaning_slice):
         span = sum((node['leaves'] for node in operands), [])
         stamp = result_order(rule, tuple(node['order'] for node in operands))
         frame = program.operation_values[index, :, start:end].detach()
-        record = dict(kind='binary' if arity == 2 else 'unary', method=rule.method_name,
+        name = getattr(rule, 'surface_name', None) or rule.method_name
+        record = dict(kind='binary' if arity == 2 else 'unary', method=name,
             leaves=span, input_orders=[node['order'] for node in operands], order=stamp,
             meaning_norms=frame.norm(dim=-1).tolist())
         steps.append(record)
@@ -42,7 +43,7 @@ def reading(language, program, source_positions, meaning_slice):
                 continue
             operand = operands[int(role[5:])-1]
             lowerings.append(dict(span=span, description=operand['leaves'],
-                before=operand['order'], after=stamp, method=rule.method_name,
+                before=operand['order'], after=stamp, method=name,
                 meaning_norm=float(frame[2].norm())))
         stack.append(dict(leaves=span, order=stamp))
     return dict(error=None, brackets=sorted(brackets), steps=steps, lowerings=lowerings,

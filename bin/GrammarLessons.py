@@ -13,7 +13,9 @@ from torch.nn import functional as F
 
 
 def _annotation_tree(language, tree, count):
-    rules = {arity: {r.method_name: i for i, r in enumerate(
+    # A declared form can share an implementation and still have different
+    # semantics (mint, bind, kind). Do not collapse those lesson targets.
+    rules = {arity: {(getattr(r, 'surface_name', None) or r.method_name): i for i, r in enumerate(
         language._compose_binary_rules if arity == 2 else language._compose_unary_rules)}
         for arity in (1, 2)}
     parents, order = {}, []
