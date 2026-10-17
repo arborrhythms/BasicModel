@@ -1,0 +1,590 @@
+{
+  "completed": true,
+  "seed": 20261010,
+  "training_documents": 136,
+  "evaluation_documents": 166,
+  "training_columns": 0,
+  "final_columns": 0,
+  "minted": 0,
+  "witnesses": 0,
+  "elapsed_seconds": 39215.326105541084,
+  "recorded_meaning_norms_finite": 940,
+  "annotated_references": {
+    "no_individual_request": 690
+  },
+  "phases": {
+    "identity-evaluation": {
+      "clauses": 556,
+      "nonzero_recorded_meaning": 0,
+      "requests": 0,
+      "programs": [
+        {
+          "program": "equal \u00d7 3",
+          "count": 228,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "equal \u00d7 2",
+          "count": 138,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "equal \u00d7 5",
+          "count": 134,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "equal \u00d7 4",
+          "count": 56,
+          "nonzero_recorded_meaning": 0
+        }
+      ]
+    },
+    "identity-training": {
+      "clauses": 384,
+      "nonzero_recorded_meaning": 43,
+      "requests": 0,
+      "programs": [
+        {
+          "program": "equal \u00d7 4",
+          "count": 175,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "equal \u00d7 3",
+          "count": 113,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "equal \u00d7 2",
+          "count": 20,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "equal \u00d7 5",
+          "count": 16,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "verb \u00d7 5",
+          "count": 13,
+          "nonzero_recorded_meaning": 10
+        },
+        {
+          "program": "verb \u00d7 3",
+          "count": 13,
+          "nonzero_recorded_meaning": 12
+        },
+        {
+          "program": "verb \u00d7 2",
+          "count": 12,
+          "nonzero_recorded_meaning": 12
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 conjunction \u2192 generic \u00d7 2 \u2192 whole \u2192 generic \u00d7 2 \u2192 equal \u2192 generic \u00d7 2 \u2192 lower \u2192 generic \u00d7 18",
+          "count": 3,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 equal \u2192 generic \u00d7 2 \u2192 equal \u2192 generic \u00d7 2 \u2192 equal \u2192 generic \u00d7 2 \u2192 lower \u2192 generic \u00d7 18",
+          "count": 2,
+          "nonzero_recorded_meaning": 1
+        },
+        {
+          "program": "generic \u00d7 7 \u2192 tense \u00d7 3 \u2192 equal \u00d7 2 \u2192 lower \u2192 generic \u00d7 2 \u2192 part \u2192 generic \u00d7 15",
+          "count": 2,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 lower \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 18",
+          "count": 2,
+          "nonzero_recorded_meaning": 2
+        },
+        {
+          "program": "generic \u00d7 10 \u2192 product \u2192 generic \u00d7 2 \u2192 whole \u2192 lower \u2192 equal \u2192 generic \u00d7 15",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 intersection \u2192 tense \u00d7 2 \u2192 verb \u2192 tense \u00d7 2 \u2192 verb \u2192 tense \u00d7 2 \u2192 surface \u2192 tense \u00d7 18",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 intersection \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 disjunction \u2192 generic \u00d7 2 \u2192 part \u2192 generic \u00d7 18",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 conjunction \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 intersection \u2192 generic \u00d7 18",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 part \u2192 generic \u00d7 2 \u2192 equal \u2192 generic \u00d7 2 \u2192 equal \u2192 generic \u00d7 5 \u2192 lower \u2192 generic \u00d7 15",
+          "count": 1,
+          "nonzero_recorded_meaning": 1
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 part \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 conjunction \u2192 generic \u00d7 18",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 6 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u00d7 2 \u2192 generic \u00d7 17",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 18",
+          "count": 1,
+          "nonzero_recorded_meaning": 0
+        },
+        {
+          "program": "generic \u00d7 3 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 2 \u2192 verb \u2192 generic \u00d7 18",
+          "count": 1,
+          "nonzero_recorded_meaning": 1
+        },
+        {
+          "program": "verb \u2192 intersection \u2192 verb",
+          "count": 1,
+          "nonzero_recorded_meaning": 1
+        },
+        {
+          "program": "verb \u00d7 4 \u2192 equal",
+          "count": 1,
+          "nonzero_recorded_meaning": 1
+        },
+        {
+          "program": "verb \u00d7 3 \u2192 equal \u2192 verb",
+          "count": 1,
+          "nonzero_recorded_meaning": 1
+        },
+        {
+          "program": "equal \u00d7 3 \u2192 lower",
+          "count": 1,
+          "nonzero_recorded_meaning": 1
+        }
+      ]
+    }
+  },
+  "groups": {
+    "all": {
+      "n": 146,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4520547945205479,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "candidates=1": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 1.0,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "candidates=2": {
+      "n": 88,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "candidates=3": {
+      "n": 54,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=1/0/subject": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 1.0,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=2/0/object": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=2/0/subject": {
+      "n": 20,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=2/1/object": {
+      "n": 24,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=2/1/subject": {
+      "n": 28,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "cell=3/0/object": {
+      "n": 6,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/0/subject": {
+      "n": 12,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/1/object": {
+      "n": 6,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/1/subject": {
+      "n": 12,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/2/object": {
+      "n": 6,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "cell=3/2/subject": {
+      "n": 12,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=document_context": {
+      "n": 8,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=neither_candidate": {
+      "n": 32,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "family=pronoun": {
+      "n": 32,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=pronoun_one": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 1.0,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=pronoun_three": {
+      "n": 54,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "family=reversed_recency": {
+      "n": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.5,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "first_mention=0": {
+      "n": 66,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.48484848484848486,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "first_mention=1": {
+      "n": 62,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.45161290322580644,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "first_mention=2": {
+      "n": 18,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "recency=0": {
+      "n": 58,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4827586206896552,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "recency=1": {
+      "n": 70,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.45714285714285713,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "recency=2": {
+      "n": 18,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.3333333333333333,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": true
+    },
+    "role=object": {
+      "n": 58,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.4482758620689655,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "role=subject": {
+      "n": 88,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null,
+      "chance": 0.45454545454545453,
+      "candidate_coverage": 0.0,
+      "collisions": 0,
+      "selects_recent": 0.0,
+      "informative": false
+    },
+    "rows=determiner/1": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=determiner/2": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=determiner_conflict/2": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=same_kind/1": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    },
+    "rows=same_kind/2": {
+      "n": 4,
+      "correct": 0,
+      "accuracy": 0.0,
+      "resolved": 0,
+      "coverage": 0.0,
+      "conditional_accuracy": null
+    }
+  }
+}
