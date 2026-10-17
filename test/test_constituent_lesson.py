@@ -105,6 +105,7 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
                 if row['target'] >= 0] == [expected]
 
 
+@pytest.mark.slow
 def test_native_constituent_lesson_captures_student_states_without_cases(tmp_path, monkeypatch):
     from identity_experiment import make_model
     import GrammarLessons
