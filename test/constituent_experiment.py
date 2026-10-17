@@ -43,7 +43,8 @@ def run(args):
         warmup=str(args.warmup), candidate=subprocess.check_output(
             ['git', 'rev-parse', 'HEAD'], text=True).strip(),
         gates=dict(brackets=.9, occurrences=.95, duplicate_writes=0,
-                   reductions='2 to 1 at every NP', unlowered_occurrences=0),
+                   reductions='one order-1 occurrence at every lowered NP; report description stamp',
+                   unlowered_occurrences=0),
         attention='student-selected; no forced source-reading lesson')
     save(args.out/'protocol.json', protocol)
     started = time.monotonic()

@@ -144,12 +144,14 @@ def grade(label, observed):
         np_results.append(dict(span=np['span'], description=np['description'], occurrences=addresses,
             one_occurrence=len(addresses) == 1,
             duplicate=max(0, len(addresses)-1),
-            reduction=(len(reductions) == 1 and reductions[0]['before'] == 2 and reductions[0]['after'] == 1)))
+            description_orders=[item['before'] for item in reductions],
+            reduction=(len(reductions) == 1 and reductions[0]['after'] == 1 and len(addresses) == 1)))
     used = [address for row in np_results for address in row['occurrences']]
     # One address reused for two different NPs also fails the occurrence gate.
     collisions = {address for address, count in Counter(used).items() if count > 1}
     for row in np_results:
         row['one_occurrence'] &= not bool(set(row['occurrences']) & collisions)
+        row['reduction'] &= row['one_occurrence']
     writes = observed['individual_writes']
     duplicate_writes = sum(count-1 for count in Counter(writes).values())
     unexpected = [item for item in observed['occurrences'] if not any(
@@ -175,7 +177,8 @@ def summarize(rows):
     gate = dict(brackets=dict(correct=brackets, total=len(main), threshold=.9),
         occurrences=dict(correct=occurrences, total=len(nps), threshold=.95,
             duplicate_writes=duplicates, collisions=collisions, unexpected=unexpected),
-        reductions=dict(correct=reductions, total=len(nps), threshold=1.),
+        reductions=dict(correct=reductions, total=len(nps), threshold=1.,
+            requirement='Every lowered NP yields one order-1 occurrence; description stamp is reported'),
         unlowered=dict(correct=unlowered, total=len(controls), threshold=1.))
     for name, values in gate.items():
         values['passed'] = bool(values['total'] and values['correct']/values['total'] >= values['threshold'])

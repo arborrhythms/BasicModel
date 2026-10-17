@@ -209,15 +209,25 @@ def test_only_order_one_defers_reference_and_higher_orders_keep_their_contract()
     assert ordinary['unary_choices'][0, 0, selected, 0].tolist() == [-1]
 
 
-def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(monkeypatch):
+@pytest.mark.parametrize('description_order', (0, 2))
+def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(monkeypatch, description_order):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import record_reading
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
+    from ReferenceContext import binding_spec, result_order
     f = SentenceFixture(monkeypatch)
+    for rule in f.binary:
+        mode = rule.determiner_mode
+        if mode not in ('mint', 'bind', 'kind'):
+            continue
+        expected = 2 if mode == 'kind' else 1
+        assert binding_spec(rule, 'argin2', description_order) == (expected, mode)
+        stamps = torch.tensor([description_order, 17])
+        assert result_order(rule, (torch.zeros_like(stamps), stamps)).tolist() == [expected, expected]
     program = f.program(('lift', ('lower', 'cue', 'object'), 'predicate'))
     program = record_reading(f.language, replace(program,
-        leaf_orders=torch.tensor([0, 2, 1]), close_references=True))
+        leaf_orders=torch.tensor([0, description_order, 1]), close_references=True))
     clause = finish_clause(f.language, program, registry=f.registry)
     mentions = constituents(clause)
     assert len(mentions) == 1 and mentions[0].order == 1
@@ -244,6 +254,8 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     identity = resolver.last_audit[0]['reference']
     assert identity in component.nouns.ids and f.cs._concept_source_order(identity) == 1
     assert component.nouns.witness_count(identity) == 1 and not hasattr(component.nouns, 'observe')
+    occurrence = resolver.last_audit[0]['occurrence']
+    assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
     restored = TernaryTruthStore(8, capacity=64)
     restored.load_state_dict(f.store.state_dict())
     restored.load_semantic_extras(f.store.semantic_extras())

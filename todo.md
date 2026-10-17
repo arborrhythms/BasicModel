@@ -365,8 +365,10 @@ before/after temporal difference, and word classes from direct operand participa
 (never phrase heads). Order-2 kinds are deferred; neither a second dictionary nor
 a taxonomy computation for their intension is chosen. Stage 4e's declared gate
 (Alec, 2026-10-17) is ≥90% exact held-out free brackets, one occurrence for
-≥95% of singular NPs with zero duplicate writes, an actual 2→1 transition at
-every lowered NP, and no occurrence for an unlowered description. The lesson's
+≥95% of singular NPs with zero duplicate writes, one order-1 occurrence at
+every lowered NP, and no occurrence for an unlowered description. The October 17
+review replaces the 2→1 condition: the description's stamp is reported, not
+required; mint/bind construct order 1 and kind constructs order 2. The lesson's
 CE supplies waits and folds; annotations never replace the student's kept
 program. No native identity run is authorized before that gate passes.
 The [stage 4e candidate](doc/benchmarks/2026-10-17-stage4e/) completes its
@@ -375,7 +377,7 @@ The [stage 4e candidate](doc/benchmarks/2026-10-17-stage4e/) completes its
 and **8/8** unlowered controls without an occurrence. The controls are vacuous
 with no occurrence writes anywhere. Native `compound` cases are unavailable
 in 160/288 teacher traces; all held-out referent stamps remain 0. The corpus,
-wait/fold CE path and measurement are a candidate, not a passing learning stage.
+wait/fold CE path and measurement are landed preparation, not a passing learning stage.
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the
@@ -663,7 +665,8 @@ not by a passing identity lesson.
 
    **Item 6's learning gates** remain prerequisites at this checkpoint:
    stage 4e's ≥90% free-bracket and ≥95% NP-occurrence gates, zero duplicate
-   writes, every lowered NP at 2→1, and no unlowered-description occurrence; then
+   writes, every lowered NP yielding one order-1 occurrence (description stamp
+   reported, not required), and no unlowered-description occurrence; then
    balanced binding by group and document-close row pairs, with mint/bind
    fixed semantics and same-kind revision; VP temporal-difference prediction;
    direct-operand word classes; and deferred order-2 kind recovery. The stage 4e

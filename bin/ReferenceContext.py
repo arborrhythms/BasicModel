@@ -73,6 +73,20 @@ def shifted_order(stamp, delta):
     return max(0, stamp + delta) if stamp >= 0 else -1
 
 
+def operation_order(rule, stamp):
+    """A determiner constructs a member or extension from its description.
+
+    The description can be a field type or a raised kind. Its stamp does
+    not determine the member's order. Other operations retain their delta;
+    these fixed outputs impose no ceiling on their operands or results.
+    """
+    mode = getattr(rule, 'determiner_mode', None)
+    if mode in ('mint', 'bind', 'kind'):
+        order = 2 if mode == 'kind' else 1
+        return torch.full_like(stamp, order) if torch.is_tensor(stamp) else order
+    return shifted_order(stamp, getattr(rule, 'order_delta', 0))
+
+
 def result_order(rule, operands):
     """The head's stamp, or the joined operands' stamp, followed by the operation."""
     head = getattr(rule, 'head_role', 0)
@@ -83,7 +97,7 @@ def result_order(rule, operands):
         stamp = torch.where((stamps >= 0).all(-1), stamps.amax(-1), -1)
     else:
         stamp = max(operands) if min(operands) >= 0 else -1
-    return shifted_order(stamp, getattr(rule, 'order_delta', 0))
+    return operation_order(rule, stamp)
 
 
 def operation_modes(rule):
@@ -180,7 +194,7 @@ def binding_spec(rule, role, stamp, *, implicit=False):
                 (clause == 'VP' and role == 'argin2') or
                 (relation in ('part', 'whole', 'equal') and role in ('argin1', 'argin2'))):
             requested = True
-    return (shifted_order(stamp, getattr(rule, 'order_delta', 0)) if requested else None), mode
+    return (operation_order(rule, stamp) if requested else None), mode
 
 
 def resolve_order(value, identity, order, types):

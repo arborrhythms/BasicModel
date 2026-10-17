@@ -56,7 +56,7 @@ def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences(
     graded = []
     for _, _, _, label in held:
         observed = dict(leaf_positions=list(range(len(label['words']))), brackets=label['brackets'],
-            lowerings=[dict(span=np['span'], before=2, after=1) for np in label['nps']],
+            lowerings=[dict(span=np['span'], before=0, after=1) for np in label['nps']],
             occurrences=[dict(description=np['description'], address=100+i, written=True, order=1)
                          for i, np in enumerate(label['nps'])],
             individual_writes=[100+i for i in range(len(label['nps']))])
@@ -67,7 +67,7 @@ def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences(
     observed = graded[0]['observed']
     observed['occurrences'] *= 2
     observed['individual_writes'] *= 2
-    observed['lowerings'][0]['before'] = 0
+    observed['lowerings'][0]['after'] = 0
     failed = grade(label, observed)
     assert failed['duplicate_writes'] and not failed['nps'][0]['reduction']
     assert not failed['nps'][0]['one_occurrence']

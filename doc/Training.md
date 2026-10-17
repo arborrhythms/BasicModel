@@ -275,8 +275,12 @@ as well as the folds; it never replaces the student's kept program.
 The gate, declared before the fixed-budget run (Alec, 2026-10-17), is free
 reading on held-out sentences of the trained kinds: **≥90% exact brackets**,
 **one occurrence for ≥95% of singular NPs with zero duplicate writes**,
-**2→1 at every lowered NP**, and **no occurrence for an unlowered
-description**. Stop at a failed gate. The
+**one order-1 occurrence at every lowered NP**, and **no occurrence for an
+unlowered description**. The October 17 review corrects the original 2→1
+requirement: mint/bind construct an order-1 member from either an order-0
+type or a raised description; kind constructs order 2. Report the
+description's stamp without requiring it to be 2. Missing NPs still fail.
+Stop at a failed gate. The
 [stage 4e receipt](benchmarks/2026-10-17-stage4e/) records the budget and
 measurement; native identity learning waits for this gate.
 
