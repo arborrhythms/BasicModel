@@ -398,6 +398,19 @@ trace is available and wait/fold CE moves, but the free gate fails:
 Its default sweep is green (5,466 passed, 333 skipped, one XFAIL), including
 c this time; the broader carried findings remain open. **Stage 4e is not
 learned; identity and the further 5.5 mechanism round remain gated.**
+That preparation is landed at `b09c6c3d4` (WikiOracle `c8c2cda`).
+The [student-state pass](doc/benchmarks/2026-10-17-stage4e-student-states/README.md)
+adds stage 3 before 4e, targets the student's actual compose states, and
+suppresses extra batch-end optimizer steps in the experiment. Final free
+source order is **8/8** on the order-lesson fields, but both CE gates remain
+failed (**.0320–.0323 / .0165–.0168**, threshold **.01**). The 16-presentation
+pilot has **invalid fold credit**: rule ids were incorrectly used as native
+reference-expanded action indices. The mapping is repaired with a regression
+and native coverage (**6 focused checks pass**); no second pilot or full
+rerun was added. Reuse the saved order checkpoint for a corrected pilot,
+without repeating the warm-up. The single pre-repair default sweep has the
+two carried failures (paired zero-cost and c); final repair coverage is
+focused only. **No new constituent or identity learning claim.**
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the

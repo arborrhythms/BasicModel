@@ -1,0 +1,32 @@
+{
+  "before": {
+    "pressure": 1.003797173500061,
+    "wait": {
+      "count": 145,
+      "ce": 5.7759277972938685
+    },
+    "fold": {
+      "count": 4,
+      "ce": 69.07755279541016
+    }
+  },
+  "after": {
+    "pressure": 0.9901325106620789,
+    "wait": {
+      "count": 145,
+      "ce": 2.4234064663150185
+    },
+    "fold": {
+      "count": 4,
+      "ce": 69.07755279541016
+    }
+  },
+  "passed": false,
+  "gate": "both raw mean CEs on first-batch student states decrease by more than 1e-5 nats",
+  "texts": [
+    "a horse sees the cat",
+    "the horse is on a dog",
+    "white dog",
+    "the black bird"
+  ]
+}

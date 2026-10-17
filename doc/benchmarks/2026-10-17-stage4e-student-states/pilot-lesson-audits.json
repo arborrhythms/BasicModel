@@ -1,0 +1,1344 @@
+[
+  {
+    "batch": 0,
+    "source": [
+      44
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 1.3703004121780396,
+        "weighted": 1.3703004121780396,
+        "space": null,
+        "category": "grammar",
+        "count": 11,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 9.716675758361816,
+        "baseline": 7.090909957885742,
+        "active_entries": 11.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 2.0,
+        "weighted": 2.0,
+        "space": null,
+        "category": "grammar",
+        "count": 2,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      63
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.9211985468864441,
+        "weighted": 0.9211985468864441,
+        "space": null,
+        "category": "grammar",
+        "count": 30,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 6.532135963439941,
+        "baseline": 7.090909957885742,
+        "active_entries": 30.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 2.0,
+        "weighted": 2.0,
+        "space": null,
+        "category": "grammar",
+        "count": 2,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      66
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.27796685695648193,
+        "weighted": 0.27796685695648193,
+        "space": null,
+        "category": "grammar",
+        "count": 5,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 1.9710381031036377,
+        "baseline": 7.0909104347229,
+        "active_entries": 5.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      11
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.8555141687393188,
+        "weighted": 0.8555141687393188,
+        "space": null,
+        "category": "grammar",
+        "count": 25,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 6.066373825073242,
+        "baseline": 7.090909957885742,
+        "active_entries": 25.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      44
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.6032448410987854,
+        "weighted": 0.6032448410987854,
+        "space": null,
+        "category": "grammar",
+        "count": 13,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 4.277554988861084,
+        "baseline": 7.090909957885742,
+        "active_entries": 13.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      63
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.9228595495223999,
+        "weighted": 0.9228595495223999,
+        "space": null,
+        "category": "grammar",
+        "count": 30,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 6.543913841247559,
+        "baseline": 7.090909957885742,
+        "active_entries": 30.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 2.0,
+        "weighted": 2.0,
+        "space": null,
+        "category": "grammar",
+        "count": 2,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      66
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.5155746936798096,
+        "weighted": 0.5155746936798096,
+        "space": null,
+        "category": "grammar",
+        "count": 6,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.6558940410614014,
+        "baseline": 7.0909104347229,
+        "active_entries": 6.0
+      }
+    }
+  },
+  {
+    "batch": 0,
+    "source": [
+      11
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.5600777268409729,
+        "weighted": 0.5600777268409729,
+        "space": null,
+        "category": "grammar",
+        "count": 25,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.9714608192443848,
+        "baseline": 7.090909957885742,
+        "active_entries": 25.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      30
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.5985892415046692,
+        "weighted": 0.5985892415046692,
+        "space": null,
+        "category": "grammar",
+        "count": 24,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 4.244542598724365,
+        "baseline": 7.090909957885742,
+        "active_entries": 24.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      33
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.2692125141620636,
+        "weighted": 0.2692125141620636,
+        "space": null,
+        "category": "grammar",
+        "count": 7,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 1.9089618921279907,
+        "baseline": 7.090910911560059,
+        "active_entries": 7.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 5.0,
+        "weighted": 5.0,
+        "space": null,
+        "category": "grammar",
+        "count": 5,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741703987121582,
+        "weighted": 9.741703987121582,
+        "space": null,
+        "category": "grammar",
+        "count": 5,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.0909104347229,
+        "active_entries": 5.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      1
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.48949217796325684,
+        "weighted": 0.48949217796325684,
+        "space": null,
+        "category": "grammar",
+        "count": 9,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.470945119857788,
+        "baseline": 7.090909957885742,
+        "active_entries": 9.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      25
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.5145845413208008,
+        "weighted": 0.5145845413208008,
+        "space": null,
+        "category": "grammar",
+        "count": 10,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.6488728523254395,
+        "baseline": 7.0909104347229,
+        "active_entries": 10.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      30
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.5985892415046692,
+        "weighted": 0.5985892415046692,
+        "space": null,
+        "category": "grammar",
+        "count": 24,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 4.244542598724365,
+        "baseline": 7.090909957885742,
+        "active_entries": 24.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      33
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.4872959852218628,
+        "weighted": 0.4872959852218628,
+        "space": null,
+        "category": "grammar",
+        "count": 28,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.455371856689453,
+        "baseline": 7.090909481048584,
+        "active_entries": 28.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      1
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.48949217796325684,
+        "weighted": 0.48949217796325684,
+        "space": null,
+        "category": "grammar",
+        "count": 9,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.470945119857788,
+        "baseline": 7.090909957885742,
+        "active_entries": 9.0
+      }
+    }
+  },
+  {
+    "batch": 1,
+    "source": [
+      25
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.47428396344184875,
+        "weighted": 0.47428396344184875,
+        "space": null,
+        "category": "grammar",
+        "count": 11,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 3.363104820251465,
+        "baseline": 7.090909957885742,
+        "active_entries": 11.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      71
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.025770222768187523,
+        "weighted": 0.025770222768187523,
+        "space": null,
+        "category": "grammar",
+        "count": 3,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 0.18273432552814484,
+        "baseline": 7.090909957885742,
+        "active_entries": 3.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      55
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.4180856943130493,
+        "weighted": 0.4180856943130493,
+        "space": null,
+        "category": "grammar",
+        "count": 17,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.9646081924438477,
+        "baseline": 7.090909957885742,
+        "active_entries": 17.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      49
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.2964678704738617,
+        "weighted": 0.2964678704738617,
+        "space": null,
+        "category": "grammar",
+        "count": 10,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.102226972579956,
+        "baseline": 7.0909104347229,
+        "active_entries": 10.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 4.0,
+        "weighted": 4.0,
+        "space": null,
+        "category": "grammar",
+        "count": 4,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 4,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 4.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      42
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.2945026457309723,
+        "weighted": 0.2945026457309723,
+        "space": null,
+        "category": "grammar",
+        "count": 9,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.088291883468628,
+        "baseline": 7.090909957885742,
+        "active_entries": 9.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      71
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.14333409070968628,
+        "weighted": 0.14333409070968628,
+        "space": null,
+        "category": "grammar",
+        "count": 3,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 1.016369104385376,
+        "baseline": 7.090909957885742,
+        "active_entries": 3.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      55
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.415939062833786,
+        "weighted": 0.415939062833786,
+        "space": null,
+        "category": "grammar",
+        "count": 15,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.9493865966796875,
+        "baseline": 7.0909104347229,
+        "active_entries": 15.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      49
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.29649174213409424,
+        "weighted": 0.29649174213409424,
+        "space": null,
+        "category": "grammar",
+        "count": 10,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.1023964881896973,
+        "baseline": 7.0909104347229,
+        "active_entries": 10.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 4.0,
+        "weighted": 4.0,
+        "space": null,
+        "category": "grammar",
+        "count": 4,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 4,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 4.0
+      }
+    }
+  },
+  {
+    "batch": 2,
+    "source": [
+      42
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.27307116985321045,
+        "weighted": 0.27307116985321045,
+        "space": null,
+        "category": "grammar",
+        "count": 9,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 1.9363231658935547,
+        "baseline": 7.090909957885742,
+        "active_entries": 9.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      50
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.6458041667938232,
+        "weighted": 0.6458041667938232,
+        "space": null,
+        "category": "grammar",
+        "count": 24,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 4.579339504241943,
+        "baseline": 7.090909957885742,
+        "active_entries": 24.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 3.0,
+        "weighted": 3.0,
+        "space": null,
+        "category": "grammar",
+        "count": 3,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 2,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 2.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      2
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.3172076940536499,
+        "weighted": 0.3172076940536499,
+        "space": null,
+        "category": "grammar",
+        "count": 6,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.24929141998291,
+        "baseline": 7.0909104347229,
+        "active_entries": 6.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      29
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.33578574657440186,
+        "weighted": 0.33578574657440186,
+        "space": null,
+        "category": "grammar",
+        "count": 7,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.3810267448425293,
+        "baseline": 7.090910911560059,
+        "active_entries": 7.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      54
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.28146108984947205,
+        "weighted": 0.28146108984947205,
+        "space": null,
+        "category": "grammar",
+        "count": 12,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 1.9958152770996094,
+        "baseline": 7.090909957885742,
+        "active_entries": 12.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 1.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      50
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.6458041667938232,
+        "weighted": 0.6458041667938232,
+        "space": null,
+        "category": "grammar",
+        "count": 24,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 4.579339504241943,
+        "baseline": 7.090909957885742,
+        "active_entries": 24.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 3.0,
+        "weighted": 3.0,
+        "space": null,
+        "category": "grammar",
+        "count": 3,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "compose.choice": {
+        "weight": 1.0,
+        "value": 9.741704940795898,
+        "weighted": 9.741704940795898,
+        "space": null,
+        "category": "grammar",
+        "count": 2,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 69.07755279541016,
+        "baseline": 7.090909957885742,
+        "active_entries": 2.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      2
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 1.6850594282150269,
+        "weighted": 1.6850594282150269,
+        "space": null,
+        "category": "grammar",
+        "count": 7,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 11.948606491088867,
+        "baseline": 7.090910911560059,
+        "active_entries": 7.0
+      },
+      "compose.unreachable": {
+        "weight": 1.0,
+        "value": 1.0,
+        "weighted": 1.0,
+        "space": null,
+        "category": "grammar",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "grammar",
+        "trained": false,
+        "context_weight": 1.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      29
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.35724762082099915,
+        "weighted": 0.35724762082099915,
+        "space": null,
+        "category": "grammar",
+        "count": 8,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.5332107543945312,
+        "baseline": 7.090909957885742,
+        "active_entries": 8.0
+      }
+    }
+  },
+  {
+    "batch": 3,
+    "source": [
+      54
+    ],
+    "terms": {
+      "compose.wait": {
+        "weight": 1.0,
+        "value": 0.3701035976409912,
+        "weighted": 0.3701035976409912,
+        "space": null,
+        "category": "grammar",
+        "count": 12,
+        "kind": "relative",
+        "objective": "grammar",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 2.624371290206909,
+        "baseline": 7.090909957885742,
+        "active_entries": 12.0
+      }
+    }
+  }
+]

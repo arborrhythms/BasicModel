@@ -155,12 +155,12 @@
     }
   ],
   "pilot": {
-    "status": "next",
-    "reason": "free source order is 8/8; report the failed CE gates before the explicitly requested pilot"
+    "status": "invalid_fold_measurement",
+    "reason": "The lesson indexed the native action vector with a grammar rule id; native reference variants expand that vector. The corrected lesson marginalizes the action probability of every candidate for the annotated operator."
   },
   "full_rerun": {
-    "status": "conditional",
-    "reason": "requires both student-state pilot CEs to fall"
+    "status": "not_run",
+    "reason": "no valid passing pilot"
   },
   "checkpoint": "output/stage4e-student-order-20261017/order.ckpt",
   "raw_diagnostics": "output/stage4e-student-order-20261017"

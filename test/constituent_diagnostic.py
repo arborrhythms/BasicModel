@@ -17,7 +17,7 @@ from identity_experiment import make_model, restore_warmup, save
 def probe(args):
     from Models import BaseModel
     from What import What
-    from GrammarLessons import constituent_examples, compose_loss, ComposeLessonStates
+    from GrammarLessons import constituent_examples, compose_loss, ComposeLessonStates, student_target_probability
     from Layers import Error
     from ObjectiveOwnership import backward_owned, registry_costs
     restore = BaseModel.load_weights
@@ -145,7 +145,7 @@ def probe(args):
                     states.append(dict(text=lesson['text'], target=target, depth=ex['depth'],
                         logits=[None if not torch.isfinite(v) else float(v) for v in logits],
                         logit_gap=float(finite.max()-finite.min()),
-                        target_probability=float(route['probabilities'][ex['row'], target].detach())))
+                        target_probability=float(student_target_probability(layer, ex, route['probabilities'][ex['row']]).detach())))
             h = torch.cat(raw_hidden)
             z = torch.cat(preactivation)
             owner = model._concept_owner()

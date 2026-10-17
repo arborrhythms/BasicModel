@@ -191,6 +191,25 @@ def score_student_state(layer, state):
     return route['probabilities'][state['row']]
 
 
+def student_target_actions(layer, state):
+    """Map a rule target to the native menu's reference-expanded actions.
+
+    The captured window has one binary position (the two newest operands).
+    The annotation supplies an operator, not a choice among its references.
+    STOP is the final action regardless of the menu's expansion.
+    """
+    if state['target'] < 0:
+        return [-1]
+    references = state['kwargs'].get('reference_data')
+    menu = (tuple(range(layer.r_reduce)) if references is None else
+            references.get('binary_ops', tuple(range(layer.r_reduce))))
+    return [index for index, operation in enumerate(menu) if operation == state['target']]
+
+
+def student_target_probability(layer, state, probabilities):
+    return probabilities[student_target_actions(layer, state)].sum()
+
+
 def compose_loss(language, programs, lessons, *, errors=None):
     """Supervise supplied forms in the same joint compose softmax.
 
@@ -219,10 +238,11 @@ def compose_loss(language, programs, lessons, *, errors=None):
                 # A bad prior fold can make the annotated wait illegal at the
                 # closing deadline. Count its full CE and report it explicitly;
                 # never substitute an unannotated fold or alter a native mask.
-                if not bool(probabilities[target].detach() > 0):
+                probability = student_target_probability(layer, example, probabilities)
+                if not bool(probability.detach() > 0):
                     errors.add('compose.unreachable', probabilities.new_ones(()),
                                category='grammar', trained=False)
-                errors.error(name, -probabilities[target].clamp_min(1e-30).log(),
+                errors.error(name, -probability.clamp_min(1e-30).log(),
                     math.log(probabilities.shape[-1]), category='grammar')
             continue
         binary, unary = compose_examples(language, program, lesson["tree"],

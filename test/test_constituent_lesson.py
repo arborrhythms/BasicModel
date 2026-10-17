@@ -57,6 +57,22 @@ def test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing
         compose_loss(language, [program], [lesson])
 
 
+def test_constituent_target_uses_all_native_reference_variants_not_the_rule_id_as_an_action():
+    from GrammarLessons import student_target_actions, student_target_probability
+    layer = SimpleNamespace(r_reduce=3)
+    # Rule 1 has two native reference alternatives at actions 3 and 4.
+    # Its numerical rule id is action 1, an unrelated masked alternative.
+    probabilities = torch.tensor([.1, 0., .1, .2, .3, .3], requires_grad=True)
+    state = dict(target=1, kwargs=dict(reference_data=dict(binary_ops=(0, 0, 0, 1, 1))))
+    assert student_target_actions(layer, state) == [3, 4]
+    probability = student_target_probability(layer, state, probabilities)
+    torch.testing.assert_close(probability, torch.tensor(.5))
+    (-probability.log()).backward()
+    torch.testing.assert_close(probabilities.grad, torch.tensor([0., 0., 0., -2., -2., 0.]))
+    state['target'] = -1
+    torch.testing.assert_close(student_target_probability(layer, state, probabilities), probabilities[-1])
+
+
 def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences():
     rows = corpus()
     assert all(text['text'] == lesson['text'] == ' '.join(label['words'])
@@ -121,6 +137,12 @@ def test_native_constituent_lesson_captures_student_states_without_cases(tmp_pat
             for state in states:
                 torch.testing.assert_close(GrammarLessons.score_student_state(
                     language._tree_layer(2), state), state['observed_probabilities'], rtol=1e-5, atol=1e-6)
+            for state in states:
+                if state['target'] >= 0:
+                    # The native case-free corpus targets have valid actions,
+                    # even when a same-numbered expanded-menu slot is masked.
+                    assert GrammarLessons.student_target_probability(language._tree_layer(2),
+                        state, state['observed_probabilities']) > 0
             seen.extend(states)
         return native(language, programs, lessons, **kwargs)
     monkeypatch.setattr(GrammarLessons, 'compose_loss', check)
