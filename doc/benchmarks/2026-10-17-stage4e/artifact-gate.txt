@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_four_constituent_gates_on_trained_artifact ________________
+
+    @pytest.mark.learning_certificate
+    @pytest.mark.artifact_eval
+    def test_four_constituent_gates_on_trained_artifact():
+        import json
+        import os
+        from pathlib import Path
+        from constituent_corpus import load
+        path = os.environ.get('BASICMODEL_CONSTITUENT_ARTIFACT')
+        if not path:
+            pytest.skip('set BASICMODEL_CONSTITUENT_ARTIFACT to a stage 4e run')
+        texts, labels = load('eval')
+        records = json.loads((Path(path)/'kept-programs.json').read_text())
+        readings = [row for row in records if not row['training']]
+        assert Counter(row['id'] for row in readings) == Counter(row['id'] for row in texts)
+        result = summarize([grade(labels[row['id']], row['observed']) for row in readings])
+>       assert result['passed'], result['gates']
+E       AssertionError: {'brackets': {'correct': 8, 'total': 32, 'threshold': 0.9, 'passed': False}, 'occurrences': {'correct': 0, 'total': 48...al': 48, 'threshold': 1.0, 'passed': False}, 'unlowered': {'correct': 8, 'total': 8, 'threshold': 1.0, 'passed': True}}
+E       assert False
+
+test/test_constituent_lesson.py:142: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_constituent_lesson.py::test_four_constituent_gates_on_trained_artifact
+1 failed in 2.32s

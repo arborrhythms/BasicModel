@@ -1,0 +1,235 @@
+{
+  "candidate": "6fb8c2505032e411bef63f464dde035d4c06c8f7",
+  "training_presentations": 144,
+  "evaluation_presentations": 40,
+  "optimizer_steps": 72,
+  "elapsed_seconds": 8401.548533707857,
+  "gates": {
+    "brackets": {
+      "correct": 8,
+      "total": 32,
+      "threshold": 0.9,
+      "passed": false
+    },
+    "occurrences": {
+      "correct": 0,
+      "total": 48,
+      "threshold": 0.95,
+      "duplicate_writes": 0,
+      "collisions": 0,
+      "unexpected": 0,
+      "passed": false
+    },
+    "reductions": {
+      "correct": 0,
+      "total": 48,
+      "threshold": 1.0,
+      "passed": false
+    },
+    "unlowered": {
+      "correct": 8,
+      "total": 8,
+      "threshold": 1.0,
+      "passed": true
+    }
+  },
+  "passed": false,
+  "groups": {
+    "description": {
+      "sentences": 8,
+      "brackets": 8,
+      "nps": 0,
+      "occurrences": 0,
+      "reductions": 0,
+      "requests": 0,
+      "writes": 0,
+      "leaf_orders": {
+        "0": 16
+      },
+      "lowering_transitions": [],
+      "closed_points": {
+        "relative_without_fused_point": 8,
+        "zero": 0,
+        "positive": 0
+      }
+    },
+    "intransitive": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 8,
+      "occurrences": 0,
+      "reductions": 0,
+      "requests": 0,
+      "writes": 0,
+      "leaf_orders": {
+        "0": 32
+      },
+      "lowering_transitions": [],
+      "closed_points": {
+        "relative_without_fused_point": 8,
+        "zero": 0,
+        "positive": 0
+      }
+    },
+    "np": {
+      "sentences": 8,
+      "brackets": 8,
+      "nps": 8,
+      "occurrences": 0,
+      "reductions": 0,
+      "requests": 0,
+      "writes": 0,
+      "leaf_orders": {
+        "0": 24
+      },
+      "lowering_transitions": [],
+      "closed_points": {
+        "relative_without_fused_point": 8,
+        "zero": 0,
+        "positive": 0
+      }
+    },
+    "preposition": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 16,
+      "occurrences": 0,
+      "reductions": 0,
+      "requests": 0,
+      "writes": 0,
+      "leaf_orders": {
+        "0": 48
+      },
+      "lowering_transitions": [],
+      "closed_points": {
+        "relative_without_fused_point": 8,
+        "zero": 0,
+        "positive": 0
+      }
+    },
+    "transitive": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 16,
+      "occurrences": 0,
+      "reductions": 0,
+      "requests": 0,
+      "writes": 0,
+      "leaf_orders": {
+        "0": 40
+      },
+      "lowering_transitions": [],
+      "closed_points": {
+        "relative_without_fused_point": 8,
+        "zero": 0,
+        "positive": 0
+      }
+    }
+  },
+  "teaching": [
+    {
+      "epoch": 1,
+      "family": "description",
+      "traces": 16,
+      "unavailable": 16,
+      "wait_targets": 16,
+      "fold_targets": 0,
+      "wait_mean_ce": 1.7860420122742653,
+      "fold_mean_ce": null
+    },
+    {
+      "epoch": 1,
+      "family": "intransitive",
+      "traces": 32,
+      "unavailable": 32,
+      "wait_targets": 64,
+      "fold_targets": 0,
+      "wait_mean_ce": 2.6916528940200806,
+      "fold_mean_ce": null
+    },
+    {
+      "epoch": 1,
+      "family": "np",
+      "traces": 32,
+      "unavailable": 32,
+      "wait_targets": 64,
+      "fold_targets": 0,
+      "wait_mean_ce": 2.692424714565277,
+      "fold_mean_ce": null
+    },
+    {
+      "epoch": 1,
+      "family": "preposition",
+      "traces": 32,
+      "unavailable": 0,
+      "wait_targets": 192,
+      "fold_targets": 160,
+      "wait_mean_ce": 2.7383172288537025,
+      "fold_mean_ce": 3.210091546177864
+    },
+    {
+      "epoch": 1,
+      "family": "transitive",
+      "traces": 32,
+      "unavailable": 0,
+      "wait_targets": 160,
+      "fold_targets": 128,
+      "wait_mean_ce": 2.526895545423031,
+      "fold_mean_ce": 3.2861791849136353
+    },
+    {
+      "epoch": 2,
+      "family": "description",
+      "traces": 16,
+      "unavailable": 16,
+      "wait_targets": 16,
+      "fold_targets": 0,
+      "wait_mean_ce": 1.7696248292922974,
+      "fold_mean_ce": null
+    },
+    {
+      "epoch": 2,
+      "family": "intransitive",
+      "traces": 32,
+      "unavailable": 32,
+      "wait_targets": 64,
+      "fold_targets": 0,
+      "wait_mean_ce": 2.6957575529813766,
+      "fold_mean_ce": null
+    },
+    {
+      "epoch": 2,
+      "family": "np",
+      "traces": 32,
+      "unavailable": 32,
+      "wait_targets": 64,
+      "fold_targets": 0,
+      "wait_mean_ce": 2.695074573159218,
+      "fold_mean_ce": null
+    },
+    {
+      "epoch": 2,
+      "family": "preposition",
+      "traces": 32,
+      "unavailable": 0,
+      "wait_targets": 192,
+      "fold_targets": 160,
+      "wait_mean_ce": 2.7249075770378113,
+      "fold_mean_ce": 3.170615315437317
+    },
+    {
+      "epoch": 2,
+      "family": "transitive",
+      "traces": 32,
+      "unavailable": 0,
+      "wait_targets": 160,
+      "fold_targets": 128,
+      "wait_mean_ce": 2.5121649354696274,
+      "fold_mean_ce": 3.2669670581817627
+    }
+  ],
+  "closed_norm_note": "null is a relative clause without a fused point, not a measured zero",
+  "training_leaf_orders": {
+    "0": 608
+  }
+}

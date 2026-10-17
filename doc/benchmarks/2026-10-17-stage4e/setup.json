@@ -1,0 +1,50 @@
+{
+  "aborted_before_updates": [
+    {
+      "candidate": "b209a5740",
+      "completed_batches": 0,
+      "optimizer_updates": 0,
+      "elapsed_seconds": 16.860154833178967,
+      "error": "ValueError: grammar lesson text does not match its captured forward words"
+    },
+    {
+      "candidate": "ab5eceb9d",
+      "completed_batches": 0,
+      "optimizer_updates": 0,
+      "elapsed_seconds": 16.52085208403878,
+      "error": "ValueError: grammar lesson uses undeclared 2-ary form 'definite'"
+    },
+    {
+      "candidate": "fc9b635dc",
+      "completed_batches": 0,
+      "optimizer_updates": 0,
+      "elapsed_seconds": 16.547432999825105,
+      "error": "RuntimeError: Tensors must have same number of dimensions: got 2 and 1"
+    }
+  ],
+  "restart": "Same accepted checkpoint and RNG seed; no failed-start state reused.",
+  "input_mismatch": [
+    {
+      "source": [
+        44
+      ],
+      "positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "words": [
+        "a",
+        "horse",
+        "sees",
+        "the",
+        "cat",
+        "."
+      ],
+      "expected": "a horse sees the cat"
+    }
+  ]
+}

@@ -269,9 +269,16 @@ supplied as the lesson (the generator knows them). The lesson names the
 constituents the way stage 3 names the order: a cross-entropy on the
 compose chooser toward the bracketed reading. At each bracketed singular
 NP the reading applies the NP operator (mint, or bind for a re-mention)
-and an occurrence row is written with a fresh anonymous id and the NP's
-own meaning, before the sentence fold. The gate is free reading on
-held-out sentences: the brackets reproduced, one occurrence per NP.
+and captures the NP's own meaning before the sentence fold. Its occurrence
+row is written at the kept close. The lesson's CE teaches the waits
+as well as the folds; it never replaces the student's kept program.
+The gate, declared before the fixed-budget run (Alec, 2026-10-17), is free
+reading on held-out sentences of the trained kinds: **≥90% exact brackets**,
+**one occurrence for ≥95% of singular NPs with zero duplicate writes**,
+**2→1 at every lowered NP**, and **no occurrence for an unlowered
+description**. Stop at a failed gate. The
+[stage 4e receipt](benchmarks/2026-10-17-stage4e/) records the budget and
+measurement; native identity learning waits for this gate.
 
     [the black cat] [runs] .
     [the dog] [chases [the cat]] .

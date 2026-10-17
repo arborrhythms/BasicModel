@@ -363,9 +363,19 @@ Their original failing evidence remains in the receipts.
 **stage 4e first**, then identity matching, VP vectors taught by the individual's
 before/after temporal difference, and word classes from direct operand participation
 (never phrase heads). Order-2 kinds are deferred; neither a second dictionary nor
-a taxonomy computation for their intension is chosen. Stage 4e must establish
-held-out free brackets and one occurrence per singular NP before another native
-identity run. No native identity run is authorized before that gate passes.
+a taxonomy computation for their intension is chosen. Stage 4e's declared gate
+(Alec, 2026-10-17) is ≥90% exact held-out free brackets, one occurrence for
+≥95% of singular NPs with zero duplicate writes, an actual 2→1 transition at
+every lowered NP, and no occurrence for an unlowered description. The lesson's
+CE supplies waits and folds; annotations never replace the student's kept
+program. No native identity run is authorized before that gate passes.
+The [stage 4e candidate](doc/benchmarks/2026-10-17-stage4e/) completes its
+144-presentation budget but fails the gate: **8/32** exact free brackets,
+**0/48** NP occurrences and **0/48** 2→1 reductions; zero duplicate writes,
+and **8/8** unlowered controls without an occurrence. The controls are vacuous
+with no occurrence writes anywhere. Native `compound` cases are unavailable
+in 160/288 teacher traces; all held-out referent stamps remain 0. The corpus,
+wait/fold CE path and measurement are a candidate, not a passing learning stage.
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the
@@ -401,6 +411,15 @@ not by a passing identity lesson.
    Replace the legacy `get_stm_chain` recency across batch rows and test
    lookup by the row's occurrence address (two truths §21). Spec §10 is
    answered; the later Orders theory governs order operations.
+   **Sequence (Alec, 2026-10-17):** stage 4e alone first, with its fixed budget
+   and [one receipt](doc/benchmarks/2026-10-17-stage4e/). Stop at a failed gate.
+   The separate mechanism round retires the legacy clock timestamp and
+   `Clause.eternal`, replaces recency with the row's source-addressed chain,
+   and replaces the English analyzer with four learned surface transformations
+   and their inverses. Measure the spec's clock-independence,
+   offset-independence, addressed-chain, interleaving, preposition and
+   surface-inverse certificates. Tense/aspect on VP phases waits for the
+   carried identity sequence.
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
    (needs `refs` and every S writing a row). Document-boundary pass from the
    high-water to the low-water mark deleting the lowest-value unprotected
@@ -643,11 +662,13 @@ not by a passing identity lesson.
    accepted; these learning claims are not.
 
    **Item 6's learning gates** remain prerequisites at this checkpoint:
-   stage 4e held-out free brackets and one occurrence per singular NP; then
+   stage 4e's ≥90% free-bracket and ≥95% NP-occurrence gates, zero duplicate
+   writes, every lowered NP at 2→1, and no unlowered-description occurrence; then
    balanced binding by group and document-close row pairs, with mint/bind
    fixed semantics and same-kind revision; VP temporal-difference prediction;
-   direct-operand word classes; and deferred order-2 kind recovery. Stage 4e,
-   the VP teacher and order-2 kinds are not built. Do not start another native
+   direct-operand word classes; and deferred order-2 kind recovery. The stage 4e
+   candidate and measurement exist, but its [gate fails](doc/benchmarks/2026-10-17-stage4e/).
+   The VP teacher and order-2 kinds are not built. Do not start another native
    identity run before stage 4e passes. Retain stored-idea recovery beyond two
    words, order CE, relation trace 2/4, free readback 0/4, MM grammar recovery,
    compiled retention, c's marker-headed `five` and the paired zero-cost
@@ -658,7 +679,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- **Item 6 — closing mechanism:** reviewed candidate `a3ec07fd0`/`b41cf3b5b`, consolidated on main in the [landing receipt](https://github.com/arborrhythms/WikiOracle/blob/main/doc/benchmarks/2026-10-16-item6-landing.md): shared bounded inverse and candidate type families; forward discard with the search exemption; positional operands and orders from stamps; paired stages 1–2; reference at the close with fixed mint/bind operators and revision. **No learning claim.** VP vectors by temporal difference, order-2 kinds and stage 4e (constituents) are not built; §15's sequence carries alongside 5.5 and at item 0, with 4e first.
+- **Item 6 — closing mechanism:** reviewed candidate `a3ec07fd0`/`b41cf3b5b`, consolidated on main in the [landing receipt](https://github.com/arborrhythms/WikiOracle/blob/main/doc/benchmarks/2026-10-16-item6-landing.md): shared bounded inverse and candidate type families; forward discard with the search exemption; positional operands and orders from stamps; paired stages 1–2; reference at the close with fixed mint/bind operators and revision. **No learning claim.** At that landing, VP vectors by temporal difference, order-2 kinds and stage 4e (constituents) were not built; §15's sequence carries alongside 5.5 and at item 0, with 4e first.
 
 
 - Item 6 positional operands and paired singleton warm-up: `51f069c30`, pushed on main, WikiOracle `f4d3139` ([receipt](doc/benchmarks/2026-10-15-item6-orders-paired/README.md)). The singleton gate passes at 20/24; balanced identity remains unresolved (0/146 bindings, 0/20 row pairs), with no learning claim. Its reference-close follow-up is [measured separately](doc/benchmarks/2026-10-16-item6-reference-close/README.md) and accepted as the closing mechanism; learning remains open.

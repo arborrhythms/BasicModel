@@ -1,0 +1,98 @@
+[BasicModel] Weight file partial -- output/item6-orders-paired-accepted-code-20261015/warmup.ckpt
+  Keys in model but missing from file: 24 (initialized fresh)
+[BasicModel] Weights loaded from output/item6-orders-paired-accepted-code-20261015/warmup.ckpt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "training": true, "epoch": 0, "ids": ["4e:transitive:3:1:0", "4e:preposition:3:2:1", "4e:description:1:1", "4e:np:2:2:1"], "optimizer_steps": 2, "lesson_costs": [1.6976375579833984, 1.7387807369232178, 0.5209164023399353, 0.7831122279167175, 1.6976375579833984, 1.7387807369232178, 0.5209164023399353, 0.7831122279167175], "elapsed_seconds": 98.75501195783727}
+batch = 1 (Δ=80.102s)
+{"batch": 2, "training": true, "epoch": 0, "ids": ["4e:intransitive:3:2:0", "4e:transitive:0:1:1", "4e:np:0:1:1", "4e:intransitive:2:1:1"], "optimizer_steps": 4, "lesson_costs": [0.783742368221283, 1.6899480819702148, 0.7826471328735352, 0.7836846709251404, 0.783742368221283, 1.6898912191390991, 0.7826471328735352, 0.7836846709251404], "elapsed_seconds": 178.8565053329803}
+batch = 2 (Δ=99.758s)
+{"batch": 3, "training": true, "epoch": 0, "ids": ["4e:description:3:3", "4e:preposition:1:2:1", "4e:preposition:0:1:1", "4e:transitive:2:2:0"], "optimizer_steps": 6, "lesson_costs": [0.5215822458267212, 1.7382252216339111, 1.732665777206421, 1.6980388164520264, 0.5215822458267212, 1.7382252216339111, 1.732665777206421, 1.6980388164520264], "elapsed_seconds": 278.61484208283946}
+batch = 3 (Δ=110.746s)
+{"batch": 4, "training": true, "epoch": 0, "ids": ["4e:preposition:0:2:0", "4e:np:0:2:0", "4e:intransitive:3:1:1", "4e:preposition:1:2:0"], "optimizer_steps": 8, "lesson_costs": [1.732072353363037, 0.7851201891899109, 0.7821241021156311, 1.7389492988586426, 1.732072353363037, 0.7851201891899109, 0.7821241021156311, 1.7389492988586426], "elapsed_seconds": 389.360666875029}
+batch = 4 (Δ=68.866s)
+{"batch": 5, "training": true, "epoch": 0, "ids": ["4e:intransitive:3:2:1", "4e:description:0:0", "4e:intransitive:0:2:0", "4e:description:3:1"], "optimizer_steps": 10, "lesson_costs": [0.7828633189201355, 0.520439863204956, 0.7839406728744507, 0.5207271575927734, 0.7828633189201355, 0.5203994512557983, 0.7839406728744507, 0.5204992890357971], "elapsed_seconds": 458.22630574996583}
+batch = 5 (Δ=115.536s)
+{"batch": 6, "training": true, "epoch": 0, "ids": ["4e:intransitive:2:2:1", "4e:transitive:1:1:0", "4e:np:1:1:0", "4e:intransitive:2:2:0"], "optimizer_steps": 12, "lesson_costs": [0.782396674156189, 1.6991143226623535, 0.7839314937591553, 0.784666121006012, 0.782396674156189, 1.6991143226623535, 0.7839314937591553, 0.7846947312355042], "elapsed_seconds": 573.7627472919412}
+batch = 6 (Δ=82.802s)
+{"batch": 7, "training": true, "epoch": 0, "ids": ["4e:intransitive:0:2:1", "4e:np:2:2:0", "4e:description:2:2", "4e:preposition:3:1:0"], "optimizer_steps": 14, "lesson_costs": [0.781596839427948, 0.784712016582489, 0.5218275189399719, 1.7383718490600586, 0.781596839427948, 0.784712016582489, 0.5218275189399719, 1.7383718490600586], "elapsed_seconds": 656.5645275418647}
+batch = 7 (Δ=94.897s)
+{"batch": 8, "training": true, "epoch": 0, "ids": ["4e:np:0:2:1", "4e:np:3:1:1", "4e:transitive:0:1:0", "4e:np:1:1:1"], "optimizer_steps": 16, "lesson_costs": [0.7829552888870239, 0.7818814516067505, 1.690083622932434, 0.7829552888870239, 0.7829552888870239, 0.7818814516067505, 1.690083622932434, 0.7829552888870239], "elapsed_seconds": 751.4614846669137}
+batch = 8 (Δ=90.374s)
+{"batch": 9, "training": true, "epoch": 0, "ids": ["4e:transitive:1:2:1", "4e:description:2:0", "4e:np:1:2:1", "4e:transitive:0:2:1"], "optimizer_steps": 18, "lesson_costs": [1.695800542831421, 0.5195186138153076, 0.7828890085220337, 1.6960639953613281, 1.695800542831421, 0.5195186138153076, 0.7828890085220337, 1.6960692405700684], "elapsed_seconds": 841.8352914999705}
+batch = 9 (Δ=137.860s)
+{"batch": 10, "training": true, "epoch": 0, "ids": ["4e:preposition:2:1:1", "4e:np:3:2:0", "4e:transitive:1:2:0", "4e:description:1:3"], "optimizer_steps": 20, "lesson_costs": [1.7328448295593262, 0.7850645780563354, 1.6960053443908691, 0.5193318128585815, 1.7328448295593262, 0.7850645780563354, 1.6960053443908691, 0.5193318128585815], "elapsed_seconds": 979.6951864168514}
+batch = 10 (Δ=135.321s)
+{"batch": 11, "training": true, "epoch": 0, "ids": ["4e:intransitive:0:1:0", "4e:intransitive:0:1:1", "4e:transitive:1:1:1", "4e:np:2:1:1"], "optimizer_steps": 22, "lesson_costs": [0.7851923704147339, 0.7817453742027283, 1.6947331428527832, 0.7826772332191467, 0.7851923704147339, 0.7817453742027283, 1.6947331428527832, 0.7826772332191467], "elapsed_seconds": 1115.0161028748844}
+batch = 11 (Δ=208.173s)
+{"batch": 12, "training": true, "epoch": 0, "ids": ["4e:intransitive:1:2:0", "4e:np:1:2:0", "4e:transitive:3:2:0", "4e:transitive:2:1:1"], "optimizer_steps": 24, "lesson_costs": [0.7860112190246582, 0.7860112190246582, 1.6920515298843384, 1.6924493312835693, 0.7860112190246582, 0.7860112190246582, 1.6920515298843384, 1.6925448179244995], "elapsed_seconds": 1323.1894040829502}
+batch = 12 (Δ=214.113s)
+{"batch": 13, "training": true, "epoch": 0, "ids": ["4e:intransitive:1:2:1", "4e:transitive:2:2:1", "4e:preposition:3:1:1", "4e:np:3:2:1"], "optimizer_steps": 26, "lesson_costs": [0.7824432253837585, 1.6919246912002563, 1.731656551361084, 0.7813674211502075, 0.7824432253837585, 1.6919246912002563, 1.731581449508667, 0.7813674211502075], "elapsed_seconds": 1537.3025288749486}
+batch = 13 (Δ=254.160s)
+{"batch": 14, "training": true, "epoch": 0, "ids": ["4e:intransitive:3:1:0", "4e:preposition:0:2:1", "4e:transitive:3:2:1", "4e:intransitive:1:1:1"], "optimizer_steps": 28, "lesson_costs": [0.785344660282135, 1.730669617652893, 1.6870508193969727, 0.781986653804779, 0.785344660282135, 1.7305364608764648, 1.6870508193969727, 0.781986653804779], "elapsed_seconds": 1791.4620759170502}
+batch = 14 (Δ=275.254s)
+{"batch": 15, "training": true, "epoch": 0, "ids": ["4e:preposition:2:2:1", "4e:intransitive:1:1:0", "4e:preposition:2:2:0", "4e:preposition:0:1:0"], "optimizer_steps": 30, "lesson_costs": [1.7296652793884277, 0.7864474058151245, 1.7316763401031494, 1.73189115524292, 1.7296652793884277, 0.7864474058151245, 1.7316763401031494, 1.73189115524292], "elapsed_seconds": 2066.715972292004}
+batch = 15 (Δ=279.506s)
+{"batch": 16, "training": true, "epoch": 0, "ids": ["4e:preposition:2:1:0", "4e:transitive:0:2:0", "4e:transitive:2:1:0", "4e:transitive:3:1:1"], "optimizer_steps": 32, "lesson_costs": [1.7267236709594727, 1.6902742385864258, 1.6893408298492432, 1.6843605041503906, 1.7267236709594727, 1.6902742385864258, 1.6893408298492432, 1.6843605041503906], "elapsed_seconds": 2346.222347874893}
+batch = 16 (Δ=195.420s)
+{"batch": 17, "training": true, "epoch": 0, "ids": ["4e:preposition:3:2:0", "4e:intransitive:2:1:0", "4e:np:0:1:0", "4e:description:0:2"], "optimizer_steps": 34, "lesson_costs": [1.7268977165222168, 0.7870369553565979, 0.786007821559906, 0.5166494250297546, 1.7268977165222168, 0.7870369553565979, 0.786007821559906, 0.5166494250297546], "elapsed_seconds": 2541.6419322500005}
+batch = 17 (Δ=181.697s)
+{"batch": 18, "training": true, "epoch": 0, "ids": ["4e:np:3:1:0", "4e:np:2:1:0", "4e:preposition:1:1:0", "4e:preposition:1:1:1"], "optimizer_steps": 36, "lesson_costs": [0.7861911058425903, 0.7873095870018005, 1.727656602859497, 1.7268202304840088, 0.7861911058425903, 0.7873095870018005, 1.727656602859497, 1.7268202304840088], "elapsed_seconds": 2723.3387565419544}
+batch = 18 (Δ=217.008s)
+{"batch": 19, "training": true, "epoch": 1, "ids": ["4e:transitive:3:2:1", "4e:intransitive:0:2:1", "4e:preposition:3:2:1", "4e:intransitive:3:1:1"], "optimizer_steps": 38, "lesson_costs": [1.6842539310455322, 0.7819032669067383, 1.7243905067443848, 0.7806618809700012, 1.6842539310455322, 0.7819032669067383, 1.7243905067443848, 0.7806618809700012], "elapsed_seconds": 2940.346713332925}
+batch = 19 (Δ=123.999s)
+{"batch": 20, "training": true, "epoch": 1, "ids": ["4e:description:1:3", "4e:transitive:0:2:1", "4e:description:1:1", "4e:np:1:2:1"], "optimizer_steps": 40, "lesson_costs": [0.5164963603019714, 1.6878019571304321, 0.5181242823600769, 0.7820357084274292, 0.5163577198982239, 1.6878019571304321, 0.5181242823600769, 0.7820357084274292], "elapsed_seconds": 3064.345619374886}
+batch = 20 (Δ=171.489s)
+{"batch": 21, "training": true, "epoch": 1, "ids": ["4e:np:3:2:1", "4e:intransitive:0:1:0", "4e:preposition:3:1:0", "4e:description:0:2"], "optimizer_steps": 42, "lesson_costs": [0.7804691195487976, 0.7868283987045288, 1.7251914739608765, 0.514872670173645, 0.7804691195487976, 0.7868283987045288, 1.7251914739608765, 0.514872670173645], "elapsed_seconds": 3235.834960917011}
+batch = 21 (Δ=208.637s)
+{"batch": 22, "training": true, "epoch": 1, "ids": ["4e:np:0:2:0", "4e:preposition:2:1:1", "4e:transitive:1:2:1", "4e:transitive:3:2:0"], "optimizer_steps": 44, "lesson_costs": [0.7887696623802185, 1.7201465368270874, 1.6865737438201904, 1.6857401132583618, 0.7887696623802185, 1.7201465368270874, 1.6865737438201904, 1.6857401132583618], "elapsed_seconds": 3444.471474666847}
+batch = 22 (Δ=184.107s)
+{"batch": 23, "training": true, "epoch": 1, "ids": ["4e:description:3:3", "4e:transitive:2:1:1", "4e:np:1:1:1", "4e:preposition:0:1:0"], "optimizer_steps": 46, "lesson_costs": [0.5153453350067139, 1.684626579284668, 0.7820309996604919, 1.7243506908416748, 0.5153453350067139, 1.684626579284668, 0.7820309996604919, 1.7243506908416748], "elapsed_seconds": 3628.5784360829275}
+batch = 23 (Δ=213.338s)
+{"batch": 24, "training": true, "epoch": 1, "ids": ["4e:np:0:2:1", "4e:preposition:0:2:1", "4e:intransitive:1:2:1", "4e:intransitive:1:1:1"], "optimizer_steps": 48, "lesson_costs": [0.7820175290107727, 1.719732642173767, 0.7816534638404846, 0.7820175290107727, 0.7820175290107727, 1.719732642173767, 0.7816534638404846, 0.7820175290107727], "elapsed_seconds": 3841.91666887491}
+batch = 24 (Δ=141.862s)
+{"batch": 25, "training": true, "epoch": 1, "ids": ["4e:intransitive:2:2:1", "4e:np:3:2:0", "4e:intransitive:3:2:1", "4e:np:1:2:0"], "optimizer_steps": 50, "lesson_costs": [0.7800576686859131, 0.7876628041267395, 0.7798601388931274, 0.7890975475311279, 0.7800576686859131, 0.7876628041267395, 0.7798601388931274, 0.7890975475311279], "elapsed_seconds": 3983.7782956669107}
+batch = 25 (Δ=113.214s)
+{"batch": 26, "training": true, "epoch": 1, "ids": ["4e:transitive:1:1:1", "4e:np:2:2:1", "4e:description:2:0", "4e:description:3:1"], "optimizer_steps": 52, "lesson_costs": [1.6840591430664062, 0.7798007726669312, 0.5152665972709656, 0.5165321826934814, 1.6840591430664062, 0.7798007726669312, 0.5152665972709656, 0.5165321826934814], "elapsed_seconds": 4096.992379833013}
+batch = 26 (Δ=154.718s)
+{"batch": 27, "training": true, "epoch": 1, "ids": ["4e:transitive:0:2:0", "4e:description:0:0", "4e:intransitive:3:1:0", "4e:preposition:0:2:0"], "optimizer_steps": 54, "lesson_costs": [1.687100887298584, 0.515110433101654, 0.7882167100906372, 1.7193641662597656, 1.687100887298584, 0.515110433101654, 0.7882167100906372, 1.7193641662597656], "elapsed_seconds": 4251.710293874843}
+batch = 27 (Δ=205.724s)
+{"batch": 28, "training": true, "epoch": 1, "ids": ["4e:preposition:1:1:1", "4e:intransitive:0:1:1", "4e:transitive:2:1:0", "4e:intransitive:3:2:0"], "optimizer_steps": 56, "lesson_costs": [1.7151026725769043, 0.7790288329124451, 1.6850366592407227, 0.7879380583763123, 1.7151026725769043, 0.7790288329124451, 1.6850366592407227, 0.7879380583763123], "elapsed_seconds": 4457.434206707869}
+batch = 28 (Δ=207.781s)
+{"batch": 29, "training": true, "epoch": 1, "ids": ["4e:np:2:1:0", "4e:preposition:2:1:0", "4e:intransitive:0:2:0", "4e:transitive:1:1:0"], "optimizer_steps": 58, "lesson_costs": [0.7896735072135925, 1.7159292697906494, 0.7906039953231812, 1.6834310293197632, 0.7896735072135925, 1.7159292697906494, 0.7906039953231812, 1.6834310293197632], "elapsed_seconds": 4665.215405500028}
+batch = 29 (Δ=244.161s)
+{"batch": 30, "training": true, "epoch": 1, "ids": ["4e:intransitive:2:2:0", "4e:np:3:1:1", "4e:preposition:1:2:0", "4e:preposition:1:1:0"], "optimizer_steps": 60, "lesson_costs": [0.7886520624160767, 0.7790980339050293, 1.714834213256836, 1.71488618850708, 0.7886520624160767, 0.7790980339050293, 1.714834213256836, 1.71488618850708], "elapsed_seconds": 4909.376851874869}
+batch = 30 (Δ=185.288s)
+{"batch": 31, "training": true, "epoch": 1, "ids": ["4e:np:0:1:0", "4e:np:0:1:1", "4e:np:3:1:0", "4e:preposition:3:2:0"], "optimizer_steps": 62, "lesson_costs": [0.788195013999939, 0.7786251306533813, 0.7887870073318481, 1.7143664360046387, 0.788195013999939, 0.7786251306533813, 0.7887870073318481, 1.7143664360046387], "elapsed_seconds": 5094.664633957902}
+batch = 31 (Δ=250.168s)
+{"batch": 32, "training": true, "epoch": 1, "ids": ["4e:intransitive:2:1:0", "4e:transitive:3:1:1", "4e:np:2:2:0", "4e:transitive:0:1:0"], "optimizer_steps": 64, "lesson_costs": [0.7901116609573364, 1.6752865314483643, 0.7889581322669983, 1.6849756240844727, 0.7901116609573364, 1.6752865314483643, 0.7889581322669983, 1.6849756240844727], "elapsed_seconds": 5344.832646749914}
+batch = 32 (Δ=218.802s)
+{"batch": 33, "training": true, "epoch": 1, "ids": ["4e:preposition:1:2:1", "4e:intransitive:2:1:1", "4e:np:1:1:0", "4e:description:2:2"], "optimizer_steps": 66, "lesson_costs": [1.713137149810791, 0.7805570363998413, 0.7914268970489502, 0.5109341144561768, 1.713137149810791, 0.7805570363998413, 0.7914268970489502, 0.5109341144561768], "elapsed_seconds": 5563.634320582962}
+batch = 33 (Δ=253.612s)
+{"batch": 34, "training": true, "epoch": 1, "ids": ["4e:intransitive:1:1:0", "4e:np:2:1:1", "4e:transitive:2:2:0", "4e:transitive:0:1:1"], "optimizer_steps": 68, "lesson_costs": [0.7916592955589294, 0.7805315852165222, 1.6829099655151367, 1.6784851551055908, 0.7916592955589294, 0.7805315852165222, 1.6829099655151367, 1.6784851551055908], "elapsed_seconds": 5817.246483749943}
+batch = 34 (Δ=342.875s)
+{"batch": 35, "training": true, "epoch": 1, "ids": ["4e:preposition:0:1:1", "4e:preposition:2:2:0", "4e:intransitive:1:2:0", "4e:transitive:3:1:0"], "optimizer_steps": 70, "lesson_costs": [1.71270751953125, 1.7152818441390991, 0.7906118631362915, 1.6788626909255981, 1.71270751953125, 1.7152818441390991, 0.7906118631362915, 1.6788626909255981], "elapsed_seconds": 6160.12163004186}
+batch = 35 (Δ=334.039s)
+{"batch": 36, "training": true, "epoch": 1, "ids": ["4e:preposition:3:1:1", "4e:transitive:2:2:1", "4e:transitive:1:2:0", "4e:preposition:2:2:1"], "optimizer_steps": 72, "lesson_costs": [1.7095962762832642, 1.6762418746948242, 1.681363821029663, 1.7100613117218018, 1.7095962762832642, 1.6762418746948242, 1.681363821029663, 1.7100067138671875], "elapsed_seconds": 6494.161101707956}
+[BasicModel] Weights saved to output/stage4e-20261017-r3/trained.ckpt
+batch = 36 (Δ=107.184s)
+{"batch": 37, "training": false, "epoch": null, "ids": ["4e:np:0:3:0", "4e:np:0:3:1", "4e:np:1:3:0", "4e:np:1:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 6601.345180874923}
+batch = 37 (Δ=106.746s)
+{"batch": 38, "training": false, "epoch": null, "ids": ["4e:np:2:3:0", "4e:np:2:3:1", "4e:np:3:3:0", "4e:np:3:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 6708.090643582866}
+batch = 38 (Δ=201.463s)
+{"batch": 39, "training": false, "epoch": null, "ids": ["4e:intransitive:0:3:0", "4e:intransitive:0:3:1", "4e:intransitive:1:3:0", "4e:intransitive:1:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 6909.553608541843}
+batch = 39 (Δ=200.661s)
+{"batch": 40, "training": false, "epoch": null, "ids": ["4e:intransitive:2:3:0", "4e:intransitive:2:3:1", "4e:intransitive:3:3:0", "4e:intransitive:3:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 7110.2146309169475}
+batch = 40 (Δ=248.168s)
+{"batch": 41, "training": false, "epoch": null, "ids": ["4e:transitive:0:3:0", "4e:transitive:0:3:1", "4e:transitive:1:3:0", "4e:transitive:1:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 7358.38252137485}
+batch = 41 (Δ=258.670s)
+{"batch": 42, "training": false, "epoch": null, "ids": ["4e:transitive:2:3:0", "4e:transitive:2:3:1", "4e:transitive:3:3:0", "4e:transitive:3:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 7617.052741833031}
+batch = 42 (Δ=324.024s)
+{"batch": 43, "training": false, "epoch": null, "ids": ["4e:preposition:0:3:0", "4e:preposition:0:3:1", "4e:preposition:1:3:0", "4e:preposition:1:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 7941.076854666928}
+batch = 43 (Δ=348.302s)
+{"batch": 44, "training": false, "epoch": null, "ids": ["4e:preposition:2:3:0", "4e:preposition:2:3:1", "4e:preposition:3:3:0", "4e:preposition:3:3:1"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 8289.378683167044}
+batch = 44 (Δ=56.194s)
+{"batch": 45, "training": false, "epoch": null, "ids": ["4e:description:0:1", "4e:description:0:3", "4e:description:1:0", "4e:description:1:2"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 8345.57303533284}
+batch = 45 (Δ=55.932s)
+{"batch": 46, "training": false, "epoch": null, "ids": ["4e:description:2:1", "4e:description:2:3", "4e:description:3:0", "4e:description:3:2"], "optimizer_steps": 72, "lesson_costs": [], "elapsed_seconds": 8401.504940416897}
+{"completed": true, "gates": {"brackets": {"correct": 8, "total": 32, "threshold": 0.9, "passed": false}, "occurrences": {"correct": 0, "total": 48, "threshold": 0.95, "duplicate_writes": 0, "collisions": 0, "unexpected": 0, "passed": false}, "reductions": {"correct": 0, "total": 48, "threshold": 1.0, "passed": false}, "unlowered": {"correct": 8, "total": 8, "threshold": 1.0, "passed": true}}, "passed": false}
