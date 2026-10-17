@@ -55,7 +55,7 @@ def corpus():
                     ['preposition', prep, np(other, not definite)]]]
             split = 'eval' if distance == 3 else 'train'
             key = f'4e:{family}:{kind}:{distance}:{int(definite)}'
-            rows.append((split, dict(id=key, text=' '.join(words)+' .'),
+            rows.append((split, dict(id=key, text=' '.join(words)),
                 dict(text=' '.join(words), tree=tree, waits=True),
                 dict(id=key, family=family, words=words, brackets=spans(tree), nps=nps,
                      unlowered=[])))
@@ -64,7 +64,7 @@ def corpus():
         tree = ['compound', 0, 1]
         split = 'train' if (kind+prop) % 2 == 0 else 'eval'
         key = f'4e:description:{kind}:{prop}'
-        rows.append((split, dict(id=key, text=' '.join(words)+' .'),
+        rows.append((split, dict(id=key, text=' '.join(words)),
             dict(text=' '.join(words), tree=tree, waits=True),
             dict(id=key, family='description', words=words, brackets=spans(tree),
                  nps=[], unlowered=[[0, 1]])))

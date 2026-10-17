@@ -1,72 +1,72 @@
-{"id": "4e:np:0:1:0", "text": "a white cat ."}
-{"id": "4e:np:0:1:1", "text": "the white cat ."}
-{"id": "4e:np:0:2:0", "text": "a small cat ."}
-{"id": "4e:np:0:2:1", "text": "the small cat ."}
-{"id": "4e:np:1:1:0", "text": "a small dog ."}
-{"id": "4e:np:1:1:1", "text": "the small dog ."}
-{"id": "4e:np:1:2:0", "text": "a large dog ."}
-{"id": "4e:np:1:2:1", "text": "the large dog ."}
-{"id": "4e:np:2:1:0", "text": "a large bird ."}
-{"id": "4e:np:2:1:1", "text": "the large bird ."}
-{"id": "4e:np:2:2:0", "text": "a black bird ."}
-{"id": "4e:np:2:2:1", "text": "the black bird ."}
-{"id": "4e:np:3:1:0", "text": "a black horse ."}
-{"id": "4e:np:3:1:1", "text": "the black horse ."}
-{"id": "4e:np:3:2:0", "text": "a white horse ."}
-{"id": "4e:np:3:2:1", "text": "the white horse ."}
-{"id": "4e:intransitive:0:1:0", "text": "a white cat sleeps ."}
-{"id": "4e:intransitive:0:1:1", "text": "the white cat runs ."}
-{"id": "4e:intransitive:0:2:0", "text": "a small cat runs ."}
-{"id": "4e:intransitive:0:2:1", "text": "the small cat sleeps ."}
-{"id": "4e:intransitive:1:1:0", "text": "a small dog runs ."}
-{"id": "4e:intransitive:1:1:1", "text": "the small dog sleeps ."}
-{"id": "4e:intransitive:1:2:0", "text": "a large dog sleeps ."}
-{"id": "4e:intransitive:1:2:1", "text": "the large dog runs ."}
-{"id": "4e:intransitive:2:1:0", "text": "a large bird sleeps ."}
-{"id": "4e:intransitive:2:1:1", "text": "the large bird runs ."}
-{"id": "4e:intransitive:2:2:0", "text": "a black bird runs ."}
-{"id": "4e:intransitive:2:2:1", "text": "the black bird sleeps ."}
-{"id": "4e:intransitive:3:1:0", "text": "a black horse runs ."}
-{"id": "4e:intransitive:3:1:1", "text": "the black horse sleeps ."}
-{"id": "4e:intransitive:3:2:0", "text": "a white horse sleeps ."}
-{"id": "4e:intransitive:3:2:1", "text": "the white horse runs ."}
-{"id": "4e:transitive:0:1:0", "text": "a cat chases the dog ."}
-{"id": "4e:transitive:0:1:1", "text": "the cat sees a dog ."}
-{"id": "4e:transitive:0:2:0", "text": "a cat chases the bird ."}
-{"id": "4e:transitive:0:2:1", "text": "the cat sees a bird ."}
-{"id": "4e:transitive:1:1:0", "text": "a dog sees the bird ."}
-{"id": "4e:transitive:1:1:1", "text": "the dog chases a bird ."}
-{"id": "4e:transitive:1:2:0", "text": "a dog sees the horse ."}
-{"id": "4e:transitive:1:2:1", "text": "the dog chases a horse ."}
-{"id": "4e:transitive:2:1:0", "text": "a bird chases the horse ."}
-{"id": "4e:transitive:2:1:1", "text": "the bird sees a horse ."}
-{"id": "4e:transitive:2:2:0", "text": "a bird chases the cat ."}
-{"id": "4e:transitive:2:2:1", "text": "the bird sees a cat ."}
-{"id": "4e:transitive:3:1:0", "text": "a horse sees the cat ."}
-{"id": "4e:transitive:3:1:1", "text": "the horse chases a cat ."}
-{"id": "4e:transitive:3:2:0", "text": "a horse sees the dog ."}
-{"id": "4e:transitive:3:2:1", "text": "the horse chases a dog ."}
-{"id": "4e:preposition:0:1:0", "text": "a cat is on the dog ."}
-{"id": "4e:preposition:0:1:1", "text": "the cat is near a dog ."}
-{"id": "4e:preposition:0:2:0", "text": "a cat is on the bird ."}
-{"id": "4e:preposition:0:2:1", "text": "the cat is near a bird ."}
-{"id": "4e:preposition:1:1:0", "text": "a dog is near the bird ."}
-{"id": "4e:preposition:1:1:1", "text": "the dog is on a bird ."}
-{"id": "4e:preposition:1:2:0", "text": "a dog is near the horse ."}
-{"id": "4e:preposition:1:2:1", "text": "the dog is on a horse ."}
-{"id": "4e:preposition:2:1:0", "text": "a bird is on the horse ."}
-{"id": "4e:preposition:2:1:1", "text": "the bird is near a horse ."}
-{"id": "4e:preposition:2:2:0", "text": "a bird is on the cat ."}
-{"id": "4e:preposition:2:2:1", "text": "the bird is near a cat ."}
-{"id": "4e:preposition:3:1:0", "text": "a horse is near the cat ."}
-{"id": "4e:preposition:3:1:1", "text": "the horse is on a cat ."}
-{"id": "4e:preposition:3:2:0", "text": "a horse is near the dog ."}
-{"id": "4e:preposition:3:2:1", "text": "the horse is on a dog ."}
-{"id": "4e:description:0:0", "text": "black cat ."}
-{"id": "4e:description:0:2", "text": "small cat ."}
-{"id": "4e:description:1:1", "text": "white dog ."}
-{"id": "4e:description:1:3", "text": "large dog ."}
-{"id": "4e:description:2:0", "text": "black bird ."}
-{"id": "4e:description:2:2", "text": "small bird ."}
-{"id": "4e:description:3:1", "text": "white horse ."}
-{"id": "4e:description:3:3", "text": "large horse ."}
+{"id": "4e:np:0:1:0", "text": "a white cat"}
+{"id": "4e:np:0:1:1", "text": "the white cat"}
+{"id": "4e:np:0:2:0", "text": "a small cat"}
+{"id": "4e:np:0:2:1", "text": "the small cat"}
+{"id": "4e:np:1:1:0", "text": "a small dog"}
+{"id": "4e:np:1:1:1", "text": "the small dog"}
+{"id": "4e:np:1:2:0", "text": "a large dog"}
+{"id": "4e:np:1:2:1", "text": "the large dog"}
+{"id": "4e:np:2:1:0", "text": "a large bird"}
+{"id": "4e:np:2:1:1", "text": "the large bird"}
+{"id": "4e:np:2:2:0", "text": "a black bird"}
+{"id": "4e:np:2:2:1", "text": "the black bird"}
+{"id": "4e:np:3:1:0", "text": "a black horse"}
+{"id": "4e:np:3:1:1", "text": "the black horse"}
+{"id": "4e:np:3:2:0", "text": "a white horse"}
+{"id": "4e:np:3:2:1", "text": "the white horse"}
+{"id": "4e:intransitive:0:1:0", "text": "a white cat sleeps"}
+{"id": "4e:intransitive:0:1:1", "text": "the white cat runs"}
+{"id": "4e:intransitive:0:2:0", "text": "a small cat runs"}
+{"id": "4e:intransitive:0:2:1", "text": "the small cat sleeps"}
+{"id": "4e:intransitive:1:1:0", "text": "a small dog runs"}
+{"id": "4e:intransitive:1:1:1", "text": "the small dog sleeps"}
+{"id": "4e:intransitive:1:2:0", "text": "a large dog sleeps"}
+{"id": "4e:intransitive:1:2:1", "text": "the large dog runs"}
+{"id": "4e:intransitive:2:1:0", "text": "a large bird sleeps"}
+{"id": "4e:intransitive:2:1:1", "text": "the large bird runs"}
+{"id": "4e:intransitive:2:2:0", "text": "a black bird runs"}
+{"id": "4e:intransitive:2:2:1", "text": "the black bird sleeps"}
+{"id": "4e:intransitive:3:1:0", "text": "a black horse runs"}
+{"id": "4e:intransitive:3:1:1", "text": "the black horse sleeps"}
+{"id": "4e:intransitive:3:2:0", "text": "a white horse sleeps"}
+{"id": "4e:intransitive:3:2:1", "text": "the white horse runs"}
+{"id": "4e:transitive:0:1:0", "text": "a cat chases the dog"}
+{"id": "4e:transitive:0:1:1", "text": "the cat sees a dog"}
+{"id": "4e:transitive:0:2:0", "text": "a cat chases the bird"}
+{"id": "4e:transitive:0:2:1", "text": "the cat sees a bird"}
+{"id": "4e:transitive:1:1:0", "text": "a dog sees the bird"}
+{"id": "4e:transitive:1:1:1", "text": "the dog chases a bird"}
+{"id": "4e:transitive:1:2:0", "text": "a dog sees the horse"}
+{"id": "4e:transitive:1:2:1", "text": "the dog chases a horse"}
+{"id": "4e:transitive:2:1:0", "text": "a bird chases the horse"}
+{"id": "4e:transitive:2:1:1", "text": "the bird sees a horse"}
+{"id": "4e:transitive:2:2:0", "text": "a bird chases the cat"}
+{"id": "4e:transitive:2:2:1", "text": "the bird sees a cat"}
+{"id": "4e:transitive:3:1:0", "text": "a horse sees the cat"}
+{"id": "4e:transitive:3:1:1", "text": "the horse chases a cat"}
+{"id": "4e:transitive:3:2:0", "text": "a horse sees the dog"}
+{"id": "4e:transitive:3:2:1", "text": "the horse chases a dog"}
+{"id": "4e:preposition:0:1:0", "text": "a cat is on the dog"}
+{"id": "4e:preposition:0:1:1", "text": "the cat is near a dog"}
+{"id": "4e:preposition:0:2:0", "text": "a cat is on the bird"}
+{"id": "4e:preposition:0:2:1", "text": "the cat is near a bird"}
+{"id": "4e:preposition:1:1:0", "text": "a dog is near the bird"}
+{"id": "4e:preposition:1:1:1", "text": "the dog is on a bird"}
+{"id": "4e:preposition:1:2:0", "text": "a dog is near the horse"}
+{"id": "4e:preposition:1:2:1", "text": "the dog is on a horse"}
+{"id": "4e:preposition:2:1:0", "text": "a bird is on the horse"}
+{"id": "4e:preposition:2:1:1", "text": "the bird is near a horse"}
+{"id": "4e:preposition:2:2:0", "text": "a bird is on the cat"}
+{"id": "4e:preposition:2:2:1", "text": "the bird is near a cat"}
+{"id": "4e:preposition:3:1:0", "text": "a horse is near the cat"}
+{"id": "4e:preposition:3:1:1", "text": "the horse is on a cat"}
+{"id": "4e:preposition:3:2:0", "text": "a horse is near the dog"}
+{"id": "4e:preposition:3:2:1", "text": "the horse is on a dog"}
+{"id": "4e:description:0:0", "text": "black cat"}
+{"id": "4e:description:0:2", "text": "small cat"}
+{"id": "4e:description:1:1", "text": "white dog"}
+{"id": "4e:description:1:3", "text": "large dog"}
+{"id": "4e:description:2:0", "text": "black bird"}
+{"id": "4e:description:2:2", "text": "small bird"}
+{"id": "4e:description:3:1", "text": "white horse"}
+{"id": "4e:description:3:3", "text": "large horse"}

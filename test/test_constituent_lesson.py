@@ -47,6 +47,8 @@ def test_explicit_brackets_teach_waits_and_multiple_folds_without_changing_stude
 
 def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences():
     rows = corpus()
+    assert all(text['text'] == lesson['text'] == ' '.join(label['words'])
+               for _, text, lesson, label in rows)
     train = [row for row in rows if row[0] == 'train']
     held = [row for row in rows if row[0] == 'eval']
     assert len(train) == 72 and len(held) == 40

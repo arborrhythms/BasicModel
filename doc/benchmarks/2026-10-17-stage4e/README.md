@@ -10,6 +10,8 @@ transitive and prepositional clauses, plus eight unlowered descriptions.
 Evaluation holds out eight examples of each construction and eight
 descriptions. Every noun occurs in both roles; determiners and lexical
 combinations cross. No inflection or word-class rule is installed.
+Each packed source record supplies one sentence boundary; the text has no
+extra period token. Native input and annotation cover exactly the same words.
 
 Fixed budget: 72 sentences twice (**144 presentations**, batches of four),
 seed **20261010**, learning rate **.003**; start from the accepted paired
@@ -43,7 +45,7 @@ Run from BasicModel:
 
 ```sh
 PYTHONPATH=bin:test DEVELOPER_DIR=/Library/Developer/CommandLineTools \
-  .venv/bin/python test/constituent_experiment.py output/stage4e-20261017
+  .venv/bin/python test/constituent_experiment.py output/stage4e-20261017-r1
 ```
 
 The candidate commit is the archive. Programs, norms, stamps, per-batch CE
