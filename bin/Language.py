@@ -7116,9 +7116,10 @@ class OperationSelectionLayer(nn.Module):
         self.temperature = float(temperature)
         if not math.isfinite(self.temperature) or self.temperature < 0:
             raise ValueError("compose temperature must be finite and nonnegative")
-        self.reduce_pressure = float(reduce_pressure)
-        if not math.isfinite(self.reduce_pressure) or self.reduce_pressure < 0:
+        pressure = float(reduce_pressure)
+        if not math.isfinite(pressure) or pressure < 0:
             raise ValueError("reduction pressure must be finite and nonnegative")
+        self.reduce_pressure = nn.Parameter(torch.tensor(pressure))
         self.stop_anchor = nn.Parameter(torch.randn(1, self.d_model) * .02)
         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * .02)
         self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
@@ -7357,7 +7358,7 @@ class OperationSelectionLayer(nn.Module):
         return torch.where(stops[None], pooled(stop), logits)
 
     def reduction_pressure(self, depth, *, allowance, rounds_left):
-        """Fixed load prior, using the whole stack and an inclusive deadline."""
+        """Lesson-owned load gain, using the whole stack and an inclusive deadline."""
         depth = depth.to(torch.get_default_dtype()) if not depth.is_floating_point() else depth
         allowance = torch.as_tensor(allowance, device=depth.device, dtype=depth.dtype)
         remaining = torch.as_tensor(rounds_left, device=depth.device, dtype=depth.dtype)

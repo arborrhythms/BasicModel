@@ -2665,6 +2665,9 @@ class BaseModel(Mereology, nn.Module):
         layer = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
         operation = getattr(layer, 'operation_layer', None)
         compose = parameters([getattr(operation, 'chooser', None)])
+        pressure = getattr(operation, 'reduce_pressure', None)
+        if isinstance(pressure, nn.Parameter) and id(pressure) in available:
+            compose.add(id(pressure))
         # The anchor scorer is stateless: its operation logits are owned by
         # the containing layer's three anchors. MLP choosers own their weights.
         compose_policy = compose | {id(p) for name in ('stop_anchor', 'reduce_anchor', 'apply_anchor')
@@ -2925,11 +2928,13 @@ class BaseModel(Mereology, nn.Module):
 
         from types import SimpleNamespace
         owners = self.objective_parameter_groups(SimpleNamespace(param_groups=[{'params': params}]))
-        reconstruct_ids = {id(p) for p in owners['reconstruction']}
+        compose_ids = {id(p) for p in owners['compose_lesson']}
+        compose_lesson = [p for p in params if id(p) in compose_ids]
+        reconstruct_ids = {id(p) for p in owners['reconstruction']} - compose_ids
         reconstruction = [p for p in params if id(p) in reconstruct_ids]
         attention_ids = {id(p) for p in owners['attention']}
         attention = [p for p in params if id(p) in attention_ids]
-        adaptive = [p for p in params if id(p) not in reconstruct_ids | attention_ids]
+        adaptive = [p for p in params if id(p) not in reconstruct_ids | attention_ids | compose_ids]
         optimizers = []
         # Keep Adam first so lazy answer/predictor modules join their owner.
         dense_adaptive = [p for p in adaptive if p.data_ptr() not in sparse_ptrs | row_local_ptrs]
@@ -2955,14 +2960,22 @@ class BaseModel(Mereology, nn.Module):
         if attention:
             optimizers.append(Adam(attention, lr=lr, capturable=_cap))
             optimizers[-1].objective_owner = 'attention'
+        # Compose lesson weights (including load gain) use the order lesson's
+        # Adam settings. Their objective ownership remains reconstruction.
+        if compose_lesson:
+            optimizers.append(Adam(compose_lesson, lr=lr, capturable=_cap))
+            optimizers[-1].objective_owner = 'compose_lesson'
         if not optimizers:
             raise RuntimeError("model exposes no trainable optimizer parameters")
         optimizer = MultiOptimizer(optimizers)
         def route_new(parameters):
             grouped = self.objective_parameter_groups(SimpleNamespace(param_groups=[{'params': list(parameters)}]))
-            return {'reconstruction': grouped['reconstruction'],
+            compose_ids = {id(p) for p in grouped['compose_lesson']}
+            return {'reconstruction': tuple(p for p in grouped['reconstruction']
+                                            if id(p) not in compose_ids),
                     'adaptive': grouped['expectation'] + grouped['output'],
-                    'attention': grouped['attention']}
+                    'attention': grouped['attention'],
+                    'compose_lesson': grouped['compose_lesson']}
         optimizer.route_parameters = route_new
         pending = getattr(self, "_pending_optimizer_state", None)
         if pending is not None:

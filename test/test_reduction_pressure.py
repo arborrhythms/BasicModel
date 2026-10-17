@@ -50,7 +50,8 @@ def test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word():
 @pytest.mark.parametrize('pressure', [0., 1.])
 def test_unary_preference_still_completes_absolute_and_relative_ends(pressure):
     step = unary_first()
-    step.reduce_pressure = pressure
+    with torch.no_grad():
+        step.reduce_pressure.fill_(pressure)
     result = step.derive(torch.ones(2, 8, 1), slots=torch.tensor([1, 3]),
                          rounds=16, greedy=True)
     assert result['complete'].all()
@@ -82,9 +83,11 @@ def test_pressure_enters_credit_but_temperature_does_not():
     with torch.no_grad():
         step.apply_anchor.zero_()
     x = torch.ones(1, 2, 1)
-    step.reduce_pressure = 0.
+    with torch.no_grad():
+        step.reduce_pressure.zero_()
     _, _, unloaded = step(x, slots=2, allowance=2, rounds_left=3)
-    step.reduce_pressure = 1.
+    with torch.no_grad():
+        step.reduce_pressure.fill_(1.)
     for temperature in (0., .25, 2.):
         step.temperature = temperature
         _, _, loaded = step(x, slots=2, allowance=2, rounds_left=3)

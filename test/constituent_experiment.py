@@ -38,14 +38,18 @@ def run(args):
     lessons = json.loads((DEST/'train.lessons.json').read_text())
     assert len(train) == len(lessons) == 72 and len(evaluation) == 40
     forms = {word for row in train+evaluation for word in row['text'].split() if word != '.'}
-    protocol = dict(seed=SEED, epochs=EPOCHS, training_presentations=len(train)*EPOCHS,
-        evaluation_presentations=len(evaluation), batch_size=4, learning_rate=RATE,
+    pilot = getattr(args, 'pilot', False)
+    protocol = dict(seed=SEED, epochs=1 if pilot else EPOCHS,
+        training_presentations=16 if pilot else len(train)*EPOCHS,
+        evaluation_presentations=0 if pilot else len(evaluation), batch_size=4, learning_rate=RATE,
         warmup=str(args.warmup), candidate=subprocess.check_output(
             ['git', 'rev-parse', 'HEAD'], text=True).strip(),
         gates=dict(brackets=.9, occurrences=.95, duplicate_writes=0,
                    reductions='one order-1 occurrence at every lowered NP; report description stamp',
                    unlowered_occurrences=0),
-        attention='student-selected; no forced source-reading lesson')
+        attention='student-selected; no forced source-reading lesson', pilot=pilot,
+        pilot_gate='both fixed-state raw mean wait and fold CEs decrease by more than 1e-5 nats',
+        pilot_state='disposable; full run restarts the original warm-up and seed')
     save(args.out/'protocol.json', protocol)
     started = time.monotonic()
     records, progress, results, steps = [], [], [], [0]
@@ -66,6 +70,15 @@ def run(args):
                 steps[0] += 1
                 return result
             optimizer.step = step
+            if pilot:
+                import GrammarLessons
+                from constituent_pilot import PilotProbe
+                probe = PilotProbe(model, args.out)
+                native_compose = GrammarLessons.compose_loss
+                def compose_probe(language, programs, annotations, **kwargs):
+                    probe.capture(language, programs, annotations)
+                    return native_compose(language, programs, annotations, **kwargs)
+                patch.setattr(GrammarLessons, 'compose_loss', compose_probe)
             rng = np.random.default_rng(SEED)
             lesson_audits = []
             native_lesson = model._grammar_lesson_objectives
@@ -111,10 +124,18 @@ def run(args):
                 print(json.dumps(report), flush=True)
                 reset(model, len(batch))
 
-            for epoch in range(EPOCHS):
+            for epoch in range(1 if pilot else EPOCHS):
                 order = rng.permutation(len(train)).tolist()
+                if pilot:
+                    order = order[:16]
                 for offset in range(0, len(order), 4):
                     present(train, order[offset:offset+4], training=True, epoch=epoch)
+            if pilot:
+                report = dict(completed=True, protocol=protocol, optimizer_steps=steps[0],
+                    elapsed_seconds=time.monotonic()-started, **probe.finish())
+                save(args.out/'results.json', report)
+                print(json.dumps(report), flush=True)
+                return
             model.save_weights(str(args.out/'trained.ckpt'))
             model._concept_owner()._online_learning_frozen = True
             for offset in range(0, len(evaluation), 4):
@@ -139,4 +160,5 @@ if __name__ == '__main__':
     parser.add_argument('out', type=Path)
     parser.add_argument('--warmup', type=Path,
         default=Path('output/item6-orders-paired-accepted-code-20261015/warmup.ckpt'))
+    parser.add_argument('--pilot', action='store_true', help='16 presentations; fixed teacher-state CE gate, no held-out run')
     run(parser.parse_args())

@@ -272,6 +272,8 @@ NP the reading applies the NP operator (mint, or bind for a re-mention)
 and captures the NP's own meaning before the sentence fold. Its occurrence
 row is written at the kept close. The lesson's CE teaches the waits
 as well as the folds; it never replaces the student's kept program.
+Adjective descriptions use `intersection`, per the operator catalogue;
+this corpus contains no noun–noun `compound` and requires no case lesson.
 The gate, declared before the fixed-budget run (Alec, 2026-10-17), is free
 reading on held-out sentences of the trained kinds: **≥90% exact brackets**,
 **one occurrence for ≥95% of singular NPs with zero duplicate writes**,

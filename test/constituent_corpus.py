@@ -37,7 +37,7 @@ def corpus():
                 if adjective is None:
                     description = word(KINDS[k])
                 else:
-                    description = ['compound', word(PROPERTIES[adjective]), word(KINDS[k])]
+                    description = ['intersection', word(PROPERTIES[adjective]), word(KINDS[k])]
                 nps.append(dict(span=list(range(start, len(words))),
                     description=list(range(start+1, len(words))), singular=True))
                 return ['definite' if d else 'lower', cue, description]
@@ -61,7 +61,7 @@ def corpus():
                      unlowered=[])))
     for kind, prop in product(range(4), repeat=2):
         words = [PROPERTIES[prop], KINDS[kind]]
-        tree = ['compound', 0, 1]
+        tree = ['intersection', 0, 1]
         split = 'train' if (kind+prop) % 2 == 0 else 'eval'
         key = f'4e:description:{kind}:{prop}'
         rows.append((split, dict(id=key, text=' '.join(words)),

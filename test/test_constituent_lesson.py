@@ -96,7 +96,6 @@ def test_constituent_teacher_runs_all_constructions_with_native_meaning_bands(tm
     from identity_experiment import make_model
     model = make_model(tmp_path, monkeypatch)
     try:
-        from CaseSelection import CaseBank
         capacity = int(model.conceptualSpace.stm.capacity)
         closing = min(2*capacity, int(model.syntacticOrder)) if model.syntacticOrder else 2*capacity
         seen = set()
@@ -108,18 +107,45 @@ def test_constituent_teacher_runs_all_constructions_with_native_meaning_bands(tm
             program = SimpleNamespace(leaves=torch.randn(len(label['words']), 232),
                 compose_capacity=capacity, compose_closing_budget=closing,
                 concept_ids=torch.arange(1, len(label['words'])+1))
-            count = len(program.leaves)
-            # A mechanism fixture supplies existing memberships. Their
-            # absence is reported, never replaced by a fabricated head.
-            missing = constituent_examples(model.languageSpace, program, lesson['tree'])
-            if label['family'] in ('np', 'intransitive', 'description'):
-                assert missing[-1]['unavailable'] == 'no_native_cases'
-            program.case_bank = CaseBank(program.concept_ids, program.leaves,
-                torch.ones(count, count, 2), torch.ones(count, count, 2))
+            # Adjective intersection needs no case bank; noun-noun compound
+            # subtyping is a different lesson and does not occur here.
+            assert 'compound' not in str(lesson['tree'])
             states = constituent_examples(model.languageSpace, program, lesson['tree'])
+            assert all(not state.get('unavailable') for state in states)
             assert all(state['window'].shape == (2, 232) for state in states)
             assert states[-1]['target'] == -1 and states[-1]['depth'] == 1
             assert torch.isfinite(compose_loss(model.languageSpace, [program], [lesson]))
+    finally:
+        model.End()
+
+
+def test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer(tmp_path, monkeypatch):
+    from identity_experiment import make_model
+    from ObjectiveOwnership import backward_owned
+    model = make_model(tmp_path, monkeypatch)
+    try:
+        layer = model.languageSpace._tree_layer(2)
+        optimizer = model.getOptimizer(lr=.003)
+        groups = model.objective_parameter_groups(optimizer)
+        owned = {id(p) for p in groups['compose_lesson']}
+        assert owned == {id(p) for p in layer.chooser.parameters()} | {id(layer.reduce_pressure)}
+        compose = next(o for o in optimizer.optimizers if getattr(o, 'objective_owner', None) == 'compose_lesson')
+        attention = next(o for o in optimizer.optimizers if getattr(o, 'objective_owner', None) == 'attention')
+        assert isinstance(compose._inner, torch.optim.Adam) and isinstance(attention._inner, torch.optim.Adam)
+        for key in ('lr', 'betas', 'eps', 'weight_decay', 'capturable'):
+            assert compose.param_groups[0][key] == attention.param_groups[0][key]
+        assert sum(p is layer.reduce_pressure for g in optimizer.param_groups for p in g['params']) == 1
+        window = torch.randn(1, 2, 232)
+        def wait_cost():
+            _, _, route = layer(window, slots=2, allowance=7, rounds_left=3)
+            return -route['probabilities'][0, -1].log()
+        before = wait_cost()
+        backward_owned({'compose_lesson': before}, groups)
+        assert layer.reduce_pressure.grad > 0
+        assert all(p.grad is None for g in optimizer.param_groups for p in g['params'] if id(p) not in owned)
+        optimizer.step()
+        assert layer.reduce_pressure < 1.
+        assert wait_cost() < before
     finally:
         model.End()
 

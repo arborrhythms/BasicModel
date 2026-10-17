@@ -384,7 +384,12 @@ unsaturated chooser CE gradients, but no native sigma cases for compounds.
 The one rerun stopped in its first commit because trial detachment dropped
 the close-reference flag; that defect is repaired and reproduced on the
 first batch. No held-out result or new learning claim was reached; the
-full experiment was not restarted. The grounded case lesson remains absent.
+full experiment was not restarted. This preparation is landed at `89621bc61`
+(WikiOracle `c78c292`). The review corrects the adjective annotation: it is
+`intersection`, not case-dependent noun–noun `compound`, so this corpus needs
+no case lesson. The next pass trains the fold-pressure gain and uses the order
+lesson’s optimizer for compose lessons, with a 16-presentation CE pilot before
+a conditional rerun at the unchanged budget.
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the
