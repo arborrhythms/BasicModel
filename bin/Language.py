@@ -12957,7 +12957,7 @@ class LanguageSpace(nn.Module):
     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
                          sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
-                         previous_unary=None, policy_grad=True):
+                         previous_unary=None, policy_grad=True, lesson_slot=None):
         """The shared compose layer with the two newest occupied STM slots."""
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -13010,8 +13010,8 @@ class LanguageSpace(nn.Module):
                                                 reference_scope[..., 0].bitwise_and(1) != 0, live_positions,
                                                 reference_scope[..., 0].bitwise_and(16) != 0),
                                           active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
-        _, _, route = self.language_layer.operation_layer(
-            window, depth=window_depth, slots=stop_slots,
+        layer = self.language_layer.operation_layer
+        arguments = dict(depth=window_depth, slots=stop_slots,
             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
             allowance=slots if allowance is None else allowance,
             rounds_left=rounds_left, load_depth=depth,
@@ -13020,6 +13020,13 @@ class LanguageSpace(nn.Module):
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=self._structural_context(
                 phase='compose', input_stream=buffer), reference_data=references)
+        _, _, route = layer(window, **arguments)
+        lesson = getattr(self, '_compose_lesson_states', None)
+        if lesson is not None:
+            # Freeze the context used by this decision before another sentence
+            # can replace the layer's implicit What context.
+            lesson.record(lesson_slot, window,
+                dict(arguments, what_ctx=getattr(layer, '_what_context', None)), route)
         position = (window_depth - 1 - route['position']).clamp_min(0)
         from ReferenceContext import result_order
         window_orders = state[2].gather(1, source)

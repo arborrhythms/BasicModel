@@ -13,6 +13,7 @@ import pytest
 import torch
 
 from constituent_corpus import DEST, load
+from constituent_budget import paired_updates_only
 from constituent_measurement import observe, grade, summarize
 from identity_experiment import make_model, restore_warmup, reset, save
 
@@ -30,6 +31,9 @@ def run(args):
     from Models import BaseModel
     from What import What
     restore = BaseModel.load_weights
+    order_report = json.loads((args.warmup.parent/'results.json').read_text())
+    if not order_report.get('passed') or 'stages' not in order_report:
+        raise ValueError('stage 4e requires the passed stage-3 order gate')
     args.out.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
     random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
@@ -47,9 +51,11 @@ def run(args):
         gates=dict(brackets=.9, occurrences=.95, duplicate_writes=0,
                    reductions='one order-1 occurrence at every lowered NP; report description stamp',
                    unlowered_occurrences=0),
-        attention='student-selected; no forced source-reading lesson', pilot=pilot,
-        pilot_gate='both fixed-state raw mean wait and fold CEs decrease by more than 1e-5 nats',
-        pilot_state='disposable; full run restarts the original warm-up and seed')
+        attention='student-selected; stage-3 order gate passed before this run', pilot=pilot,
+        order_gate=str(args.warmup.parent/'results.json'), batch_end_optimizer='disabled',
+        targets='annotation labels actual student states; no teacher trajectory',
+        pilot_gate='both raw mean wait and fold CEs on first-batch student states decrease by more than 1e-5 nats',
+        pilot_state='disposable; full run restarts the same order-trained checkpoint and seed')
     save(args.out/'protocol.json', protocol)
     started = time.monotonic()
     records, progress, results, steps = [], [], [], [0]
@@ -64,12 +70,8 @@ def run(args):
                 _annotation_tree(model.languageSpace, lesson['tree'], len(lesson['text'].split()))
             data = model.inputSpace.data
             optimizer = model.getOptimizer(lr=RATE)
-            native_step = optimizer.step
-            def step(*values, **kwargs):
-                result = native_step(*values, **kwargs)
-                steps[0] += 1
-                return result
-            optimizer.step = step
+            budget = paired_updates_only(model, optimizer)
+            updates = budget.__enter__()
             if pilot:
                 import GrammarLessons
                 from constituent_pilot import PilotProbe
@@ -109,12 +111,17 @@ def run(args):
                     records.append(dict(id=row['id'], training=training, epoch=epoch, observed=observation))
                     if not training:
                         results.append(grade(labels[row['id']], observation))
+                steps[0] = updates['paired']
+                if training and steps[0] != 2*(len(progress)+1):
+                    raise RuntimeError('stage 4e exceeded its paired optimizer budget')
+                if pilot:
+                    probe.collecting = False
                 raw = model._last_sentence_field
                 if training and len(raw['trials']) != 2:
                     raise RuntimeError('stage 4e did not run both native trials')
                 lesson_reports = getattr(model, '_reading_lesson_reports', ())
                 report = dict(batch=len(progress)+1, training=training, epoch=epoch,
-                    ids=[row['id'] for row in batch], optimizer_steps=steps[0],
+                    ids=[row['id'] for row in batch], optimizer_steps=steps[0], updates=dict(updates),
                     lesson_costs=[float(value) for value in lesson_reports] if training else [],
                     elapsed_seconds=time.monotonic()-started)
                 progress.append(report)
@@ -131,7 +138,7 @@ def run(args):
                 for offset in range(0, len(order), 4):
                     present(train, order[offset:offset+4], training=True, epoch=epoch)
             if pilot:
-                report = dict(completed=True, protocol=protocol, optimizer_steps=steps[0],
+                report = dict(completed=True, protocol=protocol, optimizer_steps=steps[0], updates=dict(updates),
                     elapsed_seconds=time.monotonic()-started, **probe.finish())
                 save(args.out/'results.json', report)
                 print(json.dumps(report), flush=True)
@@ -140,7 +147,7 @@ def run(args):
             model._concept_owner()._online_learning_frozen = True
             for offset in range(0, len(evaluation), 4):
                 present(evaluation, list(range(offset, offset+4)), training=False, epoch=None)
-            report = dict(completed=True, protocol=protocol, optimizer_steps=steps[0],
+            report = dict(completed=True, protocol=protocol, optimizer_steps=steps[0], updates=dict(updates),
                 elapsed_seconds=time.monotonic()-started, **summarize(results), results=results,
                 lexical_orders=lexical_orders(model, forms))
             save(args.out/'results.json', report)
@@ -152,6 +159,8 @@ def run(args):
                 completed_evaluation_presentations=len(results), elapsed_seconds=time.monotonic()-started))
             raise
         finally:
+            if 'budget' in locals():
+                budget.__exit__(None, None, None)
             model.End()
 
 
@@ -159,6 +168,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('out', type=Path)
     parser.add_argument('--warmup', type=Path,
-        default=Path('output/item6-orders-paired-accepted-code-20261015/warmup.ckpt'))
-    parser.add_argument('--pilot', action='store_true', help='16 presentations; fixed teacher-state CE gate, no held-out run')
+        required=True)
+    parser.add_argument('--pilot', action='store_true', help='16 presentations; student-state CE gate, no held-out run')
     run(parser.parse_args())

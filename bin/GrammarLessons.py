@@ -92,114 +92,103 @@ def compose_examples(language, program, tree, *, variables=()):
     return binary, unary
 
 
-def _constituent_cases(language, program, window, identities):
-    """The teacher may read existing cases, never supply new memberships."""
-    bank = getattr(program, 'case_bank', None)
-    if bank is None:
-        return None, None
-    layer = language._tree_layer(2)
-    from CaseSelection import select_cases
-    x = window[None]
-    ids = torch.tensor([identities], device=window.device)
-    r, u, d = layer.r_reduce, layer.r_apply, window.shape[-1]
-    weights = window.new_zeros(1, 1, r, len(bank.ids), 2)
-    valid = torch.ones(1, 1, r, device=window.device, dtype=torch.bool)
-    for local, rule in enumerate(language._compose_binary_rules):
-        head = getattr(rule, 'case_head_role', 0)
-        if head:
-            selection = select_cases(bank, ids[:, 2-head:3-head], ids[:, head-1:head])
-            weights[:, :, local] = selection.weights
-            valid[:, :, local] = selection.available
-    references = dict(case_bank=bank, case_weights=weights,
-        left=x[:, :1, None].expand(1, 1, r, d), right=x[:, 1:, None].expand(1, 1, r, d),
-        unary=x[:, :, None].expand(1, 2, u, d),
-        binary_refs=ids[:, None, None].expand(1, 1, r, 2),
-        unary_refs=torch.stack((ids, torch.full_like(ids, -1)), -1)[:, :, None].expand(1, 2, u, 2),
-        binary_relations=torch.zeros(1, 1, r, 2, device=x.device, dtype=torch.bool),
-        unary_relations=torch.zeros(1, 2, u, 2, device=x.device, dtype=torch.bool),
-        binary_valid=valid, unary_valid=torch.ones(1, 2, u, device=x.device, dtype=torch.bool))
-    context = language._structural_context(phase='compose', input_stream=x)
-    return references, context
+def detached_state(value):
+    """Own a lesson observation, including bounded native reference/context data."""
+    from collections.abc import Mapping
+    from dataclasses import fields, is_dataclass, replace
+    if torch.is_tensor(value):
+        return value.detach().clone()
+    if isinstance(value, Mapping):
+        return {key: detached_state(item) for key, item in value.items()}
+    if is_dataclass(value):
+        return replace(value, **{field.name: detached_state(getattr(value, field.name))
+                                 for field in fields(value)})
+    if isinstance(value, tuple):
+        items = [detached_state(item) for item in value]
+        return type(value)(*items) if hasattr(value, '_fields') else tuple(items)
+    if isinstance(value, list):
+        return [detached_state(item) for item in value]
+    return value
+
+
+class ComposeLessonStates:
+    """Observe actual choices, never install targets in the native traversal.
+
+    A paired fork reuses its prefix. Keep that prefix's observations and replace
+    only the rows actually visited again. The current attempted mask filters
+    observations from a discarded suffix when constructing the lesson.
+    """
+    def __init__(self):
+        self.rounds = {}
+
+    def record(self, slot, window, kwargs, route):
+        if slot is None:
+            raise ValueError('constituent lesson needs an addressed compose round')
+        payload = detached_state(dict(window=window, kwargs=kwargs))
+        for row in route['valid'].nonzero().flatten().tolist():
+            key = int(slot[row] if torch.is_tensor(slot) and slot.ndim else slot)
+            self.rounds[row, key] = dict(payload, row=row,
+                depth=int(kwargs['load_depth'][row]),
+                kind=int(route['kind'][row]), position=int(route['position'][row]), slot=key,
+                observed_probabilities=route['probabilities'][row].detach().clone())
+
+    def sentence(self, row, positions, *, width, closing_base, closing_width, attempted):
+        positions = positions.tolist()
+        source = {position: index for index, position in enumerate(sorted(positions))}
+        stack, states = [], []
+        def visit(slot):
+            if slot >= attempted.shape[1] or not bool(attempted[row, slot]):
+                return
+            state = self.rounds.get((row, slot))
+            if state is None:
+                raise ValueError(f'constituent lesson missed student round {row}:{slot}')
+            if state['depth'] != len(stack):
+                raise ValueError('constituent lesson provenance differs from the student stack')
+            states.append(dict(state, spans=tuple(stack[-2:])))
+            if state['kind'] == 1:
+                right, left = stack.pop(), stack.pop()
+                stack.append(left + right)
+            elif state['kind'] == 2:
+                # Unary operations preserve the source leaves, even if lossy.
+                pass
+        for position in positions:
+            stack.append((source[position],))
+            for round_index in range(3):
+                visit(3*position + round_index)
+        for offset in range(closing_width):
+            visit(closing_base + offset)
+        return states
 
 
 def constituent_examples(language, program, tree):
-    """Explicit folds AND waits on the native three-round, two-slot window.
+    """Bracket targets on the student's visited states, including wrong folds.
 
-    A bracket lesson permits several reductions after a word and waits when
-    the next subtree needs more input. The final closing uses its own bound.
-    Only detached teacher states are built; the student's journal is untouched.
+    Membership in a gold bracket is determined by the actual operands' source
+    leaves. An incorrect fold cannot be undone by a replacement teacher trace.
     """
-    leaves = program.leaves.detach()
-    root, parents, rules = _annotation_tree(language, tree, len(leaves))
-    layer = language._tree_layer(2)
-    capacity = int(program.compose_capacity)
-    closing_budget = int(program.compose_closing_budget)
-    stack, examples = [], []
+    root, _, rules = _annotation_tree(language, tree, len(program.leaves))
+    parents = {}
+    def spans(node):
+        if node[0] == 'leaf':
+            return (node[1],)
+        children = tuple(spans(child) for child in node[1:])
+        if len(children) != 2:
+            raise ValueError('constituent brackets require binary annotations')
+        parents[children] = rules[2][node[0]]
+        return sum(children, ())
+    spans(root)
+    states = getattr(program, 'student_states', None)
+    if states is None:
+        raise ValueError('constituent lessons require captured student states')
+    return [dict(state, target=parents.get(state['spans'], -1)) for state in states]
 
-    def step(closing, remaining):
-        depth = len(stack)
-        if not depth:
-            raise ValueError('constituent lesson has an empty compose state')
-        parent = parents.get(tuple(node for node, _, _ in stack[-2:])) if depth >= 2 else None
-        arity = 2
-        if parent is None:
-            parent = parents.get((stack[-1][0],))
-            arity = 1
-        window = leaves.new_zeros(2, leaves.shape[-1])
-        window[:min(2, depth)] = torch.stack([value for _, value, _ in stack[-2:]])
-        identities = [identity for _, _, identity in stack[-2:]] + ([-1] if depth == 1 else [])
-        references, context = _constituent_cases(language, program, window, identities)
-        target = -1
-        if parent is not None:
-            local = rules[arity][parent[0]]
-            target = (local if arity == 2 else
-                      layer.r_reduce + (min(2, depth)-1)*layer.r_apply + local)
-        if target < 0 and (depth > (1 if closing else capacity-1)):
-            raise ValueError('constituent lesson requires an illegal wait')
-        example = dict(window=window.detach(), target=target, depth=depth,
-            closing=closing, remaining=remaining, references=references, context=context)
-        examples.append(example)
-        if parent is None:
-            return 'wait'
-        catalog = language._compose_binary_rules if arity == 2 else language._compose_unary_rules
-        rule = catalog[local]
-        if getattr(rule, 'case_head_role', 0) and (references is None or not bool(references['binary_valid'][0, 0, local])):
-            example['unavailable'] = 'no_native_cases'
-            return 'unavailable'
-        with torch.no_grad():
-            # Native grammar wrappers have a batch axis, including operators
-            # which process the form and meaning blocks separately.
-            operands = [value[None] for _, value, _ in stack[-arity:]]
-            if getattr(rule, 'case_head_role', 0):
-                value = layer._stacked_reduced(window[None], context, references)[0, 0, local]
-            else:
-                value = (layer.ops[local](*operands) if arity == 2
-                         else layer.unary_ops[local](*operands))[0]
-        head = getattr(rule, 'head_role', 0)
-        reference = stack[-arity+head-1][2] if head else -1
-        stack[-arity:] = [(parent, value, reference)]
-        return 'fold'
 
-    for index, leaf in enumerate(leaves):
-        if len(stack) >= capacity:
-            raise ValueError('constituent annotation exceeds the live STM capacity')
-        ids = getattr(program, 'concept_ids', None)
-        stack.append((("leaf", index), leaf, -1 if ids is None else int(ids[index])))
-        for round_index in range(3):
-            status = step(False, 3-round_index)
-            if status == 'unavailable':
-                return examples
-            if status == 'wait':
-                break
-    for round_index in range(closing_budget):
-        status = step(True, closing_budget-round_index)
-        if status == 'unavailable':
-            return examples
-        if status == 'wait':
-            break
-    if len(stack) != 1 or stack[0][0] != root:
-        raise ValueError('constituent annotation exceeds the live closing budget')
-    return examples
+def score_student_state(layer, state):
+    # The original call's masks, pressure, references and context are retained.
+    # A sampled departure mask changes the action, not the CE distribution.
+    kwargs = dict(state['kwargs'], policy_grad=True, sample=False, masked_action=None)
+    _, _, route = layer(state['window'], **kwargs)
+    return route['probabilities'][state['row']]
 
 
 def compose_loss(language, programs, lessons, *, errors=None):
@@ -224,23 +213,16 @@ def compose_loss(language, programs, lessons, *, errors=None):
             raise ValueError("grammar supervision requires an actual captured forward program")
         if lesson.get('waits', False):
             for example in constituent_examples(language, program, lesson['tree']):
-                window, depth = example['window'], example['depth']
-                closing = example['closing']
-                if example.get('unavailable'):
-                    errors.add('compose.unavailable', window.new_ones(()), category='grammar', trained=False)
-                    break
-                _, _, route = layer(window[None],
-                    depth=torch.tensor([min(2, depth)], device=window.device),
-                    slots=2 if not closing or depth == 1 else 0,
-                    allowance=1 if closing else program.compose_capacity-1,
-                    rounds_left=example['remaining'],
-                    load_depth=torch.tensor([depth], device=window.device),
-                    reference_data=example['references'], grammar_context=example['context'],
-                    what_ctx=window.new_zeros(1, context_width))
-                probabilities = route['probabilities']
+                probabilities = score_student_state(layer, example)
                 target = example['target']
                 name = 'compose.wait' if target < 0 else 'compose.choice'
-                errors.error(name, -probabilities[0, target].clamp_min(1e-30).log(),
+                # A bad prior fold can make the annotated wait illegal at the
+                # closing deadline. Count its full CE and report it explicitly;
+                # never substitute an unannotated fold or alter a native mask.
+                if not bool(probabilities[target].detach() > 0):
+                    errors.add('compose.unreachable', probabilities.new_ones(()),
+                               category='grammar', trained=False)
+                errors.error(name, -probabilities[target].clamp_min(1e-30).log(),
                     math.log(probabilities.shape[-1]), category='grammar')
             continue
         binary, unary = compose_examples(language, program, lesson["tree"],

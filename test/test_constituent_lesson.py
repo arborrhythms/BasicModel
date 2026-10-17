@@ -11,38 +11,50 @@ from constituent_corpus import corpus
 from constituent_measurement import grade, summarize
 
 
-def test_explicit_brackets_teach_waits_and_multiple_folds_without_changing_student():
+def test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing_them():
+    from GrammarLessons import ComposeLessonStates, score_student_state
     class Sum(torch.nn.Module):
         def forward(self, left, right):
             return left+right
-    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),), chooser='mlp')
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),),
+                                    unary_ops=(torch.nn.Identity(),), chooser='mlp')
     language = SimpleNamespace(_tree_layer=lambda _: layer,
-        _compose_binary_rules=(SimpleNamespace(method_name='sum'),), _compose_unary_rules=())
-    program = SimpleNamespace(leaves=torch.eye(4), actions=torch.tensor([[0, -1, 0]]),
-        compose_capacity=8, compose_closing_budget=16)
-    # The two top leaves must first wait; the third word permits two folds.
-    lesson = dict(tree=['sum', ['sum', 0, ['sum', 1, 2]], 3], waits=True)
-    original = {name: value.clone() for name, value in vars(program).items() if torch.is_tensor(value)}
+        _compose_binary_rules=(SimpleNamespace(method_name='sum'),),
+        _compose_unary_rules=(SimpleNamespace(method_name='identity'),))
+    capture = ComposeLessonStates()
+    # Actual sequence: wait after leaf 0, prematurely fold leaves 0+1, then
+    # see leaf 2. The gold tree needs (1,2), which is now unreachable.
+    windows = [torch.stack((torch.eye(4)[0], torch.zeros(4))), torch.eye(4)[:2],
+               torch.stack((torch.eye(4)[0]+torch.eye(4)[1], torch.eye(4)[2]))]
+    for slot, depth, kind, window in zip((0, 3, 6), (1, 2, 2), (0, 1, 0), windows):
+        kwargs = dict(depth=torch.tensor([min(2, depth)]), load_depth=torch.tensor([depth]),
+                      slots=2, allowance=7, rounds_left=3)
+        _, _, route = layer(window[None], **kwargs)
+        route = dict(route, kind=torch.tensor([kind]))
+        capture.record(slot, window[None], kwargs, route)
+    attempted = torch.zeros(1, 25, dtype=torch.bool)
+    attempted[0, [0, 3, 6]] = True
+    program = SimpleNamespace(leaves=torch.eye(4)[:3], actions=torch.tensor([0, 1, 0]),
+        student_states=capture.sentence(0, torch.arange(3), width=3,
+            closing_base=9, closing_width=16, attempted=attempted))
+    lesson = dict(tree=['sum', 0, ['sum', 1, 2]], waits=True)
     states = constituent_examples(language, program, lesson['tree'])
-    assert [(state['target'], state['depth']) for state in states] == [
-        (-1, 1), (-1, 2), (0, 3), (0, 2), (-1, 1), (0, 2), (-1, 1), (-1, 1)]
-    from Layers import Error
-    errors = Error()
-    loss = compose_loss(language, [program], [lesson], errors=errors)
+    assert [state['target'] for state in states] == [-1, -1, -1]
+    assert states[-1]['spans'] == ((0, 1), (2,))
+    for state in states:
+        torch.testing.assert_close(score_student_state(layer, state), state['observed_probabilities'])
+    original = program.actions.clone()
+    loss = compose_loss(language, [program], [lesson])
     assert torch.isfinite(loss) and loss.requires_grad
     loss.backward()
-    assert any(parameter.grad is not None and bool(parameter.grad.any()) for parameter in layer.chooser.parameters())
-    for name, value in original.items():
-        torch.testing.assert_close(getattr(program, name), value, rtol=0, atol=0)
-    # Wait-only supervision is a real gradient, not the old skipped target.
-    layer.zero_grad()
-    singleton = SimpleNamespace(leaves=program.leaves[:1], compose_capacity=8, compose_closing_budget=16)
-    # Add a genuine competing unary so STOP has a nontrivial softmax.
-    other = OperationSelectionLayer(d_model=4, ops=(Sum(),), unary_ops=(torch.nn.Identity(),), chooser='mlp')
-    language._tree_layer = lambda _: other
-    language._compose_unary_rules = (SimpleNamespace(method_name='identity'),)
-    compose_loss(language, [singleton], [dict(tree=0, waits=True)]).backward()
-    assert any(parameter.grad is not None and bool(parameter.grad.any()) for parameter in other.chooser.parameters())
+    assert any(p.grad is not None and bool(p.grad.any()) for p in layer.chooser.parameters())
+    torch.testing.assert_close(program.actions, original, rtol=0, atol=0)
+    # When actual operands do match a bracket, its declared operator is taught.
+    program.student_states = [dict(states[1], spans=((1,), (2,)))]
+    assert constituent_examples(language, program, lesson['tree'])[0]['target'] == 0
+    del program.student_states
+    with pytest.raises(ValueError, match='captured student states'):
+        compose_loss(language, [program], [lesson])
 
 
 def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences():
@@ -83,7 +95,8 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
     language = SimpleNamespace(_tree_layer=lambda _: layer,
         _compose_binary_rules=tuple(SimpleNamespace(method_name='lower', surface_name=name) for name in names),
         _compose_unary_rules=())
-    program = SimpleNamespace(leaves=torch.eye(4)[:2], compose_capacity=8, compose_closing_budget=16)
+    program = SimpleNamespace(leaves=torch.eye(4)[:2],
+                              student_states=[dict(spans=((0,), (1,)))])
     for expected, name in enumerate(names):
         tree = [name, 0, 1]
         binary, _ = compose_examples(language, program, tree)
@@ -92,29 +105,45 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
                 if row['target'] >= 0] == [expected]
 
 
-def test_constituent_teacher_runs_all_constructions_with_native_meaning_bands(tmp_path, monkeypatch):
+def test_native_constituent_lesson_captures_student_states_without_cases(tmp_path, monkeypatch):
     from identity_experiment import make_model
+    import GrammarLessons
+    from What import What
     model = make_model(tmp_path, monkeypatch)
-    try:
-        capacity = int(model.conceptualSpace.stm.capacity)
-        closing = min(2*capacity, int(model.syntacticOrder)) if model.syntacticOrder else 2*capacity
-        seen = set()
-        for _, _, lesson, label in corpus():
-            key = label['family'], label['words'][0]
-            if key in seen:
-                continue
-            seen.add(key)
-            program = SimpleNamespace(leaves=torch.randn(len(label['words']), 232),
-                compose_capacity=capacity, compose_closing_budget=closing,
-                concept_ids=torch.arange(1, len(label['words'])+1))
-            # Adjective intersection needs no case bank; noun-noun compound
-            # subtyping is a different lesson and does not occur here.
+    seen = []
+    native = GrammarLessons.compose_loss
+    def check(language, programs, lessons, **kwargs):
+        for program, lesson in zip(programs, lessons):
             assert 'compound' not in str(lesson['tree'])
-            states = constituent_examples(model.languageSpace, program, lesson['tree'])
-            assert all(not state.get('unavailable') for state in states)
-            assert all(state['window'].shape == (2, 232) for state in states)
-            assert states[-1]['target'] == -1 and states[-1]['depth'] == 1
-            assert torch.isfinite(compose_loss(model.languageSpace, [program], [lesson]))
+            states = constituent_examples(language, program, lesson['tree'])
+            assert states and all(state['window'].shape[-2:] == (2, 232) for state in states)
+            for state in states:
+                torch.testing.assert_close(GrammarLessons.score_student_state(
+                    language._tree_layer(2), state), state['observed_probabilities'], rtol=1e-5, atol=1e-6)
+            seen.extend(states)
+        return native(language, programs, lessons, **kwargs)
+    monkeypatch.setattr(GrammarLessons, 'compose_loss', check)
+    try:
+        lessons = [next(lesson for split, text, lesson, label in corpus()
+                        if split == 'train' and label['family'] == family)
+                   for family in ('np', 'intransitive', 'transitive', 'preposition')]
+        model.inputSpace.data.grammar_lessons = {'train': lessons}
+        inputs = model.inputSpace.prepPackedInput([[lesson['text']] for lesson in lessons])
+        from constituent_budget import paired_updates_only
+        optimizer = model.getOptimizer(lr=.003)
+        with paired_updates_only(model, optimizer) as updates:
+            model.runBatch(train=True, optimizer=optimizer, batchSize=4,
+                split='train', batch_override=(inputs, torch.empty(4, 0)), source_rows=[[b] for b in range(4)],
+                questions=tuple(What.present(b, split='train') for b in range(4)))
+            assert updates['paired'] == 2
+            pressure = model.languageSpace._tree_layer(2).reduce_pressure
+            before = pressure.detach().clone()
+            pressure.grad = torch.ones_like(pressure)
+            disabled = updates['batch_end_disabled']
+            optimizer.step()
+            assert updates['batch_end_disabled'] == disabled+1
+            torch.testing.assert_close(pressure, before, rtol=0, atol=0)
+        assert len(seen) > 8 and model.languageSpace._compose_lesson_states is None
     finally:
         model.End()
 

@@ -1,7 +1,7 @@
-"""Fixed teacher-state CE probe inside the first native training presentation."""
+"""Matched CE on actual student states from the pilot's first paired batch."""
 import torch
 
-from GrammarLessons import constituent_examples
+from GrammarLessons import constituent_examples, score_student_state
 from identity_experiment import save
 
 
@@ -9,50 +9,48 @@ class PilotProbe:
     def __init__(self, model, output):
         self.model, self.output = model, output
         self.states = []
-        self.before = None
+        self.before_values = {'wait': [], 'fold': []}
+        self.initial_pressure = float(model.languageSpace._tree_layer(2).reduce_pressure.detach())
+        self.collecting = True
 
     def capture(self, language, programs, lessons):
-        if self.before is not None:
+        if not self.collecting:
             return
-        with torch.no_grad(), torch.random.fork_rng():
-            for program, lesson in zip(programs, lessons):
-                for state in constituent_examples(language, program, lesson['tree']):
-                    if state.get('unavailable'):
-                        raise RuntimeError('pilot teacher target unavailable')
-                    self.states.append(dict(state, capacity=program.compose_capacity, text=lesson['text']))
-            self.before = self.measure()
-            torch.save(self.states, self.output/'teacher-states.pt')
-            save(self.output/'ce-before.json', self.before)
-
-    def measure(self):
-        layer = self.model.languageSpace._tree_layer(2)
-        width = int(getattr(layer.chooser, 'WHAT_CONTEXT_DIM', 0))
-        values = {'wait': [], 'fold': []}
-        with torch.no_grad(), torch.random.fork_rng():
-            for state in self.states:
-                window, depth, closing = state['window'], state['depth'], state['closing']
-                _, _, route = layer(window[None],
-                    depth=torch.tensor([min(2, depth)], device=window.device),
-                    slots=2 if not closing or depth == 1 else 0,
-                    allowance=1 if closing else state['capacity']-1,
-                    rounds_left=state['remaining'],
-                    load_depth=torch.tensor([depth], device=window.device),
-                    reference_data=state['references'], grammar_context=state['context'],
-                    what_ctx=window.new_zeros(1, width))
+        for program, lesson in zip(programs, lessons):
+            for state in constituent_examples(language, program, lesson['tree']):
+                self.states.append(dict(state, text=lesson['text']))
                 target = state['target']
-                values['wait' if target < 0 else 'fold'].append(
-                    float(-route['probabilities'][0, target].clamp_min(1e-30).log()))
-        return dict(pressure=float(layer.reduce_pressure.detach()),
-            **{name: dict(count=len(rows), ce=sum(rows)/len(rows)) for name, rows in values.items()})
+                self.before_values['wait' if target < 0 else 'fold'].append(
+                    float(-state['observed_probabilities'][target].clamp_min(1e-30).log()))
+
+    @staticmethod
+    def summary(values, pressure):
+        return dict(pressure=pressure, **{name: dict(count=len(rows),
+            ce=sum(rows)/len(rows) if rows else None) for name, rows in values.items()})
 
     def finish(self):
-        if self.before is None:
-            raise RuntimeError('pilot received no teacher states')
-        after = self.measure()
-        # The declared pilot gate requires both means to fall, beyond float noise.
-        passed = all(self.before[name]['ce']-after[name]['ce'] > 1e-5 for name in ('wait', 'fold'))
-        result = dict(before=self.before, after=after, passed=passed,
-            gate='both fixed-state raw mean CEs decrease by more than 1e-5 nats',
+        if not self.states:
+            raise RuntimeError('pilot received no student states')
+        layer = self.model.languageSpace._tree_layer(2)
+        values = {'wait': [], 'fold': []}
+        diagnostics = []
+        with torch.no_grad(), torch.random.fork_rng():
+            for state in self.states:
+                probabilities = score_student_state(layer, state)
+                target = state['target']
+                value = float(-probabilities[target].clamp_min(1e-30).log())
+                values['wait' if target < 0 else 'fold'].append(value)
+                diagnostics.append(dict(text=state['text'], slot=state['slot'], spans=state['spans'],
+                    target=target, selected_kind=state['kind'],
+                    before=float(-state['observed_probabilities'][target].clamp_min(1e-30).log()),
+                    after=value, unreachable=not bool(probabilities[target] > 0)))
+        before = self.summary(self.before_values, self.initial_pressure)
+        after = self.summary(values, float(layer.reduce_pressure.detach()))
+        passed = all(before[name]['count'] and before[name]['ce']-after[name]['ce'] > 1e-5
+                     for name in ('wait', 'fold'))
+        result = dict(before=before, after=after, passed=bool(passed),
+            gate='both raw mean CEs on first-batch student states decrease by more than 1e-5 nats',
             texts=list(dict.fromkeys(state['text'] for state in self.states)))
+        save(self.output/'student-states.json', diagnostics)
         save(self.output/'pilot.json', result)
         return result
