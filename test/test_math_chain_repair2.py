@@ -93,7 +93,7 @@ def test_large_menu_exact_representatives_match_pairwise_contract(monkeypatch, r
     assert torch.equal(grouped, paired)
 
 
-def test_reference_variant_batching_preserves_values_and_gradients():
+def test_deferred_reference_variant_batching_preserves_operand_gradients():
     from Language import OperationSelectionLayer, ContextualBindLayer, _BinaryGrammarOpAdapter
     class Product(torch.nn.Module):
         def forward(self, left, right):
@@ -112,9 +112,10 @@ def test_reference_variant_batching_preserves_values_and_gradients():
             right=right[:, :, column:column+1])))
     separate = torch.cat(per_column, 2)
     torch.testing.assert_close(grouped, separate, rtol=0, atol=0)
-    a = torch.autograd.grad(grouped.square().sum(), (x, left, right), retain_graph=True)
-    b = torch.autograd.grad(separate.square().sum(), (x, left, right))
-    for first, second in zip(a, b):
+    a = torch.autograd.grad(grouped.square().sum(), (x, left, right), retain_graph=True, allow_unused=True)
+    b = torch.autograd.grad(separate.square().sum(), (x, left, right), allow_unused=True)
+    assert a[0] is b[0] is None
+    for first, second in zip(a[1:], b[1:]):
         torch.testing.assert_close(first, second)
 
 

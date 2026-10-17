@@ -149,6 +149,7 @@ decided gates of the plans and specs they cite.
 | 4b | **Simple sentences: NP** | `the red ball`, `a big cat` — determiner, adjective, noun | the phrase; its asked parts ("the middle word", "the noun"); the supplied answer to `what is red ?` | reconstruction of the compound 100 %; asked parts; the property question | composition within a role and its inverses (adjective ∧ noun, sub-typing; [operator catalogue](specs/2026-09-29-operator-catalogue.md)); the determiner as the bind-or-mint cue ([6.5 §2.7](specs/2026-09-26-independent-components.md)); word → operator learned, never anchored |
 | 4c | **Simple sentences: NP + VP** | `the cat sleeps.` `a dog runs.` — subject and intransitive verb | the sentence; the supplied answer to `what sleeps ?` | reconstruction and the question 100 % | the verb as a pattern of change, categorically apart from nouns (`B` against `A`, [6.5 §2.3](specs/2026-09-26-independent-components.md)); the `NP1 VP` row |
 | 4d | **Simple sentences: relations** | `the cat is on the mat.` `x is bigger than y.` `the dog chases the cat.` — two NPs and a relation | the sentence; supplied answers on either role — `what is on the mat ?`, `what chases the cat ?`, `what does the dog chase ?` | reconstruction; both role questions 100 %; `the dog chases the cat` and `the cat chases the dog` answered differently | the two noun roles distinguished by order; relation operators; the full `NP VP NP` row ([two truths](specs/2026-09-16-two-truths-ideas-and-relations.md)) |
+| 4e | **Constituents** (added 2026-10-16, [item 6 plan §15](plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)) | the 4b–4d sentences with their brackets: `[the black cat] [runs] .`, `[the dog] [chases [the cat]] .` | the constituents — a cross-entropy on the compose chooser toward the bracketed reading, as stage 3 does for order; the NP operators (mint/bind) applied at each bracketed NP | free reading reproduces the brackets on held-out sentences of the same kinds; every singular NP writes an occurrence | constituency, taught by lesson, never wired; the NP event that mints an anonymous individual |
 | 5 | **Tying sentences together: object permanence by reference** | `the cat sleeps. it is black.` `a dog runs. the dog is brown.` — a pronoun or a definite re-mention referring to an earlier occurrence, with and without an intervening sentence | the referent (which earlier occurrence); the supplied answer to a question about the first sentence asked after the second (`what is black ?` → `the cat`) | the reference resolves to the right occurrence 100 %; the repeated noun reuses its row, `a dog` mints a new one; the question across sentences answered | identity is its occurrences tied by references in slots ([two truths §3.5](specs/2026-09-16-two-truths-ideas-and-relations.md), tests 17–21); the row persists when not being read — object permanence proper; "identity is an expectation" ([4.5](specs/2026-10-08-expectation-at-every-level.md)) |
 | 6 | **Graded composition** | the standing fixtures' vocabulary arranged so each item needs one more round than the last — clauses and embedding after the simple kinds — read in order and shuffled | reconstruction; the surprise at every level | the ordered set beats the shuffled on derivation optimality ([4.5 §5.4, §9](specs/2026-10-08-expectation-at-every-level.md)) | expectation at every level; one departure per sentence |
 | 7 | **Context as content** | several documents in parallel sharing vocabulary; a document split by another; a fact stated in one needed in another; a word whose referent differs between documents | the answer, which only the right context gives | [stream-state §3](plans/2026-10-08-stream-state.md) stages 2–6: batch differentiation; return after interruption (stage 5's permanence at the document level); shared truth; priming as a prior; expectation from the right history | the situation code in content ([5.5](specs/2026-09-30-occurrence-tense-aspect.md)); retrieval as a candidate entertained into a slot |
@@ -263,6 +264,19 @@ apart.
     x is bigger than y .         what is bigger than y ?      → x
     a cat is an animal .         what is an animal ?          → a cat
 
+**4e. Constituents** — the 4b–4d sentences again, with their brackets
+supplied as the lesson (the generator knows them). The lesson names the
+constituents the way stage 3 names the order: a cross-entropy on the
+compose chooser toward the bracketed reading. At each bracketed singular
+NP the reading applies the NP operator (mint, or bind for a re-mention)
+and an occurrence row is written with a fresh anonymous id and the NP's
+own meaning, before the sentence fold. The gate is free reading on
+held-out sentences: the brackets reproduced, one occurrence per NP.
+
+    [the black cat] [runs] .
+    [the dog] [chases [the cat]] .
+    [the cat] [is on [the mat]] .
+
 **5. Tying sentences together** — two or three sentences; a pronoun or a
 definite re-mention refers to an earlier occurrence; a question about the
 first sentence is asked after the second. Every sentence is a 4c/4d
@@ -273,6 +287,13 @@ sentence; the only new thing is the reference.
     a dog runs . a dog sleeps .                                                   (two rows)
     the cat sleeps . a dog runs . the cat eats .       what eats ?   → the cat   (same row as the first)
     the cat is on the mat . it sleeps .                what sleeps ? → the cat
+
+Also at stage 5 (2026-10-16): the change lesson for verbs — the same
+individual mentioned before and after a VP, so that the VP's operation
+can be learned as the difference between its occurrences:
+
+    the cat runs . the cat is tired .          (runs: → tired)
+    the dog sleeps . the dog is rested .       (sleeps: → rested)
 
 **6. Graded composition** — one more round per item: coordination,
 relative clauses, embedding; read in order and shuffled.

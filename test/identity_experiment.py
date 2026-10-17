@@ -51,13 +51,19 @@ def identification(dictionary, value, atoms, *, source_limit):
                 total=len(atoms), correct=int(hits.sum()))
 
 
+def noun_frame(roles):
+    """Historical order-two recovery measurement, not individual identification."""
+    if roles.shape[-2] != 3:
+        raise ValueError('a recovery frame requires three role slots')
+    return roles[..., 0, :] + roles[..., 2, :]
+
+
 def recovery_value(chart, meaning, clause):
     """Score the completed row used by component cost/admission.
 
     A fused idea contains its whole sentence, including a predicate that is
     absent from the pre-fusion NP pair. Relative clauses keep that NP pair.
     """
-    from IndependentComponents import noun_frame
     value = (chart.project(clause.point.detach())
              if clause is not None and clause.point is not None
              else noun_frame(chart.project(meaning.roles.detach())))

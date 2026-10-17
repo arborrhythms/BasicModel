@@ -1,8 +1,10 @@
-"""Gradient sparse coding of event coordinates, with recurrence-gated columns.
+"""Individual signatures and legacy sparse coding of change coordinates.
 
 The dictionaries contain order-one concepts. Their addresses name columns;
-addresses and word spellings never enter a numerical score. The same sparse
-coding objective trains the columns and the current source coordinates.
+addresses and word spellings never enter a numerical score. Only B retains
+a sparse-coding objective; A stores the signatures and
+witnesses allocated and revised by the reference closing.
+A individuals are admitted at a kept close; B retains recurring innovations.
 """
 from dataclasses import dataclass
 import io
@@ -36,38 +38,16 @@ class SparseEncoding:
     residual: torch.Tensor
 
 
-def noun_frame(roles):
-    """A superposition intentionally loses the assignment to the two NP slots."""
-    if roles.shape[-2] != 3:
-        raise ValueError('an independent-component frame requires three role slots')
-    return roles[..., 0, :] + roles[..., 2, :]
-
-
-class SparseDictionary(nn.Module):
-    """An overcomplete, unit-column dictionary with amortized sparse inference.
-
-    Greedy residual selection, a small differentiable solve and Laplace
-    shrinkage use at most the grammar's source ceiling. A column is admitted
-    to the support only while it lowers the remainder. No optimizer lives here. Reconstruction plus the Laplace
-    negative log prior is the sparse-coding objective; column incoherence fixes
-    redundant directions. Relevance scales belong to this same gradient.
-    """
-    def __init__(self, dimension, *, max_sources, prior_scale, mint_threshold,
-                 recurrence=4):
+class ColumnDictionary(nn.Module):
+    """Native signatures, relevance and witnesses; no sparse inference or admission."""
+    def __init__(self, dimension):
         super().__init__()
-        if dimension < 1 or max_sources < 1 or recurrence < 1:
-            raise ValueError('component dimensions, source count and recurrence must be positive')
-        if not math.isfinite(prior_scale) or prior_scale <= 0:
-            raise ValueError('the sparsity prior scale must be finite and positive')
-        if not math.isfinite(mint_threshold) or mint_threshold <= 0:
-            raise ValueError('the component mint threshold must be finite and positive')
-        self.dimension, self.max_sources = int(dimension), int(max_sources)
-        self.prior_scale, self.mint_threshold = float(prior_scale), float(mint_threshold)
-        self.recurrence = int(recurrence)
+        if dimension < 1:
+            raise ValueError('column dimension must be positive')
+        self.dimension = int(dimension)
         self.directions = nn.ParameterDict()
         self.relevance = nn.ParameterDict()
         self.register_buffer('_anchor', torch.empty(0), persistent=False)
-        self._pending = []
         self._witnesses = {}
         self._next_id = 1
         self.admissions = []
@@ -82,6 +62,62 @@ class SparseDictionary(nn.Module):
             return self._anchor.new_zeros(0, width)
         values = F.normalize(torch.stack(tuple(self.directions.values())), dim=-1)
         return values if features is None else values.index_select(-1, features)
+
+    def pruning_candidates(self):
+        """Item 5 consumes these values; this owner never deletes a concept."""
+        return tuple(int(key) for key, scale in self.relevance.items()
+                     if float(scale.detach()) <= 0)
+
+    def witness_count(self, identity):
+        return len(self._witnesses.get(int(identity), ()))
+
+    def get_extra_state(self):
+        return _pack_state(dict(version=1, dimension=self.dimension, next_id=self._next_id,
+                    witnesses={key: sorted(value, key=repr) for key, value in self._witnesses.items()}))
+
+    def set_extra_state(self, state):
+        state = _unpack_state(state)
+        if state.get('version') != 1 or state.get('dimension') != self.dimension:
+            raise ValueError('incompatible independent-component dictionary checkpoint')
+        self._next_id = int(state['next_id'])
+        self._witnesses = {int(key): set(value) for key, value in state.get('witnesses', {}).items()}
+
+    def prepare_checkpoint(self, state_dict, prefix):
+        for name, target in (('directions.', self.directions), ('relevance.', self.relevance)):
+            for key, value in state_dict.items():
+                if key.startswith(prefix + name):
+                    local = key[len(prefix + name):]
+                    shape = (self.dimension,) if name == 'directions.' else ()
+                    if (not local.isdigit() or int(local) <= 0 or str(int(local)) != local
+                            or not torch.is_tensor(value) or tuple(value.shape) != shape
+                            or not value.is_floating_point() or not bool(torch.isfinite(value).all())):
+                        raise ValueError('invalid independent-component column checkpoint')
+                    if local not in target:
+                        target[local] = nn.Parameter(torch.zeros_like(value, device=self._anchor.device))
+
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
+        self.prepare_checkpoint(state_dict, prefix)
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
+
+class SparseDictionary(ColumnDictionary):
+    """Legacy B innovation coding, pending its temporal-difference teacher.
+
+    Greedy support is added only while it lowers the remainder. Sparse energy
+    and recurrence apply to changes, never to A's individual signatures.
+    """
+    def __init__(self, dimension, *, max_sources, prior_scale, mint_threshold,
+                 recurrence=4):
+        super().__init__(dimension)
+        if dimension < 1 or max_sources < 1 or recurrence < 1:
+            raise ValueError('component dimensions, source count and recurrence must be positive')
+        if not math.isfinite(prior_scale) or prior_scale <= 0:
+            raise ValueError('the sparsity prior scale must be finite and positive')
+        if not math.isfinite(mint_threshold) or mint_threshold <= 0:
+            raise ValueError('the component mint threshold must be finite and positive')
+        self.dimension, self.max_sources = int(dimension), int(max_sources)
+        self.prior_scale, self.mint_threshold = float(prior_scale), float(mint_threshold)
+        self.recurrence = int(recurrence)
+        self._pending = []
 
     def encode(self, values, *, features=None, max_sources=None):
         width = self.dimension if features is None else len(features)
@@ -196,46 +232,17 @@ class SparseDictionary(nn.Module):
         self._pending = [entry for entry in self._pending if entry is not pending]
         self.admissions.append(int(identity))
 
-    def pruning_candidates(self):
-        """Item 5 consumes these values; sparse coding never deletes a concept."""
-        return tuple(int(key) for key, scale in self.relevance.items()
-                     if float(scale.detach()) <= 0)
-
-    def witness_count(self, identity):
-        return len(self._witnesses.get(int(identity), ()))
-
     def get_extra_state(self):
-        return _pack_state(dict(version=1, dimension=self.dimension, next_id=self._next_id,
-                    witnesses={key: sorted(value, key=repr) for key, value in self._witnesses.items()},
-                    pending=[dict(direction=entry['direction'].detach().cpu(),
-                                  witnesses=list(entry['witnesses'])) for entry in self._pending]))
+        state = _unpack_state(super().get_extra_state())
+        state['pending'] = [dict(direction=entry['direction'].detach().cpu(),
+                                 witnesses=list(entry['witnesses'])) for entry in self._pending]
+        return _pack_state(state)
 
     def set_extra_state(self, state):
         state = _unpack_state(state)
-        if state.get('version') != 1 or state.get('dimension') != self.dimension:
-            raise ValueError('incompatible independent-component dictionary checkpoint')
-        self._next_id = int(state['next_id'])
-        self._witnesses = {int(key): set(value) for key, value in state.get('witnesses', {}).items()}
+        super().set_extra_state(state)
         self._pending = [dict(direction=entry['direction'].to(self._anchor),
-                              witnesses=list(entry['witnesses'])) for entry in state['pending']]
-
-    def prepare_checkpoint(self, state_dict, prefix):
-        for name, target in (('directions.', self.directions), ('relevance.', self.relevance)):
-            for key, value in state_dict.items():
-                if key.startswith(prefix + name):
-                    local = key[len(prefix + name):]
-                    shape = (self.dimension,) if name == 'directions.' else ()
-                    if (not local.isdigit() or int(local) <= 0 or str(int(local)) != local
-                            or not torch.is_tensor(value) or tuple(value.shape) != shape
-                            or not value.is_floating_point() or not bool(torch.isfinite(value).all())):
-                        raise ValueError('invalid independent-component column checkpoint')
-                    if local not in target:
-                        target[local] = nn.Parameter(torch.zeros_like(value, device=self._anchor.device))
-
-    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
-        self.prepare_checkpoint(state_dict, prefix)
-        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
-
+                              witnesses=list(entry['witnesses'])) for entry in state.get('pending', ())]
 
 class EventChart:
     """Order-zero event coordinates, with independent evidence lanes.
@@ -304,35 +311,17 @@ class IndependentComponents(nn.Module):
         self.weight = float(weight)
         self.capacity = int(owner.nVectors)
         options = dict(prior_scale=prior_scale, mint_threshold=mint_threshold, recurrence=recurrence)
-        self.nouns = SparseDictionary(2 * self.capacity, max_sources=2, **options)
+        self.nouns = ColumnDictionary(2 * self.capacity)
         self.verbs = SparseDictionary(3 * self.capacity, max_sources=1, **options)
         self._innovations = {}
         self._chart = None
-        self._population = None
-        self._population_limits = None
         self.admission_drops = 0
+        from ReferenceClose import ReferenceClose
+        self.reference_close = ReferenceClose(self)
 
     @property
     def source_capacity(self):
         return int(getattr(self.owner, 'stm_capacity', getattr(self.owner.stm, 'capacity', 8)))
-
-    def source_limit(self, clause=None, *, store=None, row=None):
-        """Two ordinary noun sources plus referenced S rows, bounded by STM."""
-        seen, pending = set(), [row if store is not None else clause]
-        while pending and 2 * len(seen) < self.source_capacity:
-            value = pending.pop()
-            identity = value if store is not None else id(value)
-            if identity in seen:
-                continue
-            seen.add(identity)
-            if store is None:
-                pending.extend(getattr(value, 'children', getattr(value, 'constituents', ())))
-            elif value is not None:
-                for reference in store.refs[value].tolist():
-                    child = store.index_of_row(reference)
-                    if child is not None and int(store.rel_type[child]) != store.REL_DEF:
-                        pending.append(child)
-        return min(self.source_capacity, max(2, 2 * len(seen)))
 
     def getParameters(self):
         return list(self.parameters())
@@ -353,39 +342,21 @@ class IndependentComponents(nn.Module):
             meaning_pairs=None if derived is None else derived.meaning_pairs,
             pole_stride=None if derived is None else derived.reserved_pairs)
         store = owner._closed_clause_store()
-        observations, limits, retained = [], [], set()
+        retained = set()
         if store is not None:
-            for row in range(len(store)):
-                if (int(store.rel_type[row]) == store.REL_DEF
-                        or store.KINDS[int(store.record_kind[row])] != 'observation'):
-                    continue
-                meaning = store.meaning_of(row)
-                if meaning is not None:
-                    retained.add(int(store.row_ids[row]))
-                    observations.append(noun_frame(self._chart.project(meaning.roles.detach())))
-                    limits.append(self.source_limit(store=store, row=row))
+            retained = {int(store.row_ids[row]) for row in range(len(store))
+                        if int(store.rel_type[row]) != store.REL_DEF
+                        and store.KINDS[int(store.record_kind[row])] == 'observation'}
         # Innovations are observations of the same retained chain. Discard
         # an orphan when its LTM occurrence leaves; this neither removes nor
         # prunes an identity/change column (item 5 owns that decision).
         self._innovations = {identity: value for identity, value in self._innovations.items()
                              if identity in retained}
-        self._population = (torch.stack(observations) if observations else
-                            codes.new_zeros(0, 2 * len(rows)))
-        self._population_limits = limits
 
     def _ready(self):
         if self._chart is None:
             self.begin_forward()
         return self._chart
-
-    def source(self, roles):
-        """Fresh encoding of the current source; older context remains detached."""
-        chart = self._ready()
-        if not self.nouns.ids or not len(chart.rows):
-            return roles.detach()
-        encoded = self.nouns.encode(chart.project(roles.detach()), features=chart.features,
-                                    max_sources=self.source_capacity)
-        return chart.render(encoded.reconstruction, like=roles)
 
     def column_point(self, identity):
         from MeaningCodes import defined_code
@@ -403,21 +374,15 @@ class IndependentComponents(nn.Module):
             return defined_code(point, self.verbs.witness_count(identity))
         return None
 
-    def _identified(self, roles):
-        chart = self._ready()
-        return self.nouns.encode(chart.project(roles), features=chart.features,
-                                 max_sources=self.source_capacity).codes
-
-    def prediction_coordinates(self, predicted, target):
-        """Score role assignment in A's axes with a frozen observed target."""
-        if not self.nouns.ids:
-            return predicted, target.detach()
-        return self._identified(predicted), self._identified(target.detach()).detach()
-
     def innovation(self, observation, prediction):
         """Per-role innovation in A's coordinates; no difference between poles."""
-        observed = self._identified(observation)
-        expected = self._identified(prediction)
+        # Legacy B coordinates are projections onto a detached signature
+        # snapshot, not sparse identification or an independence loss on A.
+        # The per-individual temporal-difference teacher remains deferred.
+        chart = self._ready()
+        axes = self.nouns.matrix(chart.features).detach()
+        observed = chart.project(observation) @ axes.T.to(observation)
+        expected = chart.project(prediction) @ axes.T.to(prediction)
         values = observed - expected
         rows = [self.owner._csw_row_of(cid) for cid in self.nouns.ids]
         if any(row is None for row in rows):
@@ -426,36 +391,22 @@ class IndependentComponents(nn.Module):
         return values.new_zeros(3, self.capacity).scatter(-1, indices, values).flatten()
 
     def cost(self, meanings, predictions, active, *, clauses=None):
-        """Population energy and current-step credit, one scalar per reading."""
+        """Legacy B energy only; A receives no sparse-coding pressure."""
         chart = self._ready()
-        like = self._population
-        if not len(chart.rows):
-            return like.new_zeros(len(meanings))
-        history = self._population.detach()
-        past_changes = list(self._innovations.values())
-        changes = (torch.stack([v.to(like) for v in past_changes]) if past_changes else
+        like = chart.basis
+        past = list(self._innovations.values())
+        changes = (torch.stack([value.to(like) for value in past]) if past else
                    like.new_zeros(0, 3 * self.capacity))
         losses = []
         for b, meaning in enumerate(meanings):
-            if meaning is None or not bool(active[b]):
-                losses.append(like.new_zeros(()))
-                continue
-            clause = None if clauses is None else clauses[b]
-            # The retained observation is a fused S point. Use that same
-            # observable for the current population member, rather than
-            # comparing an unfused NP pair with fused historical sentences.
-            current = (chart.project(clause.point) if clause is not None and clause.point is not None
-                       else noun_frame(chart.project(meaning.roles)))
-            population = torch.cat((history, current[None]), 0)
-            limits = ([2] * len(history) if self._population_limits is None else self._population_limits)
-            loss = self.nouns.loss(population, features=chart.features,
-                source_limits=[*limits, self.source_limit(clause if clause is not None else meaning)])
-            prediction = predictions[b] if predictions is not None else None
-            if prediction is not None and self.nouns.ids:
-                residual = self.innovation(meaning.roles, prediction.roles.detach())
-                loss = loss + self.verbs.loss(torch.cat((changes, residual[None]), 0))
-            elif len(changes):
-                loss = loss + self.verbs.loss(changes)
+            loss = like.new_zeros(())
+            if meaning is not None and bool(active[b]):
+                prediction = predictions[b] if predictions is not None else None
+                if prediction is not None and self.nouns.ids:
+                    residual = self.innovation(meaning.roles, prediction.roles.detach())
+                    loss = self.verbs.loss(torch.cat((changes, residual[None]), 0))
+                elif len(changes):
+                    loss = self.verbs.loss(changes)
             losses.append(loss)
         return torch.stack(losses)
 
@@ -486,8 +437,7 @@ class IndependentComponents(nn.Module):
         return identity
 
     @torch.no_grad()
-    def commit(self, row, meaning, prediction=None, *, individual_references=(),
-               require_selected_mint=True):
+    def commit(self, row, meaning, prediction=None):
         if getattr(self.owner, '_online_learning_frozen', False):
             return
         chart = self._ready()
@@ -497,20 +447,9 @@ class IndependentComponents(nn.Module):
         identity = int(store.row_ids[row])
         witness = (identity, int(store.witness_count[row]))
         before = {id(p) for p in self.parameters()}
-        stored = store.meaning_of(row)
-        observed = chart.project(stored.roles.detach())
-        # Grammar chooses whether an individual is present and whether it
-        # is new. Extension/kind readings supply no individual choice; bind
-        # can re-witness existing columns but cannot start a mint recurrence.
-        # The default preserves the reviewed admission rule. The explicit
-        # ablation permits its lesson to be measured without changing the
-        # selected grammar, references, or any binding decision.
-        if individual_references or not require_selected_mint:
-            self.nouns.observe(chart.expand(noun_frame(observed)), witness=witness,
-                allocate=self._allocate, max_sources=self.source_limit(store=store, row=row),
-                allow_mint=not require_selected_mint or -1 in individual_references,
-                prediction=(None if prediction is None else
-                    chart.expand(noun_frame(chart.project(prediction.roles.detach())))))
+        # A's individuals were admitted from the kept NP occurrences at this
+        # close. Whole-row residual recurrence is not individual identity.
+        # The deferred order-two mechanism owns cross-document recurrence.
         if prediction is not None and self.nouns.ids:
             residual = self.innovation(meaning.roles.detach(), prediction.roles.detach())
             self._innovations[identity] = residual.detach().cpu()
@@ -526,13 +465,21 @@ class IndependentComponents(nn.Module):
         if not self.nouns.ids:
             return ()
         result = {}
+        store = self.owner._closed_clause_store()
         for frame in frames:
-            codes = self._identified(frame.roles.detach())
-            active = noun_frame(codes).detach().ne(0)
-            for identity, used in zip(self.nouns.ids, active.tolist()):
-                if used:
-                    result.pop(identity, None)
-                    result[identity] = frame
+            row = store.index_of_row(frame.row_id) if store is not None else None
+            if row is None:
+                continue
+            for reference in self.reference_close.occurrences(row):
+                address = self.reference_close.address(reference)
+                if address is None:
+                    continue
+                index = store.index_of_row(address)
+                if index is not None and int(store.order[index]) == 1:
+                    identity = int(store.refs[index, 0])
+                    if identity in self.nouns.ids:
+                        result.pop(identity, None)
+                        result[identity] = frame
         return tuple(result.items())[-self.source_capacity:]
 
     def candidates(self, frames):
@@ -572,7 +519,7 @@ class IndependentComponents(nn.Module):
             raise ValueError('incompatible independent-component population checkpoint')
         self._innovations = state['innovations']
         self.admission_drops = int(state['admission_drops'])
-        self._chart = self._population = self._population_limits = None
+        self._chart = None
 
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
         # A pre-6.5 checkpoint has no component parameters or recurrence yet.

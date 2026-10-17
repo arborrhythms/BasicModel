@@ -168,18 +168,18 @@ class TestMMXorConvergence(unittest.TestCase):
             m.End()
             m.symbolSpace.soft_reset()
 
-    @pytest.mark.slow
+    @pytest.mark.learning_certificate
     def test_learns_xor_signal(self):
         """Reach the affine MSE floor .25 (tolerance .01) in 600 epochs."""
         self._fit_xor(_CONFIG, epochs=600, threshold=.26)
 
-    @pytest.mark.slow
+    @pytest.mark.learning_certificate
     def test_mm_grammar_learns_xor_signal(self):
         """Retain the .20 regression bar; effective-zero utility is unproven."""
         self._fit_xor(os.path.join(_PROJECT, "data", "MM_grammar.xml"),
                       epochs=900, threshold=.20, grammar=True)
 
-    @pytest.mark.slow
+    @pytest.mark.learning_certificate
     def test_convergence(self):
         """Retain the existing 200-epoch .20 bar without seed selection."""
         self._fit_xor(_CONFIG, epochs=200, threshold=.20)

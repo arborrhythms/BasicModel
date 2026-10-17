@@ -75,6 +75,9 @@ class Clause:
     factored_refs: tuple | None = None
     order: int = 0
     evidence: tuple = (0., 0.)
+    # Temporary constituent request. The writer stores only the resolved
+    # occurrence reference, never this reading/word-position provenance.
+    reference_request: Any = field(default=None, repr=False)
 
     def __post_init__(self):
         import math

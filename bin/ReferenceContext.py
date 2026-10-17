@@ -132,17 +132,6 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
     return requests
 
 
-def selected_individual_references(language, program):
-    """The kept choice, including -1 for mint, after enclosing kind scopes."""
-    if program is None or program.operation_refs is None:
-        return ()
-    requests = reference_requests(language, program.actions,
-                                  leaf_orders=program.leaf_orders,
-                                  operation_refs=program.operation_refs)
-    return tuple(dict.fromkeys(reference for order, mode, reference in requests.values()
-                               if order == 1 and mode not in ('kind', 'generic')))
-
-
 class ReferenceTypes(NamedTuple):
     """Existing dictionary interpretations of the current sentence's words."""
     sources: torch.Tensor
@@ -164,6 +153,7 @@ class ReferenceBank(NamedTuple):
     interpreter: object = None
     associations: object = None
     orders: object = None
+    close_references: bool = False
 
     def detached(self):
         """Freeze the rebuilt situation at a compose fork, retaining its API."""
@@ -225,11 +215,12 @@ def resolve_order(value, identity, order, types):
 
 def resolve_operand(value, identity, position, *, mode, bank, live, active, order=None, forced_reference=None,
                     local=None):
-    """A hard reference proposal before its numerical grammar operation.
+    """Numerical adapter for explicit, already bounded reading fixtures.
 
-    Only the existing predictor anchors and earlier occupied constituents are
-    candidates. The caller masks unavailable proposals before the global
-    operation softmax; an unselected pronoun proposal cannot reject a reading.
+    Production resolves order-one references through ReferenceClose. This
+    adapter retains the numerical fixture contract, with residual evidence
+    instead of a cosine rule; it has no mode-dependent prediction mask or
+    positional candidate filter.
     """
     live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
     live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
@@ -248,8 +239,8 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
                      & (bank.orders[:, None] >= 0))
         own_valid &= (~own_known.any(-1) |
                       (own_known & (bank.orders[:, None] == requested[:, :, None])).any(-1))
-    held = bank.valid if mode == 'bind' else bank.valid & bank.predicted[:, None]
-    earlier = (live_positions[:, None, :] < position[:, :, None])
+    held = bank.valid
+    earlier = live_ids[:, None, :] != identity[:, :, None]
     earlier &= ((live_ids[:, None, :] != -1) & (live_ids[:, None, :] != 0))
     earlier &= live_orders[:, None, :] == requested[:, :, None]
     earlier &= ~live_local[:, None, :]
@@ -275,8 +266,8 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
     # out of the operation chooser. Keep the softmax finite for all rows.
     safe_valid = valid | (~available[:, :, None] & (torch.arange(size, device=ids.device) == 0))
     query = torch.where(bank.predicted[:, None, None], bank.query[:, None, :], value)
-    logits = F.cosine_similarity(
-        values, query[:, :, None, :], dim=-1).masked_fill(~safe_valid, -torch.inf)
+    residual = (values - query[:, :, None, :]).square().sum(-1)
+    logits = (-residual / query.square().sum(-1, keepdim=True).clamp_min(1e-8)).masked_fill(~safe_valid, -torch.inf)
     probabilities = logits.softmax(-1)
     selected = probabilities.argmax(-1)
     if forced_reference is not None:
@@ -312,9 +303,26 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         if order is None:
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         source_ids = ids
-        value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+        typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+        at_close = bank.close_references
+        if at_close:
+            value = torch.where((order == 1)[..., None], value, typed_value)
+            ids = torch.where(order == 1, ids, typed_ids)
+        else:
+            value, ids = typed_value, typed_ids
         if mode in ('kind', 'generic'):
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+        closing = None
+        if at_close:
+            # Compose selects the operation, not an individual. Its operands
+            # retain their content until the completed predicate is visible.
+            deferred = order == 1
+            refs = (torch.full_like(ids, -1 if mode == 'mint' else 0)
+                    if mode in ('mint', 'bind', 'pronoun') else ids)
+            closing = (value, refs, scope.bitwise_and(1) != 0, valid & deferred)
+            # Orders other than one retain their existing operation contracts.
+            # Neither the field nor higher relations are individual columns.
+            valid = valid & ~deferred
         # The operation offers references at the operand's actual order.
         # Only dictionary admission is specific to order-one individuals.
         binding = order >= 0
@@ -328,6 +336,15 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 torch.where(binding, relative, scope.bitwise_and(1) != 0),
                 available | (~binding & original_valid),
                 *(item & binding for item in extra))
+            if closing is not None:
+                # Reuse the first variant for deferred rows. Appending a
+                # masked variant would change the unrelated field/higher-
+                # order menu and its sampled departures.
+                point, ref, relative, available, *extra = options[0]
+                options[0] = (torch.where(deferred[..., None], closing[0], point),
+                    torch.where(deferred, closing[1], ref),
+                    torch.where(deferred, closing[2], relative),
+                    available | closing[3], *(item & ~deferred for item in extra))
             return options
         valid = valid & binding
         if mode == 'mint' and interpreter is None:
@@ -405,6 +422,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
         binding = order >= 0
+        if bank.close_references and mode not in ('mint', 'bind', 'pronoun'):
+            binding = binding & (order != 1)
         return torch.where(binding, torch.where(refs == -1, -2, refs), -1)
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []

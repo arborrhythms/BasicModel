@@ -160,7 +160,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
     evidence to native rows and decodes by activity, without input events.
     """
 
-    @pytest.mark.slow
+    @pytest.mark.learning_certificate
     def test_at_least_50_pct_inputs_reconstruct(self):
         # Initialization may expose a learning defect; never select a passing basin.
         rc, stdout, stderr = _run_cli(
@@ -178,7 +178,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
             f"(expected >=50%).",
         )
 
-    @pytest.mark.slow
+    @pytest.mark.learning_certificate
     def test_output_mse_is_crisp(self):
         # Accuracy alone misses predictions clustered near .5; keep MSE < .05.
         rc, stdout, stderr = _run_cli(
@@ -220,8 +220,6 @@ def _run_xor_grammar_in_process():
 @pytest.fixture(scope="module")
 def trained_xor_grammar():
     """One unseeded training supplies both independent capability bars."""
-    if not _RUN_SLOW:
-        pytest.skip("slow (XOR_grammar train) -- set RUN_SLOW=1")
     return _run_xor_grammar_in_process()
 
 
@@ -236,7 +234,7 @@ def _bind_trained_xor_grammar(request, trained_xor_grammar):
 class TestXorGrammarLearnsXor(unittest.TestCase):
     """Grammar XOR convergence must survive an arbitrary initialization."""
 
-    @unittest.skipIf(not _RUN_SLOW, "slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+    @pytest.mark.learning_certificate
     def test_xor_class_accuracy(self):
         model = self.trained_xor_grammar
         # Read the answers saved by the final evaluation. Another forward
@@ -264,7 +262,7 @@ class TestXorGrammarLearnsXor(unittest.TestCase):
 class TestXorGrammarReconstruction(unittest.TestCase):
     """All four understandings return their own words, allowing transpositions."""
 
-    @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+    @pytest.mark.learning_certificate
     def test_piecewise_overall_at_least_50_pct(self):
         # Keep the historical selector; the decided contract is now all four.
         from collections import Counter

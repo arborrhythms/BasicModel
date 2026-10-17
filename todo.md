@@ -17,16 +17,15 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 6 **part 1** is the reviewed mechanism landing after the
-October 10 repair pass ([receipt](doc/benchmarks/2026-10-10-item6/part1/README.md)).
-Item 6 **part 2** is in measurement and review: identity learned through the same unmixing,
-with teaching corpus and measurements before rule retirement. Stored-idea
-recovery beyond two words, order-lesson CE, MM grammar recovery and compiled
-retention remain open below. Accepted 6.1, 6.2 and 6.5 mechanism landings make
-no learning claim; their checkpoint gates remain at item 0.
+**Current:** Item 6 is Done as a mechanism landing, accepted in
+[plan §16](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing).
+There is no identity-learning claim: the native reference-close lesson remains
+0/146 bindings, 0/20 row pairs and zero A columns. Stage 4e (constituents),
+VP vectors by temporal difference and order-2 kinds are not yet built.
+The learning sequence carries alongside 5.5 below and into item 0's gates.
 
-**Current sequence (6.1 closed October 10; no conference freeze):**
-6 → 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
+**Current sequence (item 6 closed as mechanism, October 16):**
+5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -158,11 +157,11 @@ measurements and decisions are in the accepted receipt and its predecessors.
 Deferred from 6.5 (non-blocking): the detached role view's retirement is in
 item 2; learned-column pruning is in item 5.
 
-Alongside item 6, retain these open findings, with the historical and current
+Alongside item 5.5, retain item 6’s open learning findings, with the historical and current
 outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1/README.md):
 
-- Stored-idea recovery beyond two words through trained A/B unmixing belongs
-  to part 2. Initial-source list free recovery is 0/4 throughout; enabled
+- Stored-idea recovery beyond two words remains a learning gate after
+  the constituent lesson; no noun-side sparse-coding mechanism remains. Initial-source list free recovery is 0/4 throughout; enabled
   two/four-word derivation recovery is 2/4 and 0/4. The order lesson's CE
   stays at .3465735912 / .7945134640 through 64 presentations, with zero
   scorer gradient. These inverse and credit findings remain active work.
@@ -182,8 +181,9 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
 - Compiled retention: the 64/312-element mismatch (max .2556) has no identified
   cause. Later passing runs do not close it. Also retain accepted 6.1's packed
   LTM retention and pending-premise order-`False` findings.
-- c's retained supplied answer does not match `five`, and the eight-sentence
-  fork certificate chooses only round 12. Keep both assertions unchanged.
+- c's retained supplied answer does not match `five`; its assertion stays.
+  The old eight-sentence fork diversity contract was retired by decision
+  and replaced with bounded coverage on a trained artifact.
   Question-sensitive answering also remains unproven in the current staged
   warm-up: noun–verb answers are 0/4 and relations 1/4; the earlier 4/4
   identity and noun-phrase scores match a last-word baseline
@@ -358,51 +358,24 @@ retrieval `meta`-reference error, scopes stored-read operator activations,
 charges dropped support in the keep cost, and isolates captured walk inputs.
 Their original failing evidence remains in the receipts.
 
-- **6. Part 2 — stored-idea unmixing and identity from data.** Part 1 is under
-   Done. Follow Alec's [full amendment, plan §2](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10):
-   one mechanism explains noun phrases and identifies occurrences, with
-   dictionary columns reused for binding and recurring unexplained surprise
-   for minting. Candidates are the eight-space plus cued frames; pronouns get
-   prediction credit from what follows and determiners are learned cues.
-   **Build the corpus and measurement before changing mechanisms**: factorial
-   properties/objects/verbs, support 1→2→3, counterbalanced pronouns,
-   imperfect determiner cues and conflicts, later distinguishing properties
-   for same-kind pairs, and varying document context. Measure binding by
-   candidate count, recency and role; one row versus two; determiner conflicts;
-   neither-candidate and reversed-recency controls. Claude's
-   [four-question numpy toy](doc/benchmarks/2026-10-10-identity-ica-toy/README.md)
-   precedes retirement. Remove each declared mode, separate pronoun rule,
-   positional bind path, mode/cosine resolver and mode-gated admission only
-   when its lesson passes without it; otherwise retain it and report the failure.
-   No parallel learned and declared replacement; no further declared modes.
-   [Orders.md](doc/Orders.md) and plan §12 refine the measurement order:
-   A's columns are order-1 individuals, and recurrence stays as their admission
-   evidence. The paired stages 1–2 pass carries 20/24 singleton atoms and
-   completes balanced gate-on identity, with zero minted columns and no
-   resolved bindings or row pairs (candidate receipt above). The identity
-   lesson remains open; it has not reached usable NP readings.
-   Factorial/confounded kind recovery is deferred to order 2; whether its pi
-   uses a second dictionary or taxonomy computation remains undecided.
-   Word classes collect words by operand participation, never phrase heads;
-   no new order ceiling or lexical count/mass declaration is introduced.
-   The [corpus and measurement preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
-   landed as `06f6e2b88`: 740 documents, separate grading labels,
-   native reference observation and both control datasets. Its native outcomes
-   and limitations are recorded separately from grading sanity controls;
-   no identity rule is retired and no learned-control result is inferred from
-   an unresolved reference or a failed run.
-   The [first matched native experiment](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
-   is reviewed and accepted as preparation: all eight branches finish, but the recovery,
-   binding and row-count lessons do not pass. The open findings above retain
-   the failed prerequisites and distinguish column admission from identification.
-   Measure forced raw/bounded and free stored recovery by depth and chain
-   length on fixed forward artifacts, now with trained A/B columns; report
-   stored dictionary separately from sentence-time live wholes. Which family
-   comes first is taught by the corpus, never a family-to-side map. Carry the
-   four inverse/CE/MM/compiled findings above. One landing, one measurement.
+**Item 6's carried learning, alongside 5.5:** follow
+[plan §15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16):
+**stage 4e first**, then identity matching, VP vectors taught by the individual's
+before/after temporal difference, and word classes from direct operand participation
+(never phrase heads). Order-2 kinds are deferred; neither a second dictionary nor
+a taxonomy computation for their intension is chosen. Stage 4e must establish
+held-out free brackets and one occurrence per singular NP before another native
+identity run. No native identity run is authorized before that gate passes.
+The balanced identity corpus and grader remain the measurement; the earlier
+factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
+relation-trace, MM grammar, compiled-retention and c findings above, and the
+paired zero-cost counterexample. Acceptance retires mechanisms by decision,
+not by a passing identity lesson.
+
 - **5.5. Where and when a sentence occurred; tense, aspect, the preposition
    and surface form** ([spec](doc/specs/2026-09-30-occurrence-tense-aspect.md)),
-   after item 6 and needing item 6.5's verb columns; one check-in (Alec,
+   after item 6; VP phase learning needs the deferred temporal-difference teacher;
+   one check-in (Alec,
    2026-09-30). **Relative `.when` and address upsert moved to operators
    landing (accepted October 7; plan §45)**:
    source-relative `[i, i+1]`, stable document/content address keys,
@@ -426,8 +399,8 @@ Their original failing evidence remains in the receipts.
    5.5" is corrected in item 2). Exit: the remaining mechanism tests of
    spec §8; learning measurements after 6.5, recorded and not tuned.
    Replace the legacy `get_stm_chain` recency across batch rows and test
-   lookup by the row's occurrence address (two truths §21). Open for Alec:
-   spec §10.
+   lookup by the row's occurrence address (two truths §21). Spec §10 is
+   answered; the later Orders theory governs order operations.
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
    (needs `refs` and every S writing a row). Document-boundary pass from the
    high-water to the low-water mark deleting the lowest-value unprotected
@@ -479,7 +452,12 @@ Their original failing evidence remains in the receipts.
    predictor; expectation's sources go live (the 2026-09-20 detachment
    existed against collapse, which an invertible path cannot do);
    reconstruction retires to an audit where the path is exactly invertible
-   and stays a loss where it is not. The record until the spec exists is
+   and stays a loss where it is not. *Added 2026-10-15 (spec §4.6):* `non`
+   on a modifier withholds that dimension from the prior — a per-dimension
+   withheld mark beside the two lanes that the inverse re-emits and the
+   forward charge counts as retained; modifiers only, position learned by
+   exposure ([Philosophy](doc/Philosophy.md#the-two-negations-on-a-modifier-not-heavy-and-non-heavy-alec-2026-10-15)).
+   The record until the spec exists is
    [FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled).
    Placed after 5 because the model has run without it so far; the spec
    says what the content width (item 3) must be for the audit to read zero,
@@ -664,11 +642,26 @@ Their original failing evidence remains in the receipts.
    The support mechanism and the first two generated-curriculum stages are
    accepted; these learning claims are not.
 
+   **Item 6's learning gates** remain prerequisites at this checkpoint:
+   stage 4e held-out free brackets and one occurrence per singular NP; then
+   balanced binding by group and document-close row pairs, with mint/bind
+   fixed semantics and same-kind revision; VP temporal-difference prediction;
+   direct-operand word classes; and deferred order-2 kind recovery. Stage 4e,
+   the VP teacher and order-2 kinds are not built. Do not start another native
+   identity run before stage 4e passes. Retain stored-idea recovery beyond two
+   words, order CE, relation trace 2/4, free readback 0/4, MM grammar recovery,
+   compiled retention, c's marker-headed `five` and the paired zero-cost
+   counterexample as named gates, not completed learning.
+
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
 
+- **Item 6 — closing mechanism:** reviewed candidate `a3ec07fd0`/`b41cf3b5b`, consolidated on main in the [landing receipt](https://github.com/arborrhythms/WikiOracle/blob/main/doc/benchmarks/2026-10-16-item6-landing.md): shared bounded inverse and candidate type families; forward discard with the search exemption; positional operands and orders from stamps; paired stages 1–2; reference at the close with fixed mint/bind operators and revision. **No learning claim.** VP vectors by temporal difference, order-2 kinds and stage 4e (constituents) are not built; §15's sequence carries alongside 5.5 and at item 0, with 4e first.
+
+
+- Item 6 positional operands and paired singleton warm-up: `51f069c30`, pushed on main, WikiOracle `f4d3139` ([receipt](doc/benchmarks/2026-10-15-item6-orders-paired/README.md)). The singleton gate passes at 20/24; balanced identity remains unresolved (0/146 bindings, 0/20 row pairs), with no learning claim. Its reference-close follow-up is [measured separately](doc/benchmarks/2026-10-16-item6-reference-close/README.md) and accepted as the closing mechanism; learning remains open.
 - Item 6 gate-off measurement and search-inverse exemption: `f1dbd12a2` (including `c647e1506`), pushed on main, WikiOracle `27a60da` ([receipt](doc/benchmarks/2026-10-14-item6-gate-off/README.md)); accepted in plan §11. No learning claim; the fresh corrected-objective warm-up and its singleton gate are measured separately.
 - Item 6 part-2 M/N/O/I preparation and first eight-branch native experiment: `af634ed35` ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)); reviewed in plan §7, no learning claim. R/S/T and all failed learning gates remain open.
 - Item 6 R2 inverse-domain repair: `348fb86c7` + `90ef40a42`, pushed on main, WikiOracle `066fb5d` ([receipt](doc/benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)); accepted in plan §10. Reconstruction certificates and observer repaired; no learning claim, and part 2's lessons remain open.

@@ -273,6 +273,22 @@ Low priming alone is not a capture signal; low priming plus a violated
 shallow prior is. Without the shallow prior there is no novelty term, and
 6.1 has nothing to revise for it.
 
+### 4.6 Non-affirming negation withholds a dimension from the prior (Alec, 2026-10-15)
+
+`non` on a modifier (*a non-heavy paper weight*) clears both evidence lanes
+on every aspect that bears on the modified dimension **and blocks this
+level's prior on that dimension**: the kind's expectation (paper weights
+are typically heavy) must not fill what the sentence withheld. The row
+therefore carries a per-dimension *withheld* mark beside the two lanes;
+without it *non-heavy paper weight* and *paper weight* are the same row
+and the prior would hallucinate *heavy* back. The mark is content the
+inverse reads (it re-emits *non-heavy*) and the forward discard charge
+counts as retained, not discarded. `non` applies to modifiers only — on a
+noun it erases the thing — and its position is learned by exposure, not
+declared ([Philosophy](../Philosophy.md#the-two-negations-on-a-modifier-not-heavy-and-non-heavy-alec-2026-10-15)).
+Gate: a corpus with negated modifiers; the expected operand at the
+withheld dimension is zero, not the prior; *non-X* is reconstructed.
+
 ## 5. Explore and exploit
 
 ### 5.1 Exploit per level

@@ -10,7 +10,7 @@ import torch
 import Language
 import Models
 import util
-from IndependentComponents import noun_frame
+from identity_experiment import noun_frame
 from identity_experiment import ROOT, digest, restore_warmup
 
 

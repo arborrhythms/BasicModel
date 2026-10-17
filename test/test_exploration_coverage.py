@@ -18,6 +18,7 @@ import torch
 
 
 @pytest.mark.artifact_eval
+@pytest.mark.learning_certificate
 def test_trained_artifact_departs_every_eligible_sentence_round(tmp_path, monkeypatch):
     artifact = os.environ.get('BASICMODEL_EXPLORATION_ARTIFACT')
     if not artifact:

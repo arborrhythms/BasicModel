@@ -1313,3 +1313,699 @@ data-loader spawn-method skip. Candidate commits replace source archives
 and integrity checks. Relation trace 2/4, 43 unadmitted leaves, both order
 gates and free readback 0/4 remain carried. No rule is retired; plan §6's
 parts-of-speech pass follows this repair.
+
+## 10. Review of the R2 repair, `348fb86c7` + `90ef40a42` (Claude, 2026-10-13) — accept as R2's landing; two scoped follow-ups
+
+Reviewed the diff (`DerivationReconstruction.inverse_step` shared by the
+reader and the charge; `SentenceCredit.forward_discard` scoped to each
+step's own undefined coordinates at its actual output; applied only under
+the field objective), the restored certificates, the
+[receipt](../benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)
+and the per-row kept programs in `recovery/*.json`.
+
+### 10.1 Done as asked
+
+- Certificates restored verbatim (`R == [0.]*4`; the paired-trial zero-cost
+  check); an exact OR pays zero forward discard; `lower`'s marker is defined
+  locally. The charge uses the reader's own definedness, so there is one
+  notion of "undefined", not an operator list.
+- Local credit 4/4 with advantage −1.
+- The review17 `KeyError: '1'` had a cause (the logger dropped calls whose
+  logits were detached — narrowing-only trials leave every compose call
+  detached) and a regression on that path without a seed.
+- Sweep 5,790 cases, 0 failed, 1 xfailed (cleared-cache overlap, still
+  adverse to 6.1); c passes this run without a repair claim.
+- Scope honoured: two branches, no archives, 80-line receipt.
+
+### 10.2 What the measurement shows
+
+`non` is gone from all 96 kept programs. The factorial branch closes 44/48
+held-out rows with meaning (mean .64, max .75); the confounded branch 4/48.
+Identification is 0/240 in both; 0 columns minted; mint selected on 37/192
+commits (was 192/192).
+
+Reading the programs: every kept reading is now a single left-to-right
+`verb` chain over all the words — `the`, `black`, `cat`, `and`, `.` alike
+(9-word rows: eight `verb`s; 13-word rows: twelve). The policy moved from
+the one operator that discards everything to the one operator that
+discards nothing, and the objective is equally silent about both: nothing
+in the keep cost prefers a reading with noun phrases, determiners or a
+closed sentence over a mass-preserving fold of the whole string. With no
+`lower`, there are no individual references, so under the selected-mint
+gate nothing can be admitted — 0 columns, 0/240 — regardless of the meaning
+now retained. That makes the gate-off branch the measurement that matters,
+and it is now non-vacuous.
+
+The confounded asymmetry is unexplained: the same programs, the same
+operator, zero closed meaning in 44/48 rows. Since `verb` discards nothing
+by construction, the meaning is lost inside the learned fold or in the
+word rows themselves as that branch trains; the receipt does not say which.
+One per-step norm trace (as in `recovery-program-audit`) on one confounded
+row answers it.
+
+### 10.3 A decision for Alec: search inverses under the forward charge
+
+In the field path a `search`-kind inverse (OR/intersection: recoverable by
+bank search, not analytically) is "undefined", so OR's removal of
+counterevidence is now charged forward there. Codex says so plainly and
+added no name exception. The free-byte path (the certificate) proves OR
+discards nothing recoverable. My recommendation: for the forward charge,
+"undefined" should mean *no inverse exists* (`non`, `bind`), not
+"recoverable only by search"; so search inverses are exempt from the
+forward charge and keep κ = 0 — otherwise the field objective taxes OR for
+its semantics in exactly the XOR/composition readings the standing gate
+protects. Not material to this measurement (no OR in these programs);
+material to MM_xor.
+
+### 10.4 Recommendation and hand-off (Alec to confirm)
+
+Land `348fb86c7`+`90ef40a42` as R2 (commit on main, push, bump). Next,
+one scoped pass:
+
+> R2 accepted (plan §10). (1) Gate-off recovery: the factorial and
+> confounded branches with `require_selected_mint=False`, same warm-up,
+> seed, corpus; report held-out identification, columns minted, merged
+> pairs, and the kept programs. This is the admission gate's lesson; it is
+> retired only if factorial identification ≥ .9 overall and per kind,
+> better than gate-on, with confounded merges. (2) One per-step meaning
+> norm trace on one confounded held-out row: where the meaning goes under
+> the same `verb` program (the learned fold or the word rows).
+> (3) Search inverses: per Alec's decision on §10.3. No sweep unless
+> production changes; the commit is the archive.
+
+§6's parts-of-speech pass starts after this; its toy is running.
+
+### 6.2 Toy results (Claude, 2026-10-13; `doc/benchmarks/2026-10-13-pos-participation-toy/`)
+
+Five seeds, hidden grammar with determiners, adjectives, common and proper
+nouns, intransitive and transitive verbs, pronouns, 10% ambiguous
+noun/verb words; three corpora (ordinary; two positions sharing their
+words; ambiguity). The rule of §6.1 works as written, with four findings
+that change the hand-off:
+
+- **It works.** Purity 1.00 from a few hundred presentations; growth gives
+  one class per position and merging reduces them to one per hidden class
+  (seven: det, adj, noun, name, vi, vt, pronoun); the NP collapse happens
+  in corpus B by ~200 presentations in 5/5 seeds and never in A; 10%
+  ambiguous words do not merge noun and verb (5/5); ids are stable (0
+  changes in the last 1,000 presentations) and a second stream and unseen
+  words reuse the classes (1.00).
+- **The pull on a switch is load-bearing and its band is narrow.** With
+  no pull there is one class per position forever. It works for a pull
+  rate of 1.5–4× the M-step rate at merge distance .35; above that noun
+  and verb merge. Letting the word's *current* class also take the M step
+  before the switch widens the band to 1–3× and converges faster — a
+  one-line variant worth adopting.
+- **The sticky margin does nothing**; stickiness comes from the chooser's
+  credit gate (an unkept use is not an observation). A word's first odd
+  kept use always moves it. If that matters, the E step needs a
+  stochastic switch, which §6.1 does not allow and the toy did not test.
+- **Growth must read typicality (distance), not share**, and its threshold
+  must sit well below EMA noise: `grow = .05` with M-rate `.02` was clean;
+  `grow = .1` with rate `.05` spawned spurious classes from a merged NP
+  class (27 switches and 3 classes per 1,000 presentations).
+- **Soft participation needs a weak bias**: the log-share weight must stay
+  below about half the chooser's structural margin, or exploration dies
+  and the result is the hard gate (which freezes: 0 switches, 0 merges).
+  A weight learned by credit would climb, so it needs a cap or an
+  exploration floor.
+- **Observe direct operands, not phrase heads.** Crediting participation
+  to heads merges pronouns into NP (5/5) and would defeat decision 4; the
+  code's direct-operand observation keeps them separate (5/5).
+
+Parameters: M-rate .02, pull .05, grow .05, merge .35, chooser bias weight
+.5. Not tested: real parses, a learned bias weight, relative clauses.
+
+## 11. Review of the gate-off measurement, `c647e1506` + `f1dbd12a2` (Claude, 2026-10-15)
+
+Reviewed the [receipt](../benchmarks/2026-10-14-item6-gate-off/README.md),
+`diagnostics/singletons.json`, the confounded trace and the sweep. All four
+items delivered; the results are honest; the scope was honoured.
+
+### 11.1 Results
+
+- **Gate off fails its lesson**: identification 0/240 overall and per
+  kind in both branches, 2 (factorial) and 4 (confounded) new columns,
+  none within |cos| .9 of any atom (maxima .64/.72), no merges. The gate
+  stays. Kept programs identical to gate-on (`verb` chains).
+- **Singletons — the finding that matters.** Of the 24 stage-1/2 rows in
+  the warm-up ("cat .", "black .", novel words), **8 carry their word's
+  meaning exactly (cosine 1.00) and 16 are zero rows**, although every
+  word's meaning has norm .2. `bird`, `black`, `white`, `small`, `large`,
+  `sleeps`, `moves` and nine novel words never reached the store. The 58
+  warm-up columns are all below .69 to any atom. So the atoms the
+  identification metric looks for were never written, and no recovery
+  branch could have found them.
+- **Why:** the warm-up all branches restore is the *accepted R/S/T*
+  warm-up — trained under the objective in which `non` was free. Its
+  singleton rows were written by that policy. I scoped the passes to "no
+  new warm-up" to keep one factor; that was wrong once the objective
+  changed, because the warm-up is the factor.
+- **Confounded trace**: `the`(0) → `verb`(0, black .2) → 0 — the learned
+  fold in that branch annihilates when one operand has no meaning
+  (`the`, `.`), so content folded after a marker is lost; the factorial
+  branch's fold, same program, retains .64–.75. A learned-weight outcome,
+  not the operator's definition; it goes on the list to re-read after the
+  warm-up is redone.
+- **Search inverses exempt** by the registered `inverse_kind`, no name
+  rule; OR's charge .63 → 0; certificates and 4/4 local credit unchanged.
+- **Sweep**: 5,794 cases, 3 failures, all new relative to accepted R2's
+  clean sweep: two recur from 6.1 (fork certificate sees one departure
+  round; c's `five`), one new against 6.1
+  (`test_forced_ordinary_bound_declaratives_open_no_episode`: a single
+  compose departure where more than one is required). All three are the
+  departure-diversity class; the exemption changed keep costs, so the
+  departure choice moved. Not bisected.
+
+### 11.2 Disposition and the path
+
+Accept as a measurement landing (no learning claim) and land the search
+exemption, with the new failure bisected in the next pass.
+
+The path is now short and the next step is forced: **redo the stages 1–4
+warm-up under the corrected objective** (R2 + exemption), then read the
+singletons again. If the charge does its job, `non` is no longer chosen on
+"bird ." and all 24 rows carry their atoms; with 4 witnesses each the
+recurrence gate mints them, and the recovery branches become the first real
+test of the unmixing. If singletons still close at zero, the loss is in the
+close or the fold, and the trace says which. The `verb`-chain reading and
+NP structure remain the obstacle for identity after that; the
+parts-of-speech pass waits for it.
+
+### 11.3 Hand-off to Codex (Alec confirmed, 2026-10-15)
+
+> Gate-off pass reviewed (plan §11): land the measurement and the search
+> exemption (commit on main, push, bump), no learning claim. Next pass,
+> one receipt: (1) bisect the new
+> `test_forced_ordinary_bound_declaratives_open_no_episode` failure (one
+> compose departure) and report its cause with the two recurring
+> departure-diversity failures. (2) Redo the stages 1–4 warm-up under the
+> corrected objective, same seed and budgets; report the 24 singleton rows'
+> cosines to their words and the columns minted with their nearest-atom
+> cosines — one table. (3) If ≥ 20 of 24 singletons carry their atoms, run
+> the factorial and confounded recovery branches (gate on and off) from
+> that warm-up and report identification per kind, merges and kept
+> programs; otherwise stop after (2) with one per-step trace of a zero
+> singleton. No other change.
+
+## 12. Orders, sets and membership (Alec, 2026-10-15; dialogue with Claude)
+
+Written up as [doc/Orders.md](../Orders.md), which adds words at order 1 (form sameness), the two ladders, relation counting (sentences 2, generics and rules 3, documents 4), distributional for words / semantic for objects, and the Pinker–Gleitman resolution.
+
+Decided in conversation; recorded here as the theory item 6 part 2 works
+under.
+
+1. **Order increases are over individuals, as in set theory.** An object
+   at order n ≥ 1 is a set of order-(n−1) symbols with graded (fuzzy)
+   membership. Order-0 objects are field objects: percepts and their
+   unions, intersections and complements, parts and wholes, located in
+   `.where`/`.when`. There is no "same" at order 0, only overlap and
+   containment.
+2. **Intension lives at order 0.** The pi (intersection) of a set's
+   members is a field object, so every set at every order carries an
+   order-0 type as its characterization; the pi is computed from the
+   members, not stored as a second object. Orders above 0 are purely
+   extensional. Mass terms (water) are a pi over events with no
+   individuals — order 0 — which is why they behave as properties
+   ("wholes are types"). Count kinds (cats) are sigma sets, first order
+   over occurrences (the mass reading, the universal grinder) or second
+   order over individuals, with the pi as the membership criterion.
+3. **Membership is by evidence**, learned per set, never fixed per order.
+   An individual is a set of occurrences whose evidence is continuity and
+   whose witnesses are the graded degrees; a kind is a set of individuals
+   whose evidence is explanation by its pi; a collection is a set whose
+   evidence is adjacency/plurality. The behaviour of each order follows
+   from its relation, not from set-hood: individuals persist and change
+   (verbs, tense, reference apply here); kinds do not change but include
+   one another (inclusion, quantification, generic truth); collections
+   have location but no identity criterion beyond membership. Parts of
+   speech are a set of word types, one order above the words (§6).
+4. **Identity is per order.** A generalization over occurrences (an
+   individual, which keeps its history) is never identified with a
+   generalization over individuals (a kind, which abstracts the index
+   `.where`/`.when` but keeps temporal *content* such as a pattern of
+   change). Same point, different order stamp ⇒ different thing.
+5. **Grammatical operations are order operations.** Determiners lower
+   (choose a member); bare plurals and `every` stay at order 2; mass terms
+   never leave 0; count/mass, singular/plural and proper/common are the
+   grammar reading the order and the relation, not lexical facts.
+
+*Consequences for part 2.* The identity lessons (order 1: the same
+individual across sentences; mint on recurrence of the individual, bind on
+re-mention; the binding and row-pair metrics) come first and are the right
+test of the dictionary. Factorial-versus-confounded recovery of kinds and
+properties is an order-2 question — the pi over individuals' signatures,
+`.when` excluded — and is measured only once order-1 individuals exist;
+whether that pi is a second dictionary or the taxonomy's computation is a
+design choice still open. The admission gate's "recurrence" is membership
+by evidence at order 1 and stays in that form.
+
+## 13. Review of the corrected-warm-up pass, `345734c38`…`d5d300aed` (Claude, 2026-10-15)
+
+Reviewed the [receipt](../benchmarks/2026-10-15-item6-corrected-warmup/README.md),
+the zero-singleton trace and the bisect diagnostics. Measurement code only;
+no production change; scope honoured (no sweep, no archives).
+
+### 13.1 Results
+
+- **The exemption did not move the departures.** Matched replays of the
+  three failing certificates on both implementations: charge difference 0
+  everywhere — the `MM_math_chain` fixture has meaning slice `[104:104]`,
+  no meaning mass at all. The two diversity failures have one cause and it
+  is in the tests' contract: `SentenceFork.record` samples an eligible
+  round per row independently and `SentenceCredit.departure` picks among
+  three walks independently, so "more than one distinct compose round
+  across rows" is a probabilistic property (fails 2.15% and 26.21% of the
+  time on the recorded menus; the native sampler reproduces rounds 6 and
+  24). c is a different defect: the filled reference ends at an order-one
+  child whose inherited form is `the` — the answer bound to a
+  marker-headed row with no lexical association to `five`. That is the
+  marker-as-head reading again, not diversity.
+- **The singleton gate fails identically: 8/24**, under the corrected
+  objective, and the trace says why: stages 1–2 are presented with
+  `train=False` — one greedy trial, no explore, no optimizer — so the
+  corrected keep cost never gets to choose. The untrained greedy policy
+  reads `black` as `black → non → generic × 18`; the word's .2 is removed
+  at step 1. The objective is not at fault; the protocol never consults
+  it. 0 columns minted anywhere (stage 3–4 readings are `verb` chains with
+  no `lower`, so no admission under the gate — consistent with §11).
+- Order CE .032/.0167 (gates .01), free readback 0/4, stage-4 answers 0/4
+  — carried.
+
+### 13.2 What follows
+
+The next step is a protocol change in the measurement driver, not a
+mechanism: stages 1–2 must learn — paired trials with the corrected
+objective, so a reading that applies `non` to a bare word loses to the one
+that does not (the forward charge gives that departure advantage −1,
+§10.1). Seventy-six presentations; cheap. If the gate then passes, the
+balanced order-1 identity branch follows in the same pass. If it still
+fails, the greedy policy's unary choice on a bare word is the next trace.
+
+Two decisions for Alec:
+
+- **Departure sampling.** Per-row independent sampling makes the fork
+  certificates probabilistic by construction. Either the certificates are
+  restated over the sampling distribution, or the fork samples rounds
+  without replacement across rows when the menu allows — I recommend the
+  latter, because exploration coverage across a batch is the point of the
+  fork, and it is a mechanism, not a test relaxation.
+- **c** stays open as a structure finding (marker-headed rows), to be
+  reread when readings have NP structure; no diversity fix will touch it.
+
+### 13.3 Alec's decisions (2026-10-15)
+
+Accept and land. The fork-diversity certificates are not useful on an
+untrained model: they assert a property of a random sampler over one
+batch. What they were testing — that exploration departs at different
+rounds across the sentences of a batch, so credit reaches different steps
+of the derivation — is a property of a training *run*, and it may be
+useful on a trained model: retire the two from the default suite and keep
+one coverage certificate at the trained-artifact tier (`artifact_eval`):
+over a run, every eligible round of every sentence is departed at least
+once, with the bound stated. The orders theory's code consequences go in
+as the **first change of the next round**, under item 6 part 2 (5.5 picks
+up the stamp-versus-temporal-content consequence when it starts): operands
+named positionally, each operand's order read from its stamp and the
+operation's `order_delta`, the name→order table and its `kind: 2` ceiling
+deleted, no code assuming a maximum order; the mode semantics that the
+names carried stay as properties of their operations until §2's lessons
+replace them.
+
+### 13.4 Hand-off to Codex (Alec confirmed, 2026-10-15; includes the theory note)
+
+> Corrected-warm-up pass reviewed (plan §13): land as measurement
+> (commit, push, bump), no learning claim. Next pass, one receipt:
+> (1) Stages 1–2 of the warm-up run with paired trials and the corrected
+> keep objective (explore + keep, optimizer on), same seed and budgets;
+> report the singleton table again (24 rows: cosine, closed norm) and the
+> kept program of every singleton. (2) If ≥ 20/24 carry their atoms, run
+> the balanced order-1 identity branch, gate on, from that warm-up: columns
+> minted with witnesses, bindings by group, row pairs, kept programs.
+> Otherwise stop with one trace of a zero singleton under the paired
+> protocol. (3) Departure sampling per Alec's decision (§13.2); c stays
+> open. No sweep unless production changes.
+>
+> Theory note for part 2 (Alec, 2026-10-15; full text `doc/Orders.md`,
+> summary plan §12): orders are fuzzy sets of symbols one order down,
+> order 0 the field; identity is per order — an individual (set of
+> occurrences, keeps its history) is never identified with a kind (set of
+> individuals, abstracts the index); membership is by evidence, learned
+> per set, never fixed per order — the admission gate's recurrence is that
+> evidence at order 1 and stays. A's columns are order-1 individuals;
+> kinds and properties are order-2 sets whose pi is computed from members,
+> not stored, so factorial/confounded kind recovery is deferred until
+> individuals exist and neither order-2 design is to be built yet. Words
+> are order-1 objects collected by form (the META rows); parts of speech
+> are order-2 sets of words collected by participation (plan §6): the
+> class vector is the pi of the word-kind, the column softmax is
+> membership; distributional for words, semantic for objects; the
+> referent's order/family enters a word's signature only as weak extra
+> coordinates; never credit participation to phrase heads. Relations
+> count one order above their arguments (sentence about individuals 2,
+> generic or rule 3, document 4); `kind: 2` is a declared ceiling retired
+> with the operand names; no new code may assume a maximum order. Grammar
+> operations are order operations; count/mass, plural, proper/common are
+> read, never declared on a word.
+
+*Note (Alec, 2026-10-15):* `non` belongs on an adjective (non-black), not
+a noun; which position it takes is for exposure to the grammatical
+possibilities to teach — its operand position forms a class under §6, and
+the corpus must offer negated modifiers for that. Open representation
+question (Claude): because `non` clears the expressed pole rather than
+marking it, "non-black cat" and "cat" leave identical rows, so the forward
+charge taxes the grammatical use like the destructive one and no inverse
+can re-emit "non-black"; whether "neither" should leave a trace is a
+two-lane (tetralemma) representation question, not one for the charge.
+
+## 14. Reference at the close, per constituent, by membership (Claude's proposal, 2026-10-16; toy results)
+
+*The proposal* (Alec OK'd a toy before any hand-off, "preserving existing
+performance"): reference becomes a closing operation over the kept
+derivation — for each order-1 constituent (NP point), one decision among
+{individuals in STM and cued frames, NEW} by membership by evidence:
+explanation of the constituent's content by the individual's signature
+(its column), the follow-up predicate's prediction credit (a pronoun's
+only evidence), and learned salience (recency, roles, determiner cue);
+kinds are never candidates at order 1; compose proposes, the close
+decides; this retires `resolve_operand`'s masks and cosine argmax and the
+selected-mint admission gate (recurrence stays as evidence). Literature
+anchors: object files (Kahneman, Treisman & Gibbs 1992) for order-1
+individuals; DRT/Heim accessibility for "no reference across orders";
+Haghighi & Klein's DP/CRP coreference for mint/bind by evidence; the IBP
+for column growth; DP-means for §6's growth; Lappin–Leass salience as
+learned features; entity networks as the engineering form.
+
+*Toy* (`doc/benchmarks/2026-10-16-reference-close-toy/`, five seeds, the
+identity corpus's mentions and roles as the given structure; targets used
+for grading only):
+
+- **Deciding at the close is the whole effect.** Every informative probe
+  family 1.00 (pronouns with 1/2/3 candidates, document context), uniform
+  over recency and role; the current rule (cosine argmax during compose
+  with declared modes) .45, recency-only .23, and the *same* learner
+  deciding during compose .45 — chance per candidate count. The
+  prediction term carries it; ablating it gives exactly the during-compose
+  result. Trained on the recency-biased set, deciding at the close installs
+  no shortcut (recency weight −.05, reversed set 1.00) because prediction
+  explains the data first; deciding during compose learns the shortcut
+  (weight 1.5, reversed set 0.00).
+- **Membership by evidence beats the argmax where content is partial:**
+  `a black cat … the white cat` is two individuals (1.00 vs 0.00) by
+  learned exclusivity. Document context needs the predicate's head absorbed
+  into the signature and the copula excluded.
+- **What fails:** `a cat runs . a cat sleeps .` is one individual under
+  the default prior (identical content is strong evidence for binding and
+  the one-step credit never sees the diverging fourth sentence); the
+  declared `a = mint` gets it. A flat content prior flips it to pass but
+  makes `the`-binding fragile. Row pairs are .80 for both the proposal and
+  the current rule, with complementary failures: the two determiner
+  conventions want opposite priors and this corpus does not arbitrate —
+  the same-kind lesson needs the diverging sentence inside the credit
+  window (a two-sentence look-ahead, or the row-pair decision deferred to
+  the document's close).
+- **The recurrence gate** changes no decision and only withholds rows
+  (strict probes .26 at r = 2, .00 at r = 3); in these lessons the
+  non-target is a singleton. Counting recurrence across documents counts
+  kinds, not individuals (Orders.md §3): the gate is an order-2 criterion
+  applied at order 1.
+- **Robust**: content noise up to σ = 1 per atom keeps .84; 20% wrong
+  determiners leave the proposal unchanged (.88) and drop the current rule
+  to .36.
+- **Not identified**: salience weights (recency, roles, cues) are collinear
+  and contribute nothing here; the `the` cue has no label-free signal. A
+  pronoun must not mint. Nothing in the toy is ICA — the "dictionary" is
+  the atom codes; the native version is the dictionary's explanation.
+
+*Consequence for the admission gate:* recurrence of an *individual* within
+a document is the order-1 evidence; the current four-witness recurrence
+across documents is an order-2 criterion and should move up with the
+kinds. The close-time resolver mints an individual on first mention (NEW)
+and binds on re-mention; whether a column is *kept* is forgetting's
+question (item 5), not admission's.
+
+*Sequencing:* after the orders change and the stages-1–2 protocol fix
+(§13.4), since it reads the derivation's constituents and needs rows with
+meaning; the determiner cue starts on the word form and switches to §6's
+class when it exists. Hand-off text to follow Alec's decision on the
+same-kind arbitration (look-ahead vs deferred row-pair decision).
+
+### 14.1 Alec's decisions (2026-10-16)
+
+1. **Mint and bind are two operators.** *(Restated 2026-10-16 after the
+   "water" example: every singular NP writes an occurrence at its order
+   reduction; the two operators differ in the instruction to the match
+   step — indefinite = new by assertion, do not match; definite = old by
+   presupposition, must match an accessible individual or stay unbound
+   until one appears — Heim's novelty/familiarity. "Definite never mints"
+   means it never asserts novelty.)* Definite never mints; indefinite
+   always does. They are distinct operations of the universal inventory
+   with fixed semantics — not one operation with a mode, and not a
+   per-mention evidence decision. Because this is UG, no operator is
+   associated with a word of any language: which word selects which
+   operator is learned by exposure (the chooser's credit; the word's
+   participation in the operator's marker position, §6). This resolves
+   the toy's same-kind failure by moving the decision up one level: `a cat
+   runs . a cat sleeps .` is two individuals because the reading used the
+   mint operator twice, and the chooser learned `a` → mint from the cases
+   the evidence disambiguates (`a black cat … a white cat`) and applies it
+   where it does not. The close-time resolver then decides only *which*
+   existing individual a bind or a pronoun refers to — the part the toy
+   got right (1.00). For the orders pass this means: the two operations
+   stay distinct (`lower`/`definite` today, neutral operator names are
+   fine — operators are not words); what is retired is the operand-kind
+   names and the name→order table.
+2. **Identity is revisable.** A binding may be re-evaluated in the light
+   of new evidence, to the extent the entities it ranges over are still
+   accessible (in STM or LTM — forgetting bounds it). A later sentence can
+   split one individual into two or merge two into one by re-tying the
+   occurrences' references; identity is its occurrences tied by
+   references, so revision is re-tying, not rewriting content. This
+   replaces the look-ahead option: the row-pair decision is never final at
+   a sentence's close; it is the current best assignment over accessible
+   individuals.
+
+### 14.2 Hand-off to Codex for the round after §13.4 (Claude; Alec to confirm)
+
+> Reference at the close (plan §14, toy `2026-10-16-reference-close-toy`;
+> decisions §14.1). One pass, one receipt, after the §13.4 round lands:
+> (1) Mint and bind remain two operations with fixed semantics (mint never
+> binds, bind never mints); the word→operator mapping is the chooser's,
+> credited at the close; no word anchors; operand names positional.
+> (2) Reference is resolved at the close over the kept derivation's
+> order-1 constituents: for each bind or pronoun constituent, one decision
+> among the accessible individuals (STM, cued frames) by membership by
+> evidence — explanation of the constituent's content by the individual's
+> signature, the sentence's predicate head absorbed into signatures (copula
+> excluded) and used as prediction credit, learned salience (recency,
+> roles) and the determiner's word form as a cue until §6's class exists;
+> a mint constituent creates an individual; a pronoun never mints; kinds
+> are never candidates at order 1. Retire `resolve_operand`'s mode masks
+> and cosine argmax and the selected-mint admission gate; an individual
+> mints on its first mention and recurrence within the document is its
+> evidence; four-witness recurrence across documents moves to the order-2
+> kinds (deferred).
+> (3) Identity is revisable: a later close may split or merge accessible
+> individuals by re-tying occurrences' references when new evidence
+> (exclusive properties, diverging predicates) arrives; bounded by access.
+> Regression: the four same-kind documents resolve to the expected row
+> count after their fourth sentence.
+> (4) Measure on the balanced order-1 identity branch from the corrected
+> warm-up: bindings by group, row pairs after the document's close,
+> columns minted with witnesses, kept programs; the accepted certificates
+> unchanged. Preserve: no accepted certificate changes; B1's cases that
+> the toy shows the current rule gets (same-kind by `a`) must still pass.
+
+## 15. Identity without a mixing matrix (Alec, 2026-10-16)
+
+Supersedes §14's resolver as the mechanism; keeps its matching step.
+
+1. **ICA presumed a mixing matrix we do not have.** The dictionary's
+   signal was the closed row's slots 0 + 2 (§ "what is the signal"), which
+   assumes the reading filled the slots with NPs; it did not. Dropped at
+   order 1.
+2. **Every singular NP mints an identity.** At the NP operator's
+   application — the determiner operation, with or without a marker word
+   (bare NPs apply the same universal operator) — an occurrence row is
+   written with a fresh anonymous id and the NP's own meaning, taken at
+   the operator's input, *before the sentence fold* (after `verb` the
+   signature is mixed; in a slot it is a position, not a thing). Minted
+   NPs are proper nouns without a name. This has nothing to do with slots.
+3. **Matching is a separate step**, deferred and revisable: the new
+   occurrence is evaluated for a match against previous identities by
+   membership by evidence (the toy's step, §14) — at the close, where the
+   predicate's evidence is, or later, against whatever is still
+   accessible; an unbound term is a singleton individual, and binding is
+   the second-order fold (sigma over occurrences with unique ids) that
+   merges it with an earlier one by a reference to another LTM frame.
+   Re-tying later is revision (§14.1.2).
+4. **VPs are operations.** They are all named (the verb) and each is
+   associated with a vector that defines its operation (6.5's B column).
+   The shaping pressure on that vector is the **temporal difference of
+   the individual it acts on**: with identity determined, the difference
+   between an individual's occurrence after the VP and before it
+   (`runs` → tired) is attributed to the VP and moves its vector; the
+   vector has a pre-state part (what the VP acts on) and an effect part
+   (the change). The VP's vector applied to a candidate's last state
+   predicts the next occurrence — the same quantity the matching step uses
+   as prediction credit, and 4.5's expectation per individual. Literature
+   anchors: change-of-state semantics (Davidsonian events; GO/BE/CAUSE),
+   STRIPS-style effects, object-centric action-effect models.
+5. **What ICA keeps:** order 2 — kinds as the pi over individuals'
+   signatures, computed or sparse-coded, later. The selected-mint gate
+   goes; four-witness recurrence moves up with the kinds; forgetting
+   decides what persists.
+
+*Prerequisite — the NP event.* Readings must apply the NP operators,
+which today's `verb` chains never do. Stage **4e, Constituents**
+([Training.md](../Training.md)): the 4b–4d sentences with their brackets
+as the lesson — cross-entropy on the compose chooser toward the bracketed
+reading, as stage 3 does for order — gated by free reading reproducing
+the brackets on held-out sentences, with one occurrence written per NP.
+The change lesson (same individual before and after a VP) is added to
+stage 5 for item 4 of this section.
+
+*Sequence after the current round (§13.4):* (i) stage 4e and the
+occurrence write at the NP operators, one pass, gate = brackets on
+held-out + occurrences; (ii) the matching step at the close with the
+revisable tie, measured on the order-1 identity lessons; (iii) the VP
+vectors from temporal differences on the change lesson; (iv) word classes
+(§6) once positions exist. Hand-offs to follow Alec's go on each.
+
+*Refinement (Alec, 2026-10-16): the minted NP is the second-order NP
+before its order is reduced.* The description ("black cat") is the
+kind-level NP at order 2 — the pi of its words' types — recognized
+compositionally, never minted by a sentence. The NP operator is the order
+reduction 2 → 1, and that reduction is the identity event: mint creates a
+new member, bind selects an existing one, a pronoun is a bind with an
+empty description. The occurrence row written at the mint is order 1 with
+the order-2 description's meaning as its signature, taken at the
+operator's input. A bare NP that is never lowered (`cats purr`, `every
+cat`, article-less generics) stays at order 2 and writes no occurrence —
+DRT accessibility. The part of speech "NP" is the class of constituents
+that enter the reduction, learned by participation in that position (§6).
+Hand-offs say "at the order reduction", not "at the determiner".
+
+## 16. Review of the reference-at-the-close round, `48093d421`…`b41cf3b5b` (Claude, 2026-10-16) — land as item 6's closing mechanism; learning carried
+
+(The positional-operands/paired-warm-up round landed meanwhile at
+`51f069c30`: operands `argin1/argin2/argout1`, the name→order table gone,
+an order-3 relation read, the two probabilistic certificates replaced by
+an `artifact_eval` coverage certificate (80/80 rounds), and the paired
+stages 1–2 passing the singleton gate **20/24** (was 8/24). Its identity
+branch was zero: held-out readings are `equal` chains at zero meaning.)
+
+### 16.1 What this round is
+
+The §14/§14.1 mechanism, implemented: reference deferred through the kept
+derivation to its close; mint and bind as two operations with fixed
+semantics and the chooser owning the word mapping; candidates the
+accessible order-1 individuals (STM, cued frames); closing by content
+explanation, predicate evidence (copula excluded) and trainable
+salience/form cues; first mentions allocated at a successful kept write;
+later closes revising accessible occurrence references (split and merge,
+transitive, across cued documents); occurrence content immutable; closing
+credit to the chooser; empty closes preserving the clause DAG. The
+controlled certificates are what the design needs: **4/4 same-kind cases
+after the fourth close**, bind/pronoun never minting and staying unbound
+without an accessible individual, higher-order rows excluded, exact
+NOT/OR reconstruction unchanged (`R == [0.]*4`), native writes and
+checkpoint round-trip.
+
+### 16.2 Findings
+
+- **The native lesson is zero and was always going to be.** 0/146,
+  0/20, zero columns: every held-out kept reading is `equal` × 2–5 at
+  zero meaning and makes **no reference request**, so the resolver never
+  ran natively. This is the §15 prerequisite — readings must apply the NP
+  operators — which I had said §14.2 should wait for. The run cost 39,215 s
+  (10.9 h) to confirm it; no more native identity runs until stage 4e
+  passes.
+- **Twelve tests assert retired contracts** (nearest-left/context-stash
+  binding, fixtures on that API, selected-mint admission, a synthetic
+  owner without a store, gradients through the old live binding slab).
+  Codex left them red "pending clarification". The clarification: those
+  contracts were retired by decision (§14.1, §15); tests of retired
+  mechanisms are deleted, not kept red, and a test that protects a
+  behaviour the new mechanism must keep is rewritten against the new API.
+  No dark paths, no red suite.
+- **No clean sweep on the final source.** One sweep at `48093d421` (25
+  failures), eleven real defects repaired by targeted checks, none
+  re-swept. The landing commit needs one full sweep.
+- Carried, unchanged: c's marker-headed `five`; the paired zero-cost
+  counterexample (`.0517` on accepted main too); cleared-cache overlap
+  XFAIL; relation trace 2/4; order CE gates; free readback 0/4.
+
+### 16.3 Disposition: close item 6 as a mechanism landing
+
+Item 6's mechanisms are complete and certified: part 1 (shared bounded
+inverse, type families as candidate types, live wholes, stored-read
+determiners, mint-the-unexplained-surprise), the forward discard charge
+with the search exemption, positional operands and orders from stamps,
+paired stages 1–2, and reference at the close with revision. What is not
+done is learning, and its prerequisite is a lesson, not a mechanism:
+stage 4e (constituents) so that readings apply the NP operators, then the
+identity lessons, VP vectors from temporal differences, word classes, and
+order-2 kinds (§15). Those carry as open work — alongside 5.5, with 4e
+the first pass — and as gates at item 0's checkpoint, exactly as 6.1, 6.2
+and 6.5 carried theirs. No rule is retired by a lesson yet; the retired
+ones (operand names, mode masks, selected-mint gate, nearest-left bind)
+were retired by decision.
+
+### 16.4 Hand-off to Codex (Alec confirmed: check in and move on)
+
+> Reference-close reviewed (plan §16): land as item 6's closing mechanism,
+> no learning claim. Before the landing commit: (1) delete the twelve tests
+> that assert retired contracts (nearest-left/context-stash binding and its
+> fixtures, selected-mint admission, the synthetic owner, the old live
+> binding slab); rewrite any that protect a behaviour the close must keep,
+> against the new API; the suite is green except c and the carried paired
+> counterexample, both named. (2) One full sweep on the final commit.
+> (3) Include the uncommitted docs in the tree (`doc/Orders.md`,
+> Philosophy, Training, the two specs, todo). (4) Commit on main, push,
+> bump WikiOracle; todo item 6 → Done with the mechanism list of §16.3
+> and the carried learning (§15 sequence, 4e first) alongside 5.5 and as
+> item 0 gates. No native identity run until stage 4e passes its gate.
+> (5) Test tiers ([Testing.md](../Testing.md#tiers-for-a-model-that-has-not-learned-alec-2026-10-16)):
+> mark the 53 slow contracts listed there `slow` (weekly `RUN_SLOW=1`);
+> certificates stay in the default sweep whatever their time; every test
+> stays in the harness.
+> (6) Delete the noun-side sparse-coding path that no longer has a
+> consumer (`SparseDictionary.encode`/`loss` and the independence term as
+> applied to `nouns`), or confine it to `verbs` until the temporal-
+> difference teacher (§15 item 4) replaces it; no dark path. The Done
+> entry states what is not yet built: VP vectors by temporal difference,
+> order-2 kinds, stage 4e.
+
+
+## 17. Closing-mechanism landing cleanup (2026-10-16)
+
+The §16 decision retires the nearest-left/context-stash fixtures and the
+selected-mint admission contracts. The old live-slab test now checks the
+unchanged operand values and gradients at the deferred bind operation. Native
+allocation, expectation-only optimizer ownership and checkpoint round-trip
+are checked through a real kept close with its clause index. The old standalone
+`bind_resolver` and `selected_individual_references` have no production caller
+and are deleted with their retired-rule tests.
+
+A is now `ColumnDictionary`: signatures, relevance, witnesses and checkpoint
+state, with no sparse encoder, sparse loss or residual-admission method.
+Noun population energy, predictor source re-encoding and noun-coordinate
+prediction loss are removed. Only legacy B retains `SparseDictionary`;
+its innovation coordinates use detached A signatures, so its energy cannot
+train noun signatures. This is not the deferred per-individual VP teacher.
+The focused regression checks that boundary and the native round-trip.
+
+The 53 timing-table contracts are accounted for as 52 live slow cases and one
+already-retired contract. Certificates remain default, including the older
+XOR certificates whose explicit slow gates are removed. The artifact coverage
+certificate retains its learned-artifact requirement and bound. Exact assertions
+for NOT/OR reconstruction, c and the paired zero-cost counterexample stay.
+
+Item 6 is Done as mechanism only. The §15 learning sequence carries alongside
+5.5 and at item 0, with stage 4e first; no new native identity run occurs before
+its gate. VP temporal-difference vectors, order-2 kinds and stage 4e are not
+built. The final BasicModel commit is swept once, then the sweep receipt is
+written with the WikiOracle bump so the measured BasicModel commit does not
+change to add its own result:
+[landing receipt](https://github.com/arborrhythms/WikiOracle/blob/main/doc/benchmarks/2026-10-16-item6-landing.md).
