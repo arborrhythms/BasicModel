@@ -1,0 +1,29 @@
+{
+  "before": {
+    "pressure": 1.0,
+    "wait": {
+      "count": 5,
+      "ce": 2.529911756515503
+    },
+    "fold": {
+      "count": 4,
+      "ce": 3.2997535467147827
+    }
+  },
+  "after": {
+    "pressure": 1.0153669118881226,
+    "wait": {
+      "count": 5,
+      "ce": 1.7159007966518403
+    },
+    "fold": {
+      "count": 4,
+      "ce": 2.6670185923576355
+    }
+  },
+  "passed": true,
+  "gate": "both fixed-state raw mean CEs decrease by more than 1e-5 nats",
+  "texts": [
+    "a horse sees the cat"
+  ]
+}
