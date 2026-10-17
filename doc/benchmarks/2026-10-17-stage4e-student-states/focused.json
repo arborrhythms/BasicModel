@@ -1,0 +1,12 @@
+{
+  "files": [
+    "test/test_constituent_lesson.py",
+    "test/test_surface_grammar.py",
+    "test/test_generation_lesson.py"
+  ],
+  "final_distinct_passes": 11,
+  "skips": 3,
+  "native_contract": "Passed explicitly before moving to the slow tier; exact captured/native probabilities, actual provenance, lesson gradient, paired-only optimizer count and suppressed external step.",
+  "intermediate_failure": "The generation-gradient fixture omitted the new _student_compose_states API. Added a None-returning fixture method; its gradient assertions are unchanged. Its focused rerun passed (2.19 s).",
+  "default_sweep": "The final 5800-case sweep confirms the default contracts; the native slow regression is recorded separately, never counted as passed by its default skip."
+}

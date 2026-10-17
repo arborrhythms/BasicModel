@@ -32,8 +32,13 @@ def run(args):
     from What import What
     restore = BaseModel.load_weights
     order_report = json.loads((args.warmup.parent/'results.json').read_text())
-    if not order_report.get('passed') or 'stages' not in order_report:
-        raise ValueError('stage 4e requires the passed stage-3 order gate')
+    stages = order_report.get('stages', ())
+    order_gate = dict(passed=bool(order_report.get('passed')),
+        free_source_order_passed=bool(stages) and all(row['final']['read_gate_passed'] for row in stages),
+        last_training_ce={row['name']: row['training'][-1]['lesson_cross_entropy'] for row in stages})
+    del stages, order_report  # Keep the large native diagnostics out of training memory.
+    if not order_gate['free_source_order_passed']:
+        raise ValueError('stage 4e requires the stage-3 reader to read freely in source order')
     args.out.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
     random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
@@ -51,8 +56,9 @@ def run(args):
         gates=dict(brackets=.9, occurrences=.95, duplicate_writes=0,
                    reductions='one order-1 occurrence at every lowered NP; report description stamp',
                    unlowered_occurrences=0),
-        attention='student-selected; stage-3 order gate passed before this run', pilot=pilot,
-        order_gate=str(args.warmup.parent/'results.json'), batch_end_optimizer='disabled',
+        attention='student-selected; free source order passed; full stage-3 gate reported separately', pilot=pilot,
+        order_gate=str(args.warmup.parent/'results.json'), order_gate_result=order_gate,
+        batch_end_optimizer='disabled',
         targets='annotation labels actual student states; no teacher trajectory',
         pilot_gate='both raw mean wait and fold CEs on first-batch student states decrease by more than 1e-5 nats',
         pilot_state='disposable; full run restarts the same order-trained checkpoint and seed')
