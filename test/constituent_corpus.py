@@ -7,6 +7,17 @@ from pathlib import Path
 from identity_corpus import KINDS, PROPERTIES, ROOT
 
 DEST = ROOT / 'data/constituents'
+STAGE3_ARTIFACT = ROOT / 'output/stage4e-student-order-20261017/order.ckpt'
+FAMILY_ORDER = ('description', 'np', 'intransitive', 'transitive', 'preposition')
+
+
+def curriculum_order(texts, rng):
+    """The declared family progression, counterbalanced cases within each."""
+    families = [row['id'].split(':')[1] for row in texts]
+    if set(families) != set(FAMILY_ORDER):
+        raise ValueError('stage 4e requires all five declared families')
+    return [int(index) for family in FAMILY_ORDER
+            for index in rng.permutation([i for i, name in enumerate(families) if name == family])]
 
 
 def spans(tree):

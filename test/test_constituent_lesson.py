@@ -80,6 +80,14 @@ def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences(
     train = [row for row in rows if row[0] == 'train']
     held = [row for row in rows if row[0] == 'eval']
     assert len(train) == 72 and len(held) == 40
+    from constituent_corpus import curriculum_order, FAMILY_ORDER
+    import numpy as np
+    rng = np.random.default_rng(20261010)
+    for _ in range(2):
+        order = curriculum_order([row[1] for row in train], rng)
+        assert sorted(order) == list(range(72))
+        families = [train[i][3]['family'] for i in order]
+        assert families == sorted(families, key=FAMILY_ORDER.index)
     assert not {row[1]['text'] for row in train} & {row[1]['text'] for row in held}
     graded = []
     for _, _, _, label in held:
@@ -100,6 +108,42 @@ def test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences(
     assert failed['duplicate_writes'] and not failed['nps'][0]['reduction']
     assert not failed['nps'][0]['one_occurrence']
     assert not grade(held[-1][3], observed)['unlowered_clean']
+
+
+def test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce(monkeypatch):
+    from constituent_trajectory import TrainingTrajectory
+    class Sum(torch.nn.Module):
+        def forward(self, left, right):
+            return left+right
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),), chooser='mlp')
+    language = SimpleNamespace(_tree_layer=lambda _: layer,
+        _compose_binary_rules=(SimpleNamespace(method_name='sum'),), _compose_unary_rules=())
+    trajectory = TrainingTrajectory(monkeypatch)
+    rows = [dict(id='4e:description:0', text='a b'), dict(id='4e:intransitive:0', text='a b c')]
+    lessons = [dict(text=rows[0]['text'], tree=['sum',0,1]),
+               dict(text=rows[1]['text'], tree=['sum',0,['sum',1,2]])]
+    before = torch.get_rng_state().clone()
+    for index, (kind, probabilities) in enumerate(((0,[0.,1.]),(0,[.25,.75]),
+                                                  (1,[.75,.25]),(1,[1.,0.]))):
+        b = index % 2
+        program = SimpleNamespace(leaves=torch.eye(4)[:b+2], student_states=[dict(
+            spans=((0,),(1,)), kind=kind, operation=0, kwargs={},
+            observed_probabilities=torch.tensor(probabilities))])
+        trajectory.capture(language, [program], [lessons[b]])
+    assert torch.equal(torch.get_rng_state(), before)
+    observations = {(0,0): dict(steps=[dict(kind=k) for k in ('leaf','leaf','binary')]),
+                    (0,1): dict(steps=[dict(kind=k) for k in
+                        ('leaf','leaf','leaf','transpose','unary','binary','binary')])}
+    trajectory.finish_batch(1, 0, rows, observations, torch.tensor([True,False]))
+    report = trajectory.report()['overall']
+    assert report['lesson_calls'] == 4 and report['fold_targets_per_lesson_call'] == .5
+    for name in ('wait','fold'):
+        assert report['reachable_state_ce'][name]['reachable'] == 1
+        assert report['reachable_state_ce'][name]['unreachable'] == 1
+        assert report['reachable_state_ce'][name]['mean'] == pytest.approx(-torch.tensor(.75).log().item())
+    assert report['first_pair_by_family']['description']['accuracy'] == 1.
+    assert report['first_pair_by_family']['intransitive']['accuracy'] == 1.
+    assert report['kept_program_steps']['totals'] == dict(leaf=5,binary=3,unary=1,transpose=1,compose=5,total=10)
 
 
 def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared():

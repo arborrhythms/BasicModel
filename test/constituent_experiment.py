@@ -12,10 +12,10 @@ import numpy as np
 import pytest
 import torch
 
-from constituent_corpus import DEST, load
+from constituent_corpus import DEST, load, curriculum_order, FAMILY_ORDER
 from constituent_budget import paired_updates_only
 from constituent_measurement import observe, grade, summarize
-from identity_experiment import make_model, restore_warmup, reset, save
+from identity_experiment import make_model, restore_warmup, reset, save, digest
 
 SEED, EPOCHS, RATE = 20261010, 2, .003
 
@@ -59,10 +59,17 @@ def run(args):
         attention='student-selected; free source order passed; full stage-3 gate reported separately', pilot=pilot,
         order_gate=str(args.warmup.parent/'results.json'), order_gate_result=order_gate,
         batch_end_optimizer='disabled',
+        warmup_sha256=digest(args.warmup), produced_artifact=str(args.out/'trained.ckpt'),
+        corpus_sha256={name:digest(DEST/name) for name in
+            ('train.text.jsonl','train.lessons.json','train.labels.jsonl','eval.text.jsonl','eval.labels.jsonl')},
+        family_order=FAMILY_ORDER, within_family='seeded permutation of the unchanged counterbalanced cases',
+        nested_marker_pattern=None, untargeted_legal_actions=['transpose', 'unary faces'],
         targets='annotation labels actual student states; no teacher trajectory',
         pilot_gate='both raw mean wait and fold CEs on first-batch student states decrease by more than 1e-5 nats',
         pilot_state='disposable; full run restarts the same order-trained checkpoint and seed')
     save(args.out/'protocol.json', protocol)
+    from bounded_tests import source_snapshot
+    save(args.out/'source-manifest.json', source_snapshot(Path(__file__).resolve().parents[1]))
     started = time.monotonic()
     records, progress, results, steps = [], [], [], [0]
     with pytest.MonkeyPatch.context() as patch, warnings.catch_warnings():
@@ -70,6 +77,9 @@ def run(args):
         model = make_model(args.out, patch)
         try:
             drift = restore_warmup(model, args.warmup, restore)
+            identity = model.perceptualSpace.percept_store.identity
+            if identity._marker_pattern is not None or identity.nested:
+                raise ValueError('stage 4e restores whole words with no nested marker lesson')
             save(args.out/'start.json', dict(loader_drift=drift, lexical_orders=lexical_orders(model, forms)))
             from GrammarLessons import _annotation_tree
             for lesson in lessons:
@@ -88,6 +98,8 @@ def run(args):
                     return native_compose(language, programs, annotations, **kwargs)
                 patch.setattr(GrammarLessons, 'compose_loss', compose_probe)
             rng = np.random.default_rng(SEED)
+            from constituent_trajectory import TrainingTrajectory
+            trajectory = TrainingTrajectory(patch)
             lesson_audits = []
             native_lesson = model._grammar_lesson_objectives
             def lesson_audit(*values, **kwargs):
@@ -125,6 +137,12 @@ def run(args):
                 raw = model._last_sentence_field
                 if training and len(raw['trials']) != 2:
                     raise RuntimeError('stage 4e did not run both native trials')
+                if identity.nested or identity._marker_pattern is not None:
+                    raise RuntimeError('stage 4e must not admit a nested marker pattern')
+                if training:
+                    trajectory.finish_batch(len(progress)+1, epoch, batch, captured, raw['wins'])
+                    save(args.out/'trajectory-batches.json', trajectory.batches)
+                    save(args.out/'trajectory.json', trajectory.report())
                 lesson_reports = getattr(model, '_reading_lesson_reports', ())
                 report = dict(batch=len(progress)+1, training=training, epoch=epoch,
                     ids=[row['id'] for row in batch], optimizer_steps=steps[0], updates=dict(updates),
@@ -138,7 +156,7 @@ def run(args):
                 reset(model, len(batch))
 
             for epoch in range(1 if pilot else EPOCHS):
-                order = rng.permutation(len(train)).tolist()
+                order = curriculum_order(train, rng)
                 if pilot:
                     order = order[:16]
                 for offset in range(0, len(order), 4):
@@ -150,12 +168,13 @@ def run(args):
                 print(json.dumps(report), flush=True)
                 return
             model.save_weights(str(args.out/'trained.ckpt'))
+            artifact = dict(path=str(args.out/'trained.ckpt'), sha256=digest(args.out/'trained.ckpt'))
             model._concept_owner()._online_learning_frozen = True
             for offset in range(0, len(evaluation), 4):
                 present(evaluation, list(range(offset, offset+4)), training=False, epoch=None)
             report = dict(completed=True, protocol=protocol, optimizer_steps=steps[0], updates=dict(updates),
                 elapsed_seconds=time.monotonic()-started, **summarize(results), results=results,
-                lexical_orders=lexical_orders(model, forms))
+                lexical_orders=lexical_orders(model, forms), artifact=artifact, trajectory=trajectory.report())
             save(args.out/'results.json', report)
             print(json.dumps(dict(completed=True, gates=report['gates'], passed=report['passed'])), flush=True)
         except BaseException:

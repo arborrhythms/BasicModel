@@ -6,6 +6,7 @@ may extend a minted atom's deterministic bit stream. Binding uses a separate
 fixed dense view; indexes and reconstruction retain the sparse form.
 """
 import hashlib
+from contextlib import contextmanager
 from functools import lru_cache
 
 import numpy as np
@@ -102,7 +103,7 @@ class WordIdentity(nn.Module):
         self.mints = []
         self.word_witnesses = {}
         self.nested = {}
-        self._run_words = {}
+        self._marker_pattern = None
         self.revision = 0
         basis = store._basis
         if not hasattr(basis, 'fixed_row_mask'):
@@ -243,63 +244,44 @@ class WordIdentity(nn.Module):
             atoms.update(self.part_atoms(part))
         return atoms
 
-    def observe_nested(self, raw):
-        """Recurring proper runs become parts, never new attention units.
+    @contextmanager
+    def nested_lesson(self, marker):
+        """Permit admission of one suffix pattern for this lesson only.
 
-        Shared runs are discovered across distinct word types. Residual runs
-        of that division require two witnesses. Repeating an indivisible
-        word alone cannot manufacture an internal boundary.
+        The permission is not a learned identity or checkpoint setting.
+        Already witnessed parts persist when the lesson ends.
         """
+        if not isinstance(marker, (str, bytes)) or not marker:
+            raise ValueError('a nested lesson names one nonempty marker')
+        if self._marker_pattern is not None:
+            raise ValueError('only one nested marker lesson may be active')
+        self._marker_pattern = bytes_of(marker) if isinstance(marker, str) else marker
+        try:
+            yield self
+        finally:
+            self._marker_pattern = None
+
+    def observe_nested(self, raw):
+        """Witness a word; carve only the lesson's marker after a known stem."""
         raw = bytes(raw)
         self.admit(raw)
         if not text_of(raw).isalpha():
             return ()
-        prior = self.word_witnesses.get(raw, 0)
-        fresh = prior == 0
-        self.word_witnesses[raw] = prior + 1
-        if prior >= 2:
+        self.word_witnesses[raw] = self.word_witnesses.get(raw, 0) + 1
+        marker = self._marker_pattern
+        if marker is None:
             return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
-        if fresh:
-            for lo in range(len(raw)):
-                for hi in range(lo+2, len(raw)+1):
-                    self._run_words.setdefault(raw[lo:hi], set()).add(raw)
-        divisions, residual_counts = {}, {}
-        for word, count in self.word_witnesses.items():
-            candidates = [(lo,hi) for lo in range(len(word)) for hi in range(lo+2,len(word)+1)
-                          if hi-lo < len(word) and len(self._run_words.get(word[lo:hi], ())) >= 2]
-            chosen = []
-            for lo,hi in sorted(candidates, key=lambda span: (span[0]-span[1],span[0])):
-                if all(hi <= a or lo >= z for a,z in chosen):
-                    chosen.append((lo,hi))
-            if not chosen:
+        nested = dict(self.nested)
+        # A new stem can license an earlier witnessed suffixed word. There
+        # is no vocabulary-wide substring search or token-count threshold.
+        for word in (raw, raw + marker):
+            if word not in self.word_witnesses or not word.endswith(marker):
                 continue
-            chosen.sort()
-            residuals, cursor = [], 0
-            for lo,hi in chosen:
-                if cursor < lo:
-                    residuals.append((cursor,lo))
-                cursor = hi
-            if cursor < len(word):
-                residuals.append((cursor,len(word)))
-            for lo,hi in residuals:
-                part = word[lo:hi]
-                residual_counts[part] = residual_counts.get(part,0)+count
-            divisions[word] = chosen,residuals
-        nested = {word: tuple((word[lo:hi],lo,hi) for lo,hi in sorted(
-                      chosen + [(lo,hi) for lo,hi in residuals if residual_counts[word[lo:hi]] >= 2]))
-                  for word,(chosen,residuals) in divisions.items()}
-        for word,old in self.nested.items():
-            retained=list(old)
-            for candidate in nested.get(word,()):
-                _part,lo,hi=candidate
-                # Existing wholes remain witnessed; new wholes may contain
-                # them, but cannot introduce a crossing bracket.
-                if candidate not in retained and all(not (a < lo < z < hi or lo < a < hi < z)
-                                                       for _raw,a,z in retained):
-                    retained.append(candidate)
-            nested[word]=tuple(sorted(retained,key=lambda part:(part[1],part[2])))
+            stem = word[:-len(marker)]
+            if stem and stem in self.word_witnesses and word not in nested:
+                nested[word] = ((stem, 0, len(stem)), (marker, len(stem), len(word)))
         if nested != self.nested:
-            # Admit shared parts through the same native identity owner.
+            # Admit the named marker through the same native identity owner.
             for parts in nested.values():
                 for part, _lo, _hi in parts:
                     self.admit(part)
@@ -361,11 +343,7 @@ class WordIdentity(nn.Module):
             setattr(self, name, value[name])
         self.word_witnesses = value.get('word_witnesses', {})
         self.nested = value.get('nested', {})
-        self._run_words = {}
-        for word in self.word_witnesses:
-            for lo in range(len(word)):
-                for hi in range(lo+2,len(word)+1):
-                    self._run_words.setdefault(word[lo:hi],set()).add(word)
+        self._marker_pattern = None
         self._reindex()
 
     def audit(self):

@@ -404,12 +404,33 @@ def test_nested_wholes(tmp_path, monkeypatch):
     from Layers import RadixLayer
     from WordIdentity import WordIdentity
     from Meronomy import pin_word_spans
-    store = RadixLayer(96)
+    from constituent_corpus import corpus, STAGE3_ARTIFACT
+    store = RadixLayer(96, initial_cap=256)
     identity = WordIdentity(store)
     words = (b'walk',b'walked',b'walking',b'walks',b'cat',b'cats',b'went')
-    for word in words*2:
+    vocabulary = tuple(sorted({word.encode() for _,text,_,_ in corpus() for word in text['text'].split()}))
+    assert len(vocabulary) == 17
+    for word in (vocabulary+words)*2:
         identity.observe_nested(word)
-    parts = identity.observe_nested(b'walked')
+    assert not identity.nested
+    before = {word: identity.form(word).clone() for word in vocabulary+words}
+    with identity.nested_lesson(b'ed'):
+        for word in vocabulary+words:
+            identity.observe_nested(word)
+        parts = identity.observe_nested(b'walked')
+        with pytest.raises(ValueError, match='only one'):
+            with identity.nested_lesson(b's'):
+                pass
+    assert set(identity.nested) == {b'walked'}
+    assert identity._marker_pattern is None
+    assert all(torch.equal(identity.form(word), value) for word,value in before.items() if word != b'walked')
+    # Merely allocating a stem is not witnessing it in a lesson's input.
+    late = WordIdentity(RadixLayer(96))
+    late.admit(b'walk')
+    with late.nested_lesson('ed'):
+        assert not late.observe_nested(b'walked')
+        late.observe_nested(b'walk')
+        assert late.nested[b'walked'] == ((b'walk',0,4),(b'ed',4,6))
     named = [(store.bytes_for(row),lo,hi) for row,lo,hi in parts]
     assert named == [(b'walk',0,4),(b'ed',4,6)]
     row = identity.word_rows[b'ed']
@@ -435,17 +456,23 @@ def test_nested_wholes(tmp_path, monkeypatch):
     values=PartSpace.part_memberships(store,[identity.word_rows[b'walk'],row],
                                       native,spans,locations,6)
     assert values[...,0].tolist()==[[[True,True,False]],[[True,False,True]]]
-    from test_compiled_word_chunk import _tiny_canonical_model
-    model = _tiny_canonical_model(tmp_path,monkeypatch,input_width=64,word_buckets='16',concept_rows=64)
+    # This phase's certificate restores the preceding phase's trained artifact.
+    from Models import BaseModel
+    from identity_experiment import make_model, restore_warmup
+    restore = BaseModel.load_weights
+    model = make_model(tmp_path,monkeypatch)
     try:
+        restore_warmup(model, STAGE3_ARTIFACT, restore)
+        current=model.perceptualSpace.percept_store.identity
+        assert not current.nested and current._marker_pattern is None
         for _ in range(2):
             with torch.no_grad():
-                model._lex_embed_stem(model.inputSpace.prepInput([' '.join(w.decode() for w in words)]))
+                model._lex_embed_stem(model.inputSpace.prepInput([' '.join(w.decode() for w in vocabulary+words)]))
             staged=model.perceptualSpace._forward_input
-            current=model.perceptualSpace.percept_store.identity
+            assert not current.nested
             mask=staged['word_part_mask'][0,0]
-            assert staged['word_part_indices'][0,0][mask].tolist()==list(current.parts(b'walk'))
-        with torch.no_grad():
+            assert staged['word_part_indices'][0,0][mask].tolist()==list(current.parts(vocabulary[0]))
+        with current.nested_lesson('ed'), torch.no_grad():
             model._lex_embed_stem(model.inputSpace.prepInput(['walked went']))
         staged = model.perceptualSpace._forward_input
         identity = model.perceptualSpace.percept_store.identity
@@ -454,8 +481,10 @@ def test_nested_wholes(tmp_path, monkeypatch):
             assert spans[ids == identity.word_rows[raw]].tolist() == [expected]
         assert staged['word_texts'][0][0] == 'walked'
         assert not identity.nested.get(b'went')
+        assert set(identity.nested) == {b'walked'}
     finally:
         model.End()
+        model.symbolSpace.soft_reset()
 
 
 def test_absences():

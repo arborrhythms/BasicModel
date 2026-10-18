@@ -509,12 +509,15 @@ conflicts with §0–§7, this amendment governs.
   the nested affix is a **temporal affix that operates as a spatial
   preposition does**: the marker leaf of the verb phrase's preposition of §4–5,
   so `walked` is the preposition operator with `ed` as its written marker on
-  `walk`. *Claude's reading, from a probe of the landed rule on the 4e
-  vocabulary (7 of 17 words carved at shared letter pairs: black, chases,
-  horse, large, near, sees, sleeps):* the shared run must itself be a
-  witnessed word (`walk`, `cat`), not merely a run of two letters found in two
-  words; with that, and residuals by type recurrence, the 4e words stay whole
-  and `walked`, `cats` carve as intended.
+  `walk`. *Decided (Alec, 2026-10-17, later):* **nested admission learns one pattern
+  for one rule at a time.** It is not a general carving statistic over the
+  vocabulary (a probe of the landed rule carved 7 of the 17 4e words at shared
+  letter pairs). A stage introduces one marker pattern: the grammar is run
+  without the marker for tense, then the marker is turned on and a set of
+  sentences is tested, as a human learns one generalization at a time. With
+  no pattern named, no word is carved; with a pattern named, only words whose
+  remainder is a witnessed stem carve into stem plus that marker, and
+  irregulars stay whole.
 - **A marker belongs to its operator.** A marker-headed operator absorbs the
   marker leaf when it is present and supplies its own learned marker when it
   is absent (a unary face of the same implementation whose reverse emits no
