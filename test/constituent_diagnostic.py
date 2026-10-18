@@ -17,7 +17,7 @@ from identity_experiment import make_model, restore_warmup, save
 def probe(args):
     from Models import BaseModel
     from What import What
-    from GrammarLessons import constituent_examples, compose_loss
+    from GrammarLessons import constituent_examples, compose_loss, ComposeLessonStates, student_target_probability
     from Layers import Error
     from ObjectiveOwnership import backward_owned, registry_costs
     restore = BaseModel.load_weights
@@ -38,6 +38,14 @@ def probe(args):
             if args.states:
                 programs = torch.load(args.states, weights_only=False)
             else:
+                from contextlib import contextmanager
+                native_run = model._sentence_run
+                @contextmanager
+                def observed_run(**kwargs):
+                    with native_run(**kwargs):
+                        model.languageSpace._compose_lesson_states = ComposeLessonStates()
+                        yield
+                model._sentence_run = observed_run
                 original = model._sentence_observation
                 def capture(state, sid, active, **kwargs):
                     result = original(state, sid, active, **kwargs)
@@ -47,9 +55,15 @@ def probe(args):
                             order = positions[b][positions[b] >= 0].argsort()
                             view = SimpleNamespace(**{name: getattr(program, name).detach().index_select(0, order)
                                 for name in ('leaves', 'concept_ids', 'word_rows')})
-                            view.compose_capacity = int(model.conceptualSpace.stm.capacity)
-                            view.compose_closing_budget = min(2*view.compose_capacity,
-                                int(model.syntacticOrder) or 2*view.compose_capacity)
+                            width = model.inputSpace._word_active_mask.shape[1]
+                            active = model.inputSpace._word_active_mask[b]
+                            actual = positions[b][positions[b] >= 0]
+                            closing_width = 2*int(model.conceptualSpace.stm.capacity)
+                            hi, last = int(actual.max()), int(active.nonzero()[-1])
+                            base = 3*width if hi == last else 3*width+(hi+1)*closing_width
+                            view.student_states = model.languageSpace._compose_lesson_states.sentence(
+                                b, actual, width=width, closing_base=base, closing_width=closing_width,
+                                attempted=model._reconstruction_stack()._choice_attempted)
                             view.case_bank = model.languageSpace._reference_bank.cases.detached()
                             programs.append(view)
                     return result
@@ -65,11 +79,11 @@ def probe(args):
                         batch_override=(inputs, torch.empty(4, 0)), source_rows=[[i] for i in chosen],
                         questions=tuple(What.present(b, split='validation') for b in range(4)))
                 model._sentence_observation = original
-                torch.save(programs, args.out/'teacher-states.pt')
+                # The immutable grammar capability contains MappingProxy data;
+                # diagnostics report observations in JSON instead of pickling it.
             assert len(programs) == len(lessons)
-            for program in programs:
-                program.compose_closing_budget = min(2*program.compose_capacity,
-                    int(model.syntacticOrder) or 2*program.compose_capacity)
+            if any(not hasattr(program, 'student_states') for program in programs):
+                raise ValueError('retired teacher-state checkpoints require their original code revision')
             layer = model.languageSpace._tree_layer(2)
             chooser = layer.chooser
             before = {name: p.detach().clone() for name, p in chooser.named_parameters()}
@@ -120,23 +134,21 @@ def probe(args):
                 examples = constituent_examples(model.languageSpace, program, lesson['tree'])
                 cases.append(dict(text=lesson['text'], ids=bank.ids.tolist(),
                     cases_nonzero=int(bank.cases.count_nonzero()), observed_nonzero=int(bank.observed.count_nonzero()),
-                    examples=len(examples), unavailable=[i for i, ex in enumerate(examples) if ex.get('unavailable')]))
+                    examples=len(examples)))
                 for ex in examples:
-                    if ex.get('unavailable'):
-                        break
                     route = routes[len(states)]
-                    logits = route['logits'].detach()[0]
+                    logits = route['logits'].detach()[ex['row']]
                     finite = logits[torch.isfinite(logits)]
                     target = ex['target']
                     states.append(dict(text=lesson['text'], target=target, depth=ex['depth'],
                         logits=[None if not torch.isfinite(v) else float(v) for v in logits],
                         logit_gap=float(finite.max()-finite.min()),
-                        target_probability=float(route['probabilities'][0, target].detach())))
+                        target_probability=float(student_target_probability(layer, ex, route['probabilities'][ex['row']]).detach())))
             h = torch.cat(raw_hidden)
             z = torch.cat(preactivation)
             owner = model._concept_owner()
             store = owner._concept_allocator.layer(0)
-            report = dict(checkpoint=str(args.checkpoint), teacher_states=str(args.states or args.out/'teacher-states.pt'),
+            report = dict(checkpoint=str(args.checkpoint), student_states=None if args.states is None else str(args.states),
                 loader_drift=drift, case_bank=cases, states=states, parameters=stats,
                 terms=registry.breakdown(), raw_score_gaps=raw_scores,
                 loss_before=float(loss.detach()), loss_after_one_step=float(after_loss.detach()),

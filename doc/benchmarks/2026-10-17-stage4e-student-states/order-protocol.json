@@ -1,0 +1,14 @@
+{
+  "seed": 20261010,
+  "batches_per_lesson": 64,
+  "batch_size": 4,
+  "training_presentations": 512,
+  "paired_optimizer_steps": 256,
+  "evaluation_presentations": 16,
+  "learning_rate": 0.003,
+  "warmup": "output/item6-orders-paired-accepted-code-20261015/warmup.ckpt",
+  "candidate": "49ea2c8c3fd8570ae6f5eafcafaef58682a9641c",
+  "gate": "both lessons: exact free source order on every row and final per-row CE <= .01 nats/read",
+  "batch_end_optimizer": "disabled",
+  "no_retries": true
+}

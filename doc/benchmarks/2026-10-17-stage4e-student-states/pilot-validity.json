@@ -1,0 +1,64 @@
+{
+  "pilot_candidate": "e089c523a",
+  "training_presentations": 16,
+  "paired_optimizer_steps": 8,
+  "batch_end_disabled": 0,
+  "status": "invalid_fold_measurement",
+  "reason": "The lesson indexed the native action vector with a grammar rule id; native reference variants expand that vector. The corrected lesson marginalizes the action probability of every candidate for the annotated operator.",
+  "correction": "One target-mapping regression plus the native integration check pass; the pilot is not rerun under this consumed budget.",
+  "kept_source_order": {
+    "exact": 13,
+    "total": 16,
+    "departures": [
+      {
+        "id": "4e:np:0:2:0",
+        "actual": [
+          2,
+          0,
+          1
+        ],
+        "expected": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "id": "4e:intransitive:3:1:1",
+        "actual": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "expected": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": "4e:preposition:1:2:0",
+        "actual": [
+          0,
+          2,
+          1,
+          3,
+          4,
+          5
+        ],
+        "expected": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    ]
+  },
+  "full_rerun": "not_run: no valid passing pilot",
+  "next_measurement": "Corrected 16-presentation pilot from output/stage4e-student-order-20261017/order.ckpt; the order warm-up need not be repeated."
+}

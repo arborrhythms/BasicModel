@@ -1,0 +1,25 @@
+{
+  "candidate": "1d1ce73b2",
+  "working_branch": "main",
+  "training_presentations": 16,
+  "heldout_presentations": 0,
+  "source_order": 14,
+  "source_order_departures": [
+    {
+      "id": "4e:description:3:3",
+      "positions": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": "4e:np:0:2:0",
+      "positions": [
+        0,
+        2,
+        1
+      ]
+    }
+  ],
+  "full_rerun": "started from the same order checkpoint and seed; pilot learning discarded"
+}

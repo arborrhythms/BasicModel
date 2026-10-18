@@ -1,0 +1,3007 @@
+[
+  {
+    "text": "a horse sees the cat",
+    "slot": 0,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.3940377235412598,
+    "after": 0.9279440641403198,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 3,
+    "spans": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "target": 12,
+    "target_actions": [
+      1128,
+      1129,
+      1130,
+      1131,
+      1132,
+      1133,
+      1134,
+      1135,
+      1136,
+      1137,
+      1138,
+      1139,
+      1140,
+      1141,
+      1142,
+      1143,
+      1144,
+      1145,
+      1146
+    ],
+    "selected_kind": 1,
+    "before": 0.41362249851226807,
+    "after": 1.2697746753692627,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 4,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.603130340576172,
+    "after": 0.6663936376571655,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 5,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.603130340576172,
+    "after": 0.6663936376571655,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 6,
+    "spans": [
+      [
+        0,
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 9.521120071411133,
+    "after": 4.154738903045654,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 7,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.933112859725952,
+    "after": 0.263278990983963,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 8,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.933112859725952,
+    "after": 0.263278990983963,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 9,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 9.079026222229004,
+    "after": 2.9195189476013184,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 10,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 0.23391610383987427,
+    "after": 0.20936943590641022,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 12,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.2835307121276855,
+    "after": 1.5374404191970825,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 192,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 69.07755279541016,
+    "after": 69.07755279541016,
+    "unreachable": true
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 193,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.2217680215835571,
+    "after": 0.5188899636268616,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 0,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.066501617431641,
+    "after": 0.9849449992179871,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 1,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.066501617431641,
+    "after": 0.9849449992179871,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 2,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.066501617431641,
+    "after": 0.9849449992179871,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 3,
+    "spans": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "target": 13,
+    "target_actions": [
+      1147,
+      1148,
+      1149,
+      1150,
+      1151,
+      1152,
+      1153,
+      1154,
+      1155,
+      1156,
+      1157,
+      1158,
+      1159,
+      1160,
+      1161,
+      1162,
+      1163,
+      1164,
+      1165
+    ],
+    "selected_kind": 1,
+    "before": 11.860271453857422,
+    "after": 4.304966449737549,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 4,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.562018632888794,
+    "after": 0.5512627959251404,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 5,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.562018632888794,
+    "after": 0.5512627959251404,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 6,
+    "spans": [
+      [
+        0,
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 7.624370574951172,
+    "after": 2.4327540397644043,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 7,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.3652915954589844,
+    "after": 0.540700376033783,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 8,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.3652915954589844,
+    "after": 0.540700376033783,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 9,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 5.378924369812012,
+    "after": 1.7919303178787231,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 10,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 5.4850029945373535,
+    "after": 0.7276833057403564,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 11,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 5.4850029945373535,
+    "after": 0.7276833057403564,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 12,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 13.394567489624023,
+    "after": 3.929621696472168,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 13,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.2445650100708008,
+    "after": 0.6680494546890259,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 15,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 0.9468393921852112,
+    "after": 1.3358126878738403,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 192,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 69.07755279541016,
+    "after": 69.07755279541016,
+    "unreachable": true
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 193,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 194,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 195,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 196,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 197,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 198,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 199,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 200,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 201,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 202,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 203,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 204,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 205,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 206,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 207,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.084874153137207,
+    "after": 1.2077834606170654,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 0,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.2822136878967285,
+    "after": 0.6949165463447571,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 1,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.2822136878967285,
+    "after": 0.6949165463447571,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 2,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.2822136878967285,
+    "after": 0.6949165463447571,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 3,
+    "spans": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "target": 4,
+    "target_actions": [
+      1084
+    ],
+    "selected_kind": 1,
+    "before": 7.557583332061768,
+    "after": 4.445623874664307,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 4,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 0.0042741913348436356,
+    "after": 0.00579465227201581,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 192,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 0.0042741913348436356,
+    "after": 0.00579465227201581,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 0,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.092079162597656,
+    "after": 1.0263681411743164,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 1,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.092079162597656,
+    "after": 1.0263681411743164,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 2,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.092079162597656,
+    "after": 1.0263681411743164,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 3,
+    "spans": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 5.607809066772461,
+    "after": 2.5993309020996094,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 4,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8938210010528564,
+    "after": 1.039396047592163,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 5,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8938210010528564,
+    "after": 1.039396047592163,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 6,
+    "spans": [
+      [
+        0,
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 3.8766422271728516,
+    "after": 1.7693939208984375,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 7,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 8,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 192,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 193,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 194,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 195,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 196,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 197,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 198,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 199,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 200,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 201,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 202,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 203,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 204,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 205,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 206,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 207,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 6.783944606781006,
+    "after": 1.3933721780776978,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 3,
+    "spans": [
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.603130340576172,
+    "after": 0.6663936376571655,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 4,
+    "spans": [
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.603130340576172,
+    "after": 0.6663936376571655,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 5,
+    "spans": [
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.603130340576172,
+    "after": 0.6663936376571655,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 0,
+    "spans": [
+      [
+        1
+      ],
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 9.131584167480469,
+    "after": 3.2305192947387695,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 1,
+    "spans": [
+      [
+        1,
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.0682182312011719,
+    "after": 0.6772797703742981,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 6,
+    "spans": [
+      [
+        1,
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 5.547335147857666,
+    "after": 4.762049198150635,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 7,
+    "spans": [
+      [
+        1,
+        0,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.5200552940368652,
+    "after": 0.2947317063808441,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 9,
+    "spans": [
+      [
+        1,
+        0,
+        2
+      ],
+      [
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 2.6335055828094482,
+    "after": 1.7445234060287476,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 10,
+    "spans": [
+      [
+        1,
+        0,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.726585865020752,
+    "after": 0.45181187987327576,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 11,
+    "spans": [
+      [
+        1,
+        0,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.726585865020752,
+    "after": 0.45181187987327576,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 12,
+    "spans": [
+      [
+        1,
+        0,
+        2,
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 12.895269393920898,
+    "after": 3.3496265411376953,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 13,
+    "spans": [
+      [
+        1,
+        0,
+        2,
+        3,
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.2748422622680664,
+    "after": 0.7993371486663818,
+    "unreachable": false
+  },
+  {
+    "text": "a horse sees the cat",
+    "slot": 192,
+    "spans": [
+      [
+        1,
+        0,
+        2,
+        3,
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.2748422622680664,
+    "after": 0.7993371486663818,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 0,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.066501617431641,
+    "after": 0.9849449992179871,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 1,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.066501617431641,
+    "after": 0.9849449992179871,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 2,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.066501617431641,
+    "after": 0.9849449992179871,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 3,
+    "spans": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "target": 13,
+    "target_actions": [
+      1147,
+      1148,
+      1149,
+      1150,
+      1151,
+      1152,
+      1153,
+      1154,
+      1155,
+      1156,
+      1157,
+      1158,
+      1159,
+      1160,
+      1161,
+      1162,
+      1163,
+      1164,
+      1165
+    ],
+    "selected_kind": 1,
+    "before": 11.934911727905273,
+    "after": 4.324568748474121,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 4,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.5739827156066895,
+    "after": 0.5537692904472351,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 5,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.5739827156066895,
+    "after": 0.5537692904472351,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 6,
+    "spans": [
+      [
+        0,
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 7.6341705322265625,
+    "after": 2.445044755935669,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 7,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.376244068145752,
+    "after": 0.5429424047470093,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 8,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.376244068145752,
+    "after": 0.5429424047470093,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 9,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 5.385116100311279,
+    "after": 1.7999552488327026,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 10,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 5.502945423126221,
+    "after": 0.7327777147293091,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 11,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 5.502945423126221,
+    "after": 0.7327777147293091,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 12,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 13.414166450500488,
+    "after": 3.9525694847106934,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 13,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.2445650100708008,
+    "after": 0.6680494546890259,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 15,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 0.940285861492157,
+    "after": 1.3206143379211426,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 192,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 69.07755279541016,
+    "after": 69.07755279541016,
+    "unreachable": true
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 193,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 194,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 195,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 196,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 197,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 198,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 199,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 200,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 201,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 202,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 203,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 204,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 205,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 206,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "the horse is on a dog",
+    "slot": 207,
+    "spans": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.101047039031982,
+    "after": 1.2182815074920654,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 3,
+    "spans": [
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.06379508972168,
+    "after": 1.1407898664474487,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 4,
+    "spans": [
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.06379508972168,
+    "after": 1.1407898664474487,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 5,
+    "spans": [
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.06379508972168,
+    "after": 1.1407898664474487,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 0,
+    "spans": [
+      [
+        1
+      ],
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 7.690250396728516,
+    "after": 4.2218451499938965,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 1,
+    "spans": [
+      [
+        1,
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.0268638134002686,
+    "after": 0.520296573638916,
+    "unreachable": false
+  },
+  {
+    "text": "white dog",
+    "slot": 192,
+    "spans": [
+      [
+        1,
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 0,
+    "before": 1.0268638134002686,
+    "after": 0.520296573638916,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 0,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.092079162597656,
+    "after": 1.0263681411743164,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 1,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.092079162597656,
+    "after": 1.0263681411743164,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 2,
+    "spans": [
+      [
+        0
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 4.092079162597656,
+    "after": 1.0263681411743164,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 3,
+    "spans": [
+      [
+        0
+      ],
+      [
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 5.607809066772461,
+    "after": 2.5993309020996094,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 4,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8938210010528564,
+    "after": 1.039396047592163,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 5,
+    "spans": [
+      [
+        0,
+        1
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8938210010528564,
+    "after": 1.039396047592163,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 6,
+    "spans": [
+      [
+        0,
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 1,
+    "before": 3.8766422271728516,
+    "after": 1.7693939208984375,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 7,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 8,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 192,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 193,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 194,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 195,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 196,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 197,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 198,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 199,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 200,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 201,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 202,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 203,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 204,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 205,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 206,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  },
+  {
+    "text": "the black bird",
+    "slot": 207,
+    "spans": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "target": -1,
+    "target_actions": [
+      -1
+    ],
+    "selected_kind": 2,
+    "before": 3.8743436336517334,
+    "after": 1.4363112449645996,
+    "unreachable": false
+  }
+]

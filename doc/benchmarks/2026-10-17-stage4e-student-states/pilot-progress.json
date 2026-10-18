@@ -1,0 +1,110 @@
+[
+  {
+    "batch": 1,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "4e:transitive:3:1:0",
+      "4e:preposition:3:2:1",
+      "4e:description:1:1",
+      "4e:np:2:2:1"
+    ],
+    "optimizer_steps": 2,
+    "updates": {
+      "paired": 2,
+      "batch_end_disabled": 0
+    },
+    "lesson_costs": [
+      11.112005233764648,
+      10.662903785705566,
+      10.019671440124512,
+      0.8555141687393188,
+      0.6032448410987854,
+      10.66456413269043,
+      0.5155746936798096,
+      0.5600777268409729
+    ],
+    "elapsed_seconds": 63.61211454193108
+  },
+  {
+    "batch": 2,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "4e:intransitive:3:2:0",
+      "4e:transitive:0:1:1",
+      "4e:np:0:1:1",
+      "4e:intransitive:2:1:1"
+    ],
+    "optimizer_steps": 4,
+    "updates": {
+      "paired": 4,
+      "batch_end_disabled": 0
+    },
+    "lesson_costs": [
+      10.340293884277344,
+      10.010916709899902,
+      0.48949217796325684,
+      10.2562894821167,
+      10.340293884277344,
+      10.22900104522705,
+      0.48949217796325684,
+      10.215989112854004
+    ],
+    "elapsed_seconds": 112.20689416700043
+  },
+  {
+    "batch": 3,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "4e:description:3:3",
+      "4e:preposition:1:2:1",
+      "4e:preposition:0:1:1",
+      "4e:transitive:2:2:0"
+    ],
+    "optimizer_steps": 6,
+    "updates": {
+      "paired": 6,
+      "batch_end_disabled": 0
+    },
+    "lesson_costs": [
+      9.767475128173828,
+      10.159790992736816,
+      10.038172721862793,
+      10.03620719909668,
+      9.885039329528809,
+      10.157644271850586,
+      10.038196563720703,
+      10.014776229858398
+    ],
+    "elapsed_seconds": 157.07241624989547
+  },
+  {
+    "batch": 4,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "4e:preposition:0:2:0",
+      "4e:np:0:2:0",
+      "4e:intransitive:3:1:1",
+      "4e:preposition:1:2:0"
+    ],
+    "optimizer_steps": 8,
+    "updates": {
+      "paired": 8,
+      "batch_end_disabled": 0
+    },
+    "lesson_costs": [
+      10.3875093460083,
+      0.3172076940536499,
+      10.07749080657959,
+      10.023165702819824,
+      10.3875093460083,
+      1.6850594282150269,
+      0.35724762082099915,
+      0.3701035976409912
+    ],
+    "elapsed_seconds": 203.85382479196414
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "source_files_matching_final_sweep": 787,
+  "production_source_matches": "1d1ce73b2",
+  "post_archive_executable_change": "Remove dead unavailable branches from test/constituent_diagnostic.py; done before the final sweep.",
+  "affected_documentation_links": {
+    "passed": 6,
+    "deselected": 380,
+    "elapsed_seconds": 2.68
+  },
+  "review": "Claude approved preparation landing before commit/push.",
+  "learning_claim": false
+}

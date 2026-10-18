@@ -288,6 +288,12 @@ measurement; native identity learning waits for this gate.
 The corrected [intersection/pressure rerun](benchmarks/2026-10-17-stage4e-intersection/)
 has complete teacher traces and moving CE, but still fails free brackets
 and NP occurrences. A green mechanism sweep does not pass this learning gate.
+The [student-state rerun](benchmarks/2026-10-17-stage4e-student-states/README.md)
+also fails (0/32 main brackets, 8/48 matching NP occurrences), despite 40/40
+source-order readings. Its read-only stage-3 diagnostic finds that the saved
+checkpoint passes two-word CE after four-word training; four-word CE remains
+above .01 with live gradients and no saturation. No additional learning budget
+or identity run follows from that diagnostic.
 
     [the black cat] [runs] .
     [the dog] [chases [the cat]] .

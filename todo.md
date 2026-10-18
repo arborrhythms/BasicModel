@@ -398,6 +398,27 @@ trace is available and wait/fold CE moves, but the free gate fails:
 Its default sweep is green (5,466 passed, 333 skipped, one XFAIL), including
 c this time; the broader carried findings remain open. **Stage 4e is not
 learned; identity and the further 5.5 mechanism round remain gated.**
+That preparation is landed at `b09c6c3d4` (WikiOracle `c8c2cda`).
+The [student-state pass](doc/benchmarks/2026-10-17-stage4e-student-states/README.md)
+adds stage 3 before 4e, targets the student's actual compose states, and
+suppresses extra batch-end optimizer steps in the experiment. Final free
+source order is **8/8** on the order-lesson fields, but both CE gates remain
+failed at their recorded training endpoints (**.0320–.0323 / .0165–.0168**,
+threshold **.01**). After repairing the native action-index mapping, the
+corrected pilot passes (wait CE **5.775928→2.680222**, fold CE
+**7.941597→3.586233**). The full 144/40 run still fails: **0/32** brackets,
+**8/48** matching occurrences, **7/48** lowering certificates, **19** unexpected
+occurrences, zero duplicates/collisions, and **3/8** clean controls, despite
+**40/40** source-order readings. No identity run follows.
+The requested stage-3 diagnostic uses the saved checkpoint with no updates:
+two-word CE now passes (**.000224–.000227**, after the later four-word lesson),
+four-word CE still fails (**.016268–.016439**), gradients are live and the scorer
+is unsaturated. The saved training trace was still improving at the fixed
+budget's end. No warm-up repeat or budget extension. The final default sweep
+has **5,466 passed, 335 skipped, one XFAIL, one carried c failure**; exact
+NOT/OR and paired zero-cost pass, without retiring their broader findings.
+Work is on `main`; Claude approves the preparation landing. **No constituent
+or identity learning claim.**
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
 relation-trace, MM grammar, compiled-retention and c findings above, and the

@@ -13733,7 +13733,8 @@ class BasicModel(BaseModel):
         reference = owner.similarity_codebook.W
         return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device)).detach()
 
-    def _grammar_lesson_objectives(self, programs, *, split, source_rows, source_positions=None):
+    def _grammar_lesson_objectives(self, programs, *, split, source_rows, source_positions=None,
+                                   student_states=None):
         """Score supplied annotations after the student has fixed its parse.
 
         No labels enter forward, resolution or generation. Ordinary unlabelled
@@ -13768,11 +13769,7 @@ class BasicModel(BaseModel):
             words_view = SimpleNamespace(**{name: getattr(program, name).index_select(0, order)
                 for name in ('leaves', 'word_rows', 'concept_ids')})
             if lesson.get('waits', False):
-                words_view.compose_capacity = int(self.conceptualSpace.stm.capacity)
-                closing = max(1, 2 * words_view.compose_capacity)
-                syntactic = int(getattr(self, 'syntacticOrder', 0) or 0)
-                words_view.compose_closing_budget = min(closing, syntactic) if syntactic > 0 else closing
-                words_view.case_bank = getattr(getattr(self.languageSpace, '_reference_bank', None), 'cases', None)
+                words_view.student_states = None if student_states is None else student_states[b]
             # Guard against accidentally crediting a different staged input.
             owner = self._concept_owner()
             words = [owner.word_surface_for_row(int(value))
@@ -13858,6 +13855,11 @@ class BasicModel(BaseModel):
         """One sentence-boundary context for raw forward, evaluation and training."""
         from SentenceCompose import saved_sentence_values
         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
+        from GrammarLessons import ComposeLessonStates
+        annotations = getattr(self.inputSpace.data, 'grammar_lessons', {}).get(split, ())
+        self.languageSpace._compose_lesson_states = (ComposeLessonStates()
+            if training and trial_mode != 'predict' and self.grammar_lesson_weight > 0
+            and any(lesson and lesson.get('waits', False) for lesson in annotations) else None)
         self._sentence_ends = (self.word_brackets and  getattr(language, 'operation_layer', None) is not None)
         # Word-major sentences use the tied traversal at both training endings,
         # including configurations that retain the older event-loss report.
@@ -13926,6 +13928,7 @@ class BasicModel(BaseModel):
             self._sentence_run_active = False
             self._sentence_codes_snapshotted = False
             self._open_sentence_slot = None
+            self.languageSpace._compose_lesson_states = None
             self.languageSpace._reference_bank = None
             self.languageSpace._compose_primed_bank = None
 
@@ -18152,7 +18155,7 @@ class BasicModel(BaseModel):
                 history.gather(1, source.clamp_min(0)), -1)
         choice = self.languageSpace.choose_operation(
             state, gate, slots=slots, allowance=allowance, rounds_left=rounds_left,
-            previous_unary=history, sample=False,
+            previous_unary=history, sample=False, lesson_slot=trace_slot,
             masked_action=self._compose_masked_action(trace_slot, state[1]),
             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
         next_state = self.conceptualSpace.apply_language_choice(state, choice)
@@ -19992,6 +19995,20 @@ class BasicModel(BaseModel):
         return torch.tensor([w for w in field.source_order(row) if bool(record.word_valid[row, w])],
                             dtype=torch.long, device=record.word_rows.device)
 
+    def _student_compose_states(self, record, row):
+        lesson = getattr(self.languageSpace, '_compose_lesson_states', None)
+        if lesson is None:
+            return None
+        active = self.inputSpace._word_active_mask
+        width = active.shape[1]
+        closing_width = max(1, 2*int(self.conceptualSpace.stm.capacity))
+        words = record.word_valid[row].nonzero().flatten()
+        hi, last = int(words[-1]), int(active[row].nonzero()[-1])
+        closing_base = 3*width if hi == last else 3*width + (hi+1)*closing_width
+        return lesson.sentence(row, self._sentence_leaf_positions(record, row),
+            width=width, closing_base=closing_base, closing_width=closing_width,
+            attempted=self._reconstruction_stack()._choice_attempted)
+
     def _decomposition_teacher_loss(self, observation, record):
         """Teacher-force actual compose operands; targets never enter free decoding.
 
@@ -20200,7 +20217,8 @@ class BasicModel(BaseModel):
                     source = source[sid] if sid < len(source) else None
                 objectives = self._grammar_lesson_objectives([program],
                     split=self._reading_lesson_split, source_rows=[source],
-                    source_positions=[self._sentence_leaf_positions(record, b)])
+                    source_positions=[self._sentence_leaf_positions(record, b)],
+                    student_states=[self._student_compose_states(record, b)])
                 if objectives:
                     for name, value in objectives.items():
                         errors.merge(self._grammar_lesson_errors[name], prefix='grammar.',
@@ -21895,7 +21913,7 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, before[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history,
+                    previous_unary=unary_history, lesson_slot=slot,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
@@ -21969,7 +21987,7 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history,
+                    previous_unary=unary_history, lesson_slot=slot,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal

@@ -1,0 +1,42 @@
+{
+  "seed": 20261010,
+  "epochs": 1,
+  "training_presentations": 16,
+  "evaluation_presentations": 0,
+  "batch_size": 4,
+  "learning_rate": 0.003,
+  "warmup": "output/stage4e-student-order-20261017/order.ckpt",
+  "candidate": "1d1ce73b20e6ba14051cda43b803748a0ded20ea",
+  "gates": {
+    "brackets": 0.9,
+    "occurrences": 0.95,
+    "duplicate_writes": 0,
+    "reductions": "one order-1 occurrence at every lowered NP; report description stamp",
+    "unlowered_occurrences": 0
+  },
+  "attention": "student-selected; free source order passed; full stage-3 gate reported separately",
+  "pilot": true,
+  "order_gate": "output/stage4e-student-order-20261017/results.json",
+  "order_gate_result": {
+    "passed": false,
+    "free_source_order_passed": true,
+    "last_training_ce": {
+      "reading_two": [
+        0.032286107540130615,
+        0.032010722905397415,
+        0.03212202340364456,
+        0.03219708427786827
+      ],
+      "reading_four": [
+        0.016489729285240173,
+        0.016761599108576775,
+        0.016648299992084503,
+        0.016642838716506958
+      ]
+    }
+  },
+  "batch_end_optimizer": "disabled",
+  "targets": "annotation labels actual student states; no teacher trajectory",
+  "pilot_gate": "both raw mean wait and fold CEs on first-batch student states decrease by more than 1e-5 nats",
+  "pilot_state": "disposable; full run restarts the same order-trained checkpoint and seed"
+}

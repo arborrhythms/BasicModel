@@ -1,0 +1,9171 @@
+{
+  "completed": true,
+  "protocol": {
+    "seed": 20261010,
+    "epochs": 2,
+    "training_presentations": 144,
+    "evaluation_presentations": 40,
+    "batch_size": 4,
+    "learning_rate": 0.003,
+    "warmup": "output/stage4e-student-order-20261017/order.ckpt",
+    "candidate": "b09c6c3d47d59ff32ce4ed6cf308cd775af5c809",
+    "gates": {
+      "brackets": 0.9,
+      "occurrences": 0.95,
+      "duplicate_writes": 0,
+      "reductions": "one order-1 occurrence at every lowered NP; report description stamp",
+      "unlowered_occurrences": 0
+    },
+    "attention": "student-selected; free source order passed; full stage-3 gate reported separately",
+    "pilot": false,
+    "order_gate": "output/stage4e-student-order-20261017/results.json",
+    "order_gate_result": {
+      "passed": false,
+      "free_source_order_passed": true,
+      "last_training_ce": {
+        "reading_two": [
+          0.032286107540130615,
+          0.032010722905397415,
+          0.03212202340364456,
+          0.03219708427786827
+        ],
+        "reading_four": [
+          0.016489729285240173,
+          0.016761599108576775,
+          0.016648299992084503,
+          0.016642838716506958
+        ]
+      }
+    },
+    "batch_end_optimizer": "disabled",
+    "targets": "annotation labels actual student states; no teacher trajectory",
+    "pilot_gate": "both raw mean wait and fold CEs on first-batch student states decrease by more than 1e-5 nats",
+    "pilot_state": "disposable; full run restarts the same order-trained checkpoint and seed"
+  },
+  "optimizer_steps": 72,
+  "updates": {
+    "paired": 72,
+    "batch_end_disabled": 0
+  },
+  "elapsed_seconds": 1905.5684902910143,
+  "gates": {
+    "brackets": {
+      "correct": 0,
+      "total": 32,
+      "threshold": 0.9,
+      "passed": false
+    },
+    "occurrences": {
+      "correct": 8,
+      "total": 48,
+      "threshold": 0.95,
+      "duplicate_writes": 0,
+      "collisions": 0,
+      "unexpected": 19,
+      "passed": false
+    },
+    "reductions": {
+      "correct": 7,
+      "total": 48,
+      "threshold": 1.0,
+      "requirement": "Every lowered NP yields one order-1 occurrence; description stamp is reported",
+      "passed": false
+    },
+    "unlowered": {
+      "correct": 3,
+      "total": 8,
+      "threshold": 1.0,
+      "passed": false
+    }
+  },
+  "passed": false,
+  "groups": {
+    "description": {
+      "sentences": 8,
+      "brackets": 8,
+      "nps": 0,
+      "occurrences": 0,
+      "reductions": 0
+    },
+    "intransitive": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 8,
+      "occurrences": 0,
+      "reductions": 0
+    },
+    "np": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 8,
+      "occurrences": 0,
+      "reductions": 0
+    },
+    "preposition": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 16,
+      "occurrences": 2,
+      "reductions": 1
+    },
+    "transitive": {
+      "sentences": 8,
+      "brackets": 0,
+      "nps": 16,
+      "occurrences": 6,
+      "reductions": 6
+    }
+  },
+  "results": [
+    {
+      "id": "4e:np:0:3:0",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.6666666865348816,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2
+            ],
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2
+            ],
+            "address": 4054388267820932672,
+            "written": true,
+            "order": 1,
+            "reference": 362,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          4054388267820932672
+        ]
+      }
+    },
+    {
+      "id": "4e:np:0:3:1",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.6666666865348816,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2
+            ],
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2
+            ],
+            "address": 8810407382676716608,
+            "written": true,
+            "order": 1,
+            "reference": 363,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          8810407382676716608
+        ]
+      }
+    },
+    {
+      "id": "4e:np:1:3:0",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333134651184,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2
+            ],
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2
+            ],
+            "address": -1904401515126473098,
+            "written": true,
+            "order": 1,
+            "reference": 364,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -1904401515126473098
+        ]
+      }
+    },
+    {
+      "id": "4e:np:1:3:1",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333134651184,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2
+            ],
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2
+            ],
+            "address": 7328264166584817917,
+            "written": true,
+            "order": 1,
+            "reference": 365,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          7328264166584817917
+        ]
+      }
+    },
+    {
+      "id": "4e:np:2:3:0",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333730697632,
+              0.3333333730697632
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333730697632,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2
+            ],
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2
+            ],
+            "address": -7004783013323505117,
+            "written": true,
+            "order": 1,
+            "reference": 366,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -7004783013323505117
+        ]
+      }
+    },
+    {
+      "id": "4e:np:2:3:1",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333730697632,
+              0.3333333730697632
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333730697632,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2
+            ],
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2
+            ],
+            "address": 7887799232058336744,
+            "written": true,
+            "order": 1,
+            "reference": 367,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          7887799232058336744
+        ]
+      }
+    },
+    {
+      "id": "4e:np:3:3:0",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.20000003278255463,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:np:3:3:1",
+      "family": "np",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.20000003278255463,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:0:3:0",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.6666666269302368,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.6666666269302368,
+              0.20000003278255463,
+              0.6666666269302368
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666269302368
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.6666666269302368,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:0:3:1",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.6666666269302368,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.4999999701976776
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.6666666269302368,
+              0.4999999701976776,
+              0.6666666269302368
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666269302368
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.6666666269302368,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:1:3:0",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333134651184,
+              0.3333333730697632,
+              0.3333333730697632
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.4999999701976776
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333730697632,
+              0.4999999701976776,
+              0.3333333730697632
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333730697632,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:1:3:1",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333134651184,
+              0.3333333730697632,
+              0.3333333730697632
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333730697632,
+              0.20000003278255463,
+              0.3333333730697632
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333730697632,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:2:3:0",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.4285714626312256
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333134651184,
+              0.4285714626312256,
+              0.3333333134651184
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333134651184,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:2:3:1",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.6000000834465027
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333134651184,
+              0.6000000834465027,
+              0.3333333134651184
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333134651184,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:intransitive:3:3:0",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.4285714328289032
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.6000000834465027
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.4285714328289032,
+              0.6000000834465027,
+              0.4285714328289032
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.4285714328289032,
+              0.4285714328289032
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "description": [
+              2,
+              3
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.4285714328289032
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.4285714328289032,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2,
+              3
+            ],
+            "meaning_norm": 0.4285714328289032
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2,
+              3
+            ],
+            "address": 1409823177294567427,
+            "written": true,
+            "order": 1,
+            "reference": 368,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          1409823177294567427
+        ]
+      }
+    },
+    {
+      "id": "4e:intransitive:3:3:1",
+      "family": "intransitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1,
+            2
+          ],
+          "description": [
+            1,
+            2
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.20000003278255463,
+              0.20000003278255463
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.4285714328289032
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.4285714626312256
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.4285714328289032,
+              0.4285714626312256,
+              0.4285714328289032
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.4285714328289032,
+              0.4285714328289032
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "description": [
+              2,
+              3
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.4285714328289032
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.4285714328289032,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2,
+              3
+            ],
+            "meaning_norm": 0.4285714328289032
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2,
+              3
+            ],
+            "address": -6238035585445939812,
+            "written": true,
+            "order": 1,
+            "reference": 369,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -6238035585445939812
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:0:3:0",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666269302368,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.6666666269302368,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "verb",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.4285714030265808
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.4285714030265808,
+              0.0
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.0
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "verb",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.0,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:transitive:0:3:1",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [
+            2709570608139840386
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666269302368,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.6666666269302368,
+              0.0,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.4285714030265808
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.4285714030265808,
+              0.4285714030265808
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.6666666269302368,
+              0.4285714030265808,
+              0.6666666269302368
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "span": [
+              3,
+              4
+            ],
+            "description": [
+              4
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.4285714030265808
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.6666666269302368,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4
+            ],
+            "meaning_norm": 0.6666666269302368
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4
+            ],
+            "address": 2709570608139840386,
+            "written": true,
+            "order": 1,
+            "reference": 370,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          2709570608139840386
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:1:3:0",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [
+            5348345858008127470
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666269302368,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.6666666269302368,
+              0.3333333432674408
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              3,
+              4
+            ],
+            "description": [
+              4
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666269302368
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333432674408,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4
+            ],
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4
+            ],
+            "address": 5348345858008127470,
+            "written": true,
+            "order": 1,
+            "reference": 371,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          5348345858008127470
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:1:3:1",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [
+            -4974810426731721946
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.6666666269302368
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666269302368,
+              0.6666666269302368
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666269302368,
+              0.0
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.0
+          },
+          {
+            "span": [
+              3,
+              4
+            ],
+            "description": [
+              4
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666269302368
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.0,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4
+            ],
+            "meaning_norm": 0.0
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4
+            ],
+            "address": -4974810426731721946,
+            "written": true,
+            "order": 1,
+            "reference": 372,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -4974810426731721946
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:2:3:0",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "verb",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "verb",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333730697632,
+              0.0
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.0
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "verb",
+          "verb"
+        ],
+        "closed_meaning_norm": 0.0,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": [
+          685389726801550872
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:2:3:1",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [
+            -466852325222315171
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333730697632,
+              0.3333333730697632
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.3333333730697632,
+              0.3333333432674408
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              3,
+              4
+            ],
+            "description": [
+              4
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333432674408,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4
+            ],
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4
+            ],
+            "address": -466852325222315171,
+            "written": true,
+            "order": 1,
+            "reference": 373,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -466852325222315171
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:3:3:0",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [
+            2776385030396680330
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.5,
+              0.0,
+              0.5
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.5,
+              0.3333333432674408,
+              0.5
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          },
+          {
+            "span": [
+              3,
+              4
+            ],
+            "description": [
+              4
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.5,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4
+            ],
+            "meaning_norm": 0.5
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4
+            ],
+            "address": 2776385030396680330,
+            "written": true,
+            "order": 1,
+            "reference": 374,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          2776385030396680330
+        ]
+      }
+    },
+    {
+      "id": "4e:transitive:3:3:1",
+      "family": "transitive",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            3,
+            4
+          ],
+          "description": [
+            4
+          ],
+          "occurrences": [
+            8319178017166299717
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.5,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.0
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          },
+          {
+            "span": [
+              0,
+              1,
+              2
+            ],
+            "description": [
+              2
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.0
+          },
+          {
+            "span": [
+              3,
+              4
+            ],
+            "description": [
+              4
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        ],
+        "program": [
+          "lower",
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.0,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4
+            ],
+            "meaning_norm": 0.0
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4
+            ],
+            "address": 8319178017166299717,
+            "written": true,
+            "order": 1,
+            "reference": 375,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          8319178017166299717
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:0:3:0",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "whole",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lift",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.6666666865348816,
+              0.7427813410758972,
+              0.6666666865348816
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.7427813410758972,
+              0.5,
+              0.5
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              4,
+              5
+            ],
+            "before": 1,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "whole",
+          "lift",
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.5,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4,
+              5
+            ],
+            "meaning_norm": 0.5
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4,
+              5
+            ],
+            "address": 4892024697432042476,
+            "written": true,
+            "order": 1,
+            "reference": 376,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          4892024697432042476
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:0:3:1",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [
+            -3284480122581492777
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4
+          ],
+          [
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "intersection",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "intersection",
+            "leaves": [
+              2,
+              3,
+              4
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.6666666865348816,
+              0.5,
+              0.6666666865348816
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "span": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "intersection",
+          "intersection",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.6666666865348816,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              5
+            ],
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              5
+            ],
+            "address": -3284480122581492777,
+            "written": true,
+            "order": 1,
+            "reference": 377,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -3284480122581492777
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:1:3:0",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "intersection",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666865348816,
+              0.0
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "before": 1,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.0
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "intersection",
+          "lower",
+          "surface",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.0,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "meaning_norm": 0.0
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "address": 7767707156148402682,
+            "written": true,
+            "order": 1,
+            "reference": 378,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          7767707156148402682
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:1:3:1",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [
+            -1820946337100683507
+          ],
+          "one_occurrence": true,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": true
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "whole",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.7427813410758972,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.6666666865348816,
+              0.3333333432674408
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "whole",
+          "surface",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.3333333432674408,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              5
+            ],
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              5
+            ],
+            "address": -1820946337100683507,
+            "written": true,
+            "order": 1,
+            "reference": 379,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -1820946337100683507
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:2:3:0",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "whole",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.7427813410758972,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              4,
+              5
+            ],
+            "before": 1,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "whole",
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333134651184,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4,
+              5
+            ],
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4,
+              5
+            ],
+            "address": 2921905822739044935,
+            "written": true,
+            "order": 1,
+            "reference": 380,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          2921905822739044935
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:2:3:1",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "whole",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.0,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.7427813410758972,
+              0.3333333134651184,
+              0.3333333134651184
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              4,
+              5
+            ],
+            "before": 1,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "surface",
+          "whole",
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333134651184,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4,
+              5
+            ],
+            "meaning_norm": 0.3333333134651184
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4,
+              5
+            ],
+            "address": 3482572849606104351,
+            "written": true,
+            "order": 1,
+            "reference": 381,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          3482572849606104351
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:3:3:0",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "intersection",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.5,
+              0.3333333432674408,
+              0.5
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              4,
+              5
+            ],
+            "before": 1,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "intersection",
+          "lower",
+          "lower",
+          "surface"
+        ],
+        "closed_meaning_norm": 0.5,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4,
+              5
+            ],
+            "meaning_norm": 0.5
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4,
+              5
+            ],
+            "address": -6926422014089169059,
+            "written": true,
+            "order": 1,
+            "reference": 382,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -6926422014089169059
+        ]
+      }
+    },
+    {
+      "id": "4e:preposition:3:3:1",
+      "family": "preposition",
+      "brackets": false,
+      "nps": [
+        {
+          "span": [
+            0,
+            1
+          ],
+          "description": [
+            1
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        },
+        {
+          "span": [
+            4,
+            5
+          ],
+          "description": [
+            5
+          ],
+          "occurrences": [],
+          "one_occurrence": false,
+          "duplicate": 0,
+          "description_orders": [
+            0
+          ],
+          "reduction": false
+        }
+      ],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": null,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 2,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 3,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "binary",
+            "method": "whole",
+            "leaves": [
+              2,
+              3
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "intersection",
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "input_orders": [
+              1,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.5,
+              0.7427813410758972,
+              0.5415704846382141
+            ]
+          },
+          {
+            "kind": "leaf",
+            "source": 4,
+            "order": 0,
+            "meaning_norm": 0.0
+          },
+          {
+            "kind": "leaf",
+            "source": 5,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              4,
+              5
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.0,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "input_orders": [
+              1,
+              1
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.7427813410758972,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          },
+          {
+            "span": [
+              4,
+              5
+            ],
+            "description": [
+              5
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "span": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": [
+              4,
+              5
+            ],
+            "before": 1,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "program": [
+          "lower",
+          "whole",
+          "intersection",
+          "lower",
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333432674408,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              4,
+              5
+            ],
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              4,
+              5
+            ],
+            "address": 7780032057100045496,
+            "written": true,
+            "order": 1,
+            "reference": 383,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          7780032057100045496
+        ]
+      }
+    },
+    {
+      "id": "4e:description:0:1",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": true,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lift",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.6666666865348816,
+              0.20000003278255463
+            ]
+          }
+        ],
+        "lowerings": [],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lift"
+        ],
+        "closed_meaning_norm": null,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:description:0:3",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": false,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.6666666865348816
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.6666666865348816,
+              0.6666666865348816
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lower"
+        ],
+        "closed_meaning_norm": 0.6666666865348816,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              1
+            ],
+            "meaning_norm": 0.6666666865348816
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              1
+            ],
+            "address": -2704074637101063762,
+            "written": true,
+            "order": 1,
+            "reference": 384,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -2704074637101063762
+        ]
+      }
+    },
+    {
+      "id": "4e:description:1:0",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": false,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.3333333134651184
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333134651184,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333432674408,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              1
+            ],
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              1
+            ],
+            "address": 7250611698317076952,
+            "written": true,
+            "order": 1,
+            "reference": 385,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          7250611698317076952
+        ]
+      }
+    },
+    {
+      "id": "4e:description:1:2",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": false,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333432674408,
+              0.3333333432674408
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333432674408,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              1
+            ],
+            "meaning_norm": 0.3333333432674408
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              1
+            ],
+            "address": 3425498336046216263,
+            "written": true,
+            "order": 1,
+            "reference": 386,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          3425498336046216263
+        ]
+      }
+    },
+    {
+      "id": "4e:description:2:1",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": true,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lift",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333730697632,
+              0.20000003278255463
+            ]
+          }
+        ],
+        "lowerings": [],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lift"
+        ],
+        "closed_meaning_norm": null,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    },
+    {
+      "id": "4e:description:2:3",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": false,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.3333333730697632
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.3333333730697632,
+              0.3333333730697632
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lower"
+        ],
+        "closed_meaning_norm": 0.3333333730697632,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              1
+            ],
+            "meaning_norm": 0.3333333730697632
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              1
+            ],
+            "address": 5552525188082143932,
+            "written": true,
+            "order": 1,
+            "reference": 387,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          5552525188082143932
+        ]
+      }
+    },
+    {
+      "id": "4e:description:3:0",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 1,
+      "unlowered_clean": false,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.3333333432674408
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "lower",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 1,
+            "meaning_norms": [
+              0.3333333432674408,
+              0.5,
+              0.5
+            ]
+          }
+        ],
+        "lowerings": [
+          {
+            "span": [
+              0,
+              1
+            ],
+            "description": [
+              1
+            ],
+            "before": 0,
+            "after": 1,
+            "method": "lower",
+            "meaning_norm": 0.5
+          }
+        ],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "lower"
+        ],
+        "closed_meaning_norm": 0.5,
+        "requests": [
+          {
+            "mode": "mint",
+            "order": 1,
+            "description": [
+              1
+            ],
+            "meaning_norm": 0.5
+          }
+        ],
+        "occurrences": [
+          {
+            "description": [
+              1
+            ],
+            "address": -5326065448000952537,
+            "written": true,
+            "order": 1,
+            "reference": 388,
+            "missing_reason": null
+          }
+        ],
+        "individual_writes": [
+          -5326065448000952537
+        ]
+      }
+    },
+    {
+      "id": "4e:description:3:2",
+      "family": "description",
+      "brackets": true,
+      "nps": [],
+      "duplicate_writes": 0,
+      "occurrence_collisions": 0,
+      "unexpected_occurrences": 0,
+      "unlowered_clean": true,
+      "observed": {
+        "error": null,
+        "brackets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "steps": [
+          {
+            "kind": "leaf",
+            "source": 0,
+            "order": 0,
+            "meaning_norm": 0.20000003278255463
+          },
+          {
+            "kind": "leaf",
+            "source": 1,
+            "order": 0,
+            "meaning_norm": 0.5
+          },
+          {
+            "kind": "binary",
+            "method": "surface",
+            "leaves": [
+              0,
+              1
+            ],
+            "input_orders": [
+              0,
+              0
+            ],
+            "order": 0,
+            "meaning_norms": [
+              0.20000003278255463,
+              0.5,
+              0.20000003278255463
+            ]
+          }
+        ],
+        "lowerings": [],
+        "leaf_positions": [
+          0,
+          1
+        ],
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "roots": [
+          [
+            0,
+            1
+          ]
+        ],
+        "program": [
+          "surface"
+        ],
+        "closed_meaning_norm": 0.20000003278255463,
+        "requests": [],
+        "occurrences": [],
+        "individual_writes": []
+      }
+    }
+  ],
+  "lexical_orders": {
+    "a": [
+      {
+        "identity": -6479567705683506922,
+        "order": 0
+      },
+      {
+        "identity": -4247026962662327926,
+        "order": 1
+      },
+      {
+        "identity": -4058499107505570049,
+        "order": 1
+      },
+      {
+        "identity": 238,
+        "order": 0
+      },
+      {
+        "identity": 239,
+        "order": 0
+      },
+      {
+        "identity": 477141861737604900,
+        "order": 0
+      },
+      {
+        "identity": 2459968124191682869,
+        "order": 0
+      },
+      {
+        "identity": 3490340135567338043,
+        "order": 1
+      }
+    ],
+    "bird": [
+      {
+        "identity": -9104339699856898140,
+        "order": 1
+      },
+      {
+        "identity": -7004783013323505117,
+        "order": 1
+      },
+      {
+        "identity": -6926422014089169059,
+        "order": 1
+      },
+      {
+        "identity": -6075422705173798713,
+        "order": 1
+      },
+      {
+        "identity": -6066040020876504453,
+        "order": 1
+      },
+      {
+        "identity": -4435104375970570442,
+        "order": 0
+      },
+      {
+        "identity": -4058499107505570049,
+        "order": 1
+      },
+      {
+        "identity": -2685547422177956442,
+        "order": 1
+      },
+      {
+        "identity": -2347423846321832645,
+        "order": 1
+      },
+      {
+        "identity": 39,
+        "order": 0
+      },
+      {
+        "identity": 40,
+        "order": 0
+      },
+      {
+        "identity": 54009070967312000,
+        "order": 1
+      },
+      {
+        "identity": 1162477199645687249,
+        "order": 1
+      },
+      {
+        "identity": 1348049694247413356,
+        "order": 1
+      },
+      {
+        "identity": 1754950267394075100,
+        "order": 1
+      },
+      {
+        "identity": 2707336263970893628,
+        "order": 0
+      },
+      {
+        "identity": 2776385030396680330,
+        "order": 1
+      },
+      {
+        "identity": 4123255039686931011,
+        "order": 1
+      },
+      {
+        "identity": 4154027446231564773,
+        "order": 1
+      },
+      {
+        "identity": 5552525188082143932,
+        "order": 1
+      },
+      {
+        "identity": 5856197518278482897,
+        "order": 1
+      },
+      {
+        "identity": 7362920041531290781,
+        "order": 0
+      },
+      {
+        "identity": 7780032057100045496,
+        "order": 1
+      },
+      {
+        "identity": 7887799232058336744,
+        "order": 1
+      },
+      {
+        "identity": 8319178017166299717,
+        "order": 1
+      },
+      {
+        "identity": 8362607060674625129,
+        "order": 1
+      }
+    ],
+    "black": [
+      {
+        "identity": -417250324527227750,
+        "order": 0
+      },
+      {
+        "identity": 43,
+        "order": 0
+      },
+      {
+        "identity": 44,
+        "order": 0
+      },
+      {
+        "identity": 250122216054017279,
+        "order": 0
+      }
+    ],
+    "cat": [
+      {
+        "identity": -9059077717138423619,
+        "order": 1
+      },
+      {
+        "identity": -8645116544144653238,
+        "order": 0
+      },
+      {
+        "identity": -7129111900889348842,
+        "order": 0
+      },
+      {
+        "identity": -6758881638558521387,
+        "order": 1
+      },
+      {
+        "identity": -4974810426731721946,
+        "order": 1
+      },
+      {
+        "identity": -4247026962662327926,
+        "order": 1
+      },
+      {
+        "identity": -2704074637101063762,
+        "order": 1
+      },
+      {
+        "identity": -2550463425922040413,
+        "order": 1
+      },
+      {
+        "identity": -1820946337100683507,
+        "order": 1
+      },
+      {
+        "identity": -417250324527227750,
+        "order": 0
+      },
+      {
+        "identity": -413121925554189438,
+        "order": 0
+      },
+      {
+        "identity": 35,
+        "order": 0
+      },
+      {
+        "identity": 36,
+        "order": 0
+      },
+      {
+        "identity": 184800904279527334,
+        "order": 0
+      },
+      {
+        "identity": 2459968124191682869,
+        "order": 0
+      },
+      {
+        "identity": 3413445548793875151,
+        "order": 0
+      },
+      {
+        "identity": 4054388267820932672,
+        "order": 1
+      },
+      {
+        "identity": 4424204217718050284,
+        "order": 0
+      },
+      {
+        "identity": 4473848734324889712,
+        "order": 0
+      },
+      {
+        "identity": 4930903819367312272,
+        "order": 1
+      },
+      {
+        "identity": 5348345858008127470,
+        "order": 1
+      },
+      {
+        "identity": 7767707156148402682,
+        "order": 1
+      },
+      {
+        "identity": 7804554264773664875,
+        "order": 1
+      },
+      {
+        "identity": 8468596737422408793,
+        "order": 1
+      },
+      {
+        "identity": 8680188210752221300,
+        "order": 1
+      },
+      {
+        "identity": 8810407382676716608,
+        "order": 1
+      }
+    ],
+    "chases": [
+      {
+        "identity": -6503206469546521596,
+        "order": 1
+      },
+      {
+        "identity": -2180236918357858346,
+        "order": 1
+      },
+      {
+        "identity": 254,
+        "order": 0
+      },
+      {
+        "identity": 255,
+        "order": 0
+      },
+      {
+        "identity": 685389726801550872,
+        "order": 1
+      },
+      {
+        "identity": 8495848597820300059,
+        "order": 1
+      }
+    ],
+    "dog": [
+      {
+        "identity": -8123580401836281341,
+        "order": 1
+      },
+      {
+        "identity": -7587449574044290872,
+        "order": 1
+      },
+      {
+        "identity": -7405491995219263489,
+        "order": 1
+      },
+      {
+        "identity": -6111288351849807956,
+        "order": 0
+      },
+      {
+        "identity": -4892593893437811697,
+        "order": 1
+      },
+      {
+        "identity": -4841754773428779076,
+        "order": 1
+      },
+      {
+        "identity": -4559157961514806030,
+        "order": 1
+      },
+      {
+        "identity": -4519250856080262092,
+        "order": 0
+      },
+      {
+        "identity": -1974393789157835851,
+        "order": 1
+      },
+      {
+        "identity": -1917012549820393914,
+        "order": 1
+      },
+      {
+        "identity": -1904401515126473098,
+        "order": 1
+      },
+      {
+        "identity": -1770017330568609972,
+        "order": 1
+      },
+      {
+        "identity": -466852325222315171,
+        "order": 1
+      },
+      {
+        "identity": 37,
+        "order": 0
+      },
+      {
+        "identity": 38,
+        "order": 0
+      },
+      {
+        "identity": 1784720479551220002,
+        "order": 1
+      },
+      {
+        "identity": 2921905822739044935,
+        "order": 1
+      },
+      {
+        "identity": 3425498336046216263,
+        "order": 1
+      },
+      {
+        "identity": 3482572849606104351,
+        "order": 1
+      },
+      {
+        "identity": 3757485749135505441,
+        "order": 1
+      },
+      {
+        "identity": 5809874515719409629,
+        "order": 1
+      },
+      {
+        "identity": 7250611698317076952,
+        "order": 1
+      },
+      {
+        "identity": 7311160621662216818,
+        "order": 1
+      },
+      {
+        "identity": 7328264166584817917,
+        "order": 1
+      }
+    ],
+    "horse": [
+      {
+        "identity": -8904616868444266755,
+        "order": 1
+      },
+      {
+        "identity": -6479567705683506922,
+        "order": 0
+      },
+      {
+        "identity": -6434853913910549862,
+        "order": 1
+      },
+      {
+        "identity": -5326065448000952537,
+        "order": 1
+      },
+      {
+        "identity": -3444074627711839786,
+        "order": 1
+      },
+      {
+        "identity": -3284480122581492777,
+        "order": 1
+      },
+      {
+        "identity": -2568269270931921128,
+        "order": 1
+      },
+      {
+        "identity": -2180236918357858346,
+        "order": 1
+      },
+      {
+        "identity": -2107202300560416867,
+        "order": 1
+      },
+      {
+        "identity": -1688001937931664287,
+        "order": 0
+      },
+      {
+        "identity": -207568763888898850,
+        "order": 0
+      },
+      {
+        "identity": -106534293014735825,
+        "order": 0
+      },
+      {
+        "identity": 41,
+        "order": 0
+      },
+      {
+        "identity": 42,
+        "order": 0
+      },
+      {
+        "identity": 96722852429855693,
+        "order": 1
+      },
+      {
+        "identity": 121677117095224016,
+        "order": 1
+      },
+      {
+        "identity": 228572042048850475,
+        "order": 1
+      },
+      {
+        "identity": 1101218532657138564,
+        "order": 0
+      },
+      {
+        "identity": 1415044267495307805,
+        "order": 1
+      },
+      {
+        "identity": 1858570467214213994,
+        "order": 1
+      },
+      {
+        "identity": 2446473733786045866,
+        "order": 1
+      },
+      {
+        "identity": 2598929713253014565,
+        "order": 1
+      },
+      {
+        "identity": 2709570608139840386,
+        "order": 1
+      },
+      {
+        "identity": 4892024697432042476,
+        "order": 1
+      },
+      {
+        "identity": 4930903819367312272,
+        "order": 1
+      },
+      {
+        "identity": 5648900960099214268,
+        "order": 1
+      },
+      {
+        "identity": 5972310466249442641,
+        "order": 0
+      },
+      {
+        "identity": 7425117419923585290,
+        "order": 1
+      },
+      {
+        "identity": 7686565263018179087,
+        "order": 1
+      },
+      {
+        "identity": 8479173680132158604,
+        "order": 1
+      }
+    ],
+    "is": [
+      {
+        "identity": 244,
+        "order": 0
+      },
+      {
+        "identity": 245,
+        "order": 0
+      },
+      {
+        "identity": 54009070967312000,
+        "order": 1
+      }
+    ],
+    "large": [
+      {
+        "identity": -9104339699856898140,
+        "order": 1
+      },
+      {
+        "identity": -6981566388155073264,
+        "order": 0
+      },
+      {
+        "identity": -6075422705173798713,
+        "order": 1
+      },
+      {
+        "identity": 49,
+        "order": 0
+      },
+      {
+        "identity": 50,
+        "order": 0
+      },
+      {
+        "identity": 649139995418431623,
+        "order": 1
+      },
+      {
+        "identity": 1784720479551220002,
+        "order": 1
+      },
+      {
+        "identity": 1948678215833146455,
+        "order": 0
+      },
+      {
+        "identity": 4394230301515125375,
+        "order": 1
+      },
+      {
+        "identity": 4938218429413206850,
+        "order": 1
+      },
+      {
+        "identity": 5809874515719409629,
+        "order": 1
+      },
+      {
+        "identity": 7062329393047115716,
+        "order": 1
+      }
+    ],
+    "near": [
+      {
+        "identity": 252,
+        "order": 0
+      },
+      {
+        "identity": 253,
+        "order": 0
+      }
+    ],
+    "on": [
+      {
+        "identity": 246,
+        "order": 0
+      },
+      {
+        "identity": 247,
+        "order": 0
+      }
+    ],
+    "runs": [
+      {
+        "identity": -7906157249849108407,
+        "order": 0
+      },
+      {
+        "identity": -7007627562713566984,
+        "order": 0
+      },
+      {
+        "identity": -3798194359193104643,
+        "order": 1
+      },
+      {
+        "identity": -2740454305408432032,
+        "order": 0
+      },
+      {
+        "identity": 51,
+        "order": 0
+      },
+      {
+        "identity": 52,
+        "order": 0
+      },
+      {
+        "identity": 1359100968150069923,
+        "order": 0
+      },
+      {
+        "identity": 1409823177294567427,
+        "order": 1
+      },
+      {
+        "identity": 4092407103995123655,
+        "order": 1
+      },
+      {
+        "identity": 6271413817338218814,
+        "order": 0
+      },
+      {
+        "identity": 8145801631808140909,
+        "order": 0
+      },
+      {
+        "identity": 8768662081363431487,
+        "order": 0
+      }
+    ],
+    "sees": [
+      {
+        "identity": -4892593893437811697,
+        "order": 1
+      },
+      {
+        "identity": -2347423846321832645,
+        "order": 1
+      },
+      {
+        "identity": -1974393789157835851,
+        "order": 1
+      },
+      {
+        "identity": 240,
+        "order": 0
+      },
+      {
+        "identity": 241,
+        "order": 0
+      }
+    ],
+    "sleeps": [
+      {
+        "identity": -7405491995219263489,
+        "order": 1
+      },
+      {
+        "identity": -6238035585445939812,
+        "order": 1
+      },
+      {
+        "identity": -970711207483457307,
+        "order": 0
+      },
+      {
+        "identity": 53,
+        "order": 0
+      },
+      {
+        "identity": 54,
+        "order": 0
+      },
+      {
+        "identity": 2538361964652727228,
+        "order": 0
+      },
+      {
+        "identity": 2722932329425529955,
+        "order": 0
+      },
+      {
+        "identity": 2881768266478743201,
+        "order": 1
+      },
+      {
+        "identity": 3490340135567338043,
+        "order": 1
+      },
+      {
+        "identity": 4192534318228624471,
+        "order": 1
+      },
+      {
+        "identity": 5829057850946810883,
+        "order": 1
+      },
+      {
+        "identity": 5856197518278482897,
+        "order": 1
+      },
+      {
+        "identity": 7012274013712669895,
+        "order": 0
+      },
+      {
+        "identity": 8362607060674625129,
+        "order": 1
+      },
+      {
+        "identity": 8680188210752221300,
+        "order": 1
+      }
+    ],
+    "small": [
+      {
+        "identity": -4841754773428779076,
+        "order": 1
+      },
+      {
+        "identity": 47,
+        "order": 0
+      },
+      {
+        "identity": 48,
+        "order": 0
+      },
+      {
+        "identity": 139165737903875425,
+        "order": 1
+      },
+      {
+        "identity": 184800904279527334,
+        "order": 0
+      },
+      {
+        "identity": 2518266326624377664,
+        "order": 1
+      },
+      {
+        "identity": 3207195428462904340,
+        "order": 1
+      },
+      {
+        "identity": 3256206536353351411,
+        "order": 1
+      },
+      {
+        "identity": 3821809894470724930,
+        "order": 1
+      },
+      {
+        "identity": 4326776215969764968,
+        "order": 0
+      },
+      {
+        "identity": 4424204217718050284,
+        "order": 0
+      },
+      {
+        "identity": 8677224369688434391,
+        "order": 1
+      }
+    ],
+    "the": [
+      {
+        "identity": -4559157961514806030,
+        "order": 1
+      },
+      {
+        "identity": 242,
+        "order": 0
+      },
+      {
+        "identity": 243,
+        "order": 0
+      },
+      {
+        "identity": 1754950267394075100,
+        "order": 1
+      },
+      {
+        "identity": 5191322694490263467,
+        "order": 0
+      }
+    ],
+    "white": [
+      {
+        "identity": 45,
+        "order": 0
+      },
+      {
+        "identity": 46,
+        "order": 0
+      },
+      {
+        "identity": 2977559336109784864,
+        "order": 1
+      },
+      {
+        "identity": 4501918056287140129,
+        "order": 0
+      }
+    ]
+  }
+}
