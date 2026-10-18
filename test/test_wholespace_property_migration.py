@@ -268,51 +268,6 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
     assert torch.equal(symbol_leg[:, 1::2, ss.nWhat:], event[..., ss.nWhat:])
 
 
-def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):
-    """Fresh property models allocate/use categories downstream in CS.
-
-    The first autobind opportunity must enable the requested role VQ before
-    taking the property-basis early return.  Parser reads and round-0 role
-    observations then stay on ConceptualSpace; WholeSpace retains no category
-    module, category sidecar, taxonomy, or downstream reference.
-    """
-    model = _small_property_model(tmp_path)
-    cs = model.conceptualSpace
-    ws = model.wholeSpace
-    router = model.symbolSpace.languageLayer
-
-    assert getattr(cs, "_category_codebook_requested", False) is True
-    assert not cs.category_codebook_enabled()
-    assert not hasattr(ws, "category_codebook_enabled")
-
-    # The grammar is configured by SymbolSpace construction.  Even an empty
-    # first autobind call reaches lazy category allocation before validating
-    # the (not-yet-present) percept slab.
-    cs._maybe_autobind_words(None, None)
-    assert cs.category_codebook_enabled()
-    assert not hasattr(ws, "category_codebook_enabled")
-    assert router._category_owner(model.symbolSpace) is cs
-    assert not any("category" in key for key in ws.state_dict())
-
-    # A property-mode terminal resolves pid -> word-concept directly in CS,
-    # rather than trying the retired WS pid -> taxonomy-META lookup.
-    word_concept, _object = cs.interpret_word(
-        [7], [0], key="cat")
-    cs._category_last_pid = [[model.perceptualSpace.percept_store.identity.word_rows[b'cat'], -1]]
-    cs._category_assign[word_concept] = 0
-    cs._category_role[0].zero_()
-    cs._category_role[0, 2] = 1.0
-    x = torch.zeros(1, 2, int(router.feature_dim))
-    ctx = router._build_category_context(x, cs)
-    assert ctx is not None
-    assert tuple(ctx.shape) == (1, 2, int(cs._category_n_roles))
-    assert float(ctx[0, 0, 2]) == 1.0
-    assert torch.count_nonzero(ctx[0, 1]) == 0
-
-    # The parser's observation handoff is likewise stashed on CS, never WS.
-    router.compose(x, model.symbolSpace)
-    assert hasattr(cs, "_category_role_obs")
-    assert not hasattr(ws, "_category_role_obs")
 
 
 def test_property_sidecar_cannot_recreate_lbg_or_downstream_state(tmp_path):

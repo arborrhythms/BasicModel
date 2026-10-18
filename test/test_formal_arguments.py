@@ -1,12 +1,4 @@
-"""Role vocabulary for the MetaSymbol Category codebook (Phase 1).
-
-``compute_role_vocabulary`` enumerates the role-collapsed grammar's operator
-roles -- ``<method>_I<n>`` inputs and ``<method>_argout1`` outputs -- read off the
-live upward rules. This is the fixed column layout of each category centroid's
-uncollapsed role vector (doc/Language.md "Participation Categories as the
-Chooser's Syntactic-Category Context").
-"""
-
+"""Fixed formal argument basis; no learned prototypes or merges."""
 import os
 import sys
 from collections import namedtuple
@@ -19,10 +11,15 @@ _BIN = os.path.join(
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-from Language import compute_role_vocabulary
+from PartsOfSpeech import formal_arguments
+
+
+def vocabulary(grammar):
+    roles = list(formal_arguments(grammar.rules_upward))
+    return roles, {name:i for i,name in enumerate(roles)}, len(roles)
 
 # Minimal rule stand-in: only the fields the helper reads.
-_Rule = namedtuple("_Rule", ["method_name", "rhs_symbols"])
+_Rule = namedtuple("_Rule", ["method_name", "rhs_symbols", "lhs"], defaults=["result"])
 
 
 class _G:
@@ -35,7 +32,7 @@ def test_inputs_and_outputs_enumerated():
         _Rule("isEqual", ["isEqual_argin1", "isEqual_argin2"]),
         _Rule("exist", ["exist_argin1"]),
     ])
-    roles, idx, n = compute_role_vocabulary(g)
+    roles, idx, n = vocabulary(g)
     assert n == len(roles) == len(idx)
     # 3 input slots (isEqual_argin1/argin2, exist_argin1) + 2 output slots (isEqual_argout1, exist_argout1)
     assert set(roles) == {
@@ -51,20 +48,32 @@ def test_methodless_projection_skipped():
         _Rule(None, ["NP"]),          # epsilon / passthrough -> no role
         _Rule("", ["X"]),             # falsy method -> skipped
     ])
-    roles, idx, n = compute_role_vocabulary(g)
+    roles, idx, n = vocabulary(g)
     assert set(roles) == {"lift_argin1", "lift_argin2", "lift_argout1"}
     assert n == 3
 
 
 def test_deterministic_order():
     g = _G([_Rule("b", ["b_argin1"]), _Rule("a", ["a_argin1", "a_argin2"])])
-    r1, _, _ = compute_role_vocabulary(g)
-    r2, _, _ = compute_role_vocabulary(g)
+    r1, _, _ = vocabulary(g)
+    r2, _, _ = vocabulary(g)
     assert r1 == r2                     # stable across calls
     # inputs (sorted by method,pos) precede outputs (sorted by method)
-    assert r1 == ["a_argin1", "a_argin2", "b_argin1", "a_argout1", "b_argout1"]
+    assert r1 == ["a_argin1", "a_argin2", "a_argout1", "b_argin1", "b_argout1"]
 
 
 def test_empty_grammar_is_zero_width():
-    roles, idx, n = compute_role_vocabulary(_G([]))
+    roles, idx, n = vocabulary(_G([]))
     assert roles == [] and idx == {} and n == 0
+
+
+def test_aliases_and_all_outputs_have_distinct_arguments():
+    from Language import Grammar
+    from PartsOfSpeech import operation_name
+    grammar = Grammar()
+    grammar.load_from_grammar_file('complete.grammar')
+    names = [operation_name(rule) for rule in grammar.rules_upward if operation_name(rule)]
+    assert len(names) == len(set(names))
+    arguments = formal_arguments(grammar.rules_upward)
+    assert {'lower_argin1','definite_argin1','universal_argin1',
+            'transpose_argout1','transpose_argout2'} <= set(arguments)

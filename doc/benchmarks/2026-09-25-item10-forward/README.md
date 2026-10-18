@@ -95,7 +95,8 @@ The [pre-publication heads](heads.json) record BasicModel at `606683a8e32aac6656
   lesson/reconstruction contract.
 - [Concept output tests](../../../test/test_concept_output.py),
   [CLI gates](../../../test/test_explicit_dimensions.py) and
-  [category smoke](../../../test/test_category_em_smoke.py): inverse ownership,
+  category smoke (retired; archived as `test/test_category_em_smoke.py` in
+  commit `85b39a4c2`): inverse ownership,
   extent placement, mode exclusions and the fifty-percent reconstruction bar.
 - [Architecture](../../Architecture.md), [Testing](../../Testing.md) and
   [todo](../../../todo.md): the accepted rule and completed review correction.

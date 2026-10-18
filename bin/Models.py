@@ -2053,14 +2053,6 @@ class BaseModel(Mereology, nn.Module):
             "architecture.whatThinkingDepth", default=1),
             "whatThinkingDepth")
 
-        # MetaSymbol role-participation Category codebook (doc/Language.md
-        # "Participation Categories"). Learn a small role-space VQ during
-        # perception: pending MetaSymbols accumulate role evidence, then
-        # commit to a single category centroid. The structured grammar layers
-        # use that role context for every transform chooser.
-        self.category_codebook = bool(TheXMLConfig.get(
-            "architecture.categoryCodebook", default=True))
-
         # Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
         # grammar op force-builds the same zero-init eigenmodifier; this knob
         # only affects ordinary LiftLayer instances and is mirrored here for
@@ -2073,7 +2065,7 @@ class BaseModel(Mereology, nn.Module):
         # raises abstraction order as attention requires. The request + the
         # ramsification-table enable happen in _create_per_stage (order-safe:
         # this self.* read runs AFTER spaces are built, so it is introspection-
-        # only -- gating reads the live config at build, like categoryCodebook).
+        # only -- gating reads the live configuration at build).
         # Default off -> no table, no raising (byte-identical).
         self.mereology_raise = bool(TheXMLConfig.get(
             "architecture.mereologyRaise", default=False))
@@ -2596,8 +2588,6 @@ class BaseModel(Mereology, nn.Module):
             # WholeSpace property growth is deliberately not prewarmed here:
             # it is independent of ConceptualSpace capacity and must happen at
             # an explicit optimizer/compiled-graph reset boundary.
-            if os.path.exists(wpath):
-                self._prewarm_checkpoint_shapes()
             # Single-artifact load: state_dict + vocab_extras +
             # bpe_extras all ride in the .ckpt. The separate .kv
             # embedding artifact was retired (2026-05-12).
@@ -4712,11 +4702,12 @@ class BaseModel(Mereology, nn.Module):
         # Their native identities are restored by the structural sidecar.
         from IndependentComponents import ColumnDictionary, IndependentComponents
         from ReferenceClose import ReferenceClose
+        from PartsOfSpeech import PartsOfSpeech
         component_metadata = set()
         for name, module in self.named_modules(remove_duplicate=False):
             if isinstance(module, ColumnDictionary):
                 module.prepare_checkpoint(state, name + '.')
-            if isinstance(module, (ColumnDictionary, IndependentComponents, ReferenceClose)):
+            if isinstance(module, (ColumnDictionary, IndependentComponents, ReferenceClose, PartsOfSpeech)):
                 component_metadata.add(name + '._extra_state')
         model_state = dict(self.state_dict())
         for name in tuple(state):
@@ -4829,7 +4820,6 @@ class BaseModel(Mereology, nn.Module):
         # ``model.symbolSpace`` are now their sole structural owners.
         _alias_renamed = 0
         _legacy_ws_grammar_dropped = []
-        _legacy_ws_category_dropped = []
         _last_cs = len(getattr(self, 'conceptualSpaces', ())) - 1
         _last_ws = len(getattr(self, 'wholeSpaces', ())) - 1
         for _old_key in list(state.keys()):
@@ -4847,36 +4837,11 @@ class BaseModel(Mereology, nn.Module):
                 # its canonical ConceptualSpace stage.
                 _target = '.'.join(
                     ['conceptualSpaces', _parts[1], *_parts[3:]])
-            elif (
-                len(_parts) >= 3
-                and _parts[0] == 'wholeSpaces'
-                and _parts[1].isdigit()
-                and _parts[2] in ('_category_vq', '_category_role')
-            ):
-                _candidate = '.'.join(
-                    ['conceptualSpaces', _parts[1], *_parts[2:]])
-                if _candidate in model_state:
-                    _target = _candidate
-                else:
-                    _legacy_ws_category_dropped.append(_old_key)
-                    del state[_old_key]
-                    continue
             elif (_last_cs >= 0
                   and _old_key.startswith('wholeSpace.conceptualSpace.')):
                 _target = (
                     f'conceptualSpaces.{_last_cs}.'
                     + _old_key[len('wholeSpace.conceptualSpace.'):])
-            elif (_last_cs >= 0 and _old_key.startswith(
-                    ('wholeSpace._category_vq.',
-                     'wholeSpace._category_role'))):
-                _rest = _old_key[len('wholeSpace.'):]
-                _candidate = f'conceptualSpaces.{_last_cs}.{_rest}'
-                if _candidate in model_state:
-                    _target = _candidate
-                else:
-                    _legacy_ws_category_dropped.append(_old_key)
-                    del state[_old_key]
-                    continue
             elif (
                 len(_parts) >= 5
                 and _parts[0] == 'body_stages'
@@ -4886,21 +4851,6 @@ class BaseModel(Mereology, nn.Module):
             ):
                 _target = '.'.join(
                     ['conceptualSpaces', _parts[1], *_parts[4:]])
-            elif (
-                len(_parts) >= 4
-                and _parts[0] == 'body_stages'
-                and _parts[1].isdigit()
-                and _parts[2] == 'ws'
-                and _parts[3] in ('_category_vq', '_category_role')
-            ):
-                _candidate = '.'.join(
-                    ['conceptualSpaces', _parts[1], *_parts[3:]])
-                if _candidate in model_state:
-                    _target = _candidate
-                else:
-                    _legacy_ws_category_dropped.append(_old_key)
-                    del state[_old_key]
-                    continue
             elif (
                 len(_parts) >= 4 and _parts[0] == 'wholeSpaces' and _parts[1].isdigit() and (_parts[2] == 'syntacticLayer')
             ):
@@ -5063,13 +5013,6 @@ class BaseModel(Mereology, nn.Module):
                 "WholeSpace ownership migration dropped "
                 f"{len(_legacy_ws_grammar_dropped)} obsolete syntactic-layer "
                 "checkpoint keys that have no exact downstream owner.",
-                stacklevel=2,
-            )
-        if _legacy_ws_category_dropped:
-            warnings.warn(
-                "WholeSpace ownership migration dropped "
-                f"{len(_legacy_ws_category_dropped)} category checkpoint "
-                "keys because no exact ConceptualSpace owner was present.",
                 stacklevel=2,
             )
         if _carrier_renamed:
@@ -7535,38 +7478,6 @@ class BasicModel(BaseModel):
         mcol = same.to(full_seq.dtype).unsqueeze(-1)      # [B,T,1] hard 0/1
         return (full_seq * mcol).sum(dim=1, keepdim=True)  # [B,1,D] word rep
 
-    def _prewarm_checkpoint_shapes(self):
-        """Materialize lazy state whose final tensors ride in checkpoints.
-
-        Materialize the lazy category codebook. A training checkpoint contains its
-        final shapes, so they must exist before ``load_state_dict``. Canonical
-        WholeSpace properties are not grown here: property growth is
-        independent of concept capacity and requires an explicit
-        optimizer/compiled-graph reset boundary. This helper is idempotent and
-        shared by autoload and compilation pre-warm.
-        """
-        # Participation-category state is allocated on the first perception
-        # forward in a fresh model, but autoload necessarily runs before that
-        # forward. At this point SymbolSpace has configured the live grammar,
-        # so materialize the requested terminal VQ on the same device as the
-        # owning concept/property dictionary. Otherwise its learned
-        # prototype/buffer keys in a checkpoint are classified as stale.
-        category_owner = getattr(self, "conceptualSpace", None)
-        if (category_owner is not None
-                and getattr(category_owner,
-                            "_category_codebook_requested", False)
-                and hasattr(category_owner, "category_codebook_enabled")
-                and not category_owner.category_codebook_enabled()
-                and hasattr(category_owner, "enable_category_codebook")):
-            from Language import TheGrammar
-            cb = getattr(category_owner, "similarity_codebook", None)
-            if cb is None:
-                cb = getattr(getattr(
-                    category_owner, "subspace", None), "what", None)
-            W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
-            device = W.device if torch.is_tensor(W) else None
-            category_owner.enable_category_codebook(
-                TheGrammar, device=device)
 
     def _aligned_serial_word_mode(self):
         """Return whether the canonical aligned per-word protocol is live."""
@@ -7988,9 +7899,6 @@ class BasicModel(BaseModel):
         # their build path. ``_stm_reducer`` resolves the already-wired
         # LanguageLayer child and caches that non-owning reference here,
         # eagerly, before the compile wrapper closes over ``self.forward``.
-        # Build every lazy, checkpointed shape before capture. Autoload uses
-        # the same helper before loading an existing training checkpoint.
-        self._prewarm_checkpoint_shapes()
         # Device-coherence sweep before the trace, against the CANONICAL
         # process device (util.TheDevice -- the single source of truth that
         # ``init_device`` keeps in sync with torch's default device). The lazy
@@ -16792,29 +16700,6 @@ class BasicModel(BaseModel):
         object.__setattr__(
             self.symbolSpace, 'grammatical_thoughts', self.grammatical_thoughts)
 
-        # MetaSymbol Category codebook (doc/Language.md
-        # "Participation Categories"). Enabled by default via
-        # <categoryCodebook>: in property-basis mode request the small
-        # role-space VQ from terminal ConceptualSpace, which owns concepts and
-        # META structure. Legacy configs keep the prior WholeSpace host until
-        # they opt into the migration. Role columns are enumerated from the
-        # now-configured grammar (SymbolSubSpace.__init__ ran
-        # _ensure_configured above).
-        # Read the flag from config HERE (not self.category_codebook): the
-        # architecture flags are assigned in create_from_config AFTER the
-        # spaces are built, so self.category_codebook is not yet set when
-        # _create_per_stage runs -- reading the live config is the order-safe
-        # source (the config is loaded before any space is created).
-        _category_codebook = bool(TheXMLConfig.get(
-            "architecture.categoryCodebook", default=True))
-        category_owner = self.conceptualSpace
-        if _category_codebook and category_owner is not None:
-            # REQUEST allocation; the actual enable runs LAZILY from the
-            # autobind hook on the first perception forward, when TheGrammar is
-            # fully configured with the (role-collapsed) operator roles. At
-            # build the role rules may not be loaded yet, so a build-time
-            # enable would see 0 roles and no-op.
-            category_owner._category_codebook_requested = True
 
         # Mereological order-raising (doc/specs/mereological-order-raising.md).
         # Opt-in via <mereologyRaise>: build a meronymic lattice in perception
@@ -17797,6 +17682,7 @@ class BasicModel(BaseModel):
 
     def _stage_reconstruction_teacher(self):
         """Stage detached surface targets before any compiled sentence body."""
+        self._occupation_word_table = None
         trace = self._reconstruction_stack()
         isp = getattr(self, "inputSpace", None)
         if trace is None or isp is None or not getattr(self, "word_brackets", False):
@@ -17811,6 +17697,8 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(word_mask)
                 and tuple(word_mask.shape) == tuple(word_ids.shape)):
             trace.store_words(word_ids, word_mask & (word_ids >= 0))
+            if torch.is_tensor(leaves):
+                self._occupation_word_table = self.languageSpace.parts_of_speech.probabilities(word_ids, leaves)
         part_ids = getattr(isp, "_ar_word_part_ids", None)
         part_mask = getattr(isp, "_ar_word_part_mask", None)
         if (torch.is_tensor(part_ids) and part_ids.dim() == 3
@@ -18244,9 +18132,6 @@ class BasicModel(BaseModel):
             trace._choice_left_rows, trace._choice_right_rows,
             torch.as_tensor(slot, device=state[0].device), state,
             choice.applied & ((choice.kind == 1) | (choice.kind == 3)))
-        if not torch.compiler.is_compiling():
-            self.languageSpace.record_category_observations(
-                trace, getattr(self.inputSpace, '_word_active_mask', None))
 
 
     def _sentence_relative_mask(self, B, device=None, word=None):
@@ -20469,7 +20354,7 @@ class BasicModel(BaseModel):
         """After both trials train, discard their operations at the closing."""
         stm, lang, feedback = state
         lang = list(lang)
-        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
+        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28):
             value = lang[index]
             blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23, 25) else torch.zeros_like(value)
             mask = active.reshape(active.shape[0], *((1,) * (value.ndim - 1)))
@@ -20672,28 +20557,16 @@ class BasicModel(BaseModel):
                 _bound, view = bound_view(state, view, sid, row, result.meaning)
                 self._last_sentence_understanding = view['record']
                 self._sentence_understandings[sid] = view['record']
-        record_categories = getattr(self.languageSpace, 'record_category_observations', None)
-        trace = getattr(self, '_reconstruction_stack', lambda: None)()
-        owner = self._concept_owner()
-        if (callable(record_categories) and trace is not None
-                and int(getattr(owner, '_category_n_roles', 0) or 0)):
-            inputs = getattr(self, 'inputSpace', None)
-            word_mask = getattr(inputs, '_word_active_mask', None)
-            sentence_ids = getattr(inputs, '_packed_sentence_ids', None)
-            if torch.is_tensor(word_mask) and torch.is_tensor(sentence_ids):
-                word_mask = word_mask & (sentence_ids == sid)
-            word_rows = getattr(inputs, '_ar_grammar_object_rows', None)
-            if not torch.is_tensor(word_rows):
-                word_rows = self._word_symbol_rows()
-            identities = None
-            if torch.is_tensor(word_rows):
-                def identity(row):
-                    value = owner.concept_id_at_row(int(row)) if row >= 0 else None
-                    return -1 if value is None else value
-                identities = word_rows.new_tensor([
-                    [identity(row) for row in values]
-                    for values in word_rows.detach().cpu().tolist()])
-            record_categories(trace, word_mask, concept_ids=identities)
+        for b, program in enumerate(entries):
+            if bool(active[b]):
+                self.languageSpace.parts_of_speech.observe_kept(program,
+                    self.languageSpace._compose_binary_rules, self.languageSpace._compose_unary_rules)
+        table = getattr(self, '_occupation_word_table', None)
+        if table is not None:
+            # A packed batch may continue with another sentence. Refresh at
+            # this eager admission boundary, after both trials have finished.
+            table.copy_(self.languageSpace.parts_of_speech.probabilities(
+                self.inputSpace._ar_word_concept_ids, table))
         state = self._clause_end_state(state, sid, view['clauses'], row_ids)
         state = self._discard_sentence_record(state, active)
         self._publish_sentence_scratch(state)
@@ -21321,6 +21194,13 @@ class BasicModel(BaseModel):
         ss = self.symbolSpace
         stm = cs.CSLang
         words = isp._ar_embedded_N
+        occupations = getattr(self, '_occupation_word_table', None)
+        argument_count = len(self.languageSpace.parts_of_speech.arguments)
+        if occupations is None:
+            occupations = words.new_full((*words.shape[:2], argument_count), 1. / max(1, argument_count))
+        if occupations.shape != (*words.shape[:2], argument_count):
+            raise ValueError('staged occupation table does not match the word slab')
+        from PartsOfSpeech import update_heads
         active = isp._word_active_mask.to(dtype=torch.bool)
         B = int(words.shape[0])
         grammar_leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
@@ -21551,6 +21431,7 @@ class BasicModel(BaseModel):
             torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
             torch.zeros_like(choices[0]),
             words.new_zeros(B, int(choices[0].shape[1])),  # selected operation log probability
+            words.new_zeros(B, capacity, occupations.shape[-1]),  # phrase head distribution
         )
         empty_cs_sub = (
             zero_concept.clone(),
@@ -21850,6 +21731,9 @@ class BasicModel(BaseModel):
             else:
                 operation_values, operation_refs, reference_relations = current_cs_lang[22:25]
             unary_history = language.push_unary_history(current_cs_lang[25], commit)
+            occupation_heads = torch.where(commit.reshape(B, 1, 1),
+                torch.cat((_gather_word(occupations, index).reshape(B, 1, -1), current_cs_lang[28][:, :-1]), 1),
+                current_cs_lang[28])
             explorable_slab = current_cs_lang[26]
             log_probability_slab = current_cs_lang[27]
             round_active = commit.reshape(B)
@@ -21896,7 +21780,7 @@ class BasicModel(BaseModel):
                     reference_relations, unary_history, explorable_slab,
                     log_probability_slab, post_op, unary_op, post_valid,
                     unary_valid, prediction, next_symbol_activations,
-                    next_loss_sum, next_loss_weight, row_gate, commit, intermediate_end)
+                    next_loss_sum, next_loss_weight, row_gate, commit, intermediate_end, occupation_heads)
             for round_index in range(3):
                 if (not torch.compiler.is_compiling() and not bool(round_active.any())
                         and (fork is None or not fork.pending(index, closing=False, width=width))):
@@ -21910,7 +21794,7 @@ class BasicModel(BaseModel):
                      unary_history, explorable_slab, log_probability_slab, post_op,
                      unary_op, post_valid, unary_valid, prediction,
                      next_symbol_activations, next_loss_sum, next_loss_weight,
-                     row_gate, commit, intermediate_end
+                     row_gate, commit, intermediate_end, occupation_heads
                     ) = fork.resume(slot, fork_state(final_stm, round_active))
                 before = final_stm
                 journal_slot = index.new_tensor(round_index)
@@ -21924,7 +21808,7 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, before[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history, lesson_slot=slot,
+                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_heads,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
@@ -21952,6 +21836,7 @@ class BasicModel(BaseModel):
                         operation_refs, journal_slot, refs, choice.applied)
                     reference_relations = self._tensor_record_selected_values(
                         reference_relations, journal_slot, relative, choice.applied)
+                occupation_heads = update_heads(occupation_heads, choice, language._occupation_heads)
                 final_stm = cs.apply_language_choice(before, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
                 final_stm = scope.publish_name(final_stm, clause_state, ended)
@@ -21989,7 +21874,7 @@ class BasicModel(BaseModel):
                      unary_history, explorable_slab, log_probability_slab, post_op,
                      unary_op, post_valid, unary_valid, prediction,
                      next_symbol_activations, next_loss_sum, next_loss_weight,
-                     row_gate, commit, intermediate_end
+                     row_gate, commit, intermediate_end, occupation_heads
                     ) = fork.resume(slot, fork_state(end_stm, closing_active))
                 pre_closing = end_stm
                 journal_slot = index.new_tensor(3 + closing_index)
@@ -22000,7 +21885,7 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history, lesson_slot=slot,
+                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_heads,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
@@ -22028,6 +21913,7 @@ class BasicModel(BaseModel):
                         operation_refs, journal_slot, refs, choice.applied)
                     reference_relations = self._tensor_record_selected_values(
                         reference_relations, journal_slot, relative, choice.applied)
+                occupation_heads = update_heads(occupation_heads, choice, language._occupation_heads)
                 end_stm = cs.apply_language_choice(pre_closing, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
                 end_stm = scope.publish_name(end_stm, clause_state, ended)
@@ -22094,7 +21980,8 @@ class BasicModel(BaseModel):
                 next_live_depth, left_rows, right_rows, position_slab, action_slab, attempted_slab,
                 clause_state, closing_events, operation_values, operation_refs,
                 reference_relations,
-                torch.where(reset[:, None], -1, unary_history), explorable_slab, log_probability_slab)
+                torch.where(reset[:, None], -1, unary_history), explorable_slab, log_probability_slab,
+                torch.where(reset[:, None, None], 0., occupation_heads))
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)

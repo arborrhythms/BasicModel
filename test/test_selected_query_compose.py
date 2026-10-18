@@ -1,5 +1,5 @@
 """Thought-capable structural faces compose without geometrically answering."""
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 
 import pytest
 import torch
@@ -40,8 +40,11 @@ def test_language_owns_rule_meaning_for_each_local_compose_action(monkeypatch):
         if rule.space_role == "CS" and rule.arity == 1)
     assert binary and unary
     monkeypatch.setattr(Language, "TheGrammar", grammar)
+    operations=SimpleNamespace(stop_anchor=torch.empty(0),ops=(),unary_ops=())
+    operations.configure_arguments=MethodType(Language.OperationSelectionLayer.configure_arguments,operations)
     layer = SimpleNamespace(
-        _binary_rule_ids={"CS": binary}, _unary_rule_ids={"CS": unary})
+        _binary_rule_ids={"CS": binary}, _unary_rule_ids={"CS": unary},
+        operation_layer=operations)
     owner = Language.LanguageSpace(SimpleNamespace(
         subspace=SimpleNamespace(languageLayer=layer, muxedSize=0)))
     captured = owner._compose_binary_rules

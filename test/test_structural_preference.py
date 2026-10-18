@@ -175,7 +175,7 @@ def test_trace_records_the_choice_without_another_argmax():
     trace.prepare_choices(3, 1, device='cpu', binary_rule_ids=(17, 23), unary_rule_ids=(29,))
     owner = NS(_reconstruction_stack=lambda: trace,
                _tensor_record_operands=BasicModel._tensor_record_operands,
-               languageSpace=NS(record_category_observations=lambda *_: None),
+               languageSpace=NS(),
                inputSpace=NS(_word_active_mask=None))
     choice = LanguageOperationChoice(torch.ones(3, 4), torch.tensor([1, 2, 0]),
         torch.tensor([0, 1, 0]), torch.tensor([1, 0, 0]),

@@ -401,9 +401,6 @@ def frozen_online_learning(model):
     try:
         yield
     finally:
-        ws = getattr(model, "wholeSpace", None)
-        if ws is not None and hasattr(ws, "_category_role_obs"):
-            ws._category_role_obs = None
         for owner, previous in saved:
             object.__setattr__(owner, "_online_learning_frozen", previous)
 

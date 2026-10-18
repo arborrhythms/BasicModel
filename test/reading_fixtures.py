@@ -208,6 +208,12 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     if owner is None:
         owner = SimpleNamespace()
     owner.languageSpace, owner.grammatical_thoughts = language, registry
+    if not hasattr(language, 'parts_of_speech'):
+        from PartsOfSpeech import PartsOfSpeech, operation_name
+        arguments = {f'{operation_name(rule)}_{face}{i+1}'
+            for arity, rules in ((2,language._compose_binary_rules),(1,language._compose_unary_rules))
+            for rule in rules for face, count in (('argin',arity),('argout',1)) for i in range(count)}
+        language.parts_of_speech = PartsOfSpeech(sorted(arguments))
     if not hasattr(language, 'program_meaning'):
         from Language import LanguageSpace
         from types import MethodType
@@ -253,6 +259,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     lang[20] = torch.zeros(1, 3, 2, dtype=torch.long)
     lang.append(torch.full((1, 3), -1, dtype=torch.long))
     lang.append(torch.zeros_like(lang[4], dtype=torch.bool))
+    lang.append(torch.zeros(1,3,len(language.parts_of_speech.arguments)))
     state = stm, tuple(lang), None
     active = torch.tensor([active], dtype=torch.bool)
     view = owner._sentence_observation(state, sid, active)

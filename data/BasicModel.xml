@@ -106,7 +106,6 @@
     <whatCurriculum>full</whatCurriculum>
     <whatCurriculumDistance>1</whatCurriculumDistance>
     <whatCurriculumRatio>0.25</whatCurriculumRatio>
-    <categoryCodebook>true</categoryCodebook>
     <data>
       <dataType>embedding</dataType>
       <dataset>text</dataset>

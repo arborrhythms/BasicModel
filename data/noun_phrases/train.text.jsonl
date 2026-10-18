@@ -1,0 +1,42 @@
+{"id": "np:np:0:-1:0", "text": "a cat"}
+{"id": "np:np:0:-1:1", "text": "a dog"}
+{"id": "np:np:0:-1:2", "text": "a bird"}
+{"id": "np:np:0:0:0", "text": "a black cat"}
+{"id": "np:np:0:0:2", "text": "a black bird"}
+{"id": "np:np:0:0:3", "text": "a black horse"}
+{"id": "np:np:0:1:0", "text": "a white cat"}
+{"id": "np:np:0:1:1", "text": "a white dog"}
+{"id": "np:np:0:1:3", "text": "a white horse"}
+{"id": "np:np:0:2:0", "text": "a small cat"}
+{"id": "np:np:0:2:1", "text": "a small dog"}
+{"id": "np:np:0:2:2", "text": "a small bird"}
+{"id": "np:np:0:3:1", "text": "a large dog"}
+{"id": "np:np:0:3:2", "text": "a large bird"}
+{"id": "np:np:0:3:3", "text": "a large horse"}
+{"id": "np:np:1:-1:0", "text": "the cat"}
+{"id": "np:np:1:-1:1", "text": "the dog"}
+{"id": "np:np:1:-1:3", "text": "the horse"}
+{"id": "np:np:1:0:0", "text": "the black cat"}
+{"id": "np:np:1:0:2", "text": "the black bird"}
+{"id": "np:np:1:0:3", "text": "the black horse"}
+{"id": "np:np:1:1:0", "text": "the white cat"}
+{"id": "np:np:1:1:1", "text": "the white dog"}
+{"id": "np:np:1:1:3", "text": "the white horse"}
+{"id": "np:np:1:2:0", "text": "the small cat"}
+{"id": "np:np:1:2:1", "text": "the small dog"}
+{"id": "np:np:1:2:2", "text": "the small bird"}
+{"id": "np:np:1:3:1", "text": "the large dog"}
+{"id": "np:np:1:3:2", "text": "the large bird"}
+{"id": "np:np:1:3:3", "text": "the large horse"}
+{"id": "np:description:0:0", "text": "black cat"}
+{"id": "np:description:0:2", "text": "black bird"}
+{"id": "np:description:0:3", "text": "black horse"}
+{"id": "np:description:1:0", "text": "white cat"}
+{"id": "np:description:1:1", "text": "white dog"}
+{"id": "np:description:1:3", "text": "white horse"}
+{"id": "np:description:2:0", "text": "small cat"}
+{"id": "np:description:2:1", "text": "small dog"}
+{"id": "np:description:2:2", "text": "small bird"}
+{"id": "np:description:3:1", "text": "large dog"}
+{"id": "np:description:3:2", "text": "large bird"}
+{"id": "np:description:3:3", "text": "large horse"}

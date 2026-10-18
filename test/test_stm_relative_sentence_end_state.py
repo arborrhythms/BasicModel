@@ -251,9 +251,9 @@ def test_relative_mask_sees_cs_role_rules():
     # No anchor state at all -> CS scan contributes False (conservatism).
     ws = model.symbolSpace.conceptualSpace
     saved = (getattr(ws, '_anchored_pids', None),
-             getattr(ws, '_category_last_pid', None))
+             getattr(model.perceptualSpace, '_forward_input', None))
     object.__setattr__(ws, '_anchored_pids', None)
-    object.__setattr__(ws, '_category_last_pid', None)
+    object.__setattr__(model.perceptualSpace, '_forward_input', None)
     try:
         m = model._sentence_relative_mask(B)
         assert not bool(m.any())
@@ -262,37 +262,15 @@ def test_relative_mask_sees_cs_role_rules():
         # ALSO fired a relative rule under 'CS' flips (row 0); row 1 (no
         # relative fire) and row 2's absolute twin stay per their rules.
         object.__setattr__(ws, '_anchored_pids', {16: 'part'})
-        object.__setattr__(ws, '_category_last_pid',
-                           [[16, 3], [16, 3], [4, 5]])
+        object.__setattr__(model.perceptualSpace, '_forward_input',
+                           {'indices': torch.tensor([[16, 3], [16, 3], [4, 5]])})
         m = model._sentence_relative_mask(B)
         assert m.tolist() == [True, False, False]
     finally:
         object.__setattr__(ws, '_anchored_pids', saved[0])
-        object.__setattr__(ws, '_category_last_pid', saved[1])
+        object.__setattr__(model.perceptualSpace, '_forward_input', saved[1])
 
 
-def test_category_prior_scores_anchored_operator_slot():
-    """The syntactic-anchor short-circuit labels a closed-class relation
-    slot with the operator's OUTPUT role (``<op>_argout1``); the reduce prior
-    must credit pairs touching that slot toward the operator's own rule.
-    Pre-fix it read only argin1/argin2 and the anchored slot scored exactly 0
-    (the depth-3 campaign's no-flip cause, 2026-07-13)."""
-    from types import SimpleNamespace
-
-    role_index = {'part_argin1': 0, 'part_argin2': 1, 'part_argout1': 2}
-    orig = Language._role_index_for_categories
-    Language._role_index_for_categories = lambda: role_index
-    try:
-        duck = SimpleNamespace(op_names=['part'])
-        cat_ctx = torch.zeros(1, 3, 3)
-        cat_ctx[0, 1, 2] = 1.0             # middle slot anchored part_argout1
-        prior = Language.OperationSelectionLayer \
-            ._category_reduce_prior(duck, cat_ctx)
-        assert prior is not None and tuple(prior.shape) == (1, 2, 1)
-        assert float(prior[0, 0, 0]) > 0.0     # pair (0,1) touches anchor
-        assert float(prior[0, 1, 0]) > 0.0     # pair (1,2) touches anchor
-    finally:
-        Language._role_index_for_categories = orig
 
 
 # --------------------------------------------------------------------------
@@ -407,7 +385,7 @@ def test_actual_operation_trace_supplies_relative_capacity_without_a_reparse():
     model.symbolSpace.current_rules = {}
     relative = _forward_relative_rule_id()
     model.symbolSpace.conceptualSpace._anchored_pids = {123: 'equal'}
-    model.symbolSpace.conceptualSpace._category_last_pid = [[123]]
+    model.perceptualSpace._forward_input = {'indices': torch.tensor([[123]])}
     model.inputSpace._word_active_mask = torch.ones(1, 4, dtype=torch.bool)
     model.inputSpace._packed_sentence_ids = torch.tensor([[0, 0, 1, 1]])
     model._prepare_reconstruction_choices(1, 4, torch.device('cpu'))

@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @contextmanager
-def parallel_concepts(*, category=False):
-    """Keep the mixing path, with the tested sparse order and optional category.
+def parallel_concepts(*, wide=False):
+    """Keep the mixing path, with the tested sparse order and optional wider geometry.
 
     The former sparse/masked XML files differed in these feature settings.
     Geometry is bounded here; the MM_20M XOR proofs still use their full XML.
@@ -19,11 +19,10 @@ def parallel_concepts(*, category=False):
     tree = ET.fromstring(source)
     for key, value in {
         'architecture/conceptLayers': '4',
-        'architecture/categoryCodebook': str(category).lower(),
-        'ConceptualSpace/nVectors': '64' if category else '32',
+        'ConceptualSpace/nVectors': '64' if wide else '32',
         'WholeSpace/codebook': 'quantize',
         'architecture/training/conceptualSimilarityScale': '0.0',
-        'architecture/training/reconstructionScale': '1.0' if category else '0.1',
+        'architecture/training/reconstructionScale': '1.0' if wide else '0.1',
         'architecture/training/maskRate': '0.3',
     }.items():
         parent, tag = key.rsplit('/', 1)

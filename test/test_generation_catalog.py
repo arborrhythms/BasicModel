@@ -109,7 +109,9 @@ def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(
         assert result.resolve_generation_op("CS", "sum") is source
         assert result.resolve_generation_op("SS", "sum") is source
         assert {id(p) for p in result.parameters()} == {id(p) for module in (result.generate_policy, result.decomposition_chooser) for p in module.parameters()}
-        assert {name for name in result.state_dict() if not name.startswith('_generate_')} == {'generate_policy.weight','generate_policy.bias','decomposition_chooser.weight'}
+        assert {name for name in result.state_dict() if not name.startswith('_generate_')} == {
+            'generate_policy.weight','generate_policy.bias','decomposition_chooser.weight',
+            'parts_of_speech._extra_state'}
         return result
 
     first = catalog(("CS", "SS"))

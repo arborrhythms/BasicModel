@@ -41,41 +41,36 @@ def test_natural_relation_words_have_no_bootstrap_operator_assignment(filename):
     assert not {"has", "contains", "includes", "belongs", "equals", "is"}.intersection(forms)
 
 
-@pytest.mark.parametrize("signal", ["concepts", "roles"])
-def test_same_candidate_values_do_not_erase_operand_order(signal):
+def test_same_candidate_values_do_not_erase_operand_order():
     torch.manual_seed(391)
     layer = OperationSelectionLayer(
         d_model=4, ops=[_SymmetricCandidate(), _SymmetricCandidate()],
-        chooser="mlp", n_role_cats=2)
+        chooser="mlp")
     chooser = layer.chooser
     pair = torch.tensor([[[0.9, -0.4, 0.2, 0.7], [-0.1, 0.8, -0.5, 0.3]]])
     x = torch.cat((pair, pair.flip(1)))
     cats = torch.tensor([[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]])
-    if signal == "roles":
-        x = x.mean(1, keepdim=True).expand_as(x)
-    else:
-        cats = None
     candidate = x.sum(1)[:, None, None].expand(-1, 1, 2, -1)
     labels = torch.tensor([0, 1])
     optimizer = torch.optim.Adam(chooser.parameters(), lr=0.03)
     for _ in range(160):
         optimizer.zero_grad()
-        _, scores = chooser.score_binary(x, candidate, None, None, cat_ctx=cats)
+        _, scores = chooser.score_binary(x, candidate, None, None)
         loss = torch.nn.functional.cross_entropy(scores[:, 0], labels)
         loss.backward()
         optimizer.step()
-    _, scores = chooser.score_binary(x, candidate, None, None, cat_ctx=cats)
+    _, scores = chooser.score_binary(x, candidate, None, None)
     assert scores[:, 0].argmax(-1).tolist() == labels.tolist()
     assert float(torch.nn.functional.cross_entropy(scores[:, 0], labels).detach()) < 0.05
 
 
 def test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero():
     torch.manual_seed(793)
-    legacy = MLPTransformChooser(d_model=4, n_copy=1, n_op=2, n_role_cats=2)
+    legacy = MLPTransformChooser(d_model=4, n_copy=1, n_op=2)
     rng_after = torch.random.get_rng_state().clone()
     torch.manual_seed(793)
     current = MLPTransformChooser(
-        d_model=4, n_copy=1, n_op=2, n_role_cats=2, ordered_binary=True)
+        d_model=4, n_copy=1, n_op=2, ordered_binary=True)
     assert torch.equal(torch.random.get_rng_state(), rng_after)
     with torch.no_grad():
         current.operand_order.weight.fill_(9.)
@@ -83,8 +78,8 @@ def test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zer
     assert torch.count_nonzero(current.operand_order.weight) == 0
     assert torch.count_nonzero(current.copy_order.weight) == 0
     x, candidate, cats = torch.randn(2, 3, 4), torch.randn(2, 2, 2, 4), torch.randn(2, 3, 2)
-    old = legacy.score_binary(x, candidate, None, None, cat_ctx=cats)
-    new = current.score_binary(x, candidate, None, None, cat_ctx=cats)
+    old = legacy.score_binary(x, candidate, None, None)
+    new = current.score_binary(x, candidate, None, None)
     for a, b in zip(old, new):
         torch.testing.assert_close(a, b, atol=0, rtol=0)
     state = current.state_dict()
@@ -114,7 +109,7 @@ def test_order_projection_does_not_advance_the_default_device_rng():
 def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
     from checkpoint_migrations import build_optimizer_param_manifest, remap_optimizer_state_by_name
 
-    kwargs = dict(d_model=4, n_copy=1, n_op=2, n_role_cats=2)
+    kwargs = dict(d_model=4, n_copy=1, n_op=2)
     legacy = MLPTransformChooser(**kwargs)
     old_optimizer = torch.optim.Adam(legacy.parameters(), lr=.001)
     sum(p.square().sum() for p in legacy.parameters()).backward()
@@ -133,7 +128,7 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
             optimizer.state[dict(current.named_parameters())[name]]["exp_avg"], atol=0, rtol=0)
     x, candidate, cats = torch.randn(2, 3, 4), torch.randn(2, 2, 2, 4), torch.randn(2, 3, 2)
     def score(value):
-        return current.score_binary(value, candidate, None, None, cat_ctx=cats)
+        return current.score_binary(value, candidate, None, None)
     try:
         compiled = torch.compile(score, backend="eager", fullgraph=True)
         torch.testing.assert_close(compiled(x), score(x))
@@ -146,7 +141,7 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
         restored.load_state_dict(current.state_dict(), strict=True)
         resumed = torch.optim.Adam(restored.parameters(), lr=.001)
         resumed.load_state_dict(optimizer.state_dict())
-        torch.testing.assert_close(restored.score_binary(x, candidate, None, None, cat_ctx=cats), score(x))
+        torch.testing.assert_close(restored.score_binary(x, candidate, None, None), score(x))
         torch.testing.assert_close(resumed.state[restored.operand_order.weight]["exp_avg"],
                                    optimizer.state[current.operand_order.weight]["exp_avg"])
         torch.testing.assert_close(resumed.state[restored.copy_order.weight]["exp_avg"],

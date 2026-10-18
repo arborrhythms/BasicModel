@@ -8,9 +8,9 @@ import torch
 
 
 def catalog(model):
-    from Language import TheGrammar, SyntacticLayer, OperationSelectionLayer, compute_role_vocabulary
+    from Language import TheGrammar, SyntacticLayer, OperationSelectionLayer
     return dict(rule_keys=list(TheGrammar.rule_table.values()),
-        roles=compute_role_vocabulary(TheGrammar)[0], categories=list(TheGrammar.categories),
+        roles=[], chooser_role_context=0, occupation_schema=1, categories=list(TheGrammar.categories),
         syntactic={name:list(module._by_name) for name,module in model.named_modules()
                    if isinstance(module,SyntacticLayer)},
         operation={name:dict(binary=module.op_names,unary=module.unary_names)
@@ -32,6 +32,11 @@ def align(model, state, old):
     live, new = model.state_dict(), catalog(model)
     result, drift, transforms = dict(state), {}, {}
     for key in tuple(result):
+        if any(part in ('_category_vq', '_category_role') for part in key.split('.')):
+            del result[key]
+            drift[key] = dict(action='dropped retired category codebook')
+            transforms[key] = None
+            continue
         if key.endswith(('.timestamp','._next_ts')):
             del result[key]
             drift[key] = dict(action='dropped retired clock')
@@ -39,6 +44,14 @@ def align(model, state, old):
         if key.endswith('.stream') and key not in result:
             result[key] = value.detach().clone()
             drift[key] = dict(action='initialized empty stream history; checkpoint has no stream witnesses')
+    for key in live:
+        if key.endswith('.parts_of_speech._extra_state') and key not in result:
+            if old is not None and old.get('occupation_schema') == 1:
+                raise ValueError('checkpoint is missing its occupation state')
+            from PartsOfSpeech import PartsOfSpeech
+            owner = model.get_submodule(key[:-len('._extra_state')])
+            result[key] = PartsOfSpeech(owner.arguments).get_extra_state()
+            drift[key] = dict(action='initialized empty occupation counts; old categories are not evidence')
     if old is None:
         return result, drift, transforms
 
@@ -101,7 +114,7 @@ def align(model, state, old):
             elif key.endswith(('.tool_embedding','.what_projection.weight')):axis,indices=0,tools
             elif key.endswith(('.mlp.0.weight','.operand_order.weight','.copy_order.weight')):
                 suffix = 8 if key.endswith('.mlp.0.weight') else 0
-                prefix = value.shape[1]-len(old['roles'])-suffix
+                prefix = value.shape[1]-old.get('chooser_role_context', len(old['roles']))-suffix
                 axis=1
                 indices=tuple(range(prefix))+tuple(-1 if i<0 else prefix+i for i in roles)+tuple(
                     range(value.shape[1]-suffix,value.shape[1]))

@@ -779,7 +779,6 @@ def test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths(
     from Models import _ensure_grad_anchors
     _ensure_grad_anchors(torch.device("cpu"))
     model = _tiny_canonical_model(tmp_path, monkeypatch)
-    model._prewarm_checkpoint_shapes()
     model._compiled_word_loop_fullgraph = True
     raw = _stage_fullgraph_tensor_peer(
         model, ["alpha beta gamma delta", "epsilon zeta"])
@@ -897,7 +896,6 @@ def test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke(
         model = _tiny_canonical_model(
             tmp_path, monkeypatch, input_width=input_width).to("mps")
         init_device("mps")
-        model._prewarm_checkpoint_shapes()
         model._compiled_word_loop_fullgraph = True
         util.TheCompileBackend = "inductor"
         util.TheCompileMode = "default"

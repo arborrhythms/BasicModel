@@ -1,0 +1,42 @@
+{"id": "np:np:0:-1:0", "family": "np", "words": ["a", "cat"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:0:-1:1", "family": "np", "words": ["a", "dog"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:0:-1:2", "family": "np", "words": ["a", "bird"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:0:0:0", "family": "np", "words": ["a", "black", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:0:2", "family": "np", "words": ["a", "black", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:0:3", "family": "np", "words": ["a", "black", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:1:0", "family": "np", "words": ["a", "white", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:1:1", "family": "np", "words": ["a", "white", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:1:3", "family": "np", "words": ["a", "white", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:2:0", "family": "np", "words": ["a", "small", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:2:1", "family": "np", "words": ["a", "small", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:2:2", "family": "np", "words": ["a", "small", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:3:1", "family": "np", "words": ["a", "large", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:3:2", "family": "np", "words": ["a", "large", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:3:3", "family": "np", "words": ["a", "large", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:-1:0", "family": "np", "words": ["the", "cat"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:1:-1:1", "family": "np", "words": ["the", "dog"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:1:-1:3", "family": "np", "words": ["the", "horse"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:1:0:0", "family": "np", "words": ["the", "black", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:0:2", "family": "np", "words": ["the", "black", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:0:3", "family": "np", "words": ["the", "black", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:1:0", "family": "np", "words": ["the", "white", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:1:1", "family": "np", "words": ["the", "white", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:1:3", "family": "np", "words": ["the", "white", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:2:0", "family": "np", "words": ["the", "small", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:2:1", "family": "np", "words": ["the", "small", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:2:2", "family": "np", "words": ["the", "small", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:3:1", "family": "np", "words": ["the", "large", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:3:2", "family": "np", "words": ["the", "large", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:3:3", "family": "np", "words": ["the", "large", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:description:0:0", "family": "description", "words": ["black", "cat"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:0:2", "family": "description", "words": ["black", "bird"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:0:3", "family": "description", "words": ["black", "horse"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:1:0", "family": "description", "words": ["white", "cat"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:1:1", "family": "description", "words": ["white", "dog"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:1:3", "family": "description", "words": ["white", "horse"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:2:0", "family": "description", "words": ["small", "cat"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:2:1", "family": "description", "words": ["small", "dog"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:2:2", "family": "description", "words": ["small", "bird"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:3:1", "family": "description", "words": ["large", "dog"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:3:2", "family": "description", "words": ["large", "bird"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:3:3", "family": "description", "words": ["large", "horse"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}

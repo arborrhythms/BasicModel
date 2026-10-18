@@ -16,7 +16,6 @@ def test_unpacked_forward_observes_each_published_sentence_once(
         input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1,
         architecture_overrides={'symbolicOrder': 1})
     model.set_sentence_expectation(True)
-    model._prewarm_checkpoint_shapes()
     import util
     monkeypatch.setattr(util, "TheCompileBackend", "eager" if compiled else "none")
     model._tensor_peer_while_eager = not compiled

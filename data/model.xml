@@ -183,7 +183,6 @@
     <!-- Role-participation category codebook for the role-collapsed grammar.
          Unsettled MetaSymbols accumulate bounded temporary role evidence, then
          commit to one role-space category id used by all transform choosers. -->
-    <categoryCodebook>true</categoryCodebook>
     <!-- Experimental overlapping PS/WS .where lattice. Requires
          mereologyRaise=true; stays false until its corpus gates pass. -->
     <codebookRetire>false</codebookRetire>

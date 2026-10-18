@@ -1,0 +1,476 @@
+[
+  {
+    "text": "a cat",
+    "tree": [
+      "lower",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "a dog",
+    "tree": [
+      "lower",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "a bird",
+    "tree": [
+      "lower",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black cat",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black bird",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a black horse",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a white cat",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a white dog",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a white horse",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small cat",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small dog",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a small bird",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large dog",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large bird",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "a large horse",
+    "tree": [
+      "lower",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the cat",
+    "tree": [
+      "definite",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "the dog",
+    "tree": [
+      "definite",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "the horse",
+    "tree": [
+      "definite",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black cat",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black bird",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the black horse",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white cat",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white dog",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the white horse",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small cat",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small dog",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the small bird",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large dog",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large bird",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "the large horse",
+    "tree": [
+      "definite",
+      0,
+      [
+        "intersection",
+        1,
+        2
+      ]
+    ],
+    "waits": true
+  },
+  {
+    "text": "black cat",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "black bird",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "black horse",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "white cat",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "white dog",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "white horse",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "small cat",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "small dog",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "small bird",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "large dog",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "large bird",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  },
+  {
+    "text": "large horse",
+    "tree": [
+      "intersection",
+      0,
+      1
+    ],
+    "waits": true
+  }
+]

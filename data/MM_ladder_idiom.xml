@@ -97,7 +97,6 @@
          keep the defaults (off), so their pinned behaviour is unchanged. -->
     <answerSynthesis>true</answerSynthesis>
     <synthesisBindings>4</synthesisBindings>
-    <categoryCodebook>true</categoryCodebook>
     <data>
       <dataType>embedding</dataType>
       <dataset>inline</dataset>

@@ -147,276 +147,6 @@ class RoutingState:
     rule_probs: object = None
 
 
-class MetaSymbolCategoryLearner:
-    """Pending role-evidence table for MetaSymbol category learning.
-
-    Long-term state stays compact: a learned MetaSymbol keeps only its
-    committed ``meta_pos -> category_id`` assignment on ``WholeSpace``. While
-    the assignment is still unstable, this learner holds a bounded sparse row
-    of accumulated grammatical role evidence for that MetaSymbol. Category
-    centroids live in role-participation space, not MetaSymbol embedding space.
-    """
-
-    def __init__(self, n_roles, *, max_pending=4096, min_mass=4.0,
-                 min_confidence=0.70, min_margin=0.10, stable_updates=2,
-                 evidence_decay=1.0, prototype_ema=0.10):
-        self.n_roles = int(n_roles)
-        self.max_pending = int(max_pending)
-        self.min_mass = float(min_mass)
-        self.min_confidence = float(min_confidence)
-        self.min_margin = float(min_margin)
-        self.stable_updates = int(stable_updates)
-        self.evidence_decay = float(evidence_decay)
-        self.prototype_ema = float(prototype_ema)
-        self.pending = {}
-        self.step = 0
-
-    def _role_tensor(self, role_vec):
-        if not torch.is_tensor(role_vec):
-            role_vec = torch.tensor(role_vec, dtype=torch.float32)
-        vec = role_vec.detach().float().reshape(-1).cpu()
-        if vec.numel() != self.n_roles:
-            return None
-        return vec
-
-    @staticmethod
-    def _profile(evidence):
-        mass = float(evidence.sum().item())
-        if mass <= 0.0:
-            return evidence.clone(), 0.0
-        return evidence / mass, mass
-
-    def _evict_if_needed(self):
-        if self.max_pending <= 0:
-            self.pending.clear()
-            return
-        if len(self.pending) < self.max_pending:
-            return
-        victim, _row = min(
-            self.pending.items(),
-            key=lambda kv: (float(kv[1].get("mass", 0.0)),
-                            int(kv[1].get("last", 0))))
-        self.pending.pop(victim, None)
-
-    def pending_role(self, meta_pos, *, device=None, dtype=None):
-        row = self.pending.get(int(meta_pos))
-        if row is None:
-            return None
-        profile, mass = self._profile(row["evidence"])
-        if mass <= 0.0:
-            return None
-        if dtype is None:
-            dtype = torch.float32
-        return profile.to(device=device, dtype=dtype)
-
-    def score_assignment(self, ws, profile):
-        """Return ``(best, confidence, margin)`` for a role-space profile."""
-        role_table = getattr(ws, "_category_role", None)
-        vq = getattr(ws, "_category_vq", None)
-        codebook = role_table
-        if codebook is None and vq is not None:
-            codebook = getattr(vq, "codebook", None)
-        if codebook is None or not torch.is_tensor(codebook):
-            return None, 0.0, 0.0
-        cb = codebook.detach().float().cpu()
-        if cb.dim() != 2 or cb.shape[1] != profile.numel() or cb.shape[0] == 0:
-            return None, 0.0, 0.0
-        dist = ((cb - profile.reshape(1, -1)) ** 2).sum(dim=-1)
-        best = int(torch.argmin(dist).item())
-        best_dist = float(dist[best].item())
-        confidence = 1.0 / (1.0 + best_dist)
-        if dist.numel() == 1:
-            margin = float("inf")
-        else:
-            ordered = torch.sort(dist).values
-            margin = float((ordered[1] - ordered[0]).item())
-        return best, confidence, margin
-
-    def _assign_profile(self, ws, profile):
-        idx = ws.assign_category(profile.reshape(1, -1))
-        if idx is None:
-            return None
-        cat_id = int(idx.reshape(-1)[0])
-        ws.update_category_role(
-            torch.tensor([cat_id], dtype=torch.long),
-            profile.reshape(1, -1),
-            ema=self.prototype_ema)
-        return cat_id
-
-    def _commit(self, ws, meta_pos, category_id):
-        assign = getattr(ws, "_category_assign", None)
-        if assign is None:
-            assign = {}
-            object.__setattr__(ws, "_category_assign", assign)
-        assign[int(meta_pos)] = int(category_id)
-        self.pending.pop(int(meta_pos), None)
-        return int(category_id)
-
-    def observe(self, ws, meta_pos, role_vec):
-        """Update category evidence for one MetaSymbol.
-
-        Returns the committed category id when the symbol is already learned
-        or becomes learned on this observation. Returns ``None`` while the
-        symbol remains in the pending table.
-        """
-        vec = self._role_tensor(role_vec)
-        if vec is None or vec.sum().item() <= 0.0:
-            return None
-        meta_pos = int(meta_pos)
-        self.step += 1
-
-        assign = getattr(ws, "_category_assign", None) or {}
-        committed = assign.get(meta_pos)
-        if committed is not None:
-            profile, _mass = self._profile(vec)
-            ws.update_category_role(
-                torch.tensor([int(committed)], dtype=torch.long),
-                profile.reshape(1, -1),
-                ema=self.prototype_ema)
-            return int(committed)
-
-        row = self.pending.get(meta_pos)
-        if row is None:
-            if self.max_pending <= 0:
-                return None
-            self._evict_if_needed()
-            row = {
-                # On vec's device: vec is the model-device role tensor, and the
-                # in-place ``row["evidence"].add_(vec)`` below would otherwise
-                # mismatch (default-device zeros vs vec on mps/cuda). The
-                # CPU-pinned test suite never exercised this.
-                "evidence": torch.zeros(self.n_roles, dtype=torch.float32,
-                                        device=vec.device),
-                "mass": 0.0,
-                "best": None,
-                "stable": 0,
-                "last": self.step,
-            }
-            self.pending[meta_pos] = row
-
-        if self.evidence_decay < 1.0:
-            row["evidence"].mul_(max(0.0, self.evidence_decay))
-        row["evidence"].add_(vec)
-        profile, mass = self._profile(row["evidence"])
-        row["mass"] = mass
-        row["last"] = self.step
-
-        best = self._assign_profile(ws, profile)
-        scored_best, confidence, margin = self.score_assignment(ws, profile)
-        if scored_best is not None:
-            best = scored_best
-        if best is None:
-            return None
-
-        if row["best"] == int(best):
-            row["stable"] = int(row.get("stable", 0)) + 1
-        else:
-            row["best"] = int(best)
-            row["stable"] = 1
-
-        if (mass >= self.min_mass
-                and confidence >= self.min_confidence
-                and margin >= self.min_margin
-                and int(row["stable"]) >= self.stable_updates):
-            return self._commit(ws, meta_pos, int(best))
-        return None
-
-    def vocab_extras(self):
-        """Return a JSON-safe snapshot of the pending E-step state.
-
-        Category centroids are registered tensors on ``WholeSpace`` and ride
-        in ``state_dict``.  This sidecar contains the complementary Python
-        state needed to resume the learner at the exact next observation:
-        its thresholds/EMA configuration, monotonic step, and every pending
-        evidence row with its stability and eviction metadata.
-        """
-        pending = {}
-        for meta_pos, row in self.pending.items():
-            evidence = row.get("evidence")
-            if not torch.is_tensor(evidence):
-                evidence = torch.tensor(evidence, dtype=torch.float32)
-            evidence = evidence.detach().to(
-                device="cpu", dtype=torch.float32).reshape(-1)
-            pending[int(meta_pos)] = {
-                "evidence": [float(x) for x in evidence.tolist()],
-                "mass": float(row.get("mass", evidence.sum().item())),
-                "best": (None if row.get("best") is None
-                         else int(row["best"])),
-                "stable": int(row.get("stable", 0)),
-                "last": int(row.get("last", 0)),
-            }
-        return {
-            "version": 1,
-            "n_roles": int(self.n_roles),
-            "config": {
-                "max_pending": int(self.max_pending),
-                "min_mass": float(self.min_mass),
-                "min_confidence": float(self.min_confidence),
-                "min_margin": float(self.min_margin),
-                "stable_updates": int(self.stable_updates),
-                "evidence_decay": float(self.evidence_decay),
-                "prototype_ema": float(self.prototype_ema),
-            },
-            "step": int(self.step),
-            "pending": pending,
-        }
-
-    def load_vocab_extras(self, extras):
-        """Restore a snapshot emitted by :meth:`vocab_extras`.
-
-        Evidence is deliberately rebuilt as CPU float32: ``_role_tensor``
-        canonicalizes every live observation to that representation too, so
-        restoring does not introduce a device-dependent continuation.
-        """
-        if not isinstance(extras, dict):
-            return False
-        saved_n_roles = int(extras.get("n_roles", self.n_roles))
-        if saved_n_roles != self.n_roles:
-            raise ValueError(
-                "MetaSymbolCategoryLearner role width mismatch: "
-                f"saved={saved_n_roles}, live={self.n_roles}")
-
-        config = extras.get("config") or {}
-        if not isinstance(config, dict):
-            raise ValueError("category learner config must be a mapping")
-        int_fields = ("max_pending", "stable_updates")
-        float_fields = (
-            "min_mass", "min_confidence", "min_margin",
-            "evidence_decay", "prototype_ema",
-        )
-        for name in int_fields:
-            if name in config:
-                setattr(self, name, int(config[name]))
-        for name in float_fields:
-            if name in config:
-                setattr(self, name, float(config[name]))
-
-        restored = {}
-        pending = extras.get("pending") or {}
-        if not isinstance(pending, dict):
-            raise ValueError("category learner pending state must be a mapping")
-        for raw_meta_pos, raw_row in pending.items():
-            if not isinstance(raw_row, dict):
-                raise ValueError("category learner row must be a mapping")
-            evidence = torch.tensor(
-                raw_row.get("evidence", []), dtype=torch.float32,
-                device="cpu").reshape(-1)
-            if evidence.numel() != self.n_roles:
-                raise ValueError(
-                    "MetaSymbolCategoryLearner evidence width mismatch for "
-                    f"meta {raw_meta_pos}: saved={evidence.numel()}, "
-                    f"live={self.n_roles}")
-            best = raw_row.get("best")
-            restored[int(raw_meta_pos)] = {
-                "evidence": evidence,
-                "mass": float(raw_row.get("mass", evidence.sum().item())),
-                "best": None if best is None else int(best),
-                "stable": int(raw_row.get("stable", 0)),
-                "last": int(raw_row.get("last", 0)),
-            }
-        self.pending = restored
-        self.step = int(extras.get("step", 0))
-        return True
 
 
 def load_grammar(filename):
@@ -929,10 +659,6 @@ class Grammar:
         # carry space_role 'subsymbolic' and are consumed by the PS analyzer phases.
         self.ps_rules_upward = []
         self.ps_rules_downward = []
-        # Online category-collapse cache (participation.learned_collapse),
-        # keyed by direction. Computed lazily at runtime by category_collapse()
-        # when <categoryCollapse> is enabled; cleared on reload.
-        self._category_collapse_cache = {}
         self.ps_rules = []
         # Step 6: Layer-2.5 reverse productions, derived mechanically
         # from rules_upward at load time.  Each entry is
@@ -1006,27 +732,6 @@ class Grammar:
         """Return the space_role tag ('subsymbolic' / 'CS' / 'SS') of rule ``rule_id``."""
         return self.rules[rule_id].space_role
 
-    def category_collapse(self, direction="compose"):
-        """Runtime online category collapse (``participation.learned_collapse``).
-
-        Merges this grammar's symbols into a smaller mutually-exclusive
-        category set by participation-signature similarity, accepting a merge
-        only when it keeps every grammar rule distinguishable
-        (``collapse_conflicts == 0``) — the "ADV and VP both operate on NP,
-        so collapse them" rule, determined purely by the grammatical
-        operations. Returns ``{symbol: class_id}`` (stable integer ids).
-
-        This is the same participation-driven collapse the offline D1 gate
-        measures, now runnable inside the live model (gated by
-        ``<categoryCollapse>``). Cached per ``direction``; deterministic and
-        side-effect-free, so it is safe to call at build/enable time.
-        """
-        cache = self._category_collapse_cache
-        if direction not in cache:
-            import participation
-            cache[direction] = participation.learned_collapse(
-                self, direction=direction)
-        return cache[direction]
 
     def binary_rules(self):
         """Return the list of rule_ids that have arity 2."""
@@ -5106,10 +4811,7 @@ def sentence_anchor_mask(word_subspace, B, device=None):
     """Existing closed-class anchor evidence, with tensor-only live PID reads."""
     owner = getattr(word_subspace, 'conceptualSpace', None)
     anchors = getattr(owner, '_anchored_pids', None) or {}
-    grid = getattr(owner, '_category_last_pid', None) or []
-    flags = [any(int(pid) in anchors for pid in (grid[min(b, len(grid) - 1)] if grid else []))
-             for b in range(B)]
-    anchored = torch.tensor(flags, dtype=torch.bool, device=device)
+    anchored = torch.zeros(B, dtype=torch.bool, device=device)
     ps = getattr(word_subspace, 'perceptualSpace', None)
     current = getattr(ps, '_forward_input', None)
     pids = current.get('indices') if isinstance(current, dict) else None
@@ -5235,30 +4937,11 @@ class LanguageLayer(Layer):
             d_model=self.feature_dim, ops=binary[0], unary_ops=unary[0],
             op_names=binary[2], unary_names=unary[2], op_space_roles=binary[3],
             temperature=self.temperature, reduce_pressure=self.reduce_pressure,
-            chooser=self.transform_chooser,
-            n_role_cats=self._chooser_role_cats())
+            chooser=self.transform_chooser)
         self.binary_rule_ids, self.unary_rule_ids = binary[1], unary[1]
         self.binary_roles, self.unary_roles = binary[4], unary[4]
 
 
-    def _chooser_role_cats(self):
-        """Category-context width for structured-layer MLP choosers.
-
-        The role count comes from the same :func:`compute_role_vocabulary` the
-        WholeSpace category codebook uses, so the chooser's context block and
-        the codebook's role vectors share a width. Anchor-dot also uses the
-        category vector, but as a layer-level score prior, so it needs no MLP
-        input widening.
-        """
-        if str(getattr(self, "transform_chooser", "anchordot")) != "mlp":
-            return 0
-        if not bool(TheXMLConfig.get("architecture.categoryCodebook",
-                                     default=True)):
-            return 0
-        try:
-            return int(compute_role_vocabulary(TheGrammar)[2])
-        except Exception:
-            return 0
 
     def attach_unary_ops(self, *, ops, rule_ids=None, op_names=None,
                          op_space_roles=None, space_role="SS"):
@@ -5276,16 +4959,12 @@ class LanguageLayer(Layer):
         """Select one operation each round and publish only the exploit program."""
         if self.operation_layer is None:
             raise RuntimeError("LanguageLayer.compose needs attach_layer_ops or attach_unary_ops")
-        owner = self._category_owner(word_space)
-        cat = self._build_category_context(data, owner) if (
-            owner is not None and callable(getattr(owner, 'category_codebook_enabled', None))
-            and owner.category_codebook_enabled()) else None
         # The row contract is one absolute slot or three relative slots.
         slots = sentence_row_slots(sentence_relative_mask(word_space, data.shape[0], device=data.device))
         budget = max(1, self.max_depth, 2 * data.shape[1])
         derivation = self.operation_layer.derive(
             data, slots=slots, rounds=budget, exploit=exploit,
-            greedy=not self.training, cat_ctx=cat,
+            greedy=not self.training,
             what_ctx=getattr(self, '_what_context', None), grammar_context=grammar_context)
         self._last_derivation = derivation
         traces = derivation['traces']
@@ -5307,84 +4986,11 @@ class LanguageLayer(Layer):
         self._last_rules = {role: [row if complete[b] else [] for b, row in enumerate(rows)]
                             for role, rows in rules.items()}
         self._last_space_role_routings = {'operations': {'rounds': traces}}
-        if owner is not None and cat is not None:
-            owner._category_role_obs = self._collect_round0_role_obs()
         return self._last_rules
 
 
-    @staticmethod
-    def _category_owner(word_space):
-        """Return the live grammatical-category owner for ``word_space``.
 
-        ``WholeSpace`` is only an upstream property basis in the canonical
-        architecture, so category VQ state and concept participation live on
-        the sibling ``ConceptualSpace``. Resolve this from
-        the already-wired SymbolSubSpace rather than planting a downstream
-        back-reference on a property WholeSpace.
-        """
-        return getattr(word_space, 'conceptualSpace', None)
 
-    def _build_category_context(self, x, category_owner):
-        """Per-slot category role vector ``[B, N, n_roles]`` for grammar
-        routing, or ``None`` when unavailable.
-
-        Pure reads only (no E-step at score time): each terminal slot position
-        -> percept id (stashed by the autobind hook earlier this step) -> word
-        concept -> assigned centroid -> role vector. Slots with no percept,
-        binding, or centroid become a zero (neutral) row. The position index
-        aligns with the round-0 slab (== original percept positions; the same
-        correspondence Phase 1's role observation relies on)."""
-        last_pid = getattr(category_owner, '_category_last_pid', None)
-        last_concepts = getattr(category_owner, '_category_last_concept_ids', None)
-        n_roles = int(
-            getattr(category_owner, '_category_n_roles', 0) or 0)
-        if not (last_pid or last_concepts) or n_roles == 0:
-            return None
-        B, N = int(x.shape[0]), int(x.shape[1])
-        ctx = x.new_zeros(B, N, n_roles)
-        anch = getattr(category_owner, '_anchored_pids', None)
-        role_index = (
-            getattr(category_owner, '_category_role_index', None) or {})
-        concept_of_percept = getattr(
-            category_owner, 'concept_of_percept', None)
-        row_to_pos = getattr(category_owner, '_ps_row_to_pos', None)
-        grid = last_concepts if last_concepts is not None else last_pid
-        for b in range(min(B, len(grid))):
-            prow = grid[b]
-            for n in range(min(N, len(prow))):
-                pid = int(prow[n])
-                if pid < 0:
-                    continue
-                # Syntactic anchor first (Alec 2026-07-13): a closed-class
-                # relation surface resolves its slot to the OPERATOR's
-                # output role directly — the NP-R-NP form is grammatical,
-                # not a learned centroid assignment.
-                if anch is not None and last_concepts is None:
-                    _op = anch.get(pid)
-                    if _op is not None:
-                        _ri = role_index.get(f"{_op}_argout1")
-                        if _ri is not None:
-                            ctx[b, n, int(_ri)] = 1.0
-                            continue
-                meta_pos = (pid if last_concepts is not None else
-                            concept_of_percept(pid) if callable(concept_of_percept) else None)
-                if meta_pos is None:
-                    continue
-                role = category_owner.category_role_for_meta(
-                    int(meta_pos), device=x.device, dtype=x.dtype)
-                if role is not None:
-                    ctx[b, n, :] = role.reshape(-1)[:n_roles]
-        return ctx
-
-    def _collect_round0_role_obs(self):
-        traces = self._last_space_role_routings.get('operations', {}).get('rounds', [])
-        if not traces:
-            return []
-        route = traces[0]
-        rows = torch.stack((route['kind'], route['op'], route['position']), -1).detach().cpu().tolist()
-        names = self.operation_layer.op_names
-        return [[(p, p + 1, names[op])] if kind in (1,3) and names[op] else []
-                for kind, op, p in rows]
 
 
     def generate(self, target, word_space, subspace=None, grammar_context=None):
@@ -6371,11 +5977,11 @@ class TransformChooser(nn.Module):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
+                    what_ctx=None, op_offset=0, op_indices=None):
         raise NotImplementedError
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None, op_indices=None):
+                     what_ctx=None, op_indices=None):
         raise NotImplementedError
 
 
@@ -6385,11 +5991,6 @@ class AnchorDotTransformChooser(TransformChooser):
     Reproduces the original inline scoring (Stern et al. 2017 /
     Vaswani et al. 2017 style): the placement score is the inner product
     between a candidate's output and a per-rule learnable anchor. The scorer
-    ignores ``cat_ctx``; the category-role prior is applied by the owning
-    layer after scoring, so with ``categoryCodebook`` enabled (now the
-    default) the END-TO-END route is no longer byte-identical even though
-    this scorer is.
-
     Deliberately STATELESS: the ``copy_anchor`` / ``apply_anchor`` /
     ``reduce_anchor`` Parameters stay OWNED BY THE LAYER and are passed in
     at call time. Moving them into this submodule would rename their
@@ -6400,18 +6001,12 @@ class AnchorDotTransformChooser(TransformChooser):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
+                    what_ctx=None, op_offset=0, op_indices=None):
         """Return ``(copy_score, apply_score)`` for the unary layer.
 
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
         ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
 
-        ``cat_ctx`` is NOT consumed here -- the anchor-dot scorer stays
-        stateless. The labelled-role category prior is added by the OWNING
-        layer AFTER scoring (``_category_apply_prior``). Because
-        ``categoryCodebook`` now defaults ON, that prior shifts routing by
-        default, so the END-TO-END route is no longer byte-identical to the
-        bare anchor-dot for category-bearing grammars (this scorer still is).
         """
         # Device safety (MPS): the anchors are the owning layer's Parameters; if
         # a device move missed them (e.g. choosers built lazily after the model's
@@ -6429,18 +6024,12 @@ class AnchorDotTransformChooser(TransformChooser):
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None, op_indices=None):
+                     what_ctx=None, op_indices=None):
         """Return ``(copy_score, reduce_score)`` for the binary layer.
 
         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
         ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
 
-        ``cat_ctx`` is NOT consumed here -- the anchor-dot scorer stays
-        stateless. The labelled-role category prior is added by the OWNING
-        layer AFTER scoring (``_category_reduce_prior``). Because
-        ``categoryCodebook`` now defaults ON, that prior shifts routing by
-        default, so the END-TO-END route is no longer byte-identical to the
-        bare anchor-dot for category-bearing grammars (this scorer still is).
         """
         # Device safety (MPS): align the owning layer's anchor Parameters to the
         # input's device in case a device move missed them. No-op when co-located.
@@ -6593,19 +6182,13 @@ class MLPTransformChooser(TransformChooser):
     WHAT_CONTEXT_DIM = 29
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
-                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False, binding_choices=False):
+                 hidden=None, depth=1, ordered_binary=False, binding_choices=False):
         super().__init__()
         self.d_model = int(d_model)
         self.n_copy = int(n_copy)
         self.n_op = int(n_op)
         self.embed_dim = int(embed_dim)
         self.pos_dim = int(pos_dim)
-        # MetaSymbol Category codebook: per-slot syntactic-category context
-        # width fed alongside the slot/cand/tool/pos features. 0 = no MLP input
-        # widening. >0 widens the first Linear by ``n_role_cats``; ``_score``
-        # then concatenates the per-slot role vector (zeros when no
-        # ``cat_ctx`` is supplied at call time).
-        self.n_role_cats = int(n_role_cats)
         self.hidden = _chooser_size(
             hidden if hidden is not None else max(8, self.d_model),
             "transformChooserHidden")
@@ -6613,7 +6196,7 @@ class MLPTransformChooser(TransformChooser):
         self.tool_embedding = nn.Parameter(
             torch.randn(max(1, self.n_copy + self.n_op), self.embed_dim) * 0.02)
         in_dim = (2 * self.d_model + self.embed_dim
-                  + self.n_role_cats + self.pos_dim)
+                  + self.pos_dim)
         self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
         # The two operand choices are features of this same scorer. Small
         # weights start mint/open close to equiprobable; cloning existing
@@ -6636,17 +6219,17 @@ class MLPTransformChooser(TransformChooser):
             # Allocate without a random draw on ANY default device. A CPU
             # fork_rng alone would still advance the production MPS stream.
             self.operand_order = nn.Linear(
-                self.d_model + self.n_role_cats, self.hidden, bias=False,
+                self.d_model, self.hidden, bias=False,
                 device="meta")
             self.operand_order.weight = nn.Parameter(self.mlp[0].weight.new_zeros(
-                self.hidden, self.d_model + self.n_role_cats))
+                self.hidden, self.d_model))
             self.register_buffer("_operand_order_version", torch.tensor(1))
             # Waiting is also a contextual grammar decision. A function
             # word's isolated copy preference must not override a licensed
             # attachment to its neighbour. This feeds the same hidden layer;
             # it is not another classifier or policy.
             self.copy_order = nn.Linear(
-                self.d_model + self.n_role_cats, self.hidden, bias=False,
+                self.d_model, self.hidden, bias=False,
                 device="meta")
             self.copy_order.weight = nn.Parameter(torch.zeros_like(self.operand_order.weight))
             self.register_buffer("_copy_order_version", torch.tensor(1))
@@ -6710,16 +6293,13 @@ class MLPTransformChooser(TransformChooser):
                 [pe, pe.new_zeros(n, self.pos_dim - pe.shape[-1])], dim=-1)
         return pe[:, :self.pos_dim]
 
-    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None,
+    def _score(self, slot, cand, tool_rows, pos, order_ctx=None,
                order_projection=None, reference_ctx=None):
         """Score ``R`` candidates at each of ``Npos`` locations.
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
         ``[B, Npos, R, D]``; ``tool_rows``: ``[R, embed_dim]``; ``pos``:
-        ``[Npos, pos_dim]``. ``cat_ctx``: optional per-slot category
-        role vector ``[B, Npos, n_role_cats]`` broadcast over R; ``None`` (or
-        ``n_role_cats == 0``) feeds a zero block / no block. Returns
-        ``[B, Npos, R]``.
+        ``[Npos, pos_dim]``. Returns ``[B, Npos, R]``.
         """
         B, Npos = slot.shape[0], slot.shape[1]
         R = int(tool_rows.shape[0])
@@ -6732,19 +6312,7 @@ class MLPTransformChooser(TransformChooser):
             B, Npos, R, self.embed_dim)
         pos_e = pos.view(1, Npos, 1, self.pos_dim).expand(
             B, Npos, R, self.pos_dim)
-        if self.n_role_cats > 0:
-            # Category context block: the per-slot role vector, broadcast over
-            # candidates and placed between the tool and position blocks (the
-            # in_dim layout the first Linear was sized for). Missing context
-            # (terminal codebook off, composed slot) -> a zero block.
-            if cat_ctx is None:
-                cat_e = slot.new_zeros(B, Npos, R, self.n_role_cats)
-            else:
-                cat_e = cat_ctx.to(slot.dtype).unsqueeze(2).expand(
-                    B, Npos, R, self.n_role_cats)
-            feat = torch.cat([slot_e, cand_e, tool_e, cat_e, pos_e], dim=-1)
-        else:
-            feat = torch.cat([slot_e, cand_e, tool_e, pos_e], dim=-1)
+        feat = torch.cat([slot_e, cand_e, tool_e, pos_e], dim=-1)
         # Cast to the slot dtype so the computed path and the degenerate
         # zero fallbacks agree even under autocast (the MLP may emit
         # bf16/fp16; the fallbacks keep the input dtype).
@@ -6781,19 +6349,18 @@ class MLPTransformChooser(TransformChooser):
         return self.what_projection(ctx).to(dtype)
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None, reference_ctx=None):
+                    what_ctx=None, op_offset=0, op_indices=None, reference_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
-        copy_score = self._score(x_score, x_score, copy_rows, pos,
-                                 cat_ctx=cat_ctx)                      # copy=slot
+        copy_score = self._score(x_score, x_score, copy_rows, pos)                      # copy=slot
         r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
         if r_apply > 0:
             indices = (torch.arange(r_apply, device=x_score.device) if op_indices is None else op_indices)
             indices = indices + self.n_copy + op_offset
             apply_rows = self.tool_embedding.index_select(0, indices)
             apply_score = self._score(x_score, applied_score, apply_rows, pos,
-                                      cat_ctx=cat_ctx, reference_ctx=reference_ctx)
+                                      reference_ctx=reference_ctx)
         else:
             apply_score = x_score.new_zeros(B, N, 0)
         what_bias = self._what_bias(
@@ -6805,21 +6372,17 @@ class MLPTransformChooser(TransformChooser):
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None, op_indices=None, reference_ctx=None):
+                     what_ctx=None, op_indices=None, reference_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
         copy_context = None
         if self.copy_order is not None and N >= 2:
             pair = .5 * (x_score[:, :-1] - x_score[:, 1:])
-            if self.n_role_cats:
-                cats = (.5 * (cat_ctx[:, :-1] - cat_ctx[:, 1:]) if cat_ctx is not None
-                        else x_score.new_zeros(B, N - 1, self.n_role_cats))
-                pair = torch.cat((pair, cats.to(pair.dtype)), -1)
             zero = torch.zeros_like(pair[:, :1])
             copy_context = torch.cat((pair, zero), 1) + torch.cat((zero, pair), 1)
         copy_score = self._score(x_score, x_score, copy_rows, pos,
-                                 cat_ctx=cat_ctx, order_ctx=copy_context,
+                                 order_ctx=copy_context,
                                  order_projection=self.copy_order)
         if (N >= 2 and reduced_score.dim() == 4
                 and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
@@ -6827,16 +6390,9 @@ class MLPTransformChooser(TransformChooser):
             # Means keep the old feature layout. The signed differences are
             # additional inputs to the same first hidden layer, so symmetric
             # candidate results cannot erase converse/role order.
-            pair_cat = (0.5 * (cat_ctx[:, :-1] + cat_ctx[:, 1:])
-                        if cat_ctx is not None else None)
             order_ctx = None
             if self.operand_order is not None:
                 order_ctx = 0.5 * (x_score[:, :-1] - x_score[:, 1:])
-                if self.n_role_cats:
-                    cat_order = (0.5 * (cat_ctx[:, :-1] - cat_ctx[:, 1:])
-                                 if cat_ctx is not None else
-                                 x_score.new_zeros(B, N - 1, self.n_role_cats))
-                    order_ctx = torch.cat((order_ctx, cat_order.to(x_score.dtype)), dim=-1)
             pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
             r_reduce = int(reduced_score.shape[2])
             # Reference variants share their grammar operator's scoring row.
@@ -6845,7 +6401,7 @@ class MLPTransformChooser(TransformChooser):
             reduce_rows = self.tool_embedding.index_select(0, indices)
             reduce_score = self._score(
                 pair_slot, reduced_score, reduce_rows, pos_pair,
-                cat_ctx=pair_cat, order_ctx=order_ctx, reference_ctx=reference_ctx)
+                order_ctx=order_ctx, reference_ctx=reference_ctx)
         else:
             reduce_score = x_score.new_zeros(B, max(N - 1, 0), int(reduced_score.shape[2]) if reduced_score.dim() == 4 else self.n_op)
         what_bias = self._what_bias(
@@ -6857,7 +6413,7 @@ class MLPTransformChooser(TransformChooser):
         return copy_score, reduce_score
 
 
-def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
+def make_transform_chooser(kind, *, d_model, n_copy, n_op,
                            ordered_binary=False):
     """Factory: build the placement chooser for a structured layer.
 
@@ -6866,9 +6422,6 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
     :class:`MLPTransformChooser` (owns params; a deliberate new-basin
     cutover behind ``<transformChooser>``).
 
-    ``n_role_cats``: the MetaSymbol category-context width fed to the MLP
-    chooser; 0 leaves the MLP feature set unchanged. Anchor-dot uses category
-    context via the structured layer's labelled-role prior.
     ``ordered_binary`` retains left/right differences in a binary MLP head.
     """
     k = str(kind or "anchordot").strip().lower()
@@ -6880,7 +6433,7 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
             "architecture.transformChooserDepth", default=1),
             "transformChooserDepth")
         return MLPTransformChooser(
-            d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats,
+            d_model=d_model, n_copy=n_copy, n_op=n_op,
             hidden=hidden or None, depth=depth, ordered_binary=ordered_binary,
             binding_choices=ordered_binary and any(
                 getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
@@ -6894,132 +6447,11 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
     return AnchorDotTransformChooser()
 
 
-def compute_role_vocabulary(grammar):
-    """Enumerate the role-collapsed grammar's operator roles for the
-    MetaSymbol Category codebook (doc/Language.md "Participation Categories as
-    the Chooser's Syntactic-Category Context").
-
-    A ROLE is one operator argument slot. Input role ``(method, pos)`` renders
-    ``<method>_argin<pos+1>`` (operand position ``pos`` fed INTO the operator);
-    output role ``(method,)`` renders ``<method>_argout1`` (the result produced BY
-    the operator) -- the same naming as ``bin/participation.py``. Roles are
-    read off the live UPWARD (compose) rules; a rule with no ``method_name``
-    (epsilon / passthrough projection) declares no role and is skipped.
-
-    Returns ``(roles, role_index, n_roles)``: ``roles`` a deterministically
-    ordered list of role-name strings (sorted inputs, then sorted outputs),
-    ``role_index`` mapping role-name -> int column, ``n_roles == len(roles)``.
-    Enumerate ONCE at build from the live rule set (not the .grammar text) --
-    ``method_name is None`` projections drop out, so the file is not the
-    source of truth.
-    """
-    rules = (getattr(grammar, 'rules_upward', None)
-             or getattr(grammar, 'rules', None) or [])
-    in_roles = set()
-    out_roles = set()
-    for r in rules:
-        method = getattr(r, 'method_name', None)
-        if not method:
-            continue
-        method = str(method)
-        rhs = getattr(r, 'rhs_symbols', None) or []
-        for pos in range(len(rhs)):
-            in_roles.add((method, pos))
-        out_roles.add(method)
-    roles = [f"{m}_argin{pos + 1}" for (m, pos) in sorted(in_roles)]
-    roles += [f"{m}_argout1" for m in sorted(out_roles)]
-    role_index = {name: i for i, name in enumerate(roles)}
-    return roles, role_index, len(roles)
 
 
-def _role_index_for_categories():
-    try:
-        return compute_role_vocabulary(TheGrammar)[1]
-    except Exception:
-        return {}
 
 
-def _role_column(role_index, method, suffix):
-    if not method:
-        return None
-    return role_index.get(f"{method}_{suffix}")
 
-
-# ----------------------------------------------------------------------
-# Online category-collapse consumption in rule selection (<categoryCollapse>).
-#
-# The category-role priors (_category_apply_prior / _category_reduce_prior)
-# read each operator role's column out of the per-position category context
-# and add it to that rule's routing score. When <categoryCollapse> is on, the
-# collapse (participation.learned_collapse via Grammar.category_collapse) tells
-# us which role columns belong to the same collapsed category. We POOL the
-# category context across those columns so every rule whose input category was
-# merged shares the same routing evidence -- rule choice by the probable
-# COLLAPSED word category, not the raw per-role activation.
-#
-# On the live (already role-collapsed) grammar the collapse is identity, so the
-# pooling matrix is None and this is a strict no-op; it only shifts routing when
-# a grammar carries genuinely redundant categories.
-# ----------------------------------------------------------------------
-_COLLAPSE_POOL_CACHE = {}
-
-
-def _build_collapse_pool(role_index, collapse, n_cols):
-    """Pure builder: ``[n_cols, n_cols]`` pooling matrix ``P`` where
-    ``P[j, i] == 1`` iff role column ``j`` shares role column ``i``'s collapsed
-    category. ``cat_ctx @ P`` then replaces each column ``i`` with the sum over
-    its collapsed-category members. Returns ``None`` when the collapse is
-    trivial (every occupied column is its own class), so callers skip the
-    matmul entirely."""
-    col_class = {}
-    for name, col in role_index.items():
-        if 0 <= col < n_cols:
-            # Roles absent from the collapse are their own singleton class.
-            col_class[col] = collapse.get(name, ("__self__", name))
-    occupied = [c for c in range(n_cols) if c in col_class]
-    if len({col_class[c] for c in occupied}) == len(occupied):
-        return None                              # identity -> nothing to pool
-    P = torch.zeros(n_cols, n_cols)
-    for i in occupied:
-        ci = col_class[i]
-        for j in occupied:
-            if col_class[j] == ci:
-                P[j, i] = 1.0
-    for i in range(n_cols):                       # unoccupied columns pass through
-        if i not in col_class:
-            P[i, i] = 1.0
-    return P
-
-
-def _collapse_pool_matrix(n_cols):
-    """Cached pooling matrix for the live grammar's collapse (or ``None`` when
-    identity). Keyed by ``(id(TheGrammar), n_cols)`` -- the collapse is static
-    per model, so this is built once."""
-    key = (id(TheGrammar), int(n_cols))
-    if key not in _COLLAPSE_POOL_CACHE:
-        try:
-            collapse = TheGrammar.category_collapse(direction="compose")
-        except Exception:
-            collapse = {}
-        _COLLAPSE_POOL_CACHE[key] = _build_collapse_pool(
-            _role_index_for_categories(), collapse, int(n_cols))
-    return _COLLAPSE_POOL_CACHE[key]
-
-
-def _collapsed_cat_ctx(cat_ctx):
-    """Pool the category context over collapsed-category siblings when
-    ``<categoryCollapse>`` is on; identity otherwise (or when the collapse is
-    trivial). Shared by the unary and binary category-role priors so rule
-    selection reads the collapsed (probable) word category."""
-    if cat_ctx is None:
-        return cat_ctx
-    if not bool(TheXMLConfig.get("architecture.categoryCollapse", default=False)):
-        return cat_ctx
-    P = _collapse_pool_matrix(int(cat_ctx.shape[-1]))
-    if P is None:
-        return cat_ctx
-    return torch.matmul(
-        cat_ctx, P.to(device=cat_ctx.device, dtype=cat_ctx.dtype))
 
 
 class OperationSelectionLayer(nn.Module):
@@ -7035,7 +6467,7 @@ class OperationSelectionLayer(nn.Module):
 
     def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0, reduce_pressure=1.0,
                  op_names=None, unary_names=None, op_space_roles=None,
-                 chooser="anchordot", n_role_cats=0):
+                 chooser="anchordot"):
         super().__init__()
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(ops)
@@ -7063,7 +6495,7 @@ class OperationSelectionLayer(nn.Module):
         self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model, n_copy=1,
-            n_op=self.r_reduce + self.r_apply + 6, n_role_cats=n_role_cats,
+            n_op=self.r_reduce + self.r_apply + 6,
             ordered_binary=True)
         self.bracket_anchor = nn.Parameter(torch.zeros(6,self.d_model))
         self.attention_operations = (0, 1, 2)
@@ -7071,6 +6503,25 @@ class OperationSelectionLayer(nn.Module):
         self.op_names = list(op_names) if op_names is not None else None
         self.unary_names = list(unary_names) if unary_names is not None else None
         self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
+        self.register_buffer('argument_inputs', torch.empty((self.r_reduce+self.r_apply, 2), dtype=torch.long), persistent=False)
+        self.stage_menu = None
+
+    def configure_arguments(self, arguments, binary_rules, unary_rules):
+        from PartsOfSpeech import operation_name
+        index = {name: i for i, name in enumerate(arguments)}
+        rows = []
+        for rule in (*binary_rules, *unary_rules):
+            name = operation_name(rule)
+            rows.append([index[f'{name}_argin{i+1}'] for i in range(len(rule.rhs_symbols))])
+        self.argument_inputs = torch.tensor([row+[row[0]]*(2-len(row)) for row in rows], dtype=torch.long, device=self.stop_anchor.device).reshape(-1, 2)
+        self.argument_operation_names = tuple(operation_name(rule) for rule in (*binary_rules, *unary_rules))
+
+    def set_stage_menu(self, operations=None):
+        if operations is not None:
+            if 'STOP' not in operations or not set(operations) <= {'STOP', *self.argument_operation_names}:
+                raise ValueError('a stage menu must include STOP and only declared operations')
+        self.stage_menu = None if operations is None else tuple(operations)
+
 
     def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False,
                       departure_eligible=None):
@@ -7312,7 +6763,7 @@ class OperationSelectionLayer(nn.Module):
             depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
 
     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
-                masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                masked_action=None, what_ctx=None, op_prior=None, occupation=None,
                 grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
                 previous_unary=None, stop_exact=None, operand_activations=None, policy_grad=True):
@@ -7338,7 +6789,6 @@ class OperationSelectionLayer(nn.Module):
         swaps = torch.tensor(pair_rewrites, device=x.device, dtype=torch.bool)
         content = x[..., :self.d_model]
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
-        score_cats = None if cat_ctx is None else cat_ctx.detach()
         score_context = None if what_ctx is None else what_ctx.detach()
         # Only a sampled departure owns a policy graph. Other chooser
         # probabilities are observations; their selected operators still train.
@@ -7359,18 +6809,21 @@ class OperationSelectionLayer(nn.Module):
                 reference_contexts = tuple(contexts)
             stop_scores, binary_scores = self.chooser.score_binary(
                 content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
-                self.reduce_anchor.index_select(0, bi), cat_ctx=score_cats, what_ctx=score_context,
+                self.reduce_anchor.index_select(0, bi), what_ctx=score_context,
                 op_indices=bi, **reference_contexts[0])
             _, unary_scores = self.chooser.score_unary(
                 content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
-                self.apply_anchor.index_select(0, ui), cat_ctx=score_cats, what_ctx=score_context,
+                self.apply_anchor.index_select(0, ui), what_ctx=score_context,
                 op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
-            prior = self._category_reduce_prior(cat_ctx)
-            if prior is not None:
-                binary_scores = binary_scores + prior.index_select(-1, bi).detach().to(binary_scores)
-            prior = self._category_apply_prior(cat_ctx)
-            if prior is not None:
-                unary_scores = unary_scores + prior.index_select(-1, ui).detach().to(unary_scores)
+            if occupation is not None:
+                inputs = self.argument_inputs.to(x.device)
+                left = inputs[:self.r_reduce, 0].index_select(0, bi)
+                right = inputs[:self.r_reduce, 1].index_select(0, bi)
+                unary_input = inputs[self.r_reduce:, 0].index_select(0, ui)
+                binary_scores = (binary_scores
+                    + occupation[:, :-1].index_select(-1, left)
+                    + occupation[:, 1:].index_select(-1, right))
+                unary_scores = unary_scores + occupation.index_select(-1, unary_input)
             if op_prior is not None:
                 binary_scores = binary_scores + op_prior.index_select(-1, bi).detach().to(binary_scores)
         deadline = torch.zeros_like(depth, dtype=torch.bool)
@@ -7393,6 +6846,10 @@ class OperationSelectionLayer(nn.Module):
         if reference_data is not None:
             binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
+        if self.stage_menu is not None:
+            allowed = torch.tensor([name in self.stage_menu for name in self.argument_operation_names], device=x.device)
+            binary_scores = binary_scores.masked_fill(~allowed[:self.r_reduce].index_select(0, bi)[None,None], -torch.inf)
+            unary_scores = unary_scores.masked_fill(~allowed[self.r_reduce:].index_select(0, ui)[None,None], -torch.inf)
         binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
         # Transpose acts only on the newest pair and cannot meet a deletion deadline.
         swap_legal = (positions[:, :-1] == depth[:,None]-2) & ~deadline[:,None]
@@ -7497,7 +6954,7 @@ class OperationSelectionLayer(nn.Module):
         return hard, path, routing
 
     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
-               cat_ctx=None, what_ctx=None, grammar_context=None, allow_identical=False):
+               what_ctx=None, grammar_context=None, allow_identical=False):
         from types import SimpleNamespace
         from SentenceFork import SentenceFork, detached
         from SentenceCompose import select_rows
@@ -7525,7 +6982,7 @@ class OperationSelectionLayer(nn.Module):
             _, next_x, route = self(
                 x, depth=depth, slots=slots, active=active,
                 sample=not greedy if exploit is None else False, masked_action=fork.mask(slot),
-                cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+                what_ctx=what_ctx,
                 grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i,
                 previous_unary=history)
             if self.training:
@@ -7558,37 +7015,6 @@ class OperationSelectionLayer(nn.Module):
         explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
         return exploit, explore
 
-    def _category_reduce_prior(self, cat_ctx):
-        """Role-frequency prior for binary ops from labelled operand slots."""
-        if cat_ctx is None or self.op_names is None or cat_ctx.shape[1] < 2:
-            return None
-        role_index = _role_index_for_categories()
-        if not role_index:
-            return None
-        # <categoryCollapse>: pool the context over merged categories first, so
-        # rules whose operand categories collapsed share routing evidence.
-        cat_ctx = _collapsed_cat_ctx(cat_ctx)
-        left = cat_ctx[:, :-1, :]
-        right = cat_ctx[:, 1:, :]
-        priors = []
-        for name in self.op_names:
-            c1 = _role_column(role_index, name, "argin1")
-            c2 = _role_column(role_index, name, "argin2")
-            o1 = _role_column(role_index, name, "argout1")
-            score = left.new_zeros(left.shape[0], left.shape[1])
-            if c1 is not None and c1 < left.shape[-1]:
-                score = score + left[..., c1]
-            if c2 is not None and c2 < right.shape[-1]:
-                score = score + right[..., c2]
-            # Anchored slots carry the operator's OUTPUT role (<op>_argout1,
-            # the syntactic-anchor short-circuit): credit pairs touching
-            # such a slot toward the operator's own rule.
-            if o1 is not None and o1 < left.shape[-1]:
-                score = score + left[..., o1] + right[..., o1]
-            priors.append(0.5 * score)
-        if not priors:
-            return None
-        return torch.stack(priors, dim=-1)
 
     def _stacked_reduced(self, x, grammar_context=None, reference_data=None, activations=None):
         """Candidate operators consume their own resolved operands."""
@@ -7672,26 +7098,6 @@ class OperationSelectionLayer(nn.Module):
         return torch.stack(result, 2)
 
 
-    def _category_apply_prior(self, cat_ctx):
-        """Role-frequency prior for unary ops from the labelled input slot."""
-        if cat_ctx is None or self.unary_names is None:
-            return None
-        role_index = _role_index_for_categories()
-        if not role_index:
-            return None
-        # <categoryCollapse>: pool the context over merged categories first, so
-        # rules whose input category collapsed share routing evidence.
-        cat_ctx = _collapsed_cat_ctx(cat_ctx)
-        priors = []
-        for name in self.unary_names:
-            col = _role_column(role_index, name, "argin1")
-            if col is None or col >= cat_ctx.shape[-1]:
-                priors.append(cat_ctx.new_zeros(cat_ctx.shape[0], cat_ctx.shape[1]))
-            else:
-                priors.append(cat_ctx[..., col])
-        if not priors:
-            return None
-        return torch.stack(priors, dim=-1)
 
     def _stacked_applied(self, x, grammar_context=None, reference_data=None):
         """[B, N, R_apply, D] each unary op applied to every position."""
@@ -12662,6 +12068,12 @@ class LanguageSpace(nn.Module):
             self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
         from ClauseScope import ClauseScope
         self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        from PartsOfSpeech import PartsOfSpeech, formal_arguments, head_role
+        self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
+        self._occupation_heads = tuple(head_role(rule) for rule in self._compose_binary_rules)
+        if self._compose_binary_rules or self._compose_unary_rules:
+            self.language_layer.operation_layer.configure_arguments(self.parts_of_speech.arguments,
+                self._compose_binary_rules, self._compose_unary_rules)
         # An unreduced lexical relative sentence can retain the native VP of a
         # canonical family while losing which grammar-spelled converse form
         # anchored its middle word.  Copy only the grammar's closed-class
@@ -12934,7 +12346,7 @@ class LanguageSpace(nn.Module):
     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
                          sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
-                         previous_unary=None, policy_grad=True, lesson_slot=None):
+                         previous_unary=None, policy_grad=True, lesson_slot=None, occupation=None):
         """The shared compose layer with the two newest occupied STM slots."""
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -12989,6 +12401,8 @@ class LanguageSpace(nn.Module):
                                           active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
         layer = self.language_layer.operation_layer
         arguments = dict(depth=window_depth, slots=stop_slots,
+            occupation=(None if occupation is None else occupation.gather(1,
+                source[..., None].expand(B, n, occupation.shape[-1]))),
             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
             allowance=slots if allowance is None else allowance,
             rounds_left=rounds_left, load_depth=depth,
@@ -14123,74 +13537,6 @@ class LanguageSpace(nn.Module):
         columns = counts[:, :width] * valid.to(counts.dtype).reshape(1, width)
         return base.index_add(1, safe, columns.to(base.dtype))
 
-    def record_category_observations(self, trace, active, *, concept_ids=None):
-        owner = self.language_layer._category_owner(self._symbol_space)
-        if (owner is None or not int(getattr(owner, '_category_n_roles', 0) or 0)
-                or not torch.is_tensor(active)):
-            return
-        ids, arities, masks = trace.choices()
-        positions = trace._choice_positions
-        if positions is None:
-            return
-        ids, arities, masks, positions, active = [
-            value.detach().cpu().tolist()
-            for value in (ids, arities, masks, positions, active)]
-        layer = self.language_layer.operation_layer
-        names = dict(zip(self._cs_binary_rule_ids.tolist(), layer.op_names or []))
-        names.update(zip(self._cs_unary_rule_ids.tolist(), layer.unary_names or []))
-        pair_rules={rid for rid,pair in zip(self._cs_binary_rule_ids.tolist(),layer.pair_rewrites) if pair}
-        observations = []
-        for b, words in enumerate(active):
-            forest, row = [], []
-            for w, live in enumerate(words):
-                if not live:
-                    continue
-                forest.append(w)
-                for slot in range(3 * w, min(3 * w + 3, len(ids[b]))):
-                    if not masks[b][slot]:
-                        continue
-                    name = names.get(ids[b][slot])
-                    if arities[b][slot] == 2 and len(forest) >= 2:
-                        if ids[b][slot] in pair_rules:
-                            left,right=forest[-2:]
-                            if name and (left>=0 or right>=0):row.append((left,right,name))
-                            forest[-2:]=[right,left]
-                            continue
-                        right, left = forest.pop(), forest.pop()
-                        if name and (left >= 0 or right >= 0):
-                            row.append((left, right, name))
-                        forest.append(-1)
-                    elif arities[b][slot] == 1:
-                        p = positions[b][slot]
-                        if 0 <= p < len(forest):
-                            leaf = forest[-1 - p]
-                            if name and leaf >= 0:
-                                row.append((leaf, -1, name))
-                            forest[-1 - p] = -1
-            observations.append(row)
-        owner._category_role_obs = observations
-        if torch.is_tensor(concept_ids):
-            # Serial positions address grammar words, not byte percepts.
-            # Learn from the admitted object references of this reading;
-            # looking up a word by a byte PID cannot recover that identity.
-            grid = concept_ids.detach().cpu().tolist()
-            owner._category_last_concept_ids = grid
-            role_index = owner._category_role_index
-            for b, row in enumerate(observations):
-                accumulated = {}
-                for left, right, method in row:
-                    for position, suffix in ((left, 'argin1'), (right, 'argin2')):
-                        column = role_index.get(f'{method}_{suffix}')
-                        if column is None or not 0 <= position < len(grid[b]):
-                            continue
-                        identity = int(grid[b][position])
-                        if identity < 0:
-                            continue
-                        vector = accumulated.setdefault(identity, [0.] * owner._category_n_roles)
-                        vector[column] += 1.
-                for identity, vector in accumulated.items():
-                    owner.observe_category_roles(identity, torch.tensor([vector]))
-            owner._category_role_obs = None
 
     def compute_local_plan(self, symbolic_snapshot, depth):
         B = symbolic_snapshot.shape[0]

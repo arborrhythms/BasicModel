@@ -210,10 +210,10 @@ The slow set, from those timings (durations in seconds, call phase):
 | 15 | weekly (slow contract) | `test/test_tied_operator_reconstruction.py::test_snapshot_owns_values_across_same_shape_dictionary_update` |
 | 15 | weekly (slow contract) | `test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader` |
 | 15 | weekly (slow contract) | `test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance` |
-| 14 | weekly (slow contract) | `test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built` |
+| 14 | retired (2026-10-18) | Category-VQ context smoke; replaced by the distributional certificates in `test/test_parts_of_speech.py` |
 | 14 | weekly (slow contract) | `test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]` |
 | 14 | weekly (slow contract) | `test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm` |
-| 13 | weekly (slow contract) | `test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model` |
+| 13 | retired (2026-10-18) | Category-VQ allocation/EM smoke; occupation counts have no trained codebook |
 | 12 | default (certificate) | `test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path` |
 | 10 | weekly (slow contract) | `test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once` |
 | 10 | weekly (slow contract) | `test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]` |

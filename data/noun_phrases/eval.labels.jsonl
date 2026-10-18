@@ -1,0 +1,14 @@
+{"id": "np:np:0:-1:3", "family": "np", "words": ["a", "horse"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:0:0:1", "family": "np", "words": ["a", "black", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:1:2", "family": "np", "words": ["a", "white", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:2:3", "family": "np", "words": ["a", "small", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:0:3:0", "family": "np", "words": ["a", "large", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:-1:2", "family": "np", "words": ["the", "bird"], "brackets": [[0, 1]], "nps": [{"span": [0, 1], "description": [1], "singular": true}], "unlowered": []}
+{"id": "np:np:1:0:1", "family": "np", "words": ["the", "black", "dog"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:1:2", "family": "np", "words": ["the", "white", "bird"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:2:3", "family": "np", "words": ["the", "small", "horse"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:np:1:3:0", "family": "np", "words": ["the", "large", "cat"], "brackets": [[0, 1, 2], [1, 2]], "nps": [{"span": [0, 1, 2], "description": [1, 2], "singular": true}], "unlowered": []}
+{"id": "np:description:0:1", "family": "description", "words": ["black", "dog"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:1:2", "family": "description", "words": ["white", "bird"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:2:3", "family": "description", "words": ["small", "horse"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}
+{"id": "np:description:3:0", "family": "description", "words": ["large", "cat"], "brackets": [[0, 1]], "nps": [], "unlowered": [[0, 1]]}

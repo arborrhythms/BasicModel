@@ -41,7 +41,7 @@ class TestDepth3RelativeEndState(unittest.TestCase):
                       f"no depth-3 relative end-state in sweeps: {flat}")
         # ConceptualSpace owns the per-position pid grid for conditioning.
         self.assertIsNotNone(
-            getattr(m._concept_owner(), '_category_last_pid', None),
+            getattr(m.perceptualSpace, '_forward_input', None),
             "word-grain autobind must stash the per-position pid grid")
 
 

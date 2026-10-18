@@ -216,6 +216,14 @@ def restore_warmup(model, path, restore):
     current=model.state_dict()
     with torch.no_grad():
         for key,value in saved.items():
+            if key.endswith('parts_of_speech._extra_state'):
+                # Equal strings can have different pickle sharing after a
+                # fresh load, changing the byte envelope's size. Validate
+                # the native restored metadata, never its serialized size.
+                from IndependentComponents import _unpack_state
+                if key not in current or _unpack_state(current[key]) != _unpack_state(value):
+                    raise RuntimeError(f'occupation state differs after native restore: {key}')
+                continue
             if key not in current or current[key].shape!=value.shape:
                 raise RuntimeError(f'checkpoint shape differs: {key}')
             if not torch.equal(current[key],value):
@@ -231,6 +239,10 @@ def restore_warmup(model, path, restore):
             # torch.save's byte envelope is not a canonical metadata encoding.
             from IndependentComponents import _unpack_state
             actual,expected=_unpack_state(final[key]),_unpack_state(value)
+            if key.endswith('parts_of_speech._extra_state'):
+                if actual != expected:
+                    raise RuntimeError(f'occupation state differs after restore: {key}')
+                continue
             if key.endswith('nouns._extra_state') and expected.get('pending') == [] and 'pending' not in actual:
                 expected=dict(expected);expected.pop('pending')
                 drift.setdefault(key,{})['retired_empty_pending']=True

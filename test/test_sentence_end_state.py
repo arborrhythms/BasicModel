@@ -127,10 +127,10 @@ def test_closing_discards_operations_without_changing_other_live_rows():
 
     lang = tuple(torch.ones(2, 4) for _ in range(25)) + (
         torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool),
-        torch.ones(2, 4))  # selected operation log-probabilities
+        torch.ones(2, 4), torch.ones(2,4,3))  # log probabilities and head distributions
     _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
                                                                   torch.tensor([True, False]))
-    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
+    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28):
         expected = -1 if index in (4, 5, 15, 16, 17, 18, 23, 25) else 0
         assert (cleared[index][0] == expected).all()
         torch.testing.assert_close(cleared[index][1], lang[index][1], rtol=0, atol=0)

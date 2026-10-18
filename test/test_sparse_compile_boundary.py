@@ -175,7 +175,6 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
                 synthesize_word_parts=lambda *args: None)
             model.wholeSpace = types.SimpleNamespace(
                 compute_word_property_event=lambda *args: None)
-        model._prewarm_checkpoint_shapes = lambda: None
         model.forward = lambda input_data: input_data
 
         compile_calls = []
@@ -225,7 +224,6 @@ def test_compile_none_preserves_legacy_sentence_loop(monkeypatch):
         model.word_brackets = True
         model.serial_object_meta = True
         model.concept_binding = "aligned"
-        model._prewarm_checkpoint_shapes = lambda: None
         model.forward = lambda input_data: input_data
 
         monkeypatch.setattr(Models, "ENUM_FULLGRAPH", True)

@@ -40,8 +40,14 @@ class _Negate(torch.nn.Module):
         return -value
 
 
-def test_language_chooses_and_conceptual_space_alone_applies_stm_update():
+def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypatch):
+    import Language
     from Language import OperationSelectionLayer
+    # Local action IDs belong to this fixture's grammar, not whichever
+    # global catalogue an earlier test happened to leave installed.
+    grammar=Language.Grammar()
+    grammar.configure({'compose':{'F':['sum(F,F)','not(F)']}})
+    monkeypatch.setattr(Language,'TheGrammar',grammar)
     layer = OperationSelectionLayer(d_model=2, ops=[_Add()], unary_ops=[_Negate()])
     with torch.no_grad():
         layer.reduce_anchor.fill_(1)

@@ -96,20 +96,19 @@ def test_default_step_head_preserves_rng_and_first_candidate_tie():
 def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
     torch.manual_seed(207)
     chooser = MLPTransformChooser(
-        d_model=4, n_copy=1, n_op=2, hidden=13, depth=depth, n_role_cats=3)
+        d_model=4, n_copy=1, n_op=2, hidden=13, depth=depth)
     layers = _linears(chooser)
     assert len(layers) == depth + 1
     assert [(layer.in_features, layer.out_features) for layer in layers] == (
-        [(27, 13)] + [(13, 13)] * (depth - 1) + [(13, 1)])
+        [(24, 13)] + [(13, 13)] * (depth - 1) + [(13, 1)])
     assert sum(isinstance(layer, nn.GELU) for layer in chooser.mlp) == depth
 
     x = torch.randn(2, 4, 4, requires_grad=True)
-    cats = torch.randn(2, 4, 3, requires_grad=True)
     context = torch.randn(2, 29, requires_grad=True)
     unary = chooser.score_unary(
-        x, torch.randn(2, 4, 2, 4), None, None, cat_ctx=cats, what_ctx=context)
+        x, torch.randn(2, 4, 2, 4), None, None, what_ctx=context)
     binary = chooser.score_binary(
-        x, torch.randn(2, 3, 2, 4), None, None, cat_ctx=cats, what_ctx=context)
+        x, torch.randn(2, 3, 2, 4), None, None, what_ctx=context)
     assert [tuple(score.shape) for score in unary + binary] == [
         (2, 4, 1), (2, 4, 2), (2, 4, 1), (2, 3, 2)]
     sum(score.square().mean() + score.mean() for score in unary + binary).backward()
@@ -117,7 +116,7 @@ def test_custom_grammar_capacity_shapes_and_all_hidden_gradients(depth):
         assert parameter.grad is not None, name
         assert torch.isfinite(parameter.grad).all(), name
         assert parameter.grad.abs().sum() > 0, name
-    for value in (x, cats):
+    for value in (x,):
         assert value.grad is not None and value.grad.abs().sum() > 0
 
 

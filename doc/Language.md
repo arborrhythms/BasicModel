@@ -628,76 +628,46 @@ operator, native VP, selected thought action, or learned feature.
 The declared thought catalog and participation clustering are live and tested.
 Production compose uses the hard derivations described below.
 
-### Participation Categories as the Chooser's Syntactic-Category Context
+### Distributional parts of speech
 
-*(Live path. The category source is learned from role participation during
-perception, attached to the **MetaSymbol**, and threaded into the placement
-chooser as grammatical context.)*
+The [parts-of-speech specification](specs/2026-10-18-parts-of-speech.md),
+especially §2a, governs. `LanguageSpace.parts_of_speech` stores sparse counts
+by word identity on the forms ladder. Every formal input and output of every
+compose operation is a fixed argument class, including distinct semantic
+faces and both outputs of transpose. A kept operation contributes one count
+per operand and output head. Annotation operands never contribute evidence.
 
-> **Terminology note**:
-> the CS part$\leftrightarrow$whole relation table is the **Concept codebook** (concepts), not a
-> "symbol table"; WholeSpace holds **whole-percepts**; only `SymbolSpace` / `MetaSymbol`
-> things are **symbols**. Code identifiers (e.g. `subspace.what`, `_sym_*`) are
-> unchanged here — that is a separate code pass.
+A word's distribution is its normalized counts; an unseen word has the
+uniform distribution. Its single label is the argmax, recomputed on every
+count change (ties use argument order). The chooser adds the sum of the input
+argument probabilities directly to the operation score, with coefficient one.
+Output classes receive evidence but are not read. Phrase head distributions
+travel with the STM through composition, transposition and trial forks.
+Count updates occur only after the paired trials select their kept reading.
+Lexical attribution follows each operation's existing declared head (or its
+sole operand). An unheaded result has no word occupant: its head distribution
+is zero and it supplies no word count as an output or later operand. No
+first-word or noun-head convention is invented. Output typing remains deferred.
 
-A word's grammatical **category is its frequency of participation across the
-operator roles** above (`<op>_I<n>` inputs / `<op>_O1` output), **learned from
-perception** (analysis of input), not from generation. No part-of-speech label
-is declared or needed: if *cat* fills `ADV`'s operand role and `LIFT`'s
-argument role with roughly equal frequency, *collapsing* that frequency profile
-is what makes it a **noun** — the model knows the category by its role
-distribution, never by a name. This is exactly what `participation.learned_collapse`
-formalizes (merge by participation similarity, keeping every rule
-distinguishable).
+The fixed argument classes have no trained prototypes or merge rule.
+Cosines between their occupant distributions are reported as collapse.
+The old category VQ, context feature block and per-operator priors are retired.
+Checkpoint migration drops those tensors and feature columns explicitly,
+retaining the remaining learned coordinates exactly. A noun-prior table of
+word concepts tied to individual columns is measurement only.
 
-This role-participation profile is the **primary determinant of syntax** — what
-a constituent *is* (its category) governs what it can combine with more than its
-surface content does. So it is precisely the context the placement chooser
-(`MLPTransformChooser`, the soft route's scorer — see
-[One operation per round](#one-operation-per-round-item-75))
-needs when scoring "should this pair reduce, and with which operator?": the
-chooser must see the **category of the value already sitting in each slot**, not
-only the candidate operator's own output. The design realizes this as a small
-**Category codebook keyed by conceptual identity**, learned online by E/M from
-perception:
-
-- **Word and object are conceptual identities.** `ConceptualSpace.interpret`
-  associates a word concept with its object interpretation through a DEF row.
-  The definition index resolves that association; the concept-level index
-  owns sigma edges. WholeSpace contributes no word or META rows.
-  Categories attach to the interpreted object's identity,
-  so observed word roles can condition its object interpretation.
-- **A small Category codebook, not a permanent per-word count table.** The VQ
-  lives directly in role-participation space: $K \approx$ `n_roles` (55 on the
-  live `complete.grammar`, `compute_role_vocabulary`) initial
-  centroids, one seeded from each labelled role (`<op>_I<n>` inputs +
-  `<op>_O1` outputs). Unlearned identities have only a bounded temporary row in
-  the existing `MetaSymbolCategoryLearner` (its historical class name);
-  learned identities keep just `concept identity -> category_id`.
-- **E/M learned from perception, with emergent collapse.** Each analysis route
-  contributes a sparse role vector to the concept that occupied the terminal
-  position. The pending row accumulates that evidence until mass, confidence,
-  margin, and short-term stability thresholds are met. Then the concept
-  commits to one VQ centroid and the pending row is discarded. Starting from one
-  centroid per role and letting unused centroids decay, **effective K shrinks as
-  role-use profiles pull centroids together** — the online realization of
-  `participation.learned_collapse`, where "noun" emerges without a label.
-- **Feeds the per-slot category to the chooser.** The chooser conditions each
-  slot on the **role vector of the committed centroid**; while a word is still
-  unsettled, the pending row supplies a temporary role context. The gather path
-  is `percept id $\to$ conceptual identity $\to$ committed category or pending
-  evidence $\to$ role vector`. `MLPTransformChooser` receives the vector as a
-  feature block; anchor-dot/default routing uses the same vector as a
-  labelled-role score prior.
-
-**Status (enabled by `<categoryCodebook>`, default true).**
-`ConceptualSpace.enable_category_codebook` owns the role-space VQ, pending
-observations and committed category assignments. LanguageSpace records the
-winning reading's selected operand roles while the sentence is still open,
-before discarding its operation record. Those observations train the existing
-category learner. The chooser reads the committed centroid, or the pending
-role context while a concept is unsettled. Both binary and unary candidates
-use the same category owner.
+The NP curriculum scopes the existing operation validity masks to STOP,
+lower, definite and intersection. Reference-expanded candidates remain
+unchanged. The bracket lesson labels the student's own visited states and
+teaches operation choice; it never supplies occupation evidence.
+The curriculum introduces one unknown at a time, against material already
+established by a previous lesson. The first NP lesson teaches one determiner
+construction over stage-3 words; the other determiner and adjective
+composition wait for its measured result. Bare adjective–noun descriptions
+teach intersection before a later lesson nests it inside a determiner NP.
+This changes the examples, not UG:
+there is no noun-aware mask or head rule. The corpus and budget are fixed
+before training.
 
 ## One operation per round (item 7.5)
 

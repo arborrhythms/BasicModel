@@ -1,0 +1,14 @@
+{"id": "np:np:0:-1:3", "text": "a horse"}
+{"id": "np:np:0:0:1", "text": "a black dog"}
+{"id": "np:np:0:1:2", "text": "a white bird"}
+{"id": "np:np:0:2:3", "text": "a small horse"}
+{"id": "np:np:0:3:0", "text": "a large cat"}
+{"id": "np:np:1:-1:2", "text": "the bird"}
+{"id": "np:np:1:0:1", "text": "the black dog"}
+{"id": "np:np:1:1:2", "text": "the white bird"}
+{"id": "np:np:1:2:3", "text": "the small horse"}
+{"id": "np:np:1:3:0", "text": "the large cat"}
+{"id": "np:description:0:1", "text": "black dog"}
+{"id": "np:description:1:2", "text": "white bird"}
+{"id": "np:description:2:3", "text": "small horse"}
+{"id": "np:description:3:0", "text": "large cat"}

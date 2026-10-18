@@ -2265,16 +2265,6 @@ class Codebook(Tensor):
         # atom; see ``WholeSpace.words_atom_id``. Allocated lazily
         # alongside ``category_ids`` via ``create(..., category=True)``.
         self.part_parents = None
-        # Per-row part-of-speech distribution learned through parsing.
-        # Shape ``[V, C]`` where C = len(SymbolSpace.category_index).
-        # Float buffer (not Parameter): updated via EMA from the chart's
-        # _chart_pos at the leaves whose nearest codebook match is this
-        # atom; persisted in state_dict alongside category_ids. The seed
-        # path in `_apply_codebook_pos_seed` reads softmax(category_logits)
-        # and uses it as a prior on the lex scorer when the atom is
-        # confidently tagged. Allocated lazily by ``ensure_category_logits``
-        # since C isn't known until the grammar is configured.
-        self.category_logits = None
         # -- ramsification table (canonical codebook contract) -------------
         # ``[V, max_order]`` uint8 record, index-aligned with the codebook
         # rows: for each code, which fold it was routed through at each
@@ -3485,65 +3475,7 @@ class Codebook(Tensor):
             return -1
         return int(self.part_parents[int(idx)].item())
 
-    def ensure_category_logits(self, num_categories, device=None):
-        """Lazily allocate ``category_logits: [V, C]`` once C is known.
 
-        Initial value is zeros (uniform softmax distribution); EMA
-        updates from `Chart.compose` accumulate evidence from the
-        chart's per-leaf POS distribution. Returns the buffer so the
-        caller can write to it directly. Idempotent for the same C.
-        """
-        if self.category_ids is None:
-            return None
-        C = int(num_categories)
-        if C <= 0:
-            return None
-        existing = self.category_logits
-        if (existing is not None
-                and existing.dim() == 2
-                and existing.shape[0] == self.nVectors
-                and existing.shape[1] == C):
-            return existing
-        dev = device if device is not None else (
-            existing.device if existing is not None else TheDevice.get())
-        self.category_logits = torch.zeros(
-            self.nVectors, C, dtype=torch.float32, device=dev)
-        return self.category_logits
-
-    def update_category_logits(self, atom_idx, target_dist, ema=0.05):
-        """EMA-update the per-atom POS logit row toward ``target_dist``.
-
-        ``atom_idx``: scalar or [B] long tensor of codebook rows.
-        ``target_dist``: matching-shape [B, C] float distribution
-            (typically a softmax over chart_pos at a leaf cell).
-        ``ema``: blend factor; new = (1 - ema) * old + ema * target_logit
-            where target_logit = log(target_dist + eps).
-
-        No-op when category_logits hasn't been allocated. Updates run
-        without gradient (this is discrete bookkeeping).
-        """
-        if self.category_logits is None:
-            return
-        if not torch.is_tensor(atom_idx):
-            atom_idx = torch.tensor([int(atom_idx)], dtype=torch.long)
-        else:
-            atom_idx = atom_idx.long().reshape(-1)
-        if not torch.is_tensor(target_dist):
-            return
-        td = target_dist.detach().float()
-        if td.dim() == 1:
-            td = td.unsqueeze(0)
-        if td.shape[0] != atom_idx.shape[0]:
-            return
-        if td.shape[1] != self.category_logits.shape[1]:
-            return
-        with torch.no_grad():
-            atom_idx = atom_idx.to(self.category_logits.device)
-            td = td.to(self.category_logits.device)
-            target_logit = torch.log(td.clamp(min=1e-6))
-            old = self.category_logits.index_select(0, atom_idx)
-            new = (1.0 - float(ema)) * old + float(ema) * target_logit
-            self.category_logits.index_copy_(0, atom_idx, new)
 
     def updateWeights(self, embed_sum, cluster_size):
         """Update weights.
@@ -12630,60 +12562,6 @@ def _concept_rows_exist(host):
             and any(ly._tensor_rows for ly in alloc._layers.values()))
 
 
-def _stash_category_roles(ws, pid_host, B, N):
-    """MetaSymbol Category learning (opt-in via <categoryCodebook>). The
-    route's round-0 role observations (stashed on the WS by
-    LanguageLayer.compose) say which operator INPUT role each percept
-    filled this sentence. Attribute them to the percept's MetaSymbol and
-    hand the observed role vector to Language.MetaSymbolCategoryLearner:
-    pending words accumulate sparse role evidence; stable words commit
-    to one role-space VQ category. The stash is consumed so a later
-    non-compose forward does not re-apply stale observations. Shared by
-    BOTH _maybe_autobind_words arms (per-pid and word-whole); module-level
-    so duck-typed stubs need no extra bound methods."""
-    if not (getattr(ws, 'category_codebook_enabled', None) is not None
-            and ws.category_codebook_enabled()):
-        return
-    # Phase 2 (chooser conditioning): stash this perception's per-
-    # position percept ids so the NEXT compose can map each terminal
-    # slot -> MetaSymbol -> centroid -> role vector for the MLP
-    # chooser's category context. Perception runs before compose in the
-    # same step (compose reads the STM this forward populated), so the
-    # stash is current. Host list [B][N] (mirrors pid_host).
-    ws._category_last_pid = pid_host
-    role_obs = getattr(ws, '_category_role_obs', None)
-    role_index = getattr(ws, '_category_role_index', None) or {}
-    n_roles = int(getattr(ws, '_category_n_roles', 0) or 0)
-    if role_obs and n_roles > 0:
-        for b in range(min(len(role_obs), B)):
-            # Accumulate this row's per-position role vector: each
-            # round-0 reduce gives its left operand op_argin1 and right
-            # operand op_argin2 of the firing method.
-            acc = {}
-            for (lp, rp, method) in role_obs[b]:
-                for pos, suffix in ((lp, 'argin1'), (rp, 'argin2')):
-                    col = role_index.get(f"{method}_{suffix}")
-                    if col is None:
-                        continue
-                    vec = acc.get(pos)
-                    if vec is None:
-                        vec = [0.0] * n_roles
-                        acc[pos] = vec
-                    vec[col] += 1.0
-            for pos, vec in acc.items():
-                if pos < 0 or pos >= N or pos >= len(pid_host[b]):
-                    continue
-                pid = int(pid_host[b][pos])
-                if pid < 0:
-                    continue
-                meta_pos = ws.concept_of_percept(pid)
-                if meta_pos is None:
-                    continue
-                ws.observe_category_roles(
-                    int(meta_pos),
-                    torch.tensor([vec], dtype=torch.float32))
-    if hasattr(ws, '_category_role_obs'):
-        ws._category_role_obs = None
 
 
 def _concept_alloc_of(host):
@@ -14677,7 +14555,6 @@ class ConceptualSpace(Space):
             self.resolve_identities()
             self.refine_over_collected()
 
-        _stash_category_roles(self, pid_host, B, N)
 
     def _maybe_autobind_words(self, pid_2d, vec_tensor, word_groups=None,
                              tokens=None, word_texts=None, percept_where=None,
@@ -14687,10 +14564,6 @@ class ConceptualSpace(Space):
         ws = getattr(self, 'wholeSpace_ref', None)
         if ws is None:
             return
-        if (getattr(self, '_category_codebook_requested', False)
-                and not self.category_codebook_enabled()):
-            from Language import TheGrammar
-            self.enable_category_codebook(TheGrammar)
         return self._autobind_property_concepts(
             pid_2d, vec_tensor, word_groups, tokens, word_texts,
             percept_where, percept_when, tile_spans, percept_store, ws)
@@ -19246,18 +19119,6 @@ class ConceptualSpace(Space):
             "version": 2,
             "role": "conceptual_structure",
         }
-        assign = getattr(self, "_category_assign", None)
-        if isinstance(assign, dict):
-            extras["category_assign"] = {
-                int(k): int(v) for k, v in assign.items()
-            }
-        learner = getattr(self, "_category_learner", None)
-        if learner is not None and hasattr(learner, "vocab_extras"):
-            extras["category_learner"] = learner.vocab_extras()
-        else:
-            pending = getattr(self, "_pending_category_learner_extras", None)
-            if isinstance(pending, dict):
-                extras["category_learner"] = pending
         fold_support = getattr(self, "_concept_fold_support", None)
         if isinstance(fold_support, dict) and fold_support:
             extras["concept_fold_support"] = {
@@ -19282,19 +19143,6 @@ class ConceptualSpace(Space):
         reference_state = extras.get("percept_readout_references")
         if reference_state is not None:
             self.concepts_from_percepts.load_reference_state(reference_state)
-
-        assign = extras.get("category_assign")
-        if isinstance(assign, dict):
-            self._category_assign = {
-                int(k): int(v) for k, v in assign.items()
-            }
-        learner_blob = extras.get("category_learner")
-        if isinstance(learner_blob, dict):
-            learner = getattr(self, "_category_learner", None)
-            if learner is not None and hasattr(learner, "load_vocab_extras"):
-                learner.load_vocab_extras(learner_blob)
-            else:
-                self._pending_category_learner_extras = learner_blob
 
         fold_blob = extras.get("concept_fold_support")
         if isinstance(fold_blob, dict):
@@ -19467,197 +19315,12 @@ class ConceptualSpace(Space):
         return vspace
 
 
-    def enable_category_codebook(self, grammar, k=None, decay=0.9, device=None):
-        """Allocate the MetaSymbol Category codebook (idempotent).
 
-        Enumerates the operator roles from ``grammar`` (the fixed column
-        layout of each role-participation profile), builds a
-        ``VectorQuantize`` in that role space with ``codebook_retire=False``,
-        and allocates the per-centroid ``_category_role`` prototype buffer.
-        ``k`` defaults to ``n_roles``: one initial prototype per labelled
-        grammar role, free to collapse as usage pulls centroids together.
-        Returns True on success, False when the grammar declares no roles.
-        ``device`` places the new VQ + buffer (the lazy caller passes the
-        live codebook device)."""
-        from Language import compute_role_vocabulary, MetaSymbolCategoryLearner
-        if getattr(self, "_category_vq", None) is not None:
-            return True
-        roles, role_index, n_roles = compute_role_vocabulary(grammar)
-        if n_roles == 0:
-            return False
-        K = int(k) if k else int(n_roles)
-        self._category_roles = roles
-        self._category_role_index = role_index
-        self._category_n_roles = int(n_roles)
-        # The category codebook is written ONLY by update_category_role (the
-        # explicit role-vector M-step), so disable the in-forward EMA at
-        # CONSTRUCTION: assign_category (the E-step read) is then a pure
-        # lookup and there is a SINGLE writer -- otherwise the EMA and the
-        # M-step mutate the same rows by different laws and the assign/score
-        # tables drift apart.
-        vq = VectorQuantize(
-            dim=int(n_roles), codebook_size=K, decay=float(decay),
-            use_cosine_sim=False, codebook_retire=False, ema_update=False)
-        if device is not None:
-            vq = vq.to(device)
-        init = torch.zeros(K, n_roles, dtype=torch.float32, device=device)
-        for i in range(min(K, n_roles)):
-            init[i, i] = 1.0
-        with torch.no_grad():
-            # The codebook setter already resets embed_avg and _b_norms_sq to
-            # match; only cluster_size needs a non-zero bootstrap.
-            vq.codebook = init
-            vq.cluster_size.fill_(1.0)
-        self.add_module("_category_vq", vq)
-        self.register_buffer(
-            "_category_role",
-            init.detach().clone())
-        # Learned long-term category: MetaSymbol position -> centroid index.
-        # Pending role evidence lives in Language.MetaSymbolCategoryLearner.
-        # ``load_vocab_extras`` can run before this lazy codebook is enabled
-        # (standalone restore paths do not all use BasicModel's prewarm). Keep
-        # any already-restored committed assignments and apply the deferred
-        # pending learner snapshot once its role width is known.
-        self._category_assign = dict(
-            getattr(self, "_category_assign", {}) or {})
-        self._category_learner = MetaSymbolCategoryLearner(n_roles)
-        learner_extras = getattr(
-            self, "_pending_category_learner_extras", None)
-        if isinstance(learner_extras, dict):
-            self._category_learner.load_vocab_extras(learner_extras)
-            del self._pending_category_learner_extras
-        # Online category collapse (<categoryCollapse>, default off): run the
-        # participation-driven learned_collapse over the live grammar at enable
-        # time so the model maintains the smaller mutually-exclusive category
-        # set determined by its grammatical operations. Stored for inspection
-        # only here — the rule-choice wiring is unchanged (the chooser still
-        # reads the operator-role context); consuming the collapse in rule
-        # selection is a deliberate follow-up increment.
-        if bool(TheXMLConfig.get("architecture.categoryCollapse", default=False)):
-            try:
-                collapse = grammar.category_collapse(direction="compose")
-            except Exception as e:
-                raise RuntimeError(
-                    "enable_category_codebook: <categoryCollapse> is on but the "
-                    "online learned_collapse failed") from e
-            self._category_collapse = dict(collapse)
-            n_cat = len(set(collapse.values()))
-            TheMessage(
-                f"[categoryCollapse] online collapse: {len(collapse)} symbols "
-                f"-> {n_cat} categories (conflict-free) over the live grammar")
-        else:
-            self._category_collapse = None
-        return True
 
-    def category_codebook_enabled(self):
-        """True once :meth:`enable_category_codebook` has allocated the VQ."""
-        return getattr(self, "_category_vq", None) is not None
 
-    def assign_category(self, role_vecs):
-        """Assign role-participation profiles to the nearest category.
 
-        This is the VQ E-step in role space. ``role_vecs`` is ``[M,
-        n_roles]`` (or ``[n_roles]``), typically a normalized pending
-        MetaSymbol role profile. Returns ``[M]`` centroid indices, or None
-        when the codebook is disabled or the width is not ``n_roles``.
-        """
-        vq = getattr(self, "_category_vq", None)
-        if vq is None or role_vecs is None or not torch.is_tensor(role_vecs):
-            return None
-        x = role_vecs.detach().to(dtype=torch.float32)
-        if x.dim() == 1:
-            x = x.unsqueeze(0)
-        if x.shape[-1] != int(getattr(self, "_category_n_roles", 0) or 0):
-            return None
-        x = x.to(device=vq.codebook.device)
-        with torch.no_grad():
-            _q, indices, _loss = vq(x)
-        return indices.reshape(-1)
 
-    def update_category_role(self, centroid_idx, role_vec, ema=0.05):
-        """M-step (role vector): EMA the assigned centroids' role vectors
-        toward the observed role vectors (the roles the objects filled in the
-        analysis parse). ``centroid_idx``: ``[M]`` long; ``role_vec``:
-        ``[M, n_roles]`` float. No-op when disabled. Mirrors
-        ``Codebook.update_category_logits`` (no-grad index_copy_); callers pass
-        distinct centroids (the autobind hook updates one MetaSymbol at a
-        time), so the last-write-wins on duplicate indices is not exercised."""
-        cr = getattr(self, "_category_role", None)
-        if cr is None:
-            return
-        if not torch.is_tensor(centroid_idx):
-            centroid_idx = torch.tensor([int(centroid_idx)], dtype=torch.long)
-        idx = centroid_idx.long().reshape(-1)
-        if not torch.is_tensor(role_vec):
-            return
-        rv = role_vec.detach().float()
-        if rv.dim() == 1:
-            rv = rv.unsqueeze(0)
-        if rv.shape[0] != idx.shape[0] or rv.shape[1] != cr.shape[1]:
-            return
-        with torch.no_grad():
-            idx = idx.to(cr.device)
-            rv = rv.to(cr.device)
-            old = cr.index_select(0, idx)
-            new = (1.0 - float(ema)) * old + float(ema) * rv
-            cr.index_copy_(0, idx, new)
-            vq = getattr(self, "_category_vq", None)
-            if vq is not None:
-                new_vq = new.to(device=vq.codebook.device,
-                                dtype=vq.codebook.dtype)
-                idx_vq = idx.to(vq.codebook.device)
-                vq.codebook.data.index_copy_(0, idx_vq, new_vq)
-                if hasattr(vq, "embed_avg"):
-                    vq.embed_avg.index_copy_(
-                        0, idx_vq, new_vq.to(dtype=vq.embed_avg.dtype))
-                if hasattr(vq, "_b_norms_sq"):
-                    norms = (vq.codebook.detach() ** 2).sum(dim=-1)
-                    vq._b_norms_sq.copy_(norms)
 
-    def observe_category_roles(self, meta_pos, role_vec):
-        """Feed one MetaSymbol's observed role vector to the category learner."""
-        learner = getattr(self, "_category_learner", None)
-        if learner is None:
-            return None
-        return learner.observe(self, int(meta_pos), role_vec)
-
-    def category_role_for_meta(self, meta_pos, *, device=None, dtype=None):
-        """Return committed or pending role context for one MetaSymbol."""
-        n_roles = int(getattr(self, "_category_n_roles", 0) or 0)
-        if n_roles <= 0:
-            return None
-        if dtype is None:
-            dtype = torch.float32
-        assign = getattr(self, "_category_assign", None) or {}
-        ci = assign.get(int(meta_pos))
-        if ci is not None:
-            cr = getattr(self, "_category_role", None)
-            dev = device if device is not None else (cr.device if cr is not None else None)
-            idx = torch.tensor([int(ci)], dtype=torch.long, device=dev)
-            role = self.category_role_of(idx)
-            if role is not None:
-                return role.reshape(-1).to(device=device, dtype=dtype)
-        learner = getattr(self, "_category_learner", None)
-        if learner is not None:
-            pending = learner.pending_role(
-                int(meta_pos), device=device, dtype=dtype)
-            if pending is not None:
-                return pending
-        return torch.zeros(n_roles, dtype=dtype, device=device)
-
-    def category_role_of(self, centroid_idx):
-        """Gather the ``[..., n_roles]`` role vectors for centroid indices --
-        the per-slot category context the chooser reads (Phase 2). Indices
-        ``< 0`` (composed / unassigned slots) map to a zero row. Returns None
-        when the codebook is disabled."""
-        cr = getattr(self, "_category_role", None)
-        if cr is None or not torch.is_tensor(centroid_idx):
-            return None
-        idx = centroid_idx.long()
-        safe = idx.clamp_min(0).reshape(-1)
-        out = cr.index_select(0, safe).reshape(*idx.shape, cr.shape[1])
-        mask = (idx >= 0).unsqueeze(-1).to(out.dtype)
-        return out * mask
 
 
 # Host-eager analysis-cut character TYPE, as a 256-entry byte LUT so the span

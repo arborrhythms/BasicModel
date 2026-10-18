@@ -1,0 +1,52 @@
+{
+  "np:np:0:-1:3": null,
+  "np:np:0:0:1": {
+    "prompt": "what is black ?",
+    "answer": "dog"
+  },
+  "np:np:0:1:2": {
+    "prompt": "what is white ?",
+    "answer": "bird"
+  },
+  "np:np:0:2:3": {
+    "prompt": "what is small ?",
+    "answer": "horse"
+  },
+  "np:np:0:3:0": {
+    "prompt": "what is large ?",
+    "answer": "cat"
+  },
+  "np:np:1:-1:2": null,
+  "np:np:1:0:1": {
+    "prompt": "what is black ?",
+    "answer": "dog"
+  },
+  "np:np:1:1:2": {
+    "prompt": "what is white ?",
+    "answer": "bird"
+  },
+  "np:np:1:2:3": {
+    "prompt": "what is small ?",
+    "answer": "horse"
+  },
+  "np:np:1:3:0": {
+    "prompt": "what is large ?",
+    "answer": "cat"
+  },
+  "np:description:0:1": {
+    "prompt": "what is black ?",
+    "answer": "dog"
+  },
+  "np:description:1:2": {
+    "prompt": "what is white ?",
+    "answer": "bird"
+  },
+  "np:description:2:3": {
+    "prompt": "what is small ?",
+    "answer": "horse"
+  },
+  "np:description:3:0": {
+    "prompt": "what is large ?",
+    "answer": "cat"
+  }
+}

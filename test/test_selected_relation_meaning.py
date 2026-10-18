@@ -1,6 +1,6 @@
 """Owned compose actions preserve semantic operands lost by their folded root."""
 from dataclasses import replace
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 
 import pytest
 import torch
@@ -31,9 +31,14 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
             Language.GRAMMAR_LAYER_CLASSES[face]() if index == selected else None
             for index in ids))
 
+    operations=SimpleNamespace(ops=bank(binary).ops,unary_ops=bank(unary).ops,
+                               stop_anchor=torch.empty(0))
+    # This fixture recovers selected kernels without constructing a chooser,
+    # but its argument metadata follows the same configuration contract.
+    operations.configure_arguments=MethodType(Language.OperationSelectionLayer.configure_arguments,operations)
     layer = SimpleNamespace(
         _binary_rule_ids={"CS": binary}, _unary_rule_ids={"CS": unary},
-        operation_layer=SimpleNamespace(ops=bank(binary).ops, unary_ops=bank(unary).ops))
+        operation_layer=operations)
     monkeypatch.setattr(Language, "TheGrammar", grammar)
     owner = Language.LanguageSpace(SimpleNamespace(
         subspace=SimpleNamespace(languageLayer=layer, muxedSize=0)))

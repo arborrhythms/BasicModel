@@ -9,12 +9,6 @@ seeded build with one evidence source disabled and pin that the masked
 predictions / the reverse reconstruction actually move -- the mask draws
 are asserted identical across runs, so a diff is evidence flow, not RNG.
 
-The role-PROFILE category learner (``observe_category_roles``) is fed
-only by ``LanguageLayer.compose`` (the serial parser), so on this
-parallel config the categoryCodebook VQ allocates (substrate roles) but
-stays observation-idle; the live per-word category evidence here is the
-META/type row of the word/object/meta triple ("wholes are types").
-
 cpu/eager, seeded.
 """
 
@@ -44,7 +38,7 @@ def _run(ablate):
     """
     torch.manual_seed(7)
     from configuration_fixtures import parallel_concepts
-    with parallel_concepts(category=True) as path:
+    with parallel_concepts(wide=True) as path:
         model, *_ = _build_model(_resolve_config(path))
     if ablate == "mint":
         # Native word definitions are the retained semantic evidence.
@@ -148,14 +142,13 @@ def test_masked_ir_training_engages():
 
 @pytest.mark.slow
 def test_concept_attention_live_not_dark():
-    """The FF pyramid populates per-rung stats; the category VQ allocates."""
+    """The FF pyramid populates per-rung statistics."""
     m = _cached("base")["model"]
     cs0 = m._concept_owner()
     lv = getattr(cs0, "_cs_level_acts", None)
     assert lv is not None and float(lv[0]) > 0.0, lv
     # The grammar-free fixture has no operator roles to cluster.
-    assert not cs0.category_codebook_enabled()
-    assert int(getattr(cs0, "_category_n_roles", 0)) == 0
+    assert not hasattr(cs0, "category_codebook_enabled")
 
 
 @pytest.mark.slow

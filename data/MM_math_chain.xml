@@ -18,7 +18,6 @@
     <sigmaPi>butterfly</sigmaPi>
     <transformChooser>mlp</transformChooser>
     <answerSynthesis>true</answerSynthesis>
-    <categoryCodebook>true</categoryCodebook>
     <ltmConsolidation>true</ltmConsolidation>
     <attentionBudget>32</attentionBudget>
     <data>

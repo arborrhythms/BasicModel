@@ -11,7 +11,6 @@ from test_compiled_word_chunk import _stage_fullgraph_tensor_peer, _tiny_canonic
 def test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths(tmp_path, monkeypatch):
     torch.manual_seed(313)
     model = _tiny_canonical_model(tmp_path, monkeypatch)
-    model._prewarm_checkpoint_shapes()
     _ensure_grad_anchors(torch.device("cpu"))
     model._compiled_word_loop_fullgraph = True
     raw = _stage_fullgraph_tensor_peer(

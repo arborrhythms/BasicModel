@@ -102,7 +102,7 @@ def test_zero_spread_is_pure_decay_bump():
 def test_priming_spread_knob_stamped():
     """<primingSpread> reaches the towers (default 0.25, live)."""
     from configuration_fixtures import parallel_concepts
-    with parallel_concepts(category=True) as path:
+    with parallel_concepts(wide=True) as path:
         model, *_ = _build_model(_resolve_config(path))
     for sp in list(model.conceptualSpaces) + list(model.wholeSpaces):
         assert abs(float(getattr(sp, "_priming_spread")) - 0.25) < 1e-9
@@ -113,7 +113,7 @@ def test_priming_spread_knob_stamped():
 
 def _projected_model(epochs=3):
     from configuration_fixtures import parallel_concepts
-    with parallel_concepts(category=True) as path:
+    with parallel_concepts(wide=True) as path:
         m, *_ = _build_model(_resolve_config(path))
     opt = m.getOptimizer(lr=0.01)
     for e in range(epochs):
