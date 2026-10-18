@@ -205,7 +205,7 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
             choice = language.choose_operation(final_state, active, slots=1)
             final_state = cs.apply_language_choice(final_state, choice)
             binary_ops.append(choice.local_op)
-            binary_valid.append(choice.applied & (choice.kind == 1))
+            binary_valid.append(choice.applied & ((choice.kind == 1) | (choice.kind == 3)))
             selected_unary = choice.applied & (choice.kind == 2)
             unary_op = torch.where(selected_unary, choice.local_op, unary_op)
             unary_valid = unary_valid | selected_unary

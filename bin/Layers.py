@@ -8710,7 +8710,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('slots', torch.zeros(capacity, 3, nDim))
         self.register_buffer('rel_type',
                              torch.zeros(capacity, dtype=torch.long))
-        self.register_buffer('timestamp', torch.zeros(capacity))
+        self.register_buffer('stream', torch.zeros(capacity, 0, dtype=torch.bool))
         self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('c_plus', torch.zeros(capacity))
         self.register_buffer('c_minus', torch.zeros(capacity))
@@ -8725,9 +8725,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # the observe-site push needs no change.
         self.register_buffer('origin',
                              torch.zeros(capacity, dtype=torch.long))
-        # Standalone stores use this timestamp fallback. Model-owned stores
-        # read the absolute model clock; neither clock enters an event band.
-        self.register_buffer('_next_ts', torch.tensor(0, dtype=torch.long))
         # Source text is checkpointed in semantic_extras. A bare state_dict
         # restore has no text until that sidecar is supplied.
         self._texts = []
@@ -9245,12 +9242,19 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        stream = state_dict.get(prefix + 'stream')
+        if stream is not None:
+            self.stream = self.stream.new_zeros(self.capacity, stream.shape[1])
         self._resize_checkpoint_rows(state_dict, prefix)
         self._definition_rows = {}
         self.definitions.rebuild()
         # Legacy checkpoints retain their recorded pair. The retired scalar
         # was provenance, so it must not silently overwrite that evidence.
         state_dict.pop(prefix + 'trust', None)
+        # Checkpoint schema migration only: the removed clock has no live reader.
+        state_dict.pop(prefix + 'timestamp', None)
+        state_dict.pop(prefix + '_next_ts', None)
+        state_dict.setdefault(prefix + 'stream', torch.zeros_like(self.stream))
         # Older checkpoints did not score surprise: unknown is not perfect.
         state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
         old_schema = prefix + 'truth_schema' not in state_dict
@@ -9414,7 +9418,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append_meaning(self, meaning, *, kind="fact", rel_type=None,
-                       trust=0.0, timestamp=None, stream=-1, surprise=-1., evidence=None, order=0,
+                       trust=0.0, stream=-1, surprise=-1., evidence=None, order=0,
                        document_key=None, sentence_index=0, content_key=None, address=None):
         """Commit a complete description with explicit evidential provenance."""
         if not isinstance(meaning, ConceptualMeaning):
@@ -9427,8 +9431,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             raise ValueError("a fact requires assertive meaning, not an interrogative question")
         if not math.isfinite(float(trust)):
             raise ValueError("fact trust must be finite")
-        if timestamp is not None and not math.isfinite(float(timestamp)):
-            raise ValueError("fact timestamp must be finite")
         if type(stream) is not int or stream < -1:
             raise ValueError("index stream must be a row or shared (-1)")
         surprise = float(surprise)
@@ -9497,10 +9499,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         if previous is None:
             self._texts[n] = None
         self._update_semantic_fingerprint(n)
-        context = self.__dict__.get('_write_address')
-        if timestamp is None and context is not None:
-            timestamp = context[3]
-        self.write_timestamp(n, timestamp)
+        self.witness_stream(n, stream)
         if previous is None:
             self.count.fill_(n + 1)
         self._append_leaf_terms(n, terms, complete, stream)
@@ -9508,7 +9507,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append_estimate(self, meaning, *, presence_logits, source_occurrences=(),
-                        stream=None, document=None, trust=0.0, timestamp=None, kind_logit=None):
+                        stream=None, document=None, trust=0.0, kind_logit=None):
         """Append one explicit prediction without granting fact authority.
 
         The estimate's complete role vectors and predicted occupancy live in
@@ -9538,7 +9537,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                for reference in self._expectation_references(provenance)):
             raise ValueError("estimate source occurrence is unavailable")
         index = self.append_meaning(
-            meaning, kind="estimate", rel_type=self.REL_NONE, trust=trust, timestamp=timestamp,
+            meaning, kind="estimate", rel_type=self.REL_NONE, trust=trust,
             **self._estimate_write_address(meaning, document=document, stream=stream))
         identifier = int(self.address_keys[index])
         self._expectation_rows[identifier] = provenance
@@ -9710,9 +9709,9 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
-               trust=0.0, timestamp=None, kind="fact", evidence=None, order=0, **address) -> int:
+               trust=0.0, kind="fact", evidence=None, order=0, **address) -> int:
         """Append one ternary row. ``Null`` slots (``None``) store the zero
-        vector. ``trust`` is clamped to ``[-1, 1]``. ``timestamp`` defaults to
+        vector. ``trust`` is clamped to ``[-1, 1]``.
         the next monotonic tick. Returns the row index, or ``-1`` when the
         store is full."""
         meaning = ConceptualMeaning(
@@ -9721,19 +9720,19 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                          dtype=torch.bool, device=self.slots.device),
             mode="interrogative" if kind == "question" else "assertive")
         return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
-                                   trust=trust, timestamp=timestamp, evidence=evidence, order=order, **address)
+                                   trust=trust, evidence=evidence, order=order, **address)
 
-    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact", evidence=None, order=0, **address) -> int:
+    def append_idea(self, np1, *, trust=0.0, kind="fact", evidence=None, order=0, **address) -> int:
         """Append a one-role description; legacy callers explicitly write facts."""
         return self.append(np1, None, None, rel_type=self.REL_NONE,
-                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order, **address)
+                           trust=trust, kind=kind, evidence=evidence, order=order, **address)
 
     def append_relation(self, np1, vp, np2, *, rel_type=REL_OPERATOR,
-                        trust=0.0, timestamp=None, kind="fact", evidence=None, order=0, **address) -> int:
+                        trust=0.0, kind="fact", evidence=None, order=0, **address) -> int:
         """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
         ``NP VP .``."""
         return self.append(np1, vp, np2, rel_type=rel_type,
-                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order, **address)
+                           trust=trust, kind=kind, evidence=evidence, order=order, **address)
 
     def row(self, idx: int) -> dict:
         """Read slots, evidence, stable provenance and an owned meaning.
@@ -9748,7 +9747,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         return {
             'np1': self.slots[i, 0], 'vp': self.slots[i, 1],
             'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
-            'timestamp': float(self.timestamp[i].item()),
+            'stream': tuple(self.stream[i].nonzero().flatten().tolist()),
             'trust': float(self.trust[i].item()),
             'order': int(self.order[i]),
             'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
@@ -9769,15 +9768,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             'metadata_complete': (not bool(self.metadata_required[i])
                                   or int(self.address_keys[i]) in self._semantic_rows),
         }
-
-    def recent(self, n: int):
-        """Row indices of the ``n`` most-recent rows (descending timestamp) --
-        the AR predictor's recency window."""
-        c = int(self.count.item())
-        if c == 0 or n <= 0:
-            return self.count.new_zeros(0)
-        order = torch.argsort(self.timestamp[:c], descending=True)
-        return order[: int(n)]
 
     def relations(self, rel_type=None):
         """Row indices of RELATION rows (``rel_type != REL_NONE``), optionally
@@ -9981,13 +9971,12 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.compact_leaf_rows(keep)
         self.slots[:n_keep] = self.slots[keep]
         self.rel_type[:n_keep] = self.rel_type[keep]
-        self.timestamp[:n_keep] = self.timestamp[keep]
         self.surprise[:n_keep] = self.surprise[keep]
         self.origin[:n_keep] = self.origin[keep]
         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
                      'address_keys', 'document_keys', 'sentence_content_keys', 'sentence_index', 'witness_count',
                      'metadata_required', 'semantic_fingerprint',
-                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order'):
+                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order', 'stream'):
             values = getattr(self, name)
             values[:n_keep] = values[keep]
         alive = set(int(value) for value in self.address_keys[:n_keep].tolist())
@@ -9999,7 +9988,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.slots[n_keep:c].zero_()
         self.sentence_content_keys[n_keep:c].zero_()
         self.rel_type[n_keep:c].zero_()
-        self.timestamp[n_keep:c].zero_()
+        self.stream[n_keep:c].zero_()
         self.surprise[n_keep:c].fill_(-1.)
         self.origin[n_keep:c].zero_()
         self.role_mask[n_keep:c].zero_()
@@ -10031,11 +10020,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         """Clear the store (idempotent)."""
         self.slots.zero_()
         self.rel_type.zero_()
-        self.timestamp.zero_()
+        self.stream.zero_()
         self.surprise.fill_(-1.)
         self.count.zero_()
         self.origin.zero_()
-        self._next_ts.zero_()
         self._texts = []
         self.role_mask.zero_()
         self.record_kind.zero_()
@@ -10716,8 +10704,8 @@ class BracketExpectation(Layer):
         self._inter_contrastive_temp = 0.1
 
         # Consolidated durable history is stored once in TernaryTruthStore.
-        # get_stm_chain retains its legacy global-recency adapter for other
-        # readers; the predictor uses the bounded per-row _inter_context
+        # get_stm_chain reads durable stream history; the predictor uses its
+        # bounded per-row _inter_context
         # observation view so unrelated batch rows and provisioned facts
         # cannot become a sentence's predecessor. The host appends durable
         # observations to the store; this layer skips its duplicate deque.
@@ -11546,69 +11534,27 @@ class BracketExpectation(Layer):
             sentence_kinds=sentence_kinds)
 
     def get_stm_chain(self, n=None, b=0):
-        """Return the last ``n`` LTM end-states for row ``b``.
+        """A stream's durable rows in store order, oldest first.
 
-        Args:
-          n: number of most-recent end-states to return; ``None`` (the
-            default) returns the entire chain for the row.
-          b: batch row index (default 0 — the test uses B=1 / row 0).
-
-        Returns a python ``list`` of time-ordered tuples (oldest first,
-        most-recent last), each ``(depth:int, payload:[depth,D] tensor,
-        trust:float|None)``. Returns ``[]`` for an out-of-range row
-        or an empty chain.
-
-        LTM consolidation FU3 (Change 2): when wired to the unified store
-        (``self._ltm_store is not None``) the chain is read from the GLOBAL
-        ``TernaryTruthStore`` recency window, NOT this layer's per-row deque.
-        The store is global (one recency window), so ``b`` is IGNORED -- this
-        is the correct semantics for B=1 / a single conversation; B>1 batched
-        training shares the one global recency window across rows.
-        Estimates are retained training targets, not external sequence
-        observations.  Exclude their tagged rows before taking the recency
-        window, so an estimate cannot become a future predictor input merely
-        because it shares the durable store with its observed counterpart.
-        The remaining rows are ordered by descending timestamp and then
-        reversed to OLDEST-FIRST time order before reconstructing each row as a
-        ``(depth, payload, tet)`` tuple matching the deque convention:
-          * occupied NP1 only -> ``(1, np1[None, :], trust)``;
-          * occupied NP1/VP -> ``(2, stack([np1, vp]), trust)``;
-          * an occupied NP2 -> ``(3, stack([np1, vp, np2]), trust)`` -- INFIX
-            ``[idea1, predicate, idea2]`` (the store's native ``[NP1, VP, NP2]``
-            order; idea1 may be present without a predicate, so it anchors the
-            triple). The consolidated ``_reduce_end_state_to_root`` reads slot
-            0 = idea1 (the subject / always-present anchor) as the AR root.
+        The bounded predictor view also contains live, not-yet-written frames;
+        it is not this full history. Estimates are not external observations.
+        Re-witnessing an address preserves its place in the store.
         """
         store = self._ltm_store
         if store is not None:
-            total = len(store)
-            if total == 0:
+            if int(b) < 0 or (n is not None and int(n) <= 0):
                 return []
-            if n is not None and int(n) <= 0:
-                return []                            # match the deque path
-            estimate_kind = store.KINDS.index("estimate")
-            eligible = (store.record_kind[:total] != estimate_kind)
-            idxs = torch.arange(
-                total, device=store.timestamp.device, dtype=torch.long)[eligible]
-            if not idxs.numel():
-                return []
-            # Select from the full non-estimate history: asking for the last
-            # two external states must not return fewer merely because a newer
-            # retained forecast lies between them.
-            order = torch.argsort(store.timestamp[idxs], descending=True)
-            idxs = idxs[order]
+            indices = store.stream_rows(b)
+            indices = indices[store.record_kind[indices] != store.KINDS.index('estimate')]
             if n is not None:
-                idxs = idxs[:int(n)]
-            idx_list = list(reversed([int(i) for i in idxs.tolist()]))
-            out = []
-            for i in idx_list:
+                indices = indices[-int(n):]
+            result = []
+            for i in indices.tolist():
                 occupied = store.role_mask[i].nonzero(as_tuple=True)[0]
-                if not occupied.numel():
-                    continue
-                depth = int(occupied[-1]) + 1
-                payload = store.slots[i, :depth].clone()
-                out.append((depth, payload, float(store.trust[i])))
-            return out
+                if occupied.numel():
+                    depth = int(occupied[-1]) + 1
+                    result.append((depth, store.slots[i, :depth].clone(), float(store.trust[i])))
+            return result
         bi = int(b)
         if bi < 0 or bi >= len(self._stm_end_states):
             return []

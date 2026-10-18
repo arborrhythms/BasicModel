@@ -69,6 +69,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                               order=-1 if program.leaf_orders is None else int(program.leaf_orders[word]),
                               children=(), leaves=(word,), has_point=has_point))
             continue
+        if kind == 3:
+            stack[-2:] = reversed(stack[-2:])
+            continue
+        unary_position = max(0, word) if kind == 2 else 0
+        if unary_position:
+            stack.append(stack.pop(-1-unary_position))
         arity = 2 if kind == 1 else 1
         catalog = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
         if kind not in (1, 2) or not 0 <= local < len(catalog) or len(stack) < arity:
@@ -159,6 +165,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                         cue=None if cue is None else cue['value'],
                         content=description['value'] if mode == 'pronoun' else parent['value'])
         stack.append(parent)
+        if unary_position:
+            stack.insert(len(stack)-1-unary_position, stack.pop())
     if len(stack) not in (1, 3):
         raise ValueError('a completed field must have one or three slots')
 
@@ -553,8 +561,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             subject_word_id=subject_word_id(role_nodes[0]),
             factored_refs=factored_refs,
             **evidence,
-            eternal=relation is None and node['rule'] is None and node['ref'] > 0
-            and program.symbol_when is None,
             **bands(root))
         if equality:
             from ThoughtReferences import bindings

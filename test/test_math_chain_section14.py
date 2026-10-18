@@ -49,7 +49,7 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     root = question(root, (('referent',0),))
     row = store.append_meaning(root, kind='question', evidence=(0.,0.),
                                document_key='original question', sentence_index=1)
-    address, timestamp = store.occurrence_of(row), float(store.timestamp[row])
+    address, position = store.occurrence_of(row), float(store.sentence_index[row])
     column = slot_key(int(store.address_keys[row]), 0)
     assert store.slot_of_reference(column) == (row,0)
     assert store.semantic_reference(column) == ('slot',address,0)
@@ -63,7 +63,7 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     assert resolved.role_refs[0] == ('sym',5)
     assert bindings(resolved)['_bound_roles'] == (('referent',0),)
     assert not bindings(resolved)['_pending']
-    assert store.occurrence_of(row) == address and float(store.timestamp[row]) == timestamp
+    assert store.occurrence_of(row) == address and float(store.sentence_index[row]) == position
     # Rebuilding the derived posting (as on checkpoint load) retains its ID.
     store._semantic_rows = dict(store._semantic_rows)
     assert store.slot_of_reference(column) == (row,0)
@@ -99,7 +99,7 @@ def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypat
         assert bindings(result.meaning)['_bound_roles'] == (('referent',2),)
         from BindingAnswers import cost
         owner = SimpleNamespace(word_concepts=lambda _: (9,), _csw_row_of=lambda _:0,
-            similarity_codebook=SimpleNamespace(lookup_rows=lambda _:torch.ones(1,root.roles.shape[-1])))
+            similarity_codebook=SimpleNamespace(lookup_rows=lambda _,**kw:torch.ones(1,root.roles.shape[-1])))
         scored = SimpleNamespace(_concept_owner=lambda:owner,symbolSpace=SimpleNamespace(ltm_store=store))
         assert .5 <= cost(scored,result.meaning,'unrelated') < 1.
 

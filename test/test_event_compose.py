@@ -19,7 +19,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
 from Language import LiftLayer, LowerLayer, PrepositionLayer
-from Spaces import event_when_encoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
+from Spaces import event_when_encoding, _WHEN_PERIOD
 
 # 2026-07-04 encoding pass: .when is the 4-dim start ladder; built through
 # the one construction seam so LiftLayer/tense share omega pairs.
@@ -92,8 +92,8 @@ class TestPrepositionWhere(unittest.TestCase):
         X = _event(torch.randn(_NWHAT).tanh(), torch.tensor([0.5, -0.2]), when)
         out = prep.compose(P, X)
         self.assertTrue(torch.equal(out, X))
-        left, right = prep.reverse(out)
-        self.assertTrue(torch.equal(left, X) and torch.equal(right, X))
+        left, right = prep.reverse(out, marker=P)
+        self.assertTrue(torch.equal(left, P) and torch.equal(right, X))
 
     def test_preposition_content_only_passthrough(self):
         # Parameter-free construction (no content width) -> safe pass-through

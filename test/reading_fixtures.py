@@ -65,6 +65,15 @@ def record_reading(language, entry):
             frames.append(values.new_zeros(3, width))
             references.append((-1, -1))
             continue
+        if kind == 3:
+            left,right=stack[-2:]
+            stack[-2:]=[right,left]
+            frames.append(torch.stack((left[0],right[0],right[0])))
+            references.append((left[1],right[1]))
+            continue
+        position=max(0,word) if kind==2 else 0
+        if position:
+            stack.append(stack.pop(len(stack)-1-position))
         arity = 2 if kind == 1 else 1
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
         rule = rules[local]
@@ -73,8 +82,12 @@ def record_reading(language, entry):
         name = rule.method_name
         if (kind, local) not in operations:
             cls = Language.GRAMMAR_LAYER_CLASSES[name]
-            operations[kind, local] = (cls(width, width) if name in
-                ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls())
+            if issubclass(cls,Language.MarkerUnaryLayer):
+                base=Language.GRAMMAR_LAYER_CLASSES[cls.marker_base](width,width)
+                operations[kind,local]=cls(base)
+            else:
+                operations[kind, local] = (cls(width, width) if name in
+                    ('lift', 'verb', 'lower', 'surface', 'preposition', 'sum', 'implies') else cls())
         result = operations[kind, local].compose(
             *(value.reshape(1, 1, -1) for value, _ in operands)).reshape(-1)
         head = getattr(rule, 'head_role', 0)
@@ -82,6 +95,8 @@ def record_reading(language, entry):
             head = 2
         identity = operands[head - 1][1] if head else -1
         stack.append((result, identity))
+        if position:
+            stack.insert(len(stack)-1-position,stack.pop())
         frames.append(torch.stack((operands[0][0], operands[1][0] if arity == 2 else result * 0, result)))
         references.append((operands[0][1], operands[1][1] if arity == 2 else -1))
     end = values.new_zeros(3, width)

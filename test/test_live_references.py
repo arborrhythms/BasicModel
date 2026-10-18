@@ -3,7 +3,7 @@ from ReferenceContext import ReferenceBank, resolve_operand
 
 
 def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
-    """The failed development verb/tense suffix retains three native roles."""
+    """A verb with a unary surface attachment retains three native roles."""
     from dataclasses import replace
     from types import SimpleNamespace
     import weakref
@@ -19,8 +19,8 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
     language, entry = language_and_program()
     language._compose_binary_rules = (SimpleNamespace(method_name='verb',
         clause_form='VP', head_role=1, predicate_identity='verb'),)
-    language._compose_unary_rules = (SimpleNamespace(method_name='tense',
-        scope_transparent=True, head_role=0),)
+    language._compose_unary_rules = (SimpleNamespace(method_name='surface_unary',
+        scope_transparent=True, head_role=1),)
     point, other = entry.leaves
     # The numerical journal says the verb's right operand is the earlier
     # relation. Its head's point-valued identity survives the unary suffix.

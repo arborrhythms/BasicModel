@@ -49,7 +49,7 @@ def test_selected_clause_tree_owns_its_local_references(monkeypatch):
     assert len(clause.children) == 1
 
 
-def test_bare_unlocated_np_reuses_its_concept_identity(monkeypatch):
+def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
     from Layers import TernaryTruthStore
     _, registry, language, entry, _ = _nested(monkeypatch)
     entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
@@ -59,10 +59,10 @@ def test_bare_unlocated_np_reuses_its_concept_identity(monkeypatch):
                     end_state=torch.cat((entry.leaves[:1], torch.zeros_like(entry.end_state[1:]))))
     clause = finish_reading(language, entry, registry=registry)
     store = TernaryTruthStore(entry.leaves.shape[-1], capacity=4)
-    store.configure_clause_index(allocate=lambda _point: pytest.fail('eternal NP minted an identity'),
+    store.configure_clause_index(allocate=lambda _point: pytest.fail('direct NP minted a concept'),
                                  concept_point=lambda cid: entry.leaves[0] if cid == 1 else None)
     row = store.write_clause(clause)
-    assert int(store.row_ids[row]) == 1
+    assert int(store.row_ids[row]) == int(store.address_keys[row]) != 1
     assert store.write_clause(clause) == row
     assert len(store) == 1
 

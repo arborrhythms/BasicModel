@@ -50,6 +50,7 @@ class RoutingCoverage:
             if kind == 0:
                 shifted.append(word)
                 continue
+            kind = 1 if kind == 3 else kind  # transpose uses the binary catalogue
             if kind not in self.catalog or not 0 <= local < len(self.catalog[kind]):
                 raise ValueError('unknown committed rule cannot disappear from coverage')
             rule = self.catalog[kind][local]

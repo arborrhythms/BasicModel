@@ -101,7 +101,12 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     assert store.meaning_of(row).role_mask.tolist() == [True, False, False]
     assert store.refs[row].tolist() == [1, 3, -1]
     torch.testing.assert_close(store.where[row], clause.where)
-    torch.testing.assert_close(store.when[row], clause.when)
+    from Spaces import WhenEncoding
+    from Occurrence import document_digest
+    assert int(store.sentence_index[row]) == 0
+    assert bytes(store.document_keys[row].tolist()) == document_digest(('direct', 'observation'))
+    encoding = WhenEncoding(n_when=4).set_capacity(store.capacity)
+    assert int(encoding.decode_index(store.when[row])) == 0
 
 
 def test_recursive_absolute_clauses_each_write_one_idea():

@@ -145,7 +145,7 @@ class TestProvisioning(unittest.TestCase):
         self.assertEqual(store.relations().tolist(), definitions)
 
     @pytest.mark.usefixtures('eager_reading')
-    def test_provisioned_trust_and_earliest_timestamps(self):
+    def test_provisioned_trust_and_store_order(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
         rows = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
@@ -154,14 +154,8 @@ class TestProvisioning(unittest.TestCase):
         self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
         self.assertAlmostEqual(store.row(rows[1])["trust"], 0.8, places=5)
         self.assertAlmostEqual(store.row(rows[2])["trust"], 0.7, places=5)
-        # Definitions and assertions share one clock. Provisioning preserves
-        # assertion order even though DEF rows occupy intervening ticks.
-        stamps = [store.row(i)["timestamp"] for i in rows]
-        self.assertEqual(stamps, sorted(set(stamps)))
-        next_tick = float(store._next_ts)
-        self.assertGreater(next_tick, max(stamps))
-        nxt = store.append_idea(torch.ones(store.nDim))
-        self.assertEqual(store.row(nxt)["timestamp"], float(m.when_time))
+        assert rows == sorted(rows)
+        assert all(store.row_ids[row] == store.address_keys[row] for row in rows)
 
     @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_rows_are_real_encodings(self):
@@ -375,8 +369,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
     def test_state_dict_keys_present(self):
         m = _make_model(_ON_CONFIG)
         sd = m.state_dict()
-        for suffix in ("slots", "rel_type", "timestamp", "c_plus", "c_minus", "count",
-                       "_next_ts"):
+        for suffix in ("slots", "rel_type", "stream", "c_plus", "c_minus", "count"):
             self.assertIn(
                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,
                 f"ltm_store.{suffix} must ride the state_dict")
@@ -437,19 +430,18 @@ class TestDiscourseConsolidationWiring(unittest.TestCase):
 
 
 class TestStoreBackedChain(unittest.TestCase):
-    def test_get_stm_chain_reads_recent_oldest_first(self):
-        # FU3: get_stm_chain reconstructs rows from store.recent() in
-        # OLDEST-FIRST time order (recent() is descending timestamp).
+    def test_get_stm_chain_reads_stream_oldest_first(self):
+        # The stream's occurrence rows retain store order.
         from Layers import TernaryTruthStore as T
         m = _make_model(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
         disc = m.symbolSpace.expectation
         store.reset()
         D = store.nDim
-        a = torch.zeros(D); a[0] = 1.0           # oldest (ts 0)
-        b = torch.zeros(D); b[1] = 1.0           # newest (ts 1)
-        store.append_idea(a, trust=0.5, timestamp=0.)
-        store.append_idea(b, trust=0.6, timestamp=1.)
+        a = torch.zeros(D); a[0] = 1.0           # oldest row
+        b = torch.zeros(D); b[1] = 1.0           # newest row
+        store.append_idea(a, trust=0.5, stream=0)
+        store.append_idea(b, trust=0.6, stream=0)
         chain = disc.get_stm_chain()
         self.assertEqual(len(chain), 2)
         # oldest-first: chain[0] is 'a', chain[-1] is 'b'.
@@ -474,7 +466,7 @@ class TestStoreBackedChain(unittest.TestCase):
         np1 = torch.zeros(D); np1[0] = 1.0       # idea1
         vp = torch.zeros(D); vp[1] = 1.0         # predicate
         np2 = torch.zeros(D); np2[2] = 1.0       # idea2
-        store.append_relation(np1, vp, np2, rel_type=T.REL_IMPLIES, trust=0.7)
+        store.append_relation(np1, vp, np2, rel_type=T.REL_IMPLIES, trust=0.7, stream=0)
         chain = disc.get_stm_chain()
         self.assertEqual(len(chain), 1)
         d, p, t = chain[0]
@@ -494,7 +486,7 @@ class TestStoreBackedChain(unittest.TestCase):
         D = store.nDim
         for i in range(5):
             v = torch.zeros(D); v[i % D] = 1.0
-            store.append_idea(v, trust=0.1 * i, timestamp=float(i))
+            store.append_idea(v, trust=0.1 * i, stream=0)
         chain = disc.get_stm_chain(n=2)
         self.assertEqual(len(chain), 2)
         # The two MOST RECENT, oldest-first: rows 3 then 4.
@@ -570,7 +562,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
         cw = max(1, min(int(store.content_width), D))
         a = torch.zeros(D); a[0] = 1.0
         b = torch.zeros(D); b[1] = 1.0
-        store.append_idea(a, trust=0.5, timestamp=0.)                     # conversation
+        store.append_idea(a, trust=0.5)                     # conversation
         i_prov = store.append_idea(a, trust=0.9, evidence=(.9, 0.))
         store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov")
         i_user = store.append_idea(b, trust=-0.5, evidence=(0., .5))
@@ -888,7 +880,7 @@ class TestSerialForwardAppendsStore(unittest.TestCase):
         # Deque stays empty (the store-append is the single source).
         self.assertEqual(len(disc._stm_end_states[0]), 0)
         # The store-backed chain reflects the store.
-        self.assertEqual(len(disc.get_stm_chain()), len(store))
+        self.assertEqual(len(disc.get_stm_chain()), len(store.stream_rows(0)))
 
 
 if __name__ == "__main__":

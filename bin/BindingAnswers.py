@@ -94,7 +94,7 @@ def _matches(model, meaning, word, values):
     return False
 
 
-def cost(model, meaning, target):
+def cost(model, meaning, target, *, stream=0):
     """An exact bound identity costs zero; other bindings receive code error.
 
     This is a loss-side answer term for the existing paired chooser rule.
@@ -113,6 +113,6 @@ def cost(model, meaning, target):
     if not rows:
         return meaning.roles.new_ones(())
     basis = owner.similarity_codebook.lookup_rows(torch.tensor(
-        rows, device=meaning.roles.device, dtype=torch.long)).detach()
+        rows, device=meaning.roles.device, dtype=torch.long),stream=stream).detach()
     distance = (basis - values[0][1].detach()).square().mean(-1).min()
     return .5 + .5 * distance / (1 + distance)

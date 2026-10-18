@@ -63,7 +63,7 @@ def scorer(model, state, observation, sentence):
             answer = data.what(questions[row]) if row < len(questions) else None
             if answer is not None and answer.available:
                 from BindingAnswers import cost
-                return cost(model, result.meaning, answer.what)
+                return cost(model, result.meaning, answer.what,stream=row)
         return 0. if value is None else value[row] if value.ndim else value
     return score,trials
 

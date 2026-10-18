@@ -105,7 +105,7 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
         meaning = replace(meaning, role_refs=(store.occurrence_of(occurrence), ('sym', 3), ('sym', 2)))
     row = store.write_clause(Clause(meaning, relation='part', refs=refs),
                              document_key='pending', sentence_index=2)
-    address, document, timestamp = store.occurrence_of(row), store.document_keys[row].clone(), store.timestamp[row].clone()
+    address, document, position = store.occurrence_of(row), store.document_keys[row].clone(), store.sentence_index[row].clone()
     if forward_first:
         assert store.row(row)['pending'] and int(store.refs[row, 0]) == -1
         assert store._forward_addresses((17,)) == {int(store.address_keys[row])}
@@ -119,7 +119,7 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     assert not store.row(row)['pending']
     assert store.occurrence_of(row) == address
     torch.testing.assert_close(store.document_keys[row], document, rtol=0, atol=0)
-    torch.testing.assert_close(store.timestamp[row], timestamp, rtol=0, atol=0)
+    torch.testing.assert_close(store.sentence_index[row], position, rtol=0, atol=0)
     assert int(store.refs[row, 0]) == int(store.row_ids[occurrence])
     if forward_first:
         assert not store._forward_addresses((17,))

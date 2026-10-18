@@ -99,7 +99,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
 def test_estimate_pair_overflow_raises_without_publishing_half_a_pair():
     store = TernaryTruthStore(4, capacity=2)
     source = _meaning(1.0)
-    source_row = store.append_meaning(source, kind="observation")
+    source_row = store.append_meaning(source, kind="observation", stream=0)
     with pytest.raises(OverflowError, match='forgetting'):
         store.append_expectation_pair(
             _meaning(.5), _meaning(2.0),
@@ -114,12 +114,12 @@ def test_retained_estimates_do_not_enter_the_generic_ltm_chain():
     """A forecast is available to its residual policy, not ordinary LTM reads."""
     store = TernaryTruthStore(4, capacity=8)
     source = _meaning(1.0)
-    source_row = store.append_meaning(source, kind="observation")
+    source_row = store.append_meaning(source, kind="observation", stream=0)
     estimate_row, observed_row = store.append_expectation_pair(
         _meaning(.5), _meaning(2.0),
         presence_logits=torch.tensor([1.0, 0.0, -1.0]),
         source_occurrences=(store.row(source_row)["occurrence"],),
-        stream=("external", "chain"), document="chain")
+        stream=("external", "chain"), document="chain", index_stream=0)
 
     chain = BracketExpectation.get_stm_chain(
         SimpleNamespace(_ltm_store=store))

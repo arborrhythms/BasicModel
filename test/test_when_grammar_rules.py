@@ -67,29 +67,6 @@ class TestBindGrammarRules(unittest.TestCase):
         self.assertEqual(up[0].rhs_symbols, ("bind_argin1", "bind_argin2"))
 
 
-class TestTenseGrammarRules(unittest.TestCase):
-    """The broad role-only grammar declares unary ``tense`` as a live .when op.
-
-    ``aspect`` remains a code-level helper for morphology, but is no longer a
-    standalone grammar rule; the complete grammar reserves that slot for a
-    future rewrite path.
-    """
-
-    def test_tense_rule_present_and_aspect_not_live(self):
-        g = _load_complete()
-        names = {r.method_name for r in g.rules_upward if r.method_name}
-        self.assertIn("tense", names)
-        self.assertNotIn("aspect", names)
-
-    def test_tense_forward_reverse_pairing(self):
-        g = _load_complete()
-        up = [r for r in g.rules_upward if r.method_name == "tense"]
-        dn = [r for r in g.rules_downward if r.method_name == "tense"]
-        self.assertTrue(up, "no forward tense rule")
-        self.assertTrue(dn, "no reverse tense rule")
-        self.assertEqual(up[0].lhs, "tense_argout1")
-        self.assertEqual(up[0].rhs_symbols, ("tense_argin1",))   # UNARY: one input
-
 class TestPrepositionSignalRouterBinding(unittest.TestCase):
     """Task 1.4: the auto-wiring contract -- ``_wire_signal_router_grammar
     _ops`` resolves the ``preposition`` rule to a ``PrepositionLayer`` via
@@ -109,6 +86,8 @@ class TestPrepositionSignalRouterBinding(unittest.TestCase):
     def test_resolve_rule_layer_yields_preposition_layer(self):
         from Language import SymbolSubSpace
         ss = SymbolSubSpace.__new__(SymbolSubSpace)   # bypass the multi-space ctor
+        torch.nn.Module.__init__(ss)
+        ss.muxedSize = 8
         ss._host_layer_registry = {}              # the only attr the method reads
         layer = ss._resolve_rule_layer('CS', 'preposition')
         self.assertIsInstance(layer, PrepositionLayer)

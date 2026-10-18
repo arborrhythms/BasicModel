@@ -78,14 +78,23 @@ class SentenceField(FieldTraversal):
                 torch.arange(width, device=rows.device)[None], -1).amax(-1)
             groups = torch.where(all_last == index, 0, group)
             columns = [3 * width + groups * (2 * K) + r for r in range(2 * K)]
+        from Language import TheGrammar, GRAMMAR_LAYER_CLASSES
+        pairs = torch.tensor([bool(getattr(GRAMMAR_LAYER_CLASSES.get(rule.method_name), 'preserves_pair', False))
+                              for rule in TheGrammar.rules], device=rows.device)
         for column in columns:
             at = (torch.full((B, 1), column, device=rows.device, dtype=torch.long)
                   if isinstance(column, int) else column[:, None])
+            rule_ids = language[4].gather(1, at).squeeze(1)
+            pair = pairs[rule_ids.clamp(0,len(pairs)-1)] if pairs.numel() else torch.zeros_like(rows)
             binary = rows & language[6].gather(1, at).squeeze(1) & (language[5].gather(1, at).squeeze(1) == 2)
+            transpose = binary & pair
+            binary &= ~pair
             if K > 1:
                 merged = torch.maximum(window[:, 0], window[:, 1])
                 folded = torch.cat((merged[:, None], window[:, 2:], torch.zeros_like(window[:, :1])), 1)
                 window = torch.where(binary[:, None, None], folded, window)
+                swapped = torch.cat((window[:,1:2], window[:,:1], window[:,2:]),1)
+                window = torch.where(transpose[:,None,None], swapped, window)
         self.support_window = window
 
     def placements(self):
@@ -151,7 +160,7 @@ class SentenceField(FieldTraversal):
         """
         return torch.where(self.scope, self.full_admission().detach().bool(), prior)
 
-    def costs(self, record, recovered, *, defined, step_cost):
+    def costs(self, record, recovered, *, defined, step_cost, programs=()):
         from AttentionObjective import field_cost
         admission = self.full_admission()
         B, W, D = record.word_values.shape
@@ -176,6 +185,10 @@ class SentenceField(FieldTraversal):
         costs = field_cost(self.observed, recovered, admission, self.scope,
             floor=self.model.attention_floor, defined=defined,
             iterations=self.iterations, step_cost=step_cost)
+        steps = recovered.new_tensor([0 if entry is None else int((entry.actions[:,0] > 0).sum())
+                                      for entry in programs]) if programs else recovered.new_zeros(B)
+        costs['compose_steps'] = steps
+        costs['work'] = costs['work'] + steps*step_cost
         residual = self.observed.abs().sum(-1)
         unread = self.scope.clone()
         for entry in self.reads:

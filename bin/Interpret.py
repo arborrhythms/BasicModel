@@ -69,8 +69,8 @@ class InterpretLayer(GrammarLayer):
         identity = getattr(native, 'identity', None)
         identity_key = None
         if identity is not None and form is None and parts:
-            atom_rows = set(identity.atoms.values())
-            if all(part in atom_rows for part in parts):
+            native_rows = set(identity.atoms.values()) | set(identity.word_rows.values())
+            if all(part in native_rows for part in parts):
                 form = identity.read_parts(parts)
         if identity is not None and isinstance(form, (str, bytes)):
             from WordIdentity import bytes_of
@@ -194,12 +194,12 @@ class InterpretLayer(GrammarLayer):
             raw = bytes_of(raw) if isinstance(raw, str) else raw
             if raw not in identity.words:
                 continue
-            parts = tuple(identity.atoms[a] for a in identity.words[raw])
+            parts = identity.parts(raw)
             self._pending[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
             for part in parts:
                 cs.add_part(word, part)
             if word not in self._field_pending:
-                cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True)
+                cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True, coactive=True)
         for word in tuple(index.word_ids):
             old = index.description(word)
             if not old or not old['forms']:
@@ -208,12 +208,12 @@ class InterpretLayer(GrammarLayer):
             raw = bytes_of(raw) if isinstance(raw, str) else raw
             if raw not in identity.words:
                 continue
-            parts = tuple(identity.atoms[a] for a in identity.words[raw])
+            parts = identity.parts(raw)
             value = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
             for part in parts:
                 cs.add_part(word, part)
             for obj in index.objects(word):
-                cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True)
+                cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True, coactive=True)
                 row = index.row(word, obj)
                 store = index._store()
                 store._definition_rows[int(store.address_keys[row])] = value
@@ -249,7 +249,6 @@ class InterpretLayer(GrammarLayer):
             raise ValueError('DEF requires distinct, live native identities')
         row = index.row(word, obj)
         if row is not None:
-            store.write_timestamp(row)
             store.witness_count[row] += 1
             return row
         self._preflight(inventory=False, word=word)

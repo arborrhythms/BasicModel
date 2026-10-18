@@ -90,7 +90,7 @@ def test_26_full_store_refuses_the_whole_word_transaction():
     assert before == (alloc.next_id, dict(alloc.placement), dict(alloc.layer()._tensor_rows), len(store))
 
 
-def test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append():
+def test_27_definition_rewitness_keeps_its_when_and_store_position():
     m = model()
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     first = admit(m, 'hello')
@@ -99,14 +99,16 @@ def test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append():
     m._advance_when_time()
     admit(m, 'there')
     count = len(store)
-    assert int(store.recent(1)[0]) != r0
+    witness = int(store.witness_count[r0])
+    address = int(store.address_keys[r0])
     m._advance_when_time()
     assert admit(m, 'hello') == first
     assert len(store) == count
-    assert int(store.recent(1)[0]) == r0
+    assert int(store.witness_count[r0]) == witness + 1
+    assert int(store.address_keys[r0]) == address
     torch.testing.assert_close(store.when[r0], when, atol=0, rtol=0)
     chain = m.symbolSpace.ensure_sentence_expectation().get_stm_chain(n=count)
-    assert len(chain) == count
+    assert len(chain) == len(store.stream_rows(0))
 
 
 def test_28_forgotten_definition_does_not_survive_in_any_lookup():

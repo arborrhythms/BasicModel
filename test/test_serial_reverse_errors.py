@@ -7,7 +7,7 @@ pseudo-inverses (union/intersection/conjunction/disjunction no-basis
 tails; isEqual/isPart/part/query; contextual bind), the ``unreduce``
 identity-stub sanction (revoked), and ``SyntacticLayer.reverse``'s
 silent non-invertible skip. Rules with REAL inverses are untouched
-(tense, lower's recommender/balanced split, union/difference's
+(lower's recommender/balanced split, union/difference's
 ∅-decomposition, generic's identity -- whose forward IS the identity, so
 ``invertible`` flips True as the trivially-satisfied WRITE verdict).
 """
@@ -81,13 +81,7 @@ def test_recommender_path_still_runs_with_basis():
 
 def test_real_inverses_untouched():
     """(b): rules with faithful reverses keep working."""
-    from Language import TenseLayer, SynthesizeLayer, GenericLayer
-    from Spaces import event_when_encoding
-    enc = event_when_encoding(4)
-    head = torch.randn(1, 1, 4)
-    x = torch.cat([head, enc.encode(1000).expand(1, 1, -1)], dim=-1)
-    t = TenseLayer(); t.set_op("PAST")
-    assert torch.allclose(t.reverse(t.forward(x)), x, atol=1e-5)
+    from Language import SynthesizeLayer, GenericLayer
     fu = SynthesizeLayer()
     p = torch.randn(2, 3, 8)
     left, right = fu.reverse(p)

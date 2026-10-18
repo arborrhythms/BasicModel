@@ -18,7 +18,7 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from Spaces import WhenRangeEncoding, _WHEN_PERIOD, _WHEN_TENSE_STEP
+from Spaces import WhenRangeEncoding, _WHEN_PERIOD
 
 
 def _enc(maxT=_WHEN_PERIOD):
@@ -126,9 +126,9 @@ def test_next_previous_move_time_by_step():
     base = _WHEN_PERIOD // 8
     enc = _enc(); enc.t = base
     c, _ext = enc.decode(enc.next())
-    assert math.isclose(float(c), base + _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(c), base + 1.0, abs_tol=0.05)
     c, _ext = enc.decode(enc.previous())
-    assert math.isclose(float(c), base - _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(c), base - 1.0, abs_tol=0.05)
 
 
 # ---------------------------------------------------------------------------

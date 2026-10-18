@@ -260,7 +260,7 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     owner = columns.owner
     owner._closed_clause_store = lambda: store
     owner._order0_inventory_row = lambda physical: physical < 4
-    owner.similarity_codebook = SimpleNamespace(W=torch.eye(4), lookup_rows=lambda rows: torch.eye(4)[rows])
+    owner.similarity_codebook = SimpleNamespace(W=torch.eye(4), lookup_rows=lambda rows,**kw: torch.eye(4)[rows])
     monkeypatch.setattr(Spaces, '_concept_alloc_of', lambda _: SimpleNamespace(
         layer=lambda: SimpleNamespace(_tensor_row_keys={i: i for i in range(4)})))
     prediction = SimpleNamespace(roles=torch.zeros(3, 4))

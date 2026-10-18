@@ -148,6 +148,8 @@ class ComposeLessonStates:
             if state['kind'] == 1:
                 right, left = stack.pop(), stack.pop()
                 stack.append(left + right)
+            elif state['kind'] == 3:
+                stack[-2:] = reversed(stack[-2:])
             elif state['kind'] == 2:
                 # Unary operations preserve the source leaves, even if lossy.
                 pass
@@ -264,7 +266,7 @@ def compose_loss(language, programs, lessons, *, errors=None):
     return errors.total()
 
 
-def generate_loss(language, programs, lessons, registry, word_code, *, errors=None):
+def generate_loss(language, programs, lessons, registry, word_code, *, errors=None, word_code_by_stream=None):
     """Learn declared generate choices from separately supplied answer trees.
 
     Called only after the student's own output is fixed. The input's selected
@@ -282,7 +284,7 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
     n_binary = len(language._generate_binary_ops)
     stop = n_binary + len(language._generate_unary_ops)
     values, targets, numerical = [], [], []
-    for program, lesson in zip(programs, lessons):
+    for b,(program, lesson) in enumerate(zip(programs, lessons)):
         supplied = None if lesson is None else lesson.get("generation")
         if supplied is None:
             continue
@@ -298,7 +300,8 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
         roles = (program.leaves[indices[0]].detach(), meaning.roles[1].detach(),
                  program.leaves[indices[1]].detach())
         words = supplied["text"].split()
-        codes = [word_code(word) for word in words]
+        codes = [word_code(word) if word_code_by_stream is None else word_code_by_stream(word,b)
+                 for word in words]
         if any(code is None for code in codes):
             # An answer-only word is not admitted by reading its label. It
             # becomes teachable after ordinary input has introduced it.

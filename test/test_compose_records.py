@@ -28,6 +28,7 @@ def test_retained_trial_reconstructs_every_admitted_leaf(committed):
     language = SimpleNamespace(
         _cs_binary_rule_ids=rules[mask & (arities == 2)].unique(),
         _cs_unary_rule_ids=rules[mask & (arities == 1)].unique(),
+        language_layer=SimpleNamespace(operation_layer=SimpleNamespace(pair_rewrites=())),
         local_op_from_rule_ids=LanguageSpace.local_op_from_rule_ids)
     trace = SimpleNamespace(choices=lambda: (rules, arities, mask),
                             _choice_positions=saved['positions'])
@@ -73,6 +74,7 @@ def _program_fixture():
     trace = SimpleNamespace(choices=lambda: (ids, arities, mask),
                             _choice_positions=positions)
     language = SimpleNamespace(_cs_binary_rule_ids=torch.tensor([10]),
+                               language_layer=SimpleNamespace(operation_layer=SimpleNamespace(pair_rewrites=())),
                                _cs_unary_rule_ids=torch.tensor([11]),
                                local_op_from_rule_ids=LanguageSpace.local_op_from_rule_ids)
     model = SimpleNamespace(_reconstruction_stack=lambda: trace, languageSpace=language,
@@ -81,23 +83,23 @@ def _program_fixture():
     return model, trace, ids
 
 
-def test_older_slot_unary_is_preserved_in_the_committed_postfix_program():
+def test_older_slot_unary_is_preserved_in_the_committed_program():
     model, _, _ = _program_fixture()
     positions, actions, targets, _ = BasicModel._derivation_program(model)
     assert positions.tolist() == [[0, 1]]
-    assert actions.tolist() == [[[0, -1, 0], [2, 0, -1], [0, -1, 1], [1, 0, -1]]]
+    assert actions.tolist() == [[[0, -1, 0], [0, -1, 1], [2, 0, 1], [1, 0, -1]]]
     # Unary doubling and ordered binary subtraction expose an operand swap.
     stack = []
     for kind, _, word in actions[0].tolist():
         if kind == 0:
             stack.append([3., 5.][word])
         elif kind == 2:
-            stack[-1] *= 2
+            stack[-1-word] *= 2
         else:
             right, left = stack.pop(), stack.pop()
             stack.append(left - right)
     assert stack == [1.]
-    assert targets[0, :4].tolist() == [0, 2, 1, 2]
+    assert targets[0, :4].tolist() == [0, 1, 2, 2]
 
 
 def test_invalid_unary_position_is_not_silently_dropped():
@@ -188,7 +190,7 @@ def test_one_word_packed_sentence_has_its_own_closing_and_program():
     assert owners[0, 10:14].tolist() == [0] * 4
     _, first, _, _ = BasicModel._derivation_program(model, t=0)
     final_positions, final, _, _ = BasicModel._derivation_program(model, t=1)
-    assert first[0, :2].tolist() == [[0, -1, 0], [2, 0, -1]]
+    assert first[0, :2].tolist() == [[0, -1, 0], [2, 0, 0]]
     assert final_positions.tolist() == [[1]]
     assert final[0, :1].tolist() == [[0, -1, 0]]
 

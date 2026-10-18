@@ -17,10 +17,10 @@ def meaning(value=1.):
     return ConceptualMeaning.from_description(torch.full((4,), float(value)))
 
 
-def write(store, document='book', position=0, value=1., evidence=(0., 0.), timestamp=1.):
+def write(store, document='book', position=0, value=1., evidence=(0., 0.)):
     return store.append_meaning(meaning(value), kind='observation', document_key=document,
         sentence_index=position, content_key=sentence_key((b'the', b'cat')),
-        evidence=evidence, timestamp=timestamp)
+        evidence=evidence)
 
 
 def test_address_is_full_int64_content_based_and_rng_independent():
@@ -42,10 +42,9 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
     store = TernaryTruthStore(4, 4)
     for epoch in range(400):
         for row in range(4):
-            assert write(store, ('xor', row), value=epoch + 1., timestamp=epoch) == row
+            assert write(store, ('xor', row), value=epoch + 1.) == row
     assert len(store) == 4
     assert store.witness_count.tolist() == [400] * 4
-    assert store.timestamp.tolist() == [399.] * 4
     assert store.slots[:, 0].eq(400).all()
     with pytest.raises(OverflowError, match='forgetting'):
         write(store, 'new-document')
@@ -54,12 +53,12 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
 
 def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
     store = TernaryTruthStore(4, 4)
-    row = write(store, value=2., evidence=(.8, .1), timestamp=7.)
+    row = write(store, value=2., evidence=(.8, .1))
     band = store.when[row].clone()
-    assert write(store, value=3., evidence=(.2, .7), timestamp=12.) == row
+    assert write(store, value=3., evidence=(.2, .7)) == row
     torch.testing.assert_close(store.slots[row, 0], torch.full((4,), 3.))
     assert store.row(row)['evidence'] == pytest.approx((.8, .7))
-    assert float(store.timestamp[row]) == 12.
+    assert int(store.witness_count[row]) == 2
     assert torch.equal(band, store.when[row])
     assert write(store, 'other-document') == 1
     assert write(store, position=1) == 2
@@ -130,14 +129,15 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
     state['_occurrence_namespace'] = torch.tensor(list(bytes.fromhex(namespace)), dtype=torch.uint8)
     state['row_ids'][:2] = torch.tensor([2**62, 2**62 + 1])
     state['refs'][target, 0] = 2**62
-    state['timestamp'][:2] = torch.tensor([100., 500.])
+    state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)
+    state['stream'][0,0] = state['stream'][1,1] = True
     restored = TernaryTruthStore(4, 8)
     restored.load_state_dict(state)
     restored.load_semantic_extras(extras)
     reference = restored.occurrence_of(0)
     assert restored.meaning_of(1).role_refs[0] == reference
     assert int(restored.refs[1, 0]) == reference[2]
-    assert restored.timestamp[:2].tolist() == [100., 500.]
+    assert restored.stream[:2].tolist() == [[True, False], [False, True]]
     assert restored.remap_legacy_references({'history': (old_ref,)}) == {'history': (reference,)}
     from Spaces import WhenEncoding
     encoder = WhenEncoding(n_when=4).set_capacity(8)
@@ -157,12 +157,12 @@ def test_live_gate_reread_changes_clock_but_not_address_or_when():
                     (b'hello world', b'hello there', b'loving world', b'loving there')}
         assert {store.content_key(int(row)) for row in rows} == expected
         addresses, bands = store.address_keys[rows].clone(), store.when[rows].clone()
-        timestamps = store.timestamp[rows].clone()
+        witnesses = store.witness_count[rows].clone()
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
         assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) == 4
         assert torch.equal(store.address_keys[rows], addresses)
         assert torch.equal(store.when[rows], bands)
-        assert (store.timestamp[rows] > timestamps).all()
+        assert (store.witness_count[rows] > witnesses).all()
         assert store.witness_count[rows].tolist() == [2] * 4
     finally:
         model.End()
@@ -206,7 +206,7 @@ def test_when_reader_inventory_covers_current_attribute_and_dynamic_readers():
     for path in (root / 'bin').glob('*.py'):
         Scan(str(path.relative_to(root))).visit(ast.parse(path.read_text()))
     assert actual == {(row['file'], row['function']) for row in fixture['readers']}
-    assert {'_event_split', '_lift_when', '_lower_when'} <= {
+    assert {'_event_split'} <= {
         row['function'] for row in fixture['dynamic_readers']}
     for row in fixture['readers'] + fixture['dynamic_readers']:
         assert isinstance(row['previous_absolute_time'], bool) and row['now']

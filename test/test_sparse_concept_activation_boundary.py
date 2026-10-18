@@ -49,7 +49,7 @@ class _LookupOnlyCodebook(nn.Module):
     def active_prototypes(self):  # pragma: no cover - incorrect scan surface
         raise AssertionError("sparse decode must not scan active prototypes")
 
-    def lookup_rows(self, indices):
+    def lookup_rows(self, indices, **kwargs):
         self.lookup_calls += 1
         self.lookup_sizes.append(int(indices.numel()))
         return self._rows[indices.long()]

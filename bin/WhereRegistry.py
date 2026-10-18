@@ -112,8 +112,6 @@ def install_where_registry(model):
     store = getattr(model.symbolSpace, 'ltm_store', None)
     if store is not None:
         object.__setattr__(store, '_address_encoding', model.when_encoding)
-        reference = weakref.ref(model)
-        object.__setattr__(store, '_timestamp_source', lambda: float(reference().when_time))
     for module in tuple(model.modules()):
         if isinstance(module, Space):
             sub = module.subspace

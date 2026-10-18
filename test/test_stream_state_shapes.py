@@ -68,7 +68,7 @@ def test_word_reference_commit_does_not_keep_old_order_shape():
 def test_word_reference_reader_rejects_reshaped_stale_presences():
     from Models import BasicModel
     owner = SimpleNamespace(similarity_codebook=SimpleNamespace(
-        lookup_rows=lambda rows: torch.ones(*rows.shape, 4)))
+        lookup_rows=lambda rows,**kw: torch.ones(*rows.shape, 4)))
     model = SimpleNamespace(
         _concept_owner=lambda: owner, _tensor_pushed_ideas=torch.ones(2, 2, 4),
         symbolSpace=SimpleNamespace(_word_reference_presences=torch.ones(1, 4, 1),

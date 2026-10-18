@@ -42,17 +42,6 @@ def test_surface_generation_learns_distinct_children_from_full_width_values():
     assert not torch.allclose(a, b)
 
 
-def test_surface_inverse_uses_only_supplied_occurrence_witness():
-    layer = Language.SurfaceLayer(nInput=8, nOutput=8)
-    left, right = torch.randn(3, 8), torch.randn(3, 8)
-    parent = layer.compose(left, right)
-    for side, reference in (("left", left), ("right", right)):
-        a, b = layer.reconstruct(parent, reference, side)
-        torch.testing.assert_close(a, left, atol=1e-5, rtol=1e-5)
-        torch.testing.assert_close(b, right, atol=1e-5, rtol=1e-5)
-    compiled = torch.compile(layer.generate, backend="eager", fullgraph=True)
-    a, b = compiled(parent)
-    torch.testing.assert_close(layer.compose(a, b), parent, atol=1e-5, rtol=1e-5)
 
 
 def test_selected_surface_preserves_complete_content_meaning(monkeypatch):

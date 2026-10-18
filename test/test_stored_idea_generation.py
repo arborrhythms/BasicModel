@@ -162,7 +162,7 @@ def test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons():
 def test_type_family_snapshot_uses_learned_membership_and_row_local_priming():
     from Generative import primed_type_families
     codes = torch.eye(5)
-    owner = SimpleNamespace(similarity_codebook=SimpleNamespace(W=codes, lookup_rows=lambda rows: codes[rows]),
+    owner = SimpleNamespace(similarity_codebook=SimpleNamespace(W=codes, lookup_rows=lambda rows,**kw: codes[rows]),
         components=SimpleNamespace(nouns=SimpleNamespace(ids=(101,)), verbs=SimpleNamespace(ids=(102,))),
         concept_id_at_row=lambda row: 100 + row, _row_order=lambda row: int(row > 0))
     heat = torch.tensor([[2., 3., 1., 4., 1.], [3., 1., 4., 1., 5.]])

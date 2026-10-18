@@ -72,7 +72,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
         extents, values = [], []
         for word, (n, value) in sorted(context.items()):
             containing = sorted(set(rows) & postings[word])
-            weights = 1/(1+(float(store._next_ts)-1-store.timestamp[containing]).clamp_min(0))
+            weights = store.recency_weights()[containing]
             expected = (torch.stack([codes[r] for r in containing])*weights[:,None]).sum(0)/weights.sum()
             expected = defined_code(expected, len(containing))
             torch.testing.assert_close(value[:64],expected)
@@ -176,14 +176,6 @@ def test_static_certificate_on_each_configured_gate_vocabulary(configuration):
     assert result['exact'] and result['distinct_meanings']==4
 
 
-def test_nondeclared_meaning_write_preserves_block_at_structural_face():
-    from Language import TenseLayer
-    from types import SimpleNamespace
-    layer=TenseLayer();layer.meaning_layout=(8,12)
-    value=torch.tensor([[.1,.2,.3,.4,.5,.6,.7,.8,.9,.2,.8,.1]])
-    output=layer.compose_from_grammar_context((value,),context=SimpleNamespace())
-    torch.testing.assert_close(output[:,8:],value[:,8:],rtol=0,atol=0)
-    torch.testing.assert_close(output[:,:8],layer.compose(value[:,:8]),rtol=0,atol=0)
 
 
 def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
@@ -241,7 +233,7 @@ def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(
     terms=derived.occurrence_terms();assert set(terms)=={0} and terms[0][0]==2
     codes=torch.stack([store.identity_code(r,8,derived.meaning_ones) for r in [0,1]])
     assert not torch.equal(codes[0],codes[1])
-    weights=1/(1+(float(store._next_ts)-1-store.timestamp[:2]).clamp_min(0))
+    weights=store.recency_weights()[:2]
     expected=(codes*weights[:,None]).sum(0)/weights.sum()
     expected=defined_code(expected, 2)
     torch.testing.assert_close(terms[0][1],torch.cat((expected,torch.zeros(8))))

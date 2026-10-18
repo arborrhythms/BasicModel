@@ -27,26 +27,6 @@
       "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
     },
     {
-      "file": "bin/ClauseJournal.py",
-      "function": "finish_clause",
-      "attributes": [
-        "symbol_when"
-      ],
-      "role": "binding/closing reader",
-      "previous_absolute_time": true,
-      "now": "Closing inherits its first leaf band; the sentence writer fixes the source bracket."
-    },
-    {
-      "file": "bin/ClauseRow.py",
-      "function": "Clause.__post_init__",
-      "attributes": [
-        "when"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
       "file": "bin/IndependentComponents.py",
       "function": "IndependentComponents.situated_point",
       "previous_absolute_time": false,
@@ -80,26 +60,6 @@
       "function": "SymbolSubSpace.forwardSymbols",
       "attributes": [
         "nWhen"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Language.py",
-      "function": "_WhenOpMixin._split_when",
-      "attributes": [
-        "_WHEN_WIDTH"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Language.py",
-      "function": "_WhenOpMixin._when_encoding",
-      "attributes": [
-        "_WHEN_WIDTH"
       ],
       "role": "carrier",
       "previous_absolute_time": false,
@@ -883,18 +843,6 @@
       "function": "_event_split",
       "previous_absolute_time": true,
       "now": "Separates when tail; its value is now relative."
-    },
-    {
-      "file": "bin/Language.py",
-      "function": "_lift_when",
-      "previous_absolute_time": true,
-      "now": "The standalone symbolic helper shifts a relative bracket by one; conceptual lift is opaque."
-    },
-    {
-      "file": "bin/Language.py",
-      "function": "_lower_when",
-      "previous_absolute_time": true,
-      "now": "The standalone symbolic helper shifts a relative bracket by minus one; conceptual lower is opaque."
     },
     {
       "file": "bin/Spaces.py",

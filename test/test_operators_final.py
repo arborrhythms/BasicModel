@@ -98,7 +98,7 @@ def test_meaning_width_zero_disables_bootstrap_without_changing_form(monkeypatch
             percept_width=derived.percept_width, percept_event_width=derived.percept_event_width)
         assert off.context_width == 0 and off.occurrence_terms() == {}
         rows = sorted(derived.occurrence_terms())
-        derived._context = None; derived._form_context = None
+        derived.begin_forward()
         active, absent = derived.derive(rows), off.derive(rows)
         torch.testing.assert_close(active[:, :104], absent[:, :104])
         assert not absent[:, 104:].any() and active[:, 104:].any()

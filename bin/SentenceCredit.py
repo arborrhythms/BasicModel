@@ -14,7 +14,7 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
     """
     from DerivationReconstruction import inverse_step
     costs = []
-    for program in programs:
+    for b,program in enumerate(programs):
         if program is None or program.operation_values is None:
             costs.append(like.new_zeros(()))
             continue
@@ -30,7 +30,7 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
             frame = program.operation_values[index]
             with torch.no_grad():
                 children = inverse_step(language, kind, operation, frame[2:3].detach(),
-                    frame.detach(), case_bank=case_bank)
+                    frame.detach(), case_bank=None if case_bank is None else case_bank.for_stream(b))
                 undefined = torch.cat([~domain[:, meaning_start:] for _, domain in children])
                 inputs = frame[:len(children), meaning_start:].detach().abs()
                 whole_mass = inputs.amax(0).sum()

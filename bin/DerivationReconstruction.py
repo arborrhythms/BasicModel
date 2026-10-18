@@ -23,7 +23,7 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
         child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
         wrapped = language._tree_layer(1).unary_ops[operation]
         op = getattr(wrapped, 'gl', wrapped)
-        if getattr(op, 'inverse_kind', None) == 'unary':
+        if getattr(op, 'inverse_kind', None) == 'unary' and not hasattr(op, 'marker_base'):
             coordinates = op.reverse(coordinates.to(parent)).bool()
         return ((child, coordinates & ~bad[:, None]),)
     wrapped = language._tree_layer(2).ops[operation]
@@ -73,7 +73,10 @@ def reconstruct(language, record, programs, positions):
                 right, left = forest.pop(), forest.pop()
                 forest.append((kind, operation, index, left, right))
             elif kind == 2:
-                forest.append((kind, operation, index, forest.pop()))
+                position = len(forest)-1-max(0,word)
+                forest[position] = (kind, operation, index, forest[position])
+            elif kind == 3:
+                forest[-2:] = reversed(forest[-2:])
         depth = int(record.end_depth[b])
         if depth != len(forest):
             raise ValueError('the recorded derivation must have the completed forest depth')
@@ -98,9 +101,10 @@ def reconstruct(language, record, programs, positions):
                 # live result before applying its numerical inverse. The
                 # address code itself is not a concept value to invert.
                 parent = program.operation_values[index, 2:3]
+            bank = getattr(getattr(record, 'primed', None), 'case_bank', None)
             children = inverse_step(language, kind, operation, parent,
                 program.operation_values[index], coordinates=coordinates,
-                case_bank=getattr(getattr(record, 'primed', None), 'case_bank', None))
+                case_bank=None if bank is None else bank.for_stream(b))
             pending.extend((child_node, value, domain)
                 for child_node, (value, domain) in zip(node[3:], children, strict=True))
     unavailable = record.word_valid & ~defined.all(-1)

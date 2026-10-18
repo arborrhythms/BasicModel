@@ -1,7 +1,7 @@
 """Faithfulness round-trips for the REMAINING grammar ops (idea-decoder, 2026-06-20):
-Space-role-A exact (non, tense, aspect, exist, sigma/pi unary, invertible-linear),
+Space-role-A exact (non, exist, sigma/pi unary, invertible-linear),
 Space-role-C stubs (isEqual, isPart, part, query/queryPart/queryEqual),
-Space-role-D carrier-dependent (morphology, preposition, symbolize, contextualBind),
+Space-role-D carrier-dependent (preposition, symbolize, contextualBind),
 legacy (equal, true, swap, copy). Run: .venv/bin/python test/_faithfulness_rest.py
 """
 import os, sys
@@ -38,19 +38,6 @@ try:
     line(f"non:        non(non(x))==x  Δ={mx(n.reverse(n.forward(x)), x):.2e}   (exact involution)")
 except Exception as e: line(f"non: ERR {e}")
 
-# tense — phase rotation by ±delta (op must be known)
-try:
-    t = L.TenseLayer(); t.set_op('PAST'); x = ev()
-    y = t.forward(x); x2 = t.reverse(y)
-    line(f"tense:      reverse(forward(x))==x  Δ={mx(x2, x):.2e}   forward shifted .when Δ={mx(y, x):.2e}  (exact given op)")
-except Exception as e: line(f"tense: ERR {e}")
-
-# aspect — identity no-op
-try:
-    a = L.AspectLayer(); x = ev()
-    line(f"aspect:     identity  fwd Δ={mx(a.forward(x), x):.2e}  rev Δ={mx(a.reverse(x), x):.2e}  (deliberate no-op)")
-except Exception as e: line(f"aspect: ERR {e}")
-
 # exist — identity wrapper
 try:
     e_ = L.ExistLayer(); x = ev()
@@ -74,23 +61,17 @@ for nm, mk in (
 ):
     try:
         op = mk(); a, b = ev(), ev()
-        parent = op.forward(a, b); l, r = op.reverse(parent)
+        parent = op.forward(a, b); l, r = op.reverse(parent, marker=marker)
         drop = "fwd=right (drops left)" if mx(parent, b) == 0.0 else ("fwd=max" if mx(parent, torch.maximum(a, b)) < 1e-6 else "fwd=lossy")
         line(f"{nm:10s}: reverse=(parent,parent)? {is_stub(l, r, parent)}   {drop}")
     except Exception as e: line(f"{nm}: ERR {e}")
 
 print(); print("="*72); print("SPACE_ROLE D — carrier-dependent (behaviour COLD, i.e. no token/context/wiring)"); print("="*72)
 
-# morphology — cold (no token) -> passthrough (tense never realized)
-try:
-    m = L.MorphologyLayer(); x = ev()
-    line(f"morphology: cold fwd Δ={mx(m.forward(x), x):.2e}  rev Δ={mx(m.reverse(x), x):.2e}  (cold = identity passthrough; tense needs the surface token)")
-except Exception as e: line(f"morphology: ERR {e}")
-
 # preposition — content/.where rotation is exact; marker not recovered (returns x,x)
 try:
     p = L.PrepositionLayer(nInput=8); marker = ev(D=8+4); phrase = ev(D=8+4)
-    parent = p.forward(marker, phrase); l, r = p.reverse(parent)
+    parent = p.forward(marker, phrase); l, r = p.reverse(parent, marker=marker)
     line(f"preposition: phrase recovered (content+.where un-rotated)? Δ(r,phrase)={mx(r, phrase):.2e}   marker slot==phrase (lost)? l==r {mx(l, r):.2e}")
 except Exception as e: line(f"preposition: ERR {e}")
 

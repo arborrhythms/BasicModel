@@ -86,7 +86,7 @@ class ClauseScope(nn.Module):
         for role in range(2):
             position = torch.where(choice.kind == 1, torch.full_like(
                 choice.position, 1-role), choice.position)
-            used = choice.applied & ((choice.kind == 1) | (role == 0))
+            used = choice.applied & (choice.kind != 3) & ((choice.kind == 1) | (role == 0))
             selected = used[:, None] & (positions == position[:, None])
             flags = updated[..., 0] | torch.where(
                 relative[:, role, None], cls.RELATIVE | cls.SENTENCE, 0)
@@ -154,4 +154,9 @@ class ClauseScope(nn.Module):
         blank[..., 1] = -1
         folded = torch.cat((parent[:, None], state[:, 2:], blank), 1) if K > 1 else state
         result = torch.where((binary & choice.applied)[:, None, None], folded, rewritten)
+        transpose = choice.applied & (choice.kind == 3)
+        if K > 1:
+            swapped = torch.cat((state[:,1:2],state[:,:1],state[:,2:]),1)
+            result = torch.where(transpose[:,None,None], swapped, result)
+        closing &= ~transpose
         return result, torch.where(closing, torch.where(relative, 3, 1), 0)

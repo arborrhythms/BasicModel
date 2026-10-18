@@ -392,13 +392,12 @@ def test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient(tmp_pa
         model.symbolSpace.soft_reset()
 
 
-@pytest.mark.parametrize("name", ["null", "generic", "tense", "morphology"])
+@pytest.mark.parametrize("name", ["null", "generic"])
 def test_declared_identity_unary_is_available_on_opaque_concepts(tmp_path, name):
-    from Language import NullLayer, GenericLayer, TenseLayer, MorphologyLayer
+    from Language import NullLayer, GenericLayer
     model = _model(tmp_path)
     try:
-        op = {"null": NullLayer, "generic": GenericLayer, "tense": TenseLayer,
-              "morphology": MorphologyLayer}[name]()
+        op = {"null": NullLayer, "generic": GenericLayer}[name]()
         idea = torch.tensor([[.2, -.7, .4, .8]])
         torch.testing.assert_close(op.compose(idea), idea)
         actual, unavailable = model.languageSpace.reverse_unary_step(

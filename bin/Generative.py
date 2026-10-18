@@ -152,7 +152,7 @@ def primed_type_families(space, heat, *, limit):
                 rows[b, family * limit:family * limit + len(candidates)] = rows.new_tensor(candidates)
     valid = rows >= 0
     if bool(valid.any()):
-        codes = book.lookup_rows(rows.clamp_min(0)).detach()
+        codes = book.lookup_rows(rows.clamp_min(0),streams=True).detach()
         interpretation = getattr(space, 'interpret', None)
         if interpretation is not None:
             codes = interpretation.binding_atoms(codes)

@@ -210,13 +210,35 @@ class OccurrenceRows:
     address_domain = ADDRESS_DOMAIN
 
     @contextmanager
-    def at_address(self, document, index, content, *, timestamp=None):
+    def at_address(self, document, index, content):
         previous = self.__dict__.get('_write_address')
-        self._write_address = (document_digest(document), int(index), content, timestamp)
+        self._write_address = (document_digest(document), int(index), content)
         try:
             yield
         finally:
             self._write_address = previous
+
+    def stream_rows(self, b=0):
+        """Rows witnessed by this batch stream, in the store's own order."""
+        if not 0 <= int(b) < self.stream.shape[1]:
+            return self.address_keys.new_empty(0)
+        return self.stream[:len(self), int(b)].nonzero(as_tuple=True)[0]
+
+    def witness_stream(self, row, b):
+        """A shared address can have been experienced by several streams."""
+        if int(b) < 0:
+            return
+        if int(b) >= self.stream.shape[1]:
+            self.stream = torch.nn.functional.pad(self.stream, (0, int(b)+1-self.stream.shape[1]))
+        self.stream[int(row), int(b)] = True
+
+    def recency_weights(self, b=0):
+        """Other streams have the weight of this stream's first row."""
+        rows = self.stream_rows(b)
+        weights = self.slots.new_full((len(self),), 1 / max(1, len(rows)))
+        if len(rows):
+            weights[rows] = 1 / torch.arange(len(rows), 0, -1, device=weights.device, dtype=weights.dtype)
+        return weights
 
     def content_key(self, row):
         return bytes(self.sentence_content_keys[int(row)].tolist())
@@ -229,15 +251,6 @@ class OccurrenceRows:
 
     def rows_for_content(self, key):
         return tuple(row for row in range(len(self)) if self.content_key(row) == key)
-
-    def write_timestamp(self, row, timestamp=None):
-        source = getattr(self, '_timestamp_source', None)
-        if timestamp is None and source is not None:
-            timestamp = source()
-        if timestamp is None:
-            timestamp = float(self._next_ts)
-        self.timestamp[row] = float(timestamp)
-        self._next_ts.fill_(max(int(self._next_ts), int(timestamp) + 1))
 
     def _address_for_write(self, meaning, *, kind, document_key=None,
                            sentence_index=0, content_key=None, key=None):
@@ -354,12 +367,9 @@ class OccurrenceRows:
             mapping[('ltm', namespace, int(old))] = ('ltm', ADDRESS_DOMAIN, key)
             old_to_new[int(old)] = key
             previous = int(row_ids[row])
-            eternal = (int(state[prefix + 'rel_type'][row]) == self.REL_NONE
-                       and previous > 0 and previous == int(refs[row, 0]))
-            if not eternal:
-                if previous not in (-1, 0):
-                    native[previous] = key
-                row_ids[row] = key
+            if previous not in (-1, 0) and previous != int(refs[row, 0]):
+                native[previous] = key
+            row_ids[row] = key
         self._legacy_reference_map, self._legacy_id_map = mapping, old_to_new
         self._legacy_namespace = namespace
         self._legacy_native_map = native

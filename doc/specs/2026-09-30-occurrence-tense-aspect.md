@@ -471,6 +471,68 @@ generic (section 6).
 
 No question is open.
 
+## 12. Amendment of 2026-10-17: location is subjective, order is the stream's history, markers belong to operators *(decided, Alec, 2026-10-17; written by Claude)*
+
+Decided in dialogue on 2026-10-17 before the 5.5 mechanism round; where it
+conflicts with §0–§7, this amendment governs.
+
+- **`.where` is the subjective location of the experience**: where in the
+  field the percept occurred. Two documents can occupy the same location (a
+  book in front of the face), so a document is not a `.where` region and
+  takes no whole row; §3.4's situation wholes in WholeSpace and the
+  remaining "documents as situation codes in content" are withdrawn in that
+  form. What tells a book apart is its history: the cover was looked at
+  before the pages. **The model reads its context from LTM**: its own
+  history (below) and the content queries of §0.
+- **Order is the stream's history.** A stream is one subject's sequence of
+  experience (one batch row across its presentations). Within a stream every
+  row is ordered by occurrence, which is the store's own order; streams are
+  not ordered with each other. *Decided (Alec, 2026-10-17, after the landing
+  review):* a row that is merely updated by re-witnessing does not move; its
+  place in the history is its first occurrence. `.when` stays the sentence's index within its
+  document (§0). The stream's history chain replaces every reader of the
+  global clock: the recency chain and the occurrence centroid's weight.
+  *Claude's reading, to be confirmed:* a document is then an individual of
+  the referent ladder, minted at its first sentence and bound by continuity,
+  referred to from each sentence's row by a slot as an NP refers to its
+  individual; the open contexts (conversation ⊃ document ⊃ paragraph ⊃
+  sentence) are the stream's recently bound individuals, and "what was said
+  in *d*" is a reference query.
+- **Sub-word wholes nest.** A recurring sub-run inside the predefined word
+  whole (item 6.8's maximal run of letters) is a nested whole: letters ⊂
+  morpheme ⊂ word, since we are parsing words. The word stays the attention
+  unit; a leaf's code carries its parts, so "walked" is walk plus ed at the
+  code level and an irregular ("went") has no nested whole. `split` leaves
+  the grammar. *Decided (Alec, 2026-10-17, after the landing):* admission uses
+  the **type criterion** — a residual such as `ed` is a nested whole when it
+  recurs across distinct word types, not when one word is read twice — and
+  the nested affix is a **temporal affix that operates as a spatial
+  preposition does**: the marker leaf of the verb phrase's preposition of §4–5,
+  so `walked` is the preposition operator with `ed` as its written marker on
+  `walk`. *Claude's reading, from a probe of the landed rule on the 4e
+  vocabulary (7 of 17 words carved at shared letter pairs: black, chases,
+  horse, large, near, sees, sleeps):* the shared run must itself be a
+  witnessed word (`walk`, `cat`), not merely a run of two letters found in two
+  words; with that, and residuals by type recurrence, the 4e words stay whole
+  and `walked`, `cats` carve as intended.
+- **A marker belongs to its operator.** A marker-headed operator absorbs the
+  marker leaf when it is present and supplies its own learned marker when it
+  is absent (a unary face of the same implementation whose reverse emits no
+  leaf). Insertion cannot occur in an arbitrary context with an arbitrary
+  word, so `insert` leaves the grammar; the zero plural, the omitted
+  relativizer and the unstated subject are the operator without its leaf,
+  the last bound at the close by reference. Tense and aspect, §4–5's
+  prepositions "with no preposition written", are this same face.
+- **Transpose stays**, as an operator on the two newest constituents (so it
+  acts on sub-trees), self-inverse and exact; source order is strict and the
+  swap explicit and charged. The parsimony cost of §6 is the field's existing
+  step cost on every step; no separate surface charge.
+- **§8 tests, amended.** Test 3: sentence *k* of document *d* is written at
+  `.when` = *k* from whichever stream read it, and reading *d* again
+  re-witnesses the same rows. Test 4: no order across streams; within a
+  stream, order by occurrence. Test 7 is withdrawn with the situation
+  wholes. Test 10 covers absorb, transpose and the unary face's reverse.
+
 ## 11. References
 
 Bybee, J., Perkins, R., & Pagliuca, W. (1994). *The Evolution of Grammar.*

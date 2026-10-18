@@ -174,6 +174,7 @@ def _deep_derivation_owner(words=600):
                            _choice_positions=torch.zeros_like(ids))
     language = SimpleNamespace(_cs_binary_rule_ids=torch.tensor([0]),
         _cs_unary_rule_ids=torch.tensor([1]),
+        language_layer=SimpleNamespace(operation_layer=SimpleNamespace(pair_rewrites=[False])),
         local_op_from_rule_ids=lambda values, catalog:
             (torch.zeros_like(values), values == catalog[0]))
     return SimpleNamespace(_reconstruction_stack=lambda: trace,
@@ -187,10 +188,10 @@ def test_deep_sentence_derivation_preserves_exact_postorder():
     positions, actions, targets, columns = BasicModel._derivation_program(
         _deep_derivation_owner(words), budget=3*words)
     assert positions.tolist() == [list(range(words))]
-    expected = [(0, -1, 0), (2, 0, -1)]
+    expected = [(0, -1, 0), (2, 0, 0)]
     addresses = [-1, 2]
     for word in range(1, words):
-        expected.extend(((0, -1, word), (1, 0, -1), (2, 0, -1)))
+        expected.extend(((0, -1, word), (1, 0, -1), (2, 0, 0)))
         addresses.extend((-1, 3*word, 3*word+2))
     assert actions.tolist() == [[list(action) for action in expected]]
     assert columns.tolist() == [addresses]

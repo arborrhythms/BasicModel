@@ -1,22 +1,7 @@
-"""Model time + serialized absolute clock for the .when encoding.
+"""Serialized processing counter and explicit standalone coordinate codecs.
 
-Implements the tests for doc/plans/2026-06-07-model-time-when-encoding.md
-(FINAL single-scaled-quadrature-phasor scheme):
-
-  1. A 0-initialized ``long`` model clock (``when_time``) that increments
-     once per processed batch on BOTH train and inference, and that
-     serializes through ``state_dict`` / ``save_weights`` / ``load_weights``.
-  2. ``WhenRangeEncoding`` stamps ``.when = D * [sin(2*pi*t/period),
-     cos(2*pi*t/period)]``: the ANGLE encodes the absolute model time
-     (``self.t``, synced from ``when_time``); the MAGNITUDE ``D in [0, 1]`` is
-     the TENSE position (0.5 = present default). ``period`` defaults to 65536.
-  3. ``next`` / ``previous`` move the tense magnitude by +/-0.1, preserving the
-     time-angle.
-  4. ``TenseLayer`` PAST/PRESENT/FUTURE compose then reverse round-trip;
-     ``AspectLayer`` is a no-op.
-
-CPU + eager (``MODEL_COMPILE=eager``): the clock / encoding semantics are
-device-independent and the round-trip exercises the real (small) model.
+The production .when band records sentence positions and never reads the
+processing counter.
 """
 import math
 import os
@@ -35,7 +20,7 @@ _P = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_P / "bin"))
 
 from Spaces import (WhenRangeEncoding, _WHEN_PERIOD,
-                    _WHEN_TENSE_STEP)
+                    )
 
 
 _DATA = _P / "data"
@@ -89,7 +74,7 @@ def test_when_period_is_a_module_knob():
     assert math.isclose(enc2.div_term, 2 * math.pi / 4096, rel_tol=1e-12)
 
 
-def test_tense_magnitude_resolution_above_float32_eps():
+def test_coordinate_resolution_above_float32_eps():
     # The angle step per time-tick (2*pi/period), scaled by the present D~0.5,
     # stays well above float32 eps so adjacent ticks are distinguishable.
     enc = _enc(t=0)
@@ -137,15 +122,15 @@ def test_encode_at_T_decodes_center_to_T():
 
 
 # ---------------------------------------------------------------------------
-# next() / previous(): advance / retreat the event time by the tense step
+# next() / previous(): advance / retreat the event time by one coordinate
 # ---------------------------------------------------------------------------
 def test_next_previous_move_time_by_step():
     base = _WHEN_PERIOD // 8
     enc = _enc(t=base)
     center, _ext = enc.decode(enc.next())
-    assert math.isclose(float(center), float(base) + _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(center), float(base) + 1.0, abs_tol=0.05)
     center, _ext = enc.decode(enc.previous())
-    assert math.isclose(float(center), float(base) - _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(center), float(base) - 1.0, abs_tol=0.05)
 
 
 def test_next_previous_are_symmetric_time_shifts():
@@ -156,41 +141,11 @@ def test_next_previous_are_symmetric_time_shifts():
 
 
 # ---------------------------------------------------------------------------
-# Tense / aspect
+# Processing counter
 # ---------------------------------------------------------------------------
-def test_tense_layer_round_trips():
-    import Language
-    head = torch.randn(2, 3, 4)
-    enc = _enc(t=_WHEN_PERIOD // 8)
-    when = enc.encode(enc.t).expand(2, 3, -1)
-    x = torch.cat([head, when], dim=-1)
-    for op in ("PAST", "PRESENT", "FUTURE"):
-        layer = Language.TenseLayer()
-        layer.set_op(op)
-        y = layer.forward(x)
-        back = layer.reverse(y)
-        assert torch.allclose(back, x, atol=1e-5), op
 
 
-def test_tense_layer_is_the_identity_on_concept_events():
-    # Concepts are opaque codes with no .when to shift (2026-09-14): the
-    # conceptual tense op is the identity for every kind; tense at the
-    # conceptual level is part of the concept code.
-    import Language
-    x = torch.randn(1, 1, 8)
-    for kind in ("PRESENT", "PAST", "FUTURE"):
-        t = Language.TenseLayer(); t.set_op(kind)
-        assert torch.equal(t.forward(x), x) and torch.equal(t.reverse(x), x)
 
-def test_aspect_layer_is_noop():
-    # AspectLayer is RETIRED to a no-op by this redesign (duration is gone).
-    import Language
-    enc = _enc(t=_WHEN_PERIOD // 8)
-    head = torch.randn(1, 1, 6)
-    x = torch.cat([head, enc.encode(enc.t).expand(1, 1, -1)], dim=-1)
-    for kind in ("SIMPLE", "PERFECT", "PROGRESSIVE"):
-        a = Language.AspectLayer(); a.set_op(kind)
-        assert torch.allclose(a.forward(x), x, atol=1e-7), kind
 
 
 # ---------------------------------------------------------------------------

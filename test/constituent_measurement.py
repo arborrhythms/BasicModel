@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 
 def reading(language, program, source_positions, meaning_slice):
-    """Brackets and stamp transitions from the kept postfix journal alone."""
+    """Brackets and stamp transitions from the kept journal alone."""
     from ReferenceContext import result_order, operation_modes
     if program is None:
         return dict(error='no_kept_program', brackets=[], steps=[], lowerings=[], leaf_positions=[])
@@ -21,6 +21,13 @@ def reading(language, program, source_positions, meaning_slice):
             steps.append(dict(kind='leaf', source=positions[leaf], order=orders[leaf],
                 meaning_norm=float(program.leaves[leaf, start:end].detach().norm())))
             continue
+        if kind == 3:
+            stack[-2:]=reversed(stack[-2:])
+            steps.append(dict(kind='transpose',method='transpose',leaves=[node['leaves'] for node in stack[-2:]]))
+            continue
+        position=max(0,leaf) if kind==2 else 0
+        if position:
+            stack.append(stack.pop(len(stack)-1-position))
         arity = 2 if kind == 1 else 1
         rules = language._compose_binary_rules if arity == 2 else language._compose_unary_rules
         if len(stack) < arity:
@@ -46,6 +53,8 @@ def reading(language, program, source_positions, meaning_slice):
                 before=operand['order'], after=stamp, method=name,
                 meaning_norm=float(frame[2].norm())))
         stack.append(dict(leaves=span, order=stamp))
+        if position:
+            stack.insert(len(stack)-1-position,stack.pop())
     return dict(error=None, brackets=sorted(brackets), steps=steps, lowerings=lowerings,
         leaf_positions=positions, leaf_orders=orders, roots=[node['leaves'] for node in stack],
         program=[step['method'] for step in steps if 'method' in step])

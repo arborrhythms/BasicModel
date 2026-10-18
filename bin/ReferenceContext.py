@@ -124,6 +124,12 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
         if kind == 0:
             stack.append(((word,), -1 if stamps is None else int(stamps[word])))
             continue
+        if kind == 3:
+            stack[-2:] = reversed(stack[-2:])
+            continue
+        unary_position = max(0, word) if kind == 2 else 0
+        if unary_position:
+            stack.append(stack.pop(-1-unary_position))
         arity = 2 if kind == 1 else 1
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
         if kind not in (1, 2) or not 0 <= local < len(rules) or len(stack) < arity:
@@ -143,6 +149,8 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
         leaves = (operands[head - 1][0] if head else
                   tuple(leaf for operand, _ in operands for leaf in operand))
         stack.append((leaves, result_order(rule, tuple(stamp for _, stamp in operands))))
+        if unary_position:
+            stack.insert(len(stack)-1-unary_position, stack.pop())
     return requests
 
 

@@ -21,6 +21,11 @@ class CaseBank(NamedTuple):
         """Answer reads freeze all staged dictionary keys and memberships."""
         return CaseBank(*(value.detach() if torch.is_tensor(value) else value for value in self))
 
+    def for_stream(self, b):
+        """The same named cases with one stream's occurrence-context codes."""
+        return self._replace(codes=self.codes[b] if self.codes.ndim == 3 else self.codes,
+            eligible=None if self.eligible is None else self.eligible[b:b+1])
+
 
 class SelectedCases(NamedTuple):
     codes: torch.Tensor
@@ -49,7 +54,9 @@ def fold_cases(selected):
     positive, negative = selected.weights.unbind(-1)
     signed = positive - negative
     mass = (positive + negative).sum(-1, keepdim=True).clamp_min(1.)
-    return (signed @ selected.codes) / mass
+    folded = (torch.einsum('b...c,bcd->b...d', signed, selected.codes)
+              if selected.codes.ndim == 3 else signed @ selected.codes)
+    return folded / mass
 
 
 def stage_case_bank(space, required_ids, *, limit):
@@ -62,10 +69,11 @@ def stage_case_bank(space, required_ids, *, limit):
     if int(limit) < 1:
         raise ValueError('case staging requires a positive existing candidate limit')
     if required_ids is None:
-        required_ids=torch.empty(0,dtype=torch.long,device=space.similarity_codebook.getW().device)
+        required_ids=torch.empty(0,dtype=torch.long,device=space.similarity_codebook.W.device)
     allocator = space._concept_allocator
     store = allocator.layer(0)
-    basis = space.similarity_codebook.getW()
+    basis = space.similarity_codebook.W
+    batch = required_ids.shape[0] if required_ids.ndim >= 2 else None
     roots = sorted(set(int(v) for v in required_ids.detach().reshape(-1).cpu().tolist() if int(v) > 0))
     rows = []
     for identity in roots:
@@ -84,12 +92,13 @@ def stage_case_bank(space, required_ids, *, limit):
         rows.extend(additions[:int(limit) - len(rows)])
     if not rows:
         return CaseBank(torch.full((1,), -1, device=basis.device, dtype=torch.long),
-                        basis.new_zeros(1, basis.shape[-1]),
+                        basis.new_zeros((1,basis.shape[-1]) if batch is None else (batch,1,basis.shape[-1])),
                         basis.new_zeros(1, 1, 2), basis.new_zeros(1, 1, 2))
     addresses = torch.tensor(rows, dtype=torch.long, device=basis.device)
     identities = torch.tensor([space.concept_id_at_row(row) or -1 for row in rows],
                               dtype=torch.long, device=basis.device)
-    codes = space.similarity_codebook.lookup_rows(addresses).clone()
+    codes = space.similarity_codebook.lookup_rows(addresses if batch is None else
+        addresses[None].expand(batch,-1), streams=batch is not None).clone()
     count = len(rows)
     identity = torch.eye(count, device=basis.device, dtype=basis.dtype)
     matrix = store.bind(rows)
@@ -112,24 +121,28 @@ def search_cases(bank, parent, *, allowed_ids=None):
     An unavailable pair stays unavailable rather than returning a pseudo-split.
     """
     count = len(bank.ids)
-    selection = select_cases(bank, bank.ids[:, None], bank.ids[None, :])
-    candidates = fold_cases(selection).reshape(count * count, -1)
+    batched = bank.codes.ndim == 3
+    selection = select_cases(bank, bank.ids[None,:,None] if batched else bank.ids[:,None],
+                             bank.ids[None,None,:] if batched else bank.ids[None,:])
+    candidates = fold_cases(selection).reshape(-1,count*count,parent.shape[-1])
     allowed = bank.eligible
     if allowed_ids is not None:
         allowed = (allowed_ids[:, :, None] == bank.ids[None, None]).any(1) & (bank.ids[None] > 0)
     if allowed is None:
         allowed = (bank.ids > 0)[None].expand(parent.shape[0], count)
     valid = (allowed[:, :, None] & allowed[:, None, :]
-             & selection.available[None]).reshape(parent.shape[0], -1)
+             & (selection.available if batched else selection.available[None])).reshape(parent.shape[0], -1)
     available = valid.any(-1)
-    costs = (parent[:, None] - candidates[None]).square().mean(-1)
+    costs = (parent[:, None] - candidates).square().mean(-1)
     safe = valid | (~available[:, None] & (torch.arange(count * count, device=parent.device)[None] == 0))
     scores = (-costs).masked_fill(~safe, -torch.inf)
     probability = scores.softmax(-1)
     best = scores.argmax(-1)
     weight = probability.gather(1, best[:, None])
     credit = 1 + weight - weight.detach()
-    modifier = bank.codes[best // count] * credit
-    head = bank.codes[best % count] * credit
+    codes = bank.codes if batched else bank.codes[None].expand(parent.shape[0],-1,-1)
+    rows = torch.arange(parent.shape[0],device=parent.device)
+    modifier = codes[rows,best // count] * credit
+    head = codes[rows,best % count] * credit
     return (torch.where(available[:, None], modifier, 0.),
             torch.where(available[:, None], head, 0.), available)

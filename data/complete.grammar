@@ -6,10 +6,6 @@
   structural family with a registered descriptor also supplies one checked
   thought operator at a completed boundary; it is never executed while parsing
   or generating. Refined per owner notes:
-    - aspect -> rewrite() (PLANNED): the dead aspect no-op becomes a
-      surface-inflection MLP that adapts a root lemma ("run") to its surface form
-      (ran / will run / running) from tense/aspect features. Needs a RewriteLayer
-      class; mentioned here but not yet a live rule.
     - bind (contextualBind): KEPT (re-introduced - necessary). Resolves a missing
       / controlled NP in a LIFT(BIND, VP) construction (subject/object control,
       nearest-left / licensing); the binding is re-derived from context at decode.
@@ -24,8 +20,7 @@
       during parse, reconstruction and generation; this does not erase its
       representation. `part` is canonical and `whole` declares its converse
       argument order. World facts and perceptual mereonomy are distinct.
-      Tense thought is deferred; tense-bearing compose rules retain surface
-      fidelity without establishing an event time.
+      Surface transformations preserve their supplied witnesses.
 
 
   Naming: op_argin[n] = input role n, op_argout1 = output. forward: inputs->output;
@@ -53,12 +48,12 @@
     area, luminosity, isaPart.
 
   Invertibility (measured, test/_faithfulness_*.py): exact -> lift, not,
-    non, tense, exist-wrapper, sigma, pi, sum (the arithmetic mean; product
+    non, exist-wrapper, sigma, pi, sum (the arithmetic mean; product
     is its lossy multiplicative dual), chunk (the structural PartSpace sum,
     2026-07-05: exact residual), + intersection/union/conjunction/disjunction
     WITH a codebook basis (recommender); content-exact / marker-lossy ->
     preposition; NO faithful inverse (fail-loud, Gate-S1 inventory) -> the
-    no-basis lattice tails; carrier-dep -> morphology. `equal` and `part` are
+    no-basis lattice tails; marker-headed operators have unary faces. `equal` and `part` are
     pure grammatical relation faces with separately checked thought execution.
 -->
 <grammar name="complete">
@@ -180,12 +175,15 @@
            morphology (surface inflection -> .when). aspect is REPURPOSED as
            rewrite() - a PLANNED surface-inflection MLP (lemma + tense ->
            ran / will run / ...); not a live rule until RewriteLayer exists. -->
-      <rule>tense_argout1 = tense.forward(tense_argin1)</rule>
-      <rule>morphology_argout1 = morphology.forward(morphology_argin1)</rule>
       <!-- A selected surface attachment preserves its complete right-hand
            meaning while retaining both operands in the numerical carrier.
            Which spans are markers is learned by the ordinary grammar MLP. -->
       <rule head="argin2">surface_argout1 = surface.forward(surface_argin1, surface_argin2)</rule>
+      <rule>transpose_argout1, transpose_argout2 = transpose.forward(transpose_argin1, transpose_argin2)</rule>
+      <rule>lower_unary_argout1 = lower_unary.forward(lower_unary_argin1)</rule>
+      <rule>definite_unary_argout1 = definite_unary.forward(definite_unary_argin1)</rule>
+      <rule>preposition_unary_argout1 = preposition_unary.forward(preposition_unary_argin1)</rule>
+      <rule>surface_unary_argout1 = surface_unary.forward(surface_unary_argin1)</rule>
     </compose>
 
     <!-- Explicit boundary allow-list. Structural declarations alone never
@@ -241,9 +239,12 @@
       <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>
       <rule>bind_argin1, bind_argin2 = bind.reverse(bind_argout1)</rule>
 
-      <rule>tense_argin1 = tense.reverse(tense_argout1)</rule>
-      <rule>morphology_argin1 = morphology.reverse(morphology_argout1)</rule>
       <rule>surface_argin1, surface_argin2 = surface.reverse(surface_argout1)</rule>
+      <rule>transpose_argin1, transpose_argin2 = transpose.reverse(transpose_argout1, transpose_argout2)</rule>
+      <rule>lower_unary_argin1 = lower_unary.reverse(lower_unary_argout1)</rule>
+      <rule>definite_unary_argin1 = definite_unary.reverse(definite_unary_argout1)</rule>
+      <rule>preposition_unary_argin1 = preposition_unary.reverse(preposition_unary_argout1)</rule>
+      <rule>surface_unary_argin1 = surface_unary.reverse(surface_unary_argout1)</rule>
     </generate>
   </Symbolic>
 

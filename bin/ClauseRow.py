@@ -71,7 +71,6 @@ class Clause:
     subject_word_id: int = -1
     where: Any = field(default=None, repr=False)
     when: Any = field(default=None, repr=False)
-    eternal: bool = False
     factored_refs: tuple | None = None
     order: int = 0
     evidence: tuple = (0., 0.)
@@ -90,9 +89,6 @@ class Clause:
             raise ValueError('unknown clause relation')
         if len(self.refs) != 3:
             raise ValueError('a clause has three reference slots')
-        if self.eternal and (self.relation is not None or type(self.refs[0]) is not int
-                             or self.refs[0] <= 0 or self.when is not None):
-            raise ValueError('an eternal NP reuses an unlocated concept identity')
         if self.relation is None:
             if (not torch.is_tensor(self.point) or self.point.ndim != 1
                     or self.point.shape != self.meaning.roles[0].shape
@@ -314,7 +310,7 @@ class ClauseRows:
             clause = index_plan.clause
         keys = {(int(self.rel_type[i]), *self.refs[i].tolist()): int(self.row_ids[i])
                 for i in self.relations().tolist() if int(self.row_ids[i]) not in (-1, 0)}
-        planned, visiting, eternal_ids, required = {}, set(), set(), 0
+        planned, visiting, required = {}, set(), 0
         context = self.__dict__.get('_write_address')
         addresses = {}
         def content_of(value):
@@ -332,7 +328,7 @@ class ClauseRows:
             if id(value) not in addresses:
                 if context is None:
                     from Occurrence import native_content_key
-                    kwargs = dict(document_key=('direct-clause', value.eternal),
+                    kwargs = dict(document_key=('direct', kind if value is clause else 'unverified'),
                                   content_key=content_of(value))
                 elif value is clause:
                     kwargs = {}
@@ -383,17 +379,11 @@ class ClauseRows:
                 identity, previous, _ = source(value)
                 if previous is not None:
                     return int(self.row_ids[previous])
-                if value.eternal and self.index_of_row(value.refs[0]) is not None:
-                    return value.refs[0]
-                if value.eternal and value.refs[0] in eternal_ids:
-                    return value.refs[0]
                 if (context is None and relation is not None and key in keys
                         and all(ref not in (-1, 0) for ref in addresses)):
                     return keys[key]
                 required += 1
-                result = value.refs[0] if value.eternal else -required - 1
-                if value.eternal:
-                    eternal_ids.add(result)
+                result = -required - 1
                 if relation is not None:
                     keys[key] = result
                 return result
@@ -476,8 +466,9 @@ class ClauseRows:
                 def update(row):
                     self.c_plus[row] = max(float(self.c_plus[row]), positive)
                     self.c_minus[row] = max(float(self.c_minus[row]), negative)
+                    self.witness_count[row] += 1
+                    self.witness_stream(row, stream)
                     if asserted:
-                        self.write_timestamp(row)
                         self.record_kind[row] = self.KINDS.index(kind)
                         self.surprise[row] = float(surprise)
                         if origin is not None:
@@ -486,10 +477,6 @@ class ClauseRows:
                 if relation is None:
                     stored = ConceptualMeaning.from_description(value.point)
                     refs = (refs[0], refs[1], -1)
-                    if value.eternal:
-                        previous = self.index_of_row(refs[0])
-                        if previous is not None:
-                            return update(previous)
                 else:
                     stored = ConceptualMeaning(value.meaning.roles,
                         value.meaning.role_mask,
@@ -510,12 +497,12 @@ class ClauseRows:
                     evidence=(positive, negative), order=value.order, **address_kwargs)
                 if row < 0:
                     raise RuntimeError('clause capacity changed after preflight')
-                row_id = value.refs[0] if value.eternal else int(self.address_keys[row])
+                row_id = int(self.address_keys[row])
                 self.row_ids[row] = row_id
                 self.refs[row] = self.refs.new_tensor(refs)
                 if index_plan is not None:
                     index_plan.bind_particular(value, row_id)
-                for name in ('where', 'when'):
+                for name in ('where',):
                     band = getattr(value, name)
                     if band is not None:
                         getattr(self, name)[row] = band.to(self.slots)
@@ -674,7 +661,7 @@ class ClauseRows:
             previous_context = self.__dict__.get('_write_address')
             object.__setattr__(self, '_write_address', (
                 bytes(self.document_keys[row].tolist()), int(self.sentence_index[row]),
-                self.content_key(row), float(self.timestamp[row])))
+                self.content_key(row)))
             try:
                 self.append_meaning(resolved, kind=self.KINDS[int(self.record_kind[row])],
                     rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),
@@ -730,7 +717,7 @@ class ClauseRows:
         previous = self.__dict__.get('_write_address')
         object.__setattr__(self, '_write_address', (
             bytes(self.document_keys[row].tolist()), int(self.sentence_index[row]),
-            self.content_key(row), float(self.timestamp[row])))
+            self.content_key(row)))
         try:
             self.append_meaning(meaning, kind=self.KINDS[int(self.record_kind[row])],
                 rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),

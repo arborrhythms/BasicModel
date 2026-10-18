@@ -3996,6 +3996,8 @@ class BaseModel(Mereology, nn.Module):
                 ) is not None else None,
             },
         }
+        from GrammarCheckpoint import catalog
+        bundle['grammar_catalog'] = catalog(self)
         bundle = stamp_checkpoint_schema(
             bundle, optimizer_param_names=optimizer_manifest)
         util.atomic_torch_save(bundle, path)
@@ -4567,7 +4569,7 @@ class BaseModel(Mereology, nn.Module):
             widened += 1
         return widened
 
-    def load_weights(self, path=None, strict=False, require_match=False):
+    def load_weights(self, path=None, strict=False, require_match=False, *, grammar_catalog=None):
         """Load model state from a single .ckpt bundle.
 
         The new bundle format carries ``state_dict`` plus
@@ -4650,6 +4652,14 @@ class BaseModel(Mereology, nn.Module):
             self._restore_vocab_extras(
                 vocab_extras or {},
                 legacy_whole_structure=legacy_whole_structure)
+
+        from GrammarCheckpoint import align, align_optimizer
+        state, self._checkpoint_grammar_drift, grammar_transforms = align(
+            self, state, saved.get('grammar_catalog', grammar_catalog))
+        optimizer_state, optimizer_manifest = align_optimizer(
+            optimizer_state, optimizer_manifest, grammar_transforms, state)
+        if self._checkpoint_grammar_drift:
+            TheMessage(f'Grammar checkpoint: {len(self._checkpoint_grammar_drift)} declared migrations')
 
         # Answer-path modules (What spec Steps 3-4, 7) are built lazily; a
         # checkpoint that carries them must find them on the fresh model
@@ -5161,12 +5171,16 @@ class BaseModel(Mereology, nn.Module):
                            'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')}
         retired_leaf_columns = {name + '.' + column for name in index_owners
                                 for column in ('leaf_codes', 'leaf_offsets')}
+        stream_columns = {name + '.stream' for name in index_owners}
         mismatches = [
             (k, list(state[k].shape), list(model_state[k].shape))
             for k in state if k in model_state
             and state[k].shape != model_state[k].shape
             and k not in component_metadata
             and not (k in variable_leaf_columns and state[k].ndim == 1
+                     and state[k].dtype == model_state[k].dtype)
+            and not (k in stream_columns and state[k].ndim == 2
+                     and state[k].shape[0] == model_state[k].shape[0]
                      and state[k].dtype == model_state[k].dtype)
         ]
         missing = [k for k in model_state if k not in state]
@@ -6831,7 +6845,7 @@ class BasicModel(BaseModel):
                 values, extra = scores.topk(k, sorted=True)
                 selected[b, own_width:own_width+k] = torch.where(torch.isfinite(values), extra, -1)
         valid = selected >= 0
-        codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0)).clone()
+        codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0), streams=True).clone()
         sparse_forms = torch.where(valid[..., None], codes, torch.zeros_like(codes)).detach().clone()
         codes = owner.interpret.binding_atoms(codes)
         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
@@ -11227,7 +11241,7 @@ class BasicModel(BaseModel):
             rows[b, p] = int(row)
             object_ids[b, p] = int(object_id)
             object_orders[b, p] = int(owner._concept_source_order(object_id))
-        atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0))
+        atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0), streams=True)
         atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
         # These references select the grammar's numerical leaves. They do
         # not publish native word identities, lexical roles or evidence in
@@ -12704,9 +12718,10 @@ class BasicModel(BaseModel):
         row's last sentence) as owned compose tensors:
         ``positions [B, n]`` (the sentence's words as
         absolute word indices, -1 padded), ``actions [B, L, 3]`` (forward
-        order, ``(kind, local op, local word)``: kind 0 pushes the word,
-        1 folds the two tops by the binary op, 2 rewrites the top by the
-        unary op; -1 padded) and ``targets [B, T]`` (reconstruction's reverse
+        order, ``(kind, local op, word/position)``: kind 0 pushes the word,
+        1 folds the two tops, 2 rewrites the selected position counted from
+        the top, and 3 transposes the two tops; -1 padded) and
+        ``targets [B, T]`` (reconstruction's reverse
         order: the endings last applied first, then per word latest
         first its unary, post-binary, pop and pre-binary, in the walk's
         action ids: a binary local id, ``R2 +`` a unary local id,
@@ -12741,6 +12756,10 @@ class BasicModel(BaseModel):
         kind = torch.where(known_b, torch.ones_like(local_b),
                            torch.where(known_u, torch.full_like(local_b, 2),
                                        torch.full_like(local_b, -1)))
+        pairs = language.language_layer.operation_layer.pair_rewrites
+        if any(pairs):
+            pair = torch.tensor(pairs, device=flat.device, dtype=torch.bool)
+            kind = torch.where(known_b & pair[local_b.clamp(0,len(pairs)-1)], 3, kind)
         kind = torch.where(recorded, kind, torch.full_like(kind, -1)).reshape(B, S)
         op = torch.where(known_b, local_b, torch.where(
             known_u, local_u, torch.full_like(local_b, -1))).reshape(B, S)
@@ -12783,43 +12802,28 @@ class BasicModel(BaseModel):
                     if 0 <= slot < S and kind_l[b][slot] >= 0:
                         return kind_l[b][slot], op_l[b][slot]
                     return -1, -1
-                forest = []
+                depth = 0
                 def apply(slot):
+                    nonlocal depth
                     k, o = _at(slot)
-                    if k == 1:
-                        if len(forest) < 2:
-                            raise ValueError('compose trace binary operation underflows')
-                        right, left = forest.pop(), forest.pop()
-                        forest.append((1, o, slot, left, right))
-                    elif k == 2:
-                        position = pos_l[b][slot]
-                        if not 0 <= position < len(forest):
-                            raise ValueError('compose trace unary position is not occupied')
-                        forest[-1 - position] = (2, o, slot, forest[-1 - position])
+                    if k in (1, 2, 3):
+                        if k in (1, 3) and depth < 2:
+                            raise ValueError('binary operation underflows the recorded forest')
+                        if k == 2 and not 0 <= pos_l[b][slot] < depth:
+                            raise ValueError('unary position is outside the recorded forest')
+                        actions.append((k, o, pos_l[b][slot] if k == 2 else -1))
+                        columns.append(slot)
+                        depth -= int(k == 1)
                 for i, w in enumerate(words):
-                    forest.append((0, i))
+                    actions.append((0, -1, i))
+                    columns.append(-1)
+                    depth += 1
                     for r in range(3):
-                        apply(3 * w + r)
+                        apply(3*w+r)
                 for k in range(closing_width):
-                    apply(base + k)
-                for node in forest:
-                    # A legal long sentence can nest beyond Python's call
-                    # stack. Preserve left-to-right postorder explicitly;
-                    # the configured trace, not recursion depth, bounds it.
-                    pending = [(node, False)]
-                    while pending:
-                        node, emitted_children = pending.pop()
-                        if node[0] == 0:
-                            actions.append((0, -1, node[1]))
-                            columns.append(-1)
-                        elif emitted_children:
-                            actions.append((node[0], node[1], -1))
-                            columns.append(node[2])
-                        else:
-                            pending.append((node, True))
-                            pending.extend((child, False) for child in reversed(node[3:]))
-                targets = [stop if k == 0 else o if k == 1 else R2 + o
-                           for k, o, _ in reversed(actions)]
+                    apply(base+k)
+                targets = [stop if k == 0 else o if k in (1,3) else R2+o
+                           for k,o,_ in reversed(actions)]
             positions_l.append(words)
             actions_l.append(actions)
             targets_l.append(targets[:T])
@@ -13562,15 +13566,11 @@ class BasicModel(BaseModel):
         return disc.consume_inter_loss()
 
     def present(self) -> int:
-        """The absolute model time (the serialized ``when_time`` clock).
-
-        0-initialized; ``runBatch`` advances it by 1 per processed batch on
-        BOTH train and inference. It is the authoritative absolute-time
-        record; event .when bands carry document positions independently."""
+        """Serialized count of processed batches; no semantic reader."""
         return int(self.when_time)
 
     def _advance_when_time(self):
-        """Advance recency time once per batch; event bands do not read it."""
+        """Advance the processing counter once per batch."""
         # In-place so the registered buffer (and its device) is preserved.
         self.when_time += 1
 
@@ -13703,25 +13703,26 @@ class BasicModel(BaseModel):
         B, W, D = words.shape
         flat = torch.nn.functional.normalize(words.detach().reshape(-1, D), dim=-1)
         chosen = torch.full((len(flat),), -1, device=flat.device, dtype=torch.long)
-        for lo in range(0, len(flat), 256):
-            queries = flat[lo:lo + 256]
-            best = queries.new_full((len(queries),), -1)
-            ids = chosen[lo:lo + 256]
-            for start in range(0, len(vocabulary), 4096):
-                rows = torch.tensor(vocabulary[start:start + 4096],
-                                    device=flat.device, dtype=torch.long)
-                atoms = owner.similarity_codebook.lookup_rows(rows).to(queries)
-                if atoms.shape[-1] != D:
-                    raise ValueError("word inverse requires the full conceptual width")
-                atoms = torch.nn.functional.normalize(atoms, dim=-1)
-                scores, index = (queries @ atoms.T).abs().max(-1)
-                ids.copy_(torch.where(scores > best, rows[index], ids))
-                best = torch.maximum(scores, best)
+        for b in range(B):
+            for lo in range(b*W, (b+1)*W, 256):
+                queries = flat[lo:min(lo + 256,(b+1)*W)]
+                best = queries.new_full((len(queries),), -1)
+                ids = chosen[lo:min(lo + 256,(b+1)*W)]
+                for start in range(0, len(vocabulary), 4096):
+                    rows = torch.tensor(vocabulary[start:start + 4096],
+                                        device=flat.device, dtype=torch.long)
+                    atoms = owner.similarity_codebook.lookup_rows(rows, stream=b).to(queries)
+                    if atoms.shape[-1] != D:
+                        raise ValueError("word inverse requires the full conceptual width")
+                    atoms = torch.nn.functional.normalize(atoms, dim=-1)
+                    scores, index = (queries @ atoms.T).abs().max(-1)
+                    ids.copy_(torch.where(scores > best, rows[index], ids))
+                    best = torch.maximum(scores, best)
         rows = chosen.reshape(B, W).cpu().tolist()
         return tuple(b" ".join(spellings[index] for index in row[:min(W, int(count))]).decode("utf8")
                      for row, count in zip(rows, counts))
 
-    def _grammar_target_word(self, word):
+    def _grammar_target_word(self, word, *, stream=0):
         """Teacher-side full concept of a word already in the live vocabulary."""
         owner = self._concept_owner()
         word_id = owner.definitions.word(form=word)
@@ -13731,7 +13732,7 @@ class BasicModel(BaseModel):
         if row is None:
             raise ValueError("grammar target word has no live conceptual row")
         reference = owner.similarity_codebook.W
-        return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device)).detach()
+        return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device),stream=stream).detach()
 
     def _grammar_lesson_objectives(self, programs, *, split, source_rows, source_positions=None,
                                    student_states=None):
@@ -13784,6 +13785,7 @@ class BasicModel(BaseModel):
                                        errors=self._grammar_lesson_errors['compose']),
                  "generate": generate_loss(self.languageSpace, teacher_words, lessons,
                                self.grammatical_thoughts, self._grammar_target_word,
+                               word_code_by_stream=lambda word,b:self._grammar_target_word(word,stream=b),
                                errors=self._grammar_lesson_errors['generate'])}
         return {name: cost for name, cost in costs.items() if cost is not None} or None
 
@@ -14071,7 +14073,7 @@ class BasicModel(BaseModel):
         # Advance the serialized model clock once per PROCESSED batch (this
         # point is past the no-batch early raise, so it ticks exactly once on
         # BOTH the train and inference paths regardless of which return fires
-        # below). The timestamp writer reads this clock; source positions
+        # below). This is only a step count; source positions
         # have already been staged independently for event .when bands.
         # The mode schedule's internal context read does not consume an
         # external batch. Compose's sentence trials run inside this one tick.
@@ -16050,7 +16052,7 @@ class BasicModel(BaseModel):
         # encoding.md): a 0-initialized ``long`` that increments once per
         # processed batch (train AND inference) in ``runBatch`` and rides
         # ``state_dict()`` through save/load. It is the AUTHORITATIVE absolute
-        # time for row timestamps; event .when bands carry source positions.
+        # steps for bookkeeping; event .when bands carry source positions.
         # Guarded so a re-entrant build does not re-register the buffer.
         if "when_time" not in self._buffers:
             self.register_buffer(
@@ -18168,6 +18170,7 @@ class BasicModel(BaseModel):
         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
          stm._concept_rows, stm._concept_activations) = next_state
         self._record_operation_choice(trace_slot, choice, state)
+        stm._wholes = self._transpose_provenance(stm.ensure_whole_state(), choice)
         binary = choice.applied & (choice.kind == 1)
         if not torch.compiler.is_compiling():
             trace = self._reconstruction_stack()
@@ -18206,20 +18209,28 @@ class BasicModel(BaseModel):
         fork = getattr(self, '_compose_fork', None)
         return None if slot is None or fork is None else fork.mask(slot)
 
+    @staticmethod
+    def _transpose_provenance(slab, choice):
+        if slab.shape[1] < 2:
+            return slab
+        swapped = torch.cat((slab[:,1:2], slab[:,:1], slab[:,2:]), 1)
+        return torch.where((choice.applied & (choice.kind == 3)).reshape(
+            slab.shape[0], *([1]*(slab.ndim-1))), swapped, slab)
+
     def _record_operation_choice(self, slot, choice, state):
         trace = self._reconstruction_stack()
         if slot is None or trace is None:
             return
         B = state[0].shape[0]
         ids = torch.full((B,), -1, dtype=torch.long, device=state[0].device)
-        for kind, arity in ((1, 2), (2, 1)):
+        for kind, arity in ((1, 2), (2, 1), (3, 2)):
             mapping = trace.rule_map(arity)
             if mapping.numel():
                 chosen = mapping.index_select(0, choice.local_op.clamp(0, mapping.numel() - 1))
                 ids = torch.where(choice.applied & (choice.kind == kind), chosen, ids)
         trace._choice_rule_ids[:, slot] = ids
         trace._choice_arities[:, slot] = torch.where(choice.applied,
-            torch.where(choice.kind == 1, 2, 1), 0).to(torch.int8)
+            torch.where((choice.kind == 1) | (choice.kind == 3), 2, 1), 0).to(torch.int8)
         trace._choice_mask[:, slot] = choice.applied
         trace._choice_positions[:, slot] = choice.position
         trace._choice_actions[:, slot] = choice.action
@@ -18232,7 +18243,7 @@ class BasicModel(BaseModel):
         trace._choice_left_rows, trace._choice_right_rows = self._tensor_record_operands(
             trace._choice_left_rows, trace._choice_right_rows,
             torch.as_tensor(slot, device=state[0].device), state,
-            choice.applied & (choice.kind == 1))
+            choice.applied & ((choice.kind == 1) | (choice.kind == 3)))
         if not torch.compiler.is_compiling():
             self.languageSpace.record_category_observations(
                 trace, getattr(self.inputSpace, '_word_active_mask', None))
@@ -19710,7 +19721,7 @@ class BasicModel(BaseModel):
         ids, arities, mask, losses, loss_mask = trace_state
         B, width = ids.shape
         chosen = torch.full_like(choice.local_op, -1)
-        for kind, mapping in ((1, binary_map), (2, unary_map)):
+        for kind, mapping in ((1, binary_map), (2, unary_map), (3, binary_map)):
             if mapping.numel():
                 mapped = mapping.index_select(0, choice.local_op.clamp(0, mapping.numel() - 1))
                 chosen = torch.where(choice.applied & (choice.kind == kind), mapped, chosen)
@@ -19718,7 +19729,7 @@ class BasicModel(BaseModel):
         def write(slab, value):
             value = torch.where(choice.valid.reshape(B, 1), value.to(slab.dtype).reshape(B, 1), slab.gather(1, column))
             return slab.scatter(1, column, value)
-        arity = torch.where(choice.applied, torch.where(choice.kind == 1, 2, 1), 0)
+        arity = torch.where(choice.applied, torch.where((choice.kind == 1) | (choice.kind == 3), 2, 1), 0)
         return ((write(ids, chosen), write(arities, arity), write(mask, choice.applied), losses, loss_mask),
                 write(position_slab, choice.position), write(action_slab, choice.action),
                 write(attempted_slab, choice.valid))
@@ -20034,6 +20045,8 @@ class BasicModel(BaseModel):
             for index, (kind, op_index, word) in enumerate(program.actions.detach().cpu().tolist()):
                 if kind == 0:
                     stack.append(int(word_rows[word]))
+                elif kind == 3:
+                    stack[-2:] = reversed(stack[-2:])
                 elif kind == 2:
                     continue
                 elif kind == 1:
@@ -20172,7 +20185,7 @@ class BasicModel(BaseModel):
                 recovered, unavailable, defined = reconstruct(self.languageSpace, record,
                     observation['entries'], lambda b: self._sentence_leaf_positions(record, b))
                 costs, recovered = field.costs(record, recovered, defined=defined,
-                    step_cost=self.WHAT_STEP_COST)
+                    step_cost=self.WHAT_STEP_COST, programs=observation['entries'])
                 field.reconstructed = recovered.detach()
                 field.unavailable = unavailable.detach()
                 field.defined = defined.detach()
@@ -20182,7 +20195,7 @@ class BasicModel(BaseModel):
                 errors.error('reconstruction.field', costs['inside'] + costs['outside'], baseline,
                     mask=available, weight=self.loss.reconstruction_scale, category='reconstruction')
                 errors.add('reconstruction.iterations', costs['work'],
-                    weight=self.loss.reconstruction_scale, category='reconstruction')
+                    weight=1., category='reconstruction')
                 self._last_field_cost = {key: value.detach() for key, value in costs.items()}
                 field.cost_report = self._last_field_cost
             lesson = getattr(self, '_attention_part_lesson', None)
@@ -20601,11 +20614,9 @@ class BasicModel(BaseModel):
                     view['clauses'][b] = clause
                 encoding = getattr(self, 'when_encoding', None)
                 if encoding is not None:
-                    clause = replace(clause, eternal=False,
-                                     when=encoding.encode(position).to(clause.meaning.roles))
+                    clause = replace(clause, when=encoding.encode(position).to(clause.meaning.roles))
                     view['clauses'][b] = clause
-                with store.at_address(document, position, content,
-                                      timestamp=float(getattr(self, 'when_time', store._next_ts))):
+                with store.at_address(document, position, content):
                     row = _append_observed_meaning(store, clause,
                         trust=self.conceptualSpace._incoming_trust_multiplier(),
                         expectation=comparison, stream=b, written_rows=written_clauses[b])
@@ -20720,7 +20731,7 @@ class BasicModel(BaseModel):
                     if row is not None:
                         identities[b, w, index] = identity
                         values[b, w, index] = owner.similarity_codebook.lookup_rows(
-                            torch.tensor(row, device=basis.device)).to(like)
+                            torch.tensor(row, device=basis.device), stream=b).to(like)
         return ReferenceTypes(sources, sources.new_tensor(orders), identities, values)
 
     def _sentence_reference_bank(self, active, like):
@@ -21933,7 +21944,7 @@ class BasicModel(BaseModel):
                     _, refs, relative, operands = proposal
                     clause_state = scope.resolve(clause_state, choice, refs, relative)
                     frame = torch.cat((operands[:, 0],
-                        torch.where((choice.kind == 1)[:, None], operands[:, 1], 0.),
+                        torch.where(((choice.kind == 1) | (choice.kind == 3))[:, None], operands[:, 1], 0.),
                         choice.candidate), -1)
                     operation_values = self._tensor_record_selected_values(
                         operation_values, journal_slot, frame, choice.applied)
@@ -21945,11 +21956,13 @@ class BasicModel(BaseModel):
                 clause_state, ended = scope.apply(clause_state, choice, slot)
                 final_stm = scope.publish_name(final_stm, clause_state, ended)
                 closing_events = record_clause_end(closing_events, slot, ended)
+                wholes = self._transpose_provenance(wholes, choice)
                 binary = choice.applied & (choice.kind == 1)
+                pair_choice = choice.applied & ((choice.kind == 1) | (choice.kind == 3))
                 unary_chosen = choice.applied & (choice.kind == 2)
-                post_op = torch.where(binary, choice.local_op, post_op)
+                post_op = torch.where(pair_choice, choice.local_op, post_op)
                 unary_op = torch.where(unary_chosen, choice.local_op, unary_op)
-                post_valid = post_valid | binary
+                post_valid = post_valid | pair_choice
                 unary_valid = unary_valid | unary_chosen
                 (wholes, phrase_row, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
                     wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
@@ -21958,7 +21971,7 @@ class BasicModel(BaseModel):
                     trace_state, position_slab, action_slab, attempted_slab, slot,
                     choice, binary_map, unary_map)
                 left_rows, right_rows = self._tensor_record_operands(
-                    left_rows, right_rows, slot, before, binary)
+                    left_rows, right_rows, slot, before, pair_choice)
                 round_active = round_active & choice.applied
 
             end_stm = final_stm
@@ -22007,7 +22020,7 @@ class BasicModel(BaseModel):
                     _, refs, relative, operands = proposal
                     clause_state = scope.resolve(clause_state, choice, refs, relative)
                     frame = torch.cat((operands[:, 0],
-                        torch.where((choice.kind == 1)[:, None], operands[:, 1], 0.),
+                        torch.where(((choice.kind == 1) | (choice.kind == 3))[:, None], operands[:, 1], 0.),
                         choice.candidate), -1)
                     operation_values = self._tensor_record_selected_values(
                         operation_values, journal_slot, frame, choice.applied)
@@ -22019,6 +22032,7 @@ class BasicModel(BaseModel):
                 clause_state, ended = scope.apply(clause_state, choice, slot)
                 end_stm = scope.publish_name(end_stm, clause_state, ended)
                 closing_events = record_clause_end(closing_events, slot, ended)
+                wholes = self._transpose_provenance(wholes, choice)
                 binary = choice.applied & (choice.kind == 1)
                 (wholes, phrase, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
                     wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
@@ -22027,7 +22041,8 @@ class BasicModel(BaseModel):
                     trace_state, position_slab, action_slab, attempted_slab,
                     slot, choice, binary_map, unary_map)
                 left_rows, right_rows = self._tensor_record_operands(
-                    left_rows, right_rows, slot, pre_closing, binary)
+                    left_rows, right_rows, slot, pre_closing,
+                    choice.applied & ((choice.kind == 1) | (choice.kind == 3)))
                 closing_active = closing_active & choice.applied
             if sentence_transactions:
                 operation_values = current_cs_lang[22].scatter(1, value_columns, operation_values)

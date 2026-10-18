@@ -100,6 +100,9 @@ class WordIdentity(nn.Module):
         self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
         self.word_keys = {}
         self.mints = []
+        self.word_witnesses = {}
+        self.nested = {}
+        self._run_words = {}
         self.revision = 0
         basis = store._basis
         if not hasattr(basis, 'fixed_row_mask'):
@@ -137,8 +140,11 @@ class WordIdentity(nn.Module):
         return self.atoms[atom]
 
     def form(self, raw):
-        atoms = self.words.get(bytes(raw), base_atoms(raw))
-        return torch.stack([self.atom_code(a) for a in atoms]).amax(0)
+        raw = bytes(raw)
+        atoms = self.words.get(raw, base_atoms(raw))
+        parts = [self.atom_code(a) for a in atoms]
+        parts.extend(self.form(part) for part, _lo, _hi in self.nested.get(raw, ()))
+        return torch.stack(parts).amax(0)
 
     @staticmethod
     def key(form):
@@ -224,7 +230,97 @@ class WordIdentity(nn.Module):
                 self._fixed(row, value)
                 self.store.hash_map[key] = row
                 self.store.radix_trie.insert(key, row)
-        return tuple(self.atoms[a] for a in self.words[raw])
+        return self.parts(raw)
+
+    def parts(self, raw):
+        """The word's native atoms and its witnessed nested wholes."""
+        return (tuple(self.atoms[a] for a in self.words[raw]) +
+                tuple(self.word_rows[part] for part, _lo, _hi in self.nested.get(raw, ())))
+
+    def part_atoms(self, raw):
+        atoms = set(self.words[raw])
+        for part, _lo, _hi in self.nested.get(raw, ()):
+            atoms.update(self.part_atoms(part))
+        return atoms
+
+    def observe_nested(self, raw):
+        """Recurring proper runs become parts, never new attention units.
+
+        Shared runs are discovered across distinct word types. Residual runs
+        of that division require two witnesses. Repeating an indivisible
+        word alone cannot manufacture an internal boundary.
+        """
+        raw = bytes(raw)
+        self.admit(raw)
+        if not text_of(raw).isalpha():
+            return ()
+        prior = self.word_witnesses.get(raw, 0)
+        fresh = prior == 0
+        self.word_witnesses[raw] = prior + 1
+        if prior >= 2:
+            return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
+        if fresh:
+            for lo in range(len(raw)):
+                for hi in range(lo+2, len(raw)+1):
+                    self._run_words.setdefault(raw[lo:hi], set()).add(raw)
+        divisions, residual_counts = {}, {}
+        for word, count in self.word_witnesses.items():
+            candidates = [(lo,hi) for lo in range(len(word)) for hi in range(lo+2,len(word)+1)
+                          if hi-lo < len(word) and len(self._run_words.get(word[lo:hi], ())) >= 2]
+            chosen = []
+            for lo,hi in sorted(candidates, key=lambda span: (span[0]-span[1],span[0])):
+                if all(hi <= a or lo >= z for a,z in chosen):
+                    chosen.append((lo,hi))
+            if not chosen:
+                continue
+            chosen.sort()
+            residuals, cursor = [], 0
+            for lo,hi in chosen:
+                if cursor < lo:
+                    residuals.append((cursor,lo))
+                cursor = hi
+            if cursor < len(word):
+                residuals.append((cursor,len(word)))
+            for lo,hi in residuals:
+                part = word[lo:hi]
+                residual_counts[part] = residual_counts.get(part,0)+count
+            divisions[word] = chosen,residuals
+        nested = {word: tuple((word[lo:hi],lo,hi) for lo,hi in sorted(
+                      chosen + [(lo,hi) for lo,hi in residuals if residual_counts[word[lo:hi]] >= 2]))
+                  for word,(chosen,residuals) in divisions.items()}
+        for word,old in self.nested.items():
+            retained=list(old)
+            for candidate in nested.get(word,()):
+                _part,lo,hi=candidate
+                # Existing wholes remain witnessed; new wholes may contain
+                # them, but cannot introduce a crossing bracket.
+                if candidate not in retained and all(not (a < lo < z < hi or lo < a < hi < z)
+                                                       for _raw,a,z in retained):
+                    retained.append(candidate)
+            nested[word]=tuple(sorted(retained,key=lambda part:(part[1],part[2])))
+        if nested != self.nested:
+            # Admit shared parts through the same native identity owner.
+            for parts in nested.values():
+                for part, _lo, _hi in parts:
+                    self.admit(part)
+            self.nested = nested
+            while (collision := self._reindex()) is not None:
+                self._mint(*collision)
+            for key in tuple(self.store.hash_map):
+                if key.startswith(self.WORD_PREFIX):
+                    del self.store.hash_map[key]
+            for word,row in self.word_rows.items():
+                value = self.form(word)
+                self._fixed(row,value)
+                key = self.WORD_PREFIX+self.key(value)
+                self.store.hash_map[key] = row
+            # A rekey must retire its trie terminal as well as its hash entry.
+            from Layers import RadixTrie
+            self.store.radix_trie = RadixTrie()
+            for key,row in self.store.hash_map.items():
+                self.store.radix_trie.insert(key,row)
+            self.revision += 1
+        return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
 
     def row_for_form(self, form):
         raw = self.forms.get(self.key(form))
@@ -237,9 +333,9 @@ class WordIdentity(nn.Module):
     def read_parts(self, rows, *, form=None):
         """Read an indexed identity, or assemble an unindexed pair spelling."""
         atoms = {row: atom for atom, row in self.atoms.items()}
-        parts = [atoms[int(row)] for row in rows]
+        parts = [atoms[int(row)] for row in rows if int(row) in atoms]
         if form is None:
-            form = torch.stack([self.atom_code(atom) for atom in parts]).amax(0)
+            form = self.store._basis.fixed_row_codes[list(rows)].amax(0).detach().cpu()
         known = self.read(form)
         if known is not None:
             return known
@@ -257,11 +353,19 @@ class WordIdentity(nn.Module):
 
     def vocab_extras(self):
         return dict(atoms=self.atoms, bits=self.bits, words=self.words,
-                    word_rows=self.word_rows, mints=self.mints, revision=self.revision)
+                    word_rows=self.word_rows, mints=self.mints, revision=self.revision,
+                    word_witnesses=self.word_witnesses, nested=self.nested)
 
     def load_vocab_extras(self, value):
         for name in ('atoms', 'bits', 'words', 'word_rows', 'mints', 'revision'):
             setattr(self, name, value[name])
+        self.word_witnesses = value.get('word_witnesses', {})
+        self.nested = value.get('nested', {})
+        self._run_words = {}
+        for word in self.word_witnesses:
+            for lo in range(len(word)):
+                for hi in range(lo+2,len(word)+1):
+                    self._run_words.setdefault(word[lo:hi],set()).add(word)
         self._reindex()
 
     def audit(self):

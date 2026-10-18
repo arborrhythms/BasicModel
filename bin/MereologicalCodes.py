@@ -31,6 +31,7 @@ class MereologicalCodes(nn.Module):
         self.meaning_ones = min(self.meaning_pairs, 6 if self.meaning_pairs > 64 else 3)
         self.symbol_centroid = bool(TheXMLConfig.space('ConceptualSpace', 'symbolCentroid', True))
         self._context = None
+        self._adjacency_context = None
         self._centroid_cache = None
 
     @torch.no_grad()
@@ -44,12 +45,14 @@ class MereologicalCodes(nn.Module):
         rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
         words = {row: raw for row in rows if (raw := self.owner.word_surface_for_row(row)) in identity.words}
         store = self.owner._closed_clause_store()
-        revision = (identity.revision, tuple(words.items()),
-                    None if store is None else store._adjacency_revision, self.symbol_centroid)
+        adjacency = self._adjacency_context
+        if adjacency is None:
+            adjacency = (None, {}) if store is None else (store._adjacency_revision, store._adjacent_postings)
+        revision = (identity.revision, tuple(words.items()), adjacency[0], self.symbol_centroid)
         if self._centroid_cache is None or revision != self._centroid_cache[0]:
             forms = {row: identity.form(raw) for row, raw in words.items()}
-            parts = {row: set(identity.words[raw]) for row, raw in words.items()}
-            placed, report = place(forms, parts, {} if store is None else store._adjacent_postings,
+            parts = {row: identity.part_atoms(raw) for row, raw in words.items()}
+            placed, report = place(forms, parts, adjacency[1],
                                    enabled=self.symbol_centroid)
             self._centroid_cache = revision, placed, report
         return self._centroid_cache[1]
@@ -59,7 +62,7 @@ class MereologicalCodes(nn.Module):
         return {} if self._centroid_cache is None else self._centroid_cache[2]
 
     @torch.no_grad()
-    def occurrence_terms(self):
+    def occurrence_terms(self, b=0):
         """Occurrence membership supplies n and detached conceptual meaning M.
 
         A reference witnesses membership even in an unverified sentence.
@@ -68,9 +71,8 @@ class MereologicalCodes(nn.Module):
         store = self.owner._closed_clause_store()
         if store is None or not len(store) or not self.context_width:
             return {}
-        terms = {}
-        now = float(store._next_ts) - 1
         terms = occurrence_memberships(self.owner, store)
+        recency = store.recency_weights(b)
         result = {}
         from MeaningCodes import defined_code
         codes = {row: store.identity_code(row, self.meaning_pairs, self.meaning_ones)
@@ -80,7 +82,7 @@ class MereologicalCodes(nn.Module):
             if not rows:
                 continue
             idx = torch.tensor(rows, dtype=torch.long, device=store.slots.device)
-            weight = 1 / (1 + (now-store.timestamp[idx]).clamp_min(0))
+            weight = recency[idx]
             roots = torch.stack([codes[row] for row in rows])
             positive = (roots * weight[:, None]).sum(0) / weight.sum()
             positive = defined_code(positive, len(rows))
@@ -90,7 +92,14 @@ class MereologicalCodes(nn.Module):
     def begin_forward(self):
         # Both walk paths use the same pre-forward durable context; the
         # current closing becomes available on the next forward only.
-        self._context = self.occurrence_terms()
+        store = self.owner._closed_clause_store()
+        # Lexical parts may grow during staging; a closing's new adjacency
+        # affects the next reading, just like its occurrence meaning.
+        self._adjacency_context = ((None, {}) if store is None else
+            (store._adjacency_revision, {key: frozenset(rows) for key, rows in store._adjacent_postings.items()}))
+        self._contexts = {b: self.occurrence_terms(b) for b in range(max(1, 0 if store is None else store.stream.shape[1]))}
+        self._context = self._contexts[0]
+        self._unseen_context = self.occurrence_terms(len(self._contexts))
         self._form_context = self.centroid_forms()
         from Spaces import _concept_alloc_of
         cb = self.owner.similarity_codebook
@@ -206,7 +215,7 @@ class MereologicalCodes(nn.Module):
                     self_pairs=False, before=report(before), after=report(after))
 
     @torch.no_grad()
-    def derive(self, indices):
+    def derive(self, indices, b=0):
         owner = self.owner
         cached = owner.similarity_codebook.W
         indices = torch.as_tensor(indices, dtype=torch.long, device=cached.device)
@@ -223,16 +232,20 @@ class MereologicalCodes(nn.Module):
         model = getattr(owner, '_model', None)
         identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
         if identity is not None:
-            placed = getattr(self, '_form_context', None)
-            if placed is None:
-                placed = self.centroid_forms()
+            # New lexical witnesses can add nested parts during the stem.
+            # Form identity must follow that vocabulary revision immediately;
+            # occurrence meaning and adjacency stay frozen across paired walks.
+            placed = self.centroid_forms()
             for row in unique:
                 raw = owner.word_surface_for_row(row)
                 if raw in identity.words:
                     # Identification is immutable. Learned support changes a
                     # reading's evidence, never the named word's sparse key.
                     out[row_index[row], :identity.width] = placed.get(row, identity.form(raw)).to(out)
-        context = self.occurrence_terms() if self._context is None else self._context
+        contexts = getattr(self, "_contexts", {0:self._context})
+        context = contexts.get(b, getattr(self, '_unseen_context', None))
+        if context is None:
+            context = self.occurrence_terms(b)
         for row in unique:
             if row in context and self.context_width:
                 mean = context[row][1].detach().to(out)

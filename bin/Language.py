@@ -1326,6 +1326,10 @@ class Grammar:
         if inputs is None or outputs is None:
             raise ValueError(
                 f'thought operation {method!r} has an incomplete {direction} role contract')
+        if getattr(GRAMMAR_LAYER_CLASSES.get(method), 'preserves_pair', False):
+            if len(inputs) != 2 or len(outputs) != 2:
+                raise ValueError('a pair rewrite requires two inputs and two outputs')
+            return None
         if len(outputs) != 1:
             raise ValueError(
                 f'thought operation {method!r} requires exactly one result role')
@@ -3196,36 +3200,6 @@ def _split_event(x, content_width, when_width=_EVENT_WHEN_WIDTH):
     return what, where, when
 
 
-def _event_when_encoding(when_width=_EVENT_WHEN_WIDTH):
-    # The ONE .when construction seam (config <whenPeriod>/<whenRungRatio>)
-    # so tense rotation and the Space stamps share one omega pair.
-    from Spaces import event_when_encoding
-    return event_when_encoding(when_width)
-
-
-# _when_extent RETIRED (2026-07-04 encoding pass): duration left the band
-# (write-only in v1 -- zero callers); exact extents belong to the record
-# store when aspect is built.
-
-
-def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
-    """Advance the event one tense step toward the FUTURE (the
-    verb-advances-future rule of spec Section 5). Tense is the onset position
-    relative to now: LIFT shifts the onset by +_WHEN_TENSE_STEP ticks
-    (``shift_time`` rotates BOTH ladder pairs coherently)."""
-    from Spaces import _WHEN_TENSE_STEP
-    enc = _event_when_encoding(when_width)
-    return enc.shift_time(when, +_WHEN_TENSE_STEP)
-
-
-def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
-    """Inverse of _lift_when: retreat the event one tense step toward the PAST
-    (-_WHEN_TENSE_STEP ticks)."""
-    from Spaces import _WHEN_TENSE_STEP
-    enc = _event_when_encoding(when_width)
-    return enc.shift_time(when, -_WHEN_TENSE_STEP)
-
-
 def _make_lex_gate(n_in, rank, seed, bias=1.4722):
     """Build the §2 lexical-mask projection (word code -> gate rank
     space) WITHOUT touching the global RNG (GrammarOpsPass §2).
@@ -3890,14 +3864,95 @@ class PrepositionLayer(GrammarLayer):
         # The event is opaque here: concepts are full-width codes
         # (Alec, 2026-09-13); no split, no .when shift.
         return right                       # P is the marker (absorbed), X passes through
-    def reverse(self, parent):
-        # The event is opaque here: concepts are full-width codes
-        # (Alec, 2026-09-13); no split, no .when shift.
-        return parent, parent              # (marker_placeholder, phrase); emit realizes the marker
+    def reverse(self, parent, *, marker=None):
+        if marker is None:
+            self.raise_no_inverse('preposition reverse requires its marker witness')
+        return marker, parent
     def compose(self, left, right):
         return self.forward(left, right)
-    def generate(self, parent):
-        return self.reverse(parent)
+    def generate(self, parent, **kwargs):
+        return self.reverse(parent, **kwargs)
+
+class MarkerUnaryLayer(GrammarLayer):
+    """The same marker-headed kernel with its own learned, unwritten marker."""
+    arity = 1
+    head_role = 1
+    inverse_kind = 'unary'
+    invertible = True
+    lossy = False
+    space_role = 'CS'
+    marker_base = None
+
+    def __init__(self, base):
+        width = int(base.nInput)
+        super().__init__(width, width)
+        # The host owns the binary implementation once. Only the missing
+        # marker belongs to this face; no second implementation is trained.
+        object.__setattr__(self, 'base', base)
+        self.marker = nn.Parameter(torch.zeros(width))
+
+    def compose(self, value):
+        return self.base.compose(self.marker.expand_as(value), value)
+
+    forward = compose
+
+    def reverse(self, parent):
+        marker = self.marker.expand_as(parent)
+        if isinstance(self.base, SurfaceLayer):
+            return self.base.reconstruct(parent, marker, 'left')[1]
+        return self.base.reverse(parent, marker=marker)[1]
+
+    generate = reverse
+
+
+class LowerUnaryLayer(MarkerUnaryLayer):
+    marker_base = 'lower'
+    rule_name = 'lower_unary'
+    predicate_identity = 'lower'
+    order_delta = -1
+    determiner_mode = 'mint'
+    reference_modes = (('argin1', 'particular'),)
+
+
+class DefiniteUnaryLayer(LowerUnaryLayer):
+    rule_name = 'definite_unary'
+    determiner_mode = 'bind'
+
+
+class PrepositionUnaryLayer(MarkerUnaryLayer):
+    marker_base = 'preposition'
+    rule_name = 'preposition_unary'
+    predicate_identity = 'preposition'
+    semantic_operand = 0
+
+
+class SurfaceUnaryLayer(MarkerUnaryLayer):
+    marker_base = 'surface'
+    rule_name = 'surface_unary'
+    predicate_identity = 'surface'
+    semantic_operand = 0
+
+
+class TransposeLayer(GrammarLayer):
+    """Exact 2 -> 2 rewrite of the two newest constituents."""
+    rule_name = 'transpose'
+    predicate_identity = 'transpose'
+    arity = 2
+    preserves_pair = True
+    operation_identity = inverse_identity = 'transpose'
+    inverse_kind = 'transpose'
+    invertible = True
+    lossy = False
+    space_role = 'CS'
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput, nOutput)
+
+    def compose(self, left, right):
+        return right, left
+
+    forward = reverse = generate = compose
+
 
 class ContextualBindLayer(GrammarLayer):
     """Carry a binding marker; individual selection belongs to the close."""
@@ -3920,130 +3975,6 @@ class ContextualBindLayer(GrammarLayer):
         return self.forward(left, right)
     def generate(self, parent):
         return self.reverse(parent)
-
-class _WhenOpMixin:
-    """Shared helpers for unary ops that rewrite the .when tail of a
-    materialized muxed event [B, V, nWhat + nWhere + nWhen]. Modifies ONLY
-    the trailing nWhen (=4, the 2026-07-04 start ladder) columns; .what /
-    .where pass through. Builds the matching v2 encoding via the one
-    construction seam. Tense operates on the VP/event .when BEFORE the
-    subject LIFT (spec note: equivalent post-LIFT)."""
-    _WHEN_WIDTH = 4
-    def _when_encoding(self):
-        from Spaces import event_when_encoding
-        if getattr(self, '_shared_when_encoding', None) is not None:
-            return self._shared_when_encoding
-        return event_when_encoding(self._WHEN_WIDTH)
-    def _split_when(self, x):
-        w = self._WHEN_WIDTH
-        if x.shape[-1] < w:
-            raise ValueError(f"{type(self).__name__}: event width {x.shape[-1]} < "
-                             f".when width {w}; is nWhen enabled?")
-        return x[..., :-w], x[..., -w:]
-
-class TenseLayer(_WhenOpMixin, GrammarLayer):
-    """Unary CS op that shifts the event ``.when`` center by tense."""
-    footprint_reads = footprint_writes = ()
-    inverse_kind = 'identity'
-    scope_transparent = True
-    rule_name = "tense"; arity = 1
-    predicate_identity = 'tense'
-    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
-    # _DELTA is the TENSE step applied to the event-time CENTER (in clock ticks):
-    # PRESENT = no shift, PAST = -step (toward past), FUTURE = +step (toward
-    # future). step == _WHEN_TENSE_STEP (1.0 tick).
-    from Spaces import _WHEN_TENSE_STEP as _STEP
-    _DELTA = {"PRESENT": 0.0, "PAST": -_STEP, "FUTURE": +_STEP}
-    del _STEP
-    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
-        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
-        object.__setattr__(self, '_op', "PRESENT")
-    def set_op(self, tense):
-        if tense not in self._DELTA: raise ValueError(f"unknown tense {tense!r}")
-        object.__setattr__(self, '_op', tense)
-    # Concept events are opaque (no .when to shift): tense at the
-    # conceptual level is carried by the concept code itself, so the op is
-    # the identity here (Alec, 2026-09-14).  The tense kind is kept for
-    # the symbolic layer's realisation, which owns the .when coordinate.
-    def forward(self, x):
-        return x
-    def reverse(self, y):
-        return y
-    def compose(self, x):     return self.forward(x)
-    def generate(self, parent): return self.reverse(parent)
-
-class AspectLayer(_WhenOpMixin, GrammarLayer):
-    """Grammar-compatible aspect op; currently identity for all aspect kinds."""
-    inverse_kind = 'identity'
-    rule_name = "aspect"; arity = 1
-    predicate_identity = 'aspect'
-    # No-op: nothing is lost (identity), so it is trivially invertible.
-    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
-    _KINDS = ("SIMPLE", "PERFECT", "PROGRESSIVE")
-    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
-        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
-        object.__setattr__(self, '_op', "SIMPLE"); object.__setattr__(self, '_eps', 0.25)
-    def set_op(self, kind, eps=0.25):
-        if kind not in self._KINDS: raise ValueError(f"unknown aspect kind {kind!r}")
-        object.__setattr__(self, '_op', kind); object.__setattr__(self, '_eps', float(eps))
-    def forward(self, x):      return x           # no-op (duration/aspect retired)
-    def reverse(self, parent): return parent      # no-op
-    def compose(self, x):      return self.forward(x)
-    def generate(self, parent): return self.reverse(parent)
-
-class MorphologyLayer(GrammarLayer):
-    """Apply surface_morphology features to the event via tense/aspect ops."""
-    inverse_kind = 'identity'
-    scope_transparent = True
-    rule_name = "morphology"; arity = 1
-    predicate_identity = 'morphology'
-    invertible = True; lossy = True; space_role = 'CS'; reads_activation = False
-    event_aware = True          # routes the analyzed tense/aspect onto .when
-
-    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
-        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
-        object.__setattr__(self, '_token', None)
-        object.__setattr__(self, '_tense', TenseLayer())
-        object.__setattr__(self, '_aspect', AspectLayer())
-
-    def set_token(self, token):
-        """Stash the surface token ``analyze()`` decomposes (out-of-band,
-        like ``TenseLayer.set_op``)."""
-        object.__setattr__(self, '_token', token)
-
-    def _analyze(self):
-        import surface_morphology
-        if not self._token:
-            return None, {}
-        return surface_morphology.analyze(self._token)
-
-    def forward(self, x):
-        _lemma, feats = self._analyze()
-        if not feats:
-            return x                        # plain / unknown token: pass through
-        out = x
-        self._tense.set_op(feats.get("tense", "PRESENT"))
-        out = self._tense.compose(out)      # delegate the .when rotation
-        for asp in feats.get("aspect", []):
-            self._aspect.set_op(asp)
-            out = self._aspect.compose(out)  # delegate the .when reshape
-        return out
-
-    def reverse(self, y):
-        _lemma, feats = self._analyze()
-        if not feats:
-            return y
-        out = y
-        for asp in reversed(feats.get("aspect", [])):
-            self._aspect.set_op(asp)
-            out = self._aspect.generate(out)
-        self._tense.set_op(feats.get("tense", "PRESENT"))
-        out = self._tense.generate(out)
-        return out
-
-    def compose(self, x):     return self.forward(x)
-    def generate(self, parent): return self.reverse(parent)
-
 
 class _SearchedBinaryLayer(GrammarLayer):
     """Three faces of a commutative code operation with a searched inverse."""
@@ -4701,12 +4632,14 @@ GRAMMAR_LAYER_CLASSES = {
     'compound':     CompoundLayer,
     'adverb':       AdverbLayer,
     'lower':        LowerLayer,
+    'transpose': TransposeLayer,
+    'lower_unary': LowerUnaryLayer,
+    'definite_unary': DefiniteUnaryLayer,
+    'preposition_unary': PrepositionUnaryLayer,
+    'surface_unary': SurfaceUnaryLayer,
     'surface':      SurfaceLayer,
     'preposition':  PrepositionLayer,
     'bind':         ContextualBindLayer,
-    'tense':        TenseLayer,
-    'aspect':       AspectLayer,
-    'morphology':   MorphologyLayer,
     'conjunction':  ConjunctionLayer,
     'disjunction':  DisjunctionLayer,
     'min':          MinLayer,
@@ -4855,11 +4788,10 @@ _OPERATOR_SURFACE_SCHEMAS = {
     # licensing), so the realized phrase has no overt marker (spec
     # "Operation 2").
     'bind':         T5_BINARY_ELISION,
-    # tense / aspect (T1): unary .when ops; each owns a learned affix
-    # marker (the inflectional ending / auxiliary) realized over the head.
-    'tense':        T1_UNARY_AFFIX,
-    'aspect':       T1_UNARY_AFFIX,
-    'morphology':   T1_UNARY_AFFIX,
+    'lower_unary':       T1_UNARY_AFFIX,
+    'definite_unary':    T1_UNARY_AFFIX,
+    'preposition_unary': T1_UNARY_AFFIX,
+    'surface_unary':     T1_UNARY_AFFIX,
     # copy/swap (T5 BINARY_ELISION) were parked in bin/Legacy.py
     # (2026-07-17); their surface schema is set there.
 }
@@ -5107,6 +5039,8 @@ class _BinaryGrammarOpAdapter(nn.Module):
 
     def forward(self, left, right):
         """Forward ``(left, right)`` to the wrapped grammar layer's compose."""
+        if getattr(self.gl, 'preserves_pair', False):
+            return self.gl.compose(left, right)[0]
         return self.gl.compose_blocks(self.gl.compose, left, right)
 
     def forward_with_context(self, left, right, slab):
@@ -5114,6 +5048,8 @@ class _BinaryGrammarOpAdapter(nn.Module):
         compose = getattr(self.gl, "compose_with_context", None)
         if callable(compose):
             return compose(left, right, slab)
+        if getattr(self.gl, 'preserves_pair', False):
+            return self.gl.compose(left, right)[0]
         return self.gl.compose_blocks(self.gl.compose, left, right)
 
     def forward_with_grammar_context(self, left, right, slab, *, context):
@@ -5358,8 +5294,8 @@ class LanguageLayer(Layer):
         for route in traces:
             rows = torch.stack((route['kind'], route['op'], route['valid'].long()), -1).detach().cpu().tolist()
             for b, (kind, op, valid) in enumerate(rows):
-                if valid and kind in (1, 2):
-                    ids, owners = ((self.binary_rule_ids, self.binary_roles) if kind == 1
+                if valid and kind in (1, 2, 3):
+                    ids, owners = ((self.binary_rule_ids, self.binary_roles) if kind in (1, 3)
                                    else (self.unary_rule_ids, self.unary_roles))
                     rules[owners[op]][b].append(ids[op])
         self._last_input = data
@@ -5447,7 +5383,7 @@ class LanguageLayer(Layer):
         route = traces[0]
         rows = torch.stack((route['kind'], route['op'], route['position']), -1).detach().cpu().tolist()
         names = self.operation_layer.op_names
-        return [[(p, p + 1, names[op])] if kind == 1 and names[op] else []
+        return [[(p, p + 1, names[op])] if kind in (1,3) and names[op] else []
                 for kind, op, p in rows]
 
 
@@ -7105,6 +7041,8 @@ class OperationSelectionLayer(nn.Module):
         self.ops = nn.ModuleList(ops)
         self.unary_ops = nn.ModuleList(unary_ops)
         self.r_reduce, self.r_apply = len(self.ops), len(self.unary_ops)
+        self.pair_rewrites = tuple(bool(getattr(getattr(op, 'gl', op), 'preserves_pair', False))
+                                   for op in self.ops)
         declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
         self._unary_inverse_pairs = tuple(tuple(
             getattr(candidate, 'inverse_identity', None) is not None
@@ -7201,7 +7139,7 @@ class OperationSelectionLayer(nn.Module):
 
     @staticmethod
     def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
-                             r_reduce, r_apply, stop_exact=None, reference_ids=None):
+                             r_reduce, r_apply, stop_exact=None, reference_ids=None, pair_rewrites=()):
         """One representative of each distinct numerical next state.
 
         Exact equality is the value criterion; no tolerance, target, or
@@ -7214,10 +7152,13 @@ class OperationSelectionLayer(nn.Module):
         A = logits.shape[1]
         ids = torch.arange(A, device=x.device)
         binary = ids < n_binary
+        transpose = (torch.tensor(pair_rewrites, device=x.device, dtype=torch.bool)[ids.clamp_max(max(0, n_binary-1)) % r_reduce]
+                     & binary) if pair_rewrites and any(pair_rewrites) else torch.zeros_like(binary)
+        binary = binary & ~transpose
         unary = (ids >= n_binary) & (ids < n_binary + n_unary)
-        position = torch.where(binary, ids // max(1, r_reduce),
+        position = torch.where(binary | transpose, ids // max(1, r_reduce),
             (ids - n_binary) // max(1, r_apply)).clamp(0, N - 1)
-        if A > 128 and not torch.compiler.is_compiling() and not bool(torch.isnan(x).any()):
+        if A > 128 and not any(pair_rewrites) and not torch.compiler.is_compiling() and not bool(torch.isnan(x).any()):
             counts, category, positions, payload, unchanged = OperationSelectionLayer._compact_departure_groups(
                 x, depth, candidates, binary, unary, position)
             if reference_ids is not None:
@@ -7244,6 +7185,10 @@ class OperationSelectionLayer(nn.Module):
             source.clamp_max(N - 1)[None, :, :, None].expand(B, A, N, D))
         rewrite = (binary | unary)[:, None] & (columns[None] == position[:, None])
         states = torch.where(rewrite[None, :, :, None], candidates[:, :, None], states)
+        swap_source = torch.where(columns[None] == position[:, None], position[:, None]+1,
+            torch.where(columns[None] == position[:, None]+1, position[:, None], columns[None])).clamp_max(N-1)
+        swapped = x[:, None].expand(B,A,N,D).gather(2, swap_source[None,:,:,None].expand(B,A,N,D))
+        states = torch.where(transpose[None,:,None,None], swapped, states)
         counts = depth[:, None] - binary.long()[None]
         states = torch.where(columns[None, None, :, None] < counts[:, :, None, None], states, 0.)
         allowed = torch.isfinite(logits)
@@ -7389,6 +7334,8 @@ class OperationSelectionLayer(nn.Module):
         bi = torch.tensor(binary_ops, device=x.device, dtype=torch.long)
         ui = torch.tensor(unary_ops, device=x.device, dtype=torch.long)
         r_reduce, r_apply = len(binary_ops), len(unary_ops)
+        pair_rewrites = tuple(self.pair_rewrites[i] for i in binary_ops)
+        swaps = torch.tensor(pair_rewrites, device=x.device, dtype=torch.bool)
         content = x[..., :self.d_model]
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
         score_cats = None if cat_ctx is None else cat_ctx.detach()
@@ -7438,7 +7385,7 @@ class OperationSelectionLayer(nn.Module):
             deadline = required >= torch.as_tensor(rounds_left, device=x.device)
             pressure = self.reduction_pressure(load.to(binary_scores),
                 allowance=limit, rounds_left=rounds_left)
-            binary_scores = binary_scores + pressure[:, None, None]
+            binary_scores = binary_scores + pressure[:, None, None] * (~swaps)[None,None]
         if reference_data is None:
             needs_cases = torch.tensor([bool(getattr(getattr(op, 'gl', op), 'case_head_role', 0))
                                         for op in self.ops], device=x.device, dtype=torch.bool)
@@ -7447,6 +7394,11 @@ class OperationSelectionLayer(nn.Module):
             binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
         binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
+        # Transpose acts only on the newest pair and cannot meet a deletion deadline.
+        swap_legal = (positions[:, :-1] == depth[:,None]-2) & ~deadline[:,None]
+        if previous_unary is not None:
+            swap_legal &= ~((previous_unary[:,:-1] == -2) & (previous_unary[:,1:] == -2))
+        binary_scores = binary_scores.masked_fill(swaps[None,None] & ~swap_legal[...,None], -torch.inf)
         unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
         if previous_unary is not None and self.r_apply:
             inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
@@ -7479,7 +7431,7 @@ class OperationSelectionLayer(nn.Module):
                 reference_data['unary_choices'].reshape(B, nu, 2),
                 torch.full((B, 1, 2), -1, device=x.device, dtype=torch.long)), 1)
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
-            nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids)
+            nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids, pair_rewrites=pair_rewrites)
         action, probabilities, has_choice = self.select_logits(logits, structural=flags,
             masked_action=masked_action,sample=sample,
             departure_eligible=departure_eligible)
@@ -7488,7 +7440,8 @@ class OperationSelectionLayer(nn.Module):
         active = active & has_choice
         is_binary = active & (action < nb)
         is_unary = active & (action >= nb) & (action < nb + nu)
-        kind = torch.where(is_binary, 1, torch.where(is_unary, 2, 0))
+        is_transpose = is_binary & swaps[action.clamp_max(max(0, nb-1)) % max(1,r_reduce)] if r_reduce else torch.zeros_like(is_binary)
+        kind = torch.where(is_transpose, 3, torch.where(is_binary, 1, torch.where(is_unary, 2, 0)))
         position = torch.where(is_binary, action // max(1, r_reduce),
                                (action - nb) // max(1, r_apply)).clamp(0, N - 1)
         b_index = bi[action % r_reduce] if r_reduce else torch.zeros_like(action)
@@ -7496,13 +7449,19 @@ class OperationSelectionLayer(nn.Module):
         local_op = torch.where(is_binary, b_index, u_index)
         chosen = candidates.gather(1, action[:, None, None].expand(B, 1, D)).squeeze(1)
         probability = probabilities.gather(1, action[:, None])
-        next_depth = depth - is_binary.long()
+        folding = is_binary & ~is_transpose
+        next_depth = depth - folding.long()
         # A single deletion/rewrite, not tile compaction or a length DP.
-        source = positions.expand(B, N) + (is_binary[:, None] & (positions > position[:, None])).long()
+        source = positions.expand(B, N) + (folding[:, None] & (positions > position[:, None])).long()
         base = x.gather(1, source.clamp_max(N - 1)[..., None].expand(B, N, D))
         selected = (is_binary | is_unary)[:, None] & (positions == position[:, None])
         path = torch.where(selected[..., None], chosen[:, None], base)
         hard = torch.where(selected[..., None], chosen.detach()[:, None], base)
+        swap_source = torch.where(positions == position[:,None], position[:,None]+1,
+            torch.where(positions == position[:,None]+1, position[:,None], positions)).clamp_max(N-1)
+        swapped = x.gather(1, swap_source[...,None].expand(B,N,D))
+        path = torch.where(is_transpose[:,None,None], swapped, path)
+        hard = torch.where(is_transpose[:,None,None], swapped, hard)
         path = torch.where((active & (kind == 0))[:, None, None], x, path)
         path = torch.where((positions < next_depth[:, None])[..., None], path, 0.)
         hard = torch.where((positions < next_depth[:, None])[..., None], hard, 0.)
@@ -7516,6 +7475,8 @@ class OperationSelectionLayer(nn.Module):
                    if previous_unary is None else previous_unary)
         history = history.gather(1, source.clamp_max(N - 1))
         history = torch.where(selected, torch.where(is_unary, local_op, -1)[:, None], history)
+        swap_history = torch.where((positions == position[:,None]) | (positions == position[:,None]+1), -2, history)
+        history = torch.where(is_transpose[:,None], swap_history, history)
         routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
         routing['alternatives'] = active & departure_eligible.any(-1)
         routing['departure_eligible'] = departure_eligible
@@ -8340,8 +8301,14 @@ def build_space_syntactic_layer(space, word_space, *, space_role,
         if cls is None:
             continue
         try:
-            if cls is SurfaceLayer:
-                width = int(space.muxedSize)
+            width = int(space.muxedSize)
+            if issubclass(cls, MarkerUnaryLayer):
+                base = host_layers.get(cls.marker_base)
+                if base is None:
+                    base = cls_registry[cls.marker_base](nInput=width, nOutput=width)
+                    host_layers[cls.marker_base] = base
+                host_layers[mn] = cls(base)
+            elif cls in (SurfaceLayer, LowerLayer, PrepositionLayer):
                 host_layers[mn] = cls(nInput=width, nOutput=width)
             else:
                 host_layers[mn] = cls()
@@ -11767,7 +11734,12 @@ class SymbolSubSpace(SubSpace):
         cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
         if cls is None:
             return None
-        if cls is SurfaceLayer:
+        if issubclass(cls, MarkerUnaryLayer):
+            base = self._resolve_rule_layer(space_role, cls.marker_base)
+            layer = cls(base)
+            self.register_host_layer(space_role, rule_name, layer)
+            return layer
+        if cls in (SurfaceLayer, LowerLayer, PrepositionLayer):
             # The host owns this numerical map once; the separate compose and
             # generate catalogues retain references to that identical instance.
             width = int(self.muxedSize)
@@ -12098,7 +12070,10 @@ class SymbolSubSpace(SubSpace):
                     # 'merge' / unknown -- not a registry op.
                     continue
                 try:
-                    builtin_layers[name] = cls()
+                    if issubclass(cls, MarkerUnaryLayer):
+                        continue  # Built together with its shared base below.
+                    builtin_layers[name] = (cls(nInput=concept_width, nOutput=concept_width)
+                        if cls in (SurfaceLayer, GRAMMAR_LAYER_CLASSES["lower"], PrepositionLayer) else cls())
                 except TypeError:
                     # Op needs constructor params (host-wired elsewhere,
                     # e.g. via _resolve_rule_layer / the CS-space_role branch).
@@ -12752,7 +12727,8 @@ class LanguageSpace(nn.Module):
             if op is None:
                 raise ValueError(f"unresolved generate rule: {rule.canonical}")
             resolved[identity] = op
-            catalog[arity].append((rule.space_role, offset, rule, op))
+            if not getattr(op, 'preserves_pair', False):
+                catalog[arity].append((rule.space_role, offset, rule, op))
         # A compose-only grammar declares the same operators' generate
         # faces implicitly. It must still reconstruct, including numeric
         # answer configurations with no output loop. No recorded choice is
@@ -12769,7 +12745,8 @@ class LanguageSpace(nn.Module):
                     op = getattr(wrapped, 'gl', wrapped)
                     identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
                     resolved[identity] = op
-                    catalog[arity].append((rule.space_role, rid-len(TheGrammar.rules_upward), rule, op))
+                    if not getattr(op, 'preserves_pair', False):
+                        catalog[arity].append((rule.space_role, rid-len(TheGrammar.rules_upward), rule, op))
         # Non-owning views: no copied weights, state-dict aliases, parameter
         # adoption or RNG consumption. The host keeps its checkpoint identity.
         object.__setattr__(self, "_generation_resolved", resolved)
@@ -13067,6 +13044,8 @@ class LanguageSpace(nn.Module):
         folded = torch.cat((torch.full_like(history[:, :1], -1), history[:, 2:],
                             torch.full_like(history[:, :1], -1)), 1)[:, :history.shape[1]]
         history = torch.where(binary[:, None], folded, history)
+        transpose = choice.applied & (choice.kind == 3)
+        history = torch.where(transpose[:,None] & (torch.arange(history.shape[1], device=history.device)[None] < 2), -2, history)
         unary = choice.applied & (choice.kind == 2)
         position = torch.arange(history.shape[1], device=history.device)[None]
         return torch.where(unary[:, None] & (position == choice.position[:, None]),
@@ -13199,6 +13178,11 @@ class LanguageSpace(nn.Module):
                     return None
                 stack.append(("leaf", word))
                 continue
+            if kind == 3:
+                if len(stack) < 2:
+                    return None
+                stack[-2:] = reversed(stack[-2:])
+                continue
             if kind == 1:
                 if not 0 <= local < len(self._compose_binary_rules) or len(stack) < 2:
                     return None
@@ -13209,7 +13193,8 @@ class LanguageSpace(nn.Module):
             if kind == 2:
                 if not 0 <= local < len(self._compose_unary_rules) or not stack:
                     return None
-                stack.append(("unary", self._compose_unary_rules[local], stack.pop()))
+                position = len(stack)-1-max(0,word)
+                stack[position] = ("unary", self._compose_unary_rules[local], stack[position])
                 continue
             return None
         def relation(face, left_index, right_index, *, mode, polarity,
@@ -13934,8 +13919,9 @@ class LanguageSpace(nn.Module):
                     pair_masks.append(torch.zeros_like(singular))
                     continue
                 from CaseSelection import select_cases, fold_cases
-                li = (case_bank.codes[None] - left[:, None]).square().sum(-1).argmin(-1)
-                ri = (case_bank.codes[None] - right[:, None]).square().sum(-1).argmin(-1)
+                codes = case_bank.codes if case_bank.codes.ndim == 3 else case_bank.codes[None]
+                li = (codes - left[:, None]).square().sum(-1).argmin(-1)
+                ri = (codes - right[:, None]).square().sum(-1).argmin(-1)
                 folded = fold_cases(select_cases(case_bank, case_bank.ids[li], case_bank.ids[ri]))
             else:
                 folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
@@ -13998,8 +13984,7 @@ class LanguageSpace(nn.Module):
             inverse = getattr(op, "inverse_kind", None)
             if inverse == "identity":
                 # These declared operators are tensor identities on opaque
-                # concepts. Morphology's surface-token analysis cannot change
-                # this CS value and must not read a later token during replay.
+                # concepts; replay retains that same CS value.
                 available = available | selected
                 continue
             if inverse != "unary":
@@ -14153,6 +14138,7 @@ class LanguageSpace(nn.Module):
         layer = self.language_layer.operation_layer
         names = dict(zip(self._cs_binary_rule_ids.tolist(), layer.op_names or []))
         names.update(zip(self._cs_unary_rule_ids.tolist(), layer.unary_names or []))
+        pair_rules={rid for rid,pair in zip(self._cs_binary_rule_ids.tolist(),layer.pair_rewrites) if pair}
         observations = []
         for b, words in enumerate(active):
             forest, row = [], []
@@ -14165,6 +14151,11 @@ class LanguageSpace(nn.Module):
                         continue
                     name = names.get(ids[b][slot])
                     if arities[b][slot] == 2 and len(forest) >= 2:
+                        if ids[b][slot] in pair_rules:
+                            left,right=forest[-2:]
+                            if name and (left>=0 or right>=0):row.append((left,right,name))
+                            forest[-2:]=[right,left]
+                            continue
                         right, left = forest.pop(), forest.pop()
                         if name and (left >= 0 or right >= 0):
                             row.append((left, right, name))

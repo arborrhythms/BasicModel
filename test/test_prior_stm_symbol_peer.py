@@ -30,7 +30,7 @@ class _IndexedRows(nn.Module):
         self.rows = nn.Parameter(rows.clone())
         self.calls = []
 
-    def lookup_rows(self, indices):
+    def lookup_rows(self, indices, **kwargs):
         self.calls.append(indices.detach().clone())
         return self.rows[indices.long()]
 

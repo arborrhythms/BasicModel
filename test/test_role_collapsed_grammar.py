@@ -44,7 +44,8 @@ _REQUIRED_OPS = {
     "not", "non",
     "conjunction", "disjunction", "intersection", "union",
     "lift", "verb", "adverb", "lower",
-    "preposition", "bind", "tense", "morphology",
+    "preposition", "bind", "surface", "transpose", "lower_unary",
+    "definite_unary", "preposition_unary", "surface_unary",
 }
 
 

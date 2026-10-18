@@ -15,7 +15,7 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from Spaces import WhenRangeEncoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
+from Spaces import WhenRangeEncoding, _WHEN_PERIOD
 
 
 def _enc(): return WhenRangeEncoding(_WHEN_PERIOD, 2)
@@ -56,24 +56,16 @@ def test_tense_shifts_center_by_step_via_shift_time():
     base = _WHEN_PERIOD // 8
     when = enc.encode(base).expand(1, 1, -1).clone()
     # FUTURE: center + step ticks.
-    fut = enc.shift_time(when, +_WHEN_TENSE_STEP)
+    fut = enc.shift_time(when, +1.0)
     c, ext = enc.decode(fut)
-    assert math.isclose(float(c.reshape(-1)[0]), float(base) + _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(c.reshape(-1)[0]), float(base) + 1.0, abs_tol=0.05)
     assert math.isclose(float(ext.reshape(-1)[0]), 0.0, abs_tol=1e-3)
     # PAST: center - step ticks.
-    past = enc.shift_time(when, -_WHEN_TENSE_STEP)
+    past = enc.shift_time(when, -1.0)
     c2, _ext = enc.decode(past)
-    assert math.isclose(float(c2.reshape(-1)[0]), float(base) - _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(c2.reshape(-1)[0]), float(base) - 1.0, abs_tol=0.05)
 
 
-def test_aspect_layer_is_identity():
-    from Language import AspectLayer
-    enc = _enc()
-    head = torch.randn(1, 1, 6)
-    x = torch.cat([head, enc.encode(0.0).expand(1, 1, -1)], dim=-1)
-    for kind in ("SIMPLE", "PERFECT", "PROGRESSIVE"):
-        a = AspectLayer(); a.set_op(kind)
-        assert torch.allclose(a.forward(x), x, atol=1e-7), kind   # no-op
 
 
 # --- present-instant stamp -> [0, 1] at t=0 --------------------------------

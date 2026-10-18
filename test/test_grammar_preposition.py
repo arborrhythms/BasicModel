@@ -41,9 +41,10 @@ class TestPrepositionLayer(unittest.TestCase):
 
     def test_reverse_structural_split(self):
         layer = PrepositionLayer(); parent = torch.randn(2, 3, 6)
-        left, right = layer.reverse(parent)
-        self.assertTrue(torch.allclose(right, parent, atol=1e-6))  # content side recovers phrase
-        self.assertEqual(left.shape, parent.shape)
+        marker = torch.randn_like(parent)
+        left, right = layer.reverse(parent, marker=marker)
+        self.assertTrue(torch.equal(right, parent))
+        self.assertTrue(torch.equal(left, marker))
 
     def test_permissive_arguments(self):  # accepts NP/VP/S-shaped content; gating is a learned hook
         layer = PrepositionLayer()

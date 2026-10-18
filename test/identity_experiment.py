@@ -192,7 +192,13 @@ def restore_warmup(model, path, restore):
     that round-trip drift; it must not alter the matched experiment's start.
     This measurement adapter does not repair or certify checkpoint retention.
     """
-    saved=torch.load(path,map_location='cpu',weights_only=False)['state_dict']
+    bundle=torch.load(path,map_location='cpu',weights_only=False,mmap=True)
+    saved=bundle['state_dict']
+    catalog=bundle.get('grammar_catalog')
+    if catalog is None and any(key.endswith('._next_ts') for key in saved):
+        # The two retained 4e checkpoints use this archived complete grammar.
+        # This is a one-way storage migration, never a runnable old path.
+        catalog=json.loads((ROOT/'test/fixtures/grammar-catalog-63ece2e1.json').read_text())
     # BaseModel's preflight runs before this lazy child's own load hook.
     # Materialize its saved bank through that hook, retaining strict key
     # checking and every learned weight. This presents no training example.
@@ -200,9 +206,14 @@ def restore_warmup(model, path, restore):
     comparison={key[len(prefix):]:value for key,value in saved.items() if key.startswith(prefix)}
     if comparison:
         model.comparison_reader.load_state_dict(comparison,strict=True)
-    if not restore(model,str(path),require_match=True):
+    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):
         raise RuntimeError('warm-up checkpoint restore failed')
-    current=model.state_dict();drift={}
+    from GrammarCheckpoint import align
+    saved,drift,_=align(model,saved,catalog)
+    for name,module in model.named_modules(remove_duplicate=False):
+        migrate=getattr(type(module),'migrate_generate_checkpoint',None)
+        if migrate is not None:migrate(module,saved,name+'.')
+    current=model.state_dict()
     with torch.no_grad():
         for key,value in saved.items():
             if key not in current or current[key].shape!=value.shape:
@@ -210,7 +221,23 @@ def restore_warmup(model, path, restore):
             if not torch.equal(current[key],value):
                 drift[key]=dict(elements=int(current[key].ne(value).sum()),
                     max_difference=float((current[key].double()-value.double()).abs().max()))
-                current[key].copy_(value)
+                if key.endswith('._extra_state'):
+                    model.get_submodule(key[:-len('._extra_state')]).set_extra_state(value)
+                else:
+                    current[key].copy_(value)
+    final=model.state_dict()
+    for key,value in saved.items():
+        if key.endswith('._extra_state'):
+            # torch.save's byte envelope is not a canonical metadata encoding.
+            from IndependentComponents import _unpack_state
+            actual,expected=_unpack_state(final[key]),_unpack_state(value)
+            if key.endswith('nouns._extra_state') and expected.get('pending') == [] and 'pending' not in actual:
+                expected=dict(expected);expected.pop('pending')
+                drift.setdefault(key,{})['retired_empty_pending']=True
+            torch.testing.assert_close(actual,expected,rtol=0,atol=0)
+            continue
+        if not torch.equal(final[key],value):
+            raise RuntimeError(f'checkpoint retention differs after restore: {key}')
     return drift
 
 

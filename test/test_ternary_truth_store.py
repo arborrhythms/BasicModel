@@ -4,7 +4,7 @@
 
 ``TernaryTruthStore`` combines the LTM end-state chain and the
 RelativeTruthStore into ONE tensor of ``(NP1, VP, NP2)`` rows (full idea
-vectors; Null = zero) + a per-row timestamp + a per-row scalar trust:
+vectors; Null = zero) + stream membership + a per-row scalar trust:
 
   * NP . .   = an IDEA (absolute truth)
   * NP VP .  = a unary predication
@@ -90,19 +90,7 @@ class TestSchema(unittest.TestCase):
 
 
 class TestTimestampAndTrust(unittest.TestCase):
-    def test_timestamp_monotonic(self):
-        s = _store()
-        s.append_idea(_v(1))
-        s.append_idea(_v(2))
-        s.append_idea(_v(3))
-        self.assertEqual([s.row(i)['timestamp'] for i in range(3)],
-                         [0.0, 1.0, 2.0])
 
-    def test_explicit_timestamp_advances_clock(self):
-        s = _store()
-        s.append_idea(_v(1), timestamp=10.0)   # provisioned early/explicit
-        r = s.append_idea(_v(2))               # next tick must be > 10
-        self.assertEqual(s.row(r)['timestamp'], 11.0)
 
     def test_trust_clamped(self):
         s = _store()
@@ -121,14 +109,6 @@ class TestTimestampAndTrust(unittest.TestCase):
 
 
 class TestQueries(unittest.TestCase):
-    def test_recent_by_timestamp_desc(self):
-        s = _store()
-        s.append_idea(_v(1))   # ts 0
-        s.append_idea(_v(2))   # ts 1
-        s.append_idea(_v(3))   # ts 2
-        self.assertEqual(s.recent(2).tolist(), [2, 1])
-        self.assertEqual(s.recent(10).tolist(), [2, 1, 0])
-        self.assertEqual(s.recent(0).tolist(), [])
 
     def test_relations_and_ideas_filters(self):
         s = _store()
@@ -143,7 +123,7 @@ class TestQueries(unittest.TestCase):
 
     def test_empty_queries(self):
         s = _store()
-        self.assertEqual(s.recent(3).tolist(), [])
+        self.assertEqual(s.stream_rows(0).tolist(), [])
         self.assertEqual(s.relations().tolist(), [])
         self.assertEqual(s.ideas().tolist(), [])
 
@@ -178,8 +158,7 @@ class TestPersistence(unittest.TestCase):
                           rel_type=T.REL_IMPLIES, trust=-0.4)
         sd = s.state_dict()
         # every piece of state is a registered buffer -> rides state_dict
-        for k in ('slots', 'rel_type', 'timestamp', 'c_plus', 'c_minus', 'count',
-                  '_next_ts'):
+        for k in ('slots', 'rel_type', 'stream', 'c_plus', 'c_minus', 'count'):
             self.assertIn(k, sd, f"{k} must be in state_dict")
         self.assertNotIn('trust', sd)
         s2 = _store()
@@ -192,16 +171,14 @@ class TestPersistence(unittest.TestCase):
         self.assertTrue(torch.equal(s2.row(1)['np2'], _v(0, 0, 1)))
         # the clock survives so further appends keep increasing
         r = s2.append_idea(_v(9))
-        self.assertEqual(s2.row(r)['timestamp'], 2.0)
 
     def test_reset_clears(self):
         s = _store()
         s.append_idea(_v(1), trust=0.5)
         s.reset()
         self.assertEqual(len(s), 0)
-        self.assertEqual(s.recent(3).tolist(), [])
+        self.assertEqual(s.stream_rows(0).tolist(), [])
         r = s.append_idea(_v(2))
-        self.assertEqual(s.row(r)['timestamp'], 0.0, "clock reset")
 
 
 class TestOriginProvenance(unittest.TestCase):
@@ -269,22 +246,19 @@ class TestOriginProvenance(unittest.TestCase):
         removed = s.clear_origin(T.ORIGIN_USER)
         self.assertEqual(removed, 2)
         self.assertEqual(len(s), 2)
-        # survivors keep order, vectors, trust, rel_type, timestamp, text
+        # survivors keep order, vectors, trust, rel_type, stream, text
         r0, r1 = s.row(0), s.row(1)
         self.assertTrue(torch.equal(r0['np1'], _v(1)))
         self.assertEqual(r0['origin'], T.ORIGIN_CONVERSATION)
-        self.assertEqual(r0['timestamp'], 0.0)
         self.assertTrue(torch.equal(r1['np1'], _v(3)))
         self.assertEqual(r1['rel_type'], T.REL_IMPLIES)
         self.assertAlmostEqual(r1['trust'], 0.3, places=6)
-        self.assertEqual(r1['timestamp'], 2.0)
         self.assertEqual(r1['text'], "p")
         # vacated tail rows are zeroed
         self.assertEqual(float(s.slots[2:4].abs().sum()), 0.0)
         self.assertEqual(int(s.origin[2:4].abs().sum()), 0)
         # the clock is NOT rewound: the next append lands after row 3's tick
         r = s.append_idea(_v(9))
-        self.assertEqual(s.row(r)['timestamp'], 4.0)
         # idempotent: nothing left of that origin
         self.assertEqual(s.clear_origin(T.ORIGIN_USER), 0)
 

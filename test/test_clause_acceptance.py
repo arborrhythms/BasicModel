@@ -171,12 +171,12 @@ def test_07_equality_writes_two_independent_part_rows(monkeypatch):
     assert f.store.row(1)['evidence'] == pytest.approx((.7, 0.))
 
 
-def test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row(monkeypatch):
+def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    eternal = f.store.write_clause(f.clause('cat', located=False))
-    assert f.store.row_ids[eternal] == f.noun('cat')
+    direct = f.store.write_clause(f.clause('cat', located=False))
+    assert f.store.row_ids[direct] == f.store.address_keys[direct] != f.noun('cat')
     located = f.store.write_clause(f.clause('cat'))
-    assert located != eternal and f.store.row_ids[located] != f.noun('cat')
+    assert located == direct and int(f.store.witness_count[direct]) == 2
     assert f.store.when[located].any()
 
 

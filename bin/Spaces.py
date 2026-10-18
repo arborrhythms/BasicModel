@@ -691,37 +691,10 @@ class WhereEncoding(QuadratureEncoding):
 # Live event bands use DocumentWhenEncoding below: relative [i, i+1].
 # These legacy codecs retain explicit caller-owned t; the model no longer
 # propagates when_time into any event encoder.
-#
-# ``.when`` is now the same endpoint-sum bracket as ``.where`` (see
-# ``_bracket_encode``), keyed on a span of model TIME ``[start, end]`` measured
-# from the model clock origin:
-#
-#   .when = 0.5 * [sin(s*dt)+sin(e*dt),  cos(s*dt)+cos(e*dt)],   dt = 2*pi/period
-#
-# so the ANGLE decodes the event-time CENTER and the MAGNITUDE decodes the event
-# DURATION (extent). An INSTANT event (start == end == t) collapses to
-# ``[sin(t*dt), cos(t*dt)]`` (magnitude 1). The serialized ``BasicModel.when_time``
-# long counter owns the EXACT absolute time; ``.when``'s angle is the coarse
-# (folded / aliasing) feature.
-#
-# TENSE (past / present / future) is no longer a magnitude axis: it is DERIVED
-# from the interval's position relative to ``now`` (the model clock ``self.t``) --
-# center < now = past, interval contains now = present, center > now = future.
-# ``TenseLayer`` / ``_lift_when`` / ``_lower_when`` move the interval CENTER along
-# time (``shift_time``), preserving the duration. The pre-2026-06-16 magnitude-D
-# tense scheme (and the earlier endpoint-sum *range* / aspect-interval duration)
-# are both superseded.
-#
-# ``_WHEN_MAXT`` is retained as a back-compat alias for ``_WHEN_PERIOD`` so the
-# existing construction sites that import / pass it keep working.
 _WHEN_PERIOD = 65536
 _WHEN_MAXT = _WHEN_PERIOD
 # Legacy standalone fixture period. Complete models use the registry capacity.
 _WHERE_PERIOD_DEFAULT = 8192
-# Tense TIME step in clock ticks: one tense step (PAST / FUTURE, _lift_when /
-# _lower_when) shifts the event-time center by this many ticks toward past /
-# future, preserving the event duration.
-_WHEN_TENSE_STEP = 1.0
 
 
 class WhenRangeEncoding(QuadratureEncoding):
@@ -738,12 +711,8 @@ class WhenRangeEncoding(QuadratureEncoding):
         (start == end == t) collapses to ``[sin(t*dt), cos(t*dt)]`` (magnitude
         1), the default stamp.
 
-    TENSE (past / present / future) is DERIVED from the interval vs ``now``
-    (``self.t``): center < now = past, interval straddles now = present, center
-    > now = future. ``TenseLayer`` / ``_lift_when`` / ``_lower_when`` move the
-    event-time CENTER (``shift_time``), preserving duration. The former
-    magnitude-D tense axis is retired. nDim=2 (== nWhere); disabled (nDim=0) when
-    n_when=0.
+    This standalone codec accepts explicit caller coordinates. Production
+    rows use DocumentWhenEncoding and never derive tense from it.
     """
     index = []
 
@@ -802,12 +771,12 @@ class WhenRangeEncoding(QuadratureEncoding):
         """Scalar FUTURE handle: the present instant advanced ``k`` ticks toward
         the future, ``encode(self.t + step*k)`` (time center moves, no mutation
         of the clock origin ``self.t``)."""
-        return self.encode(self.t + _WHEN_TENSE_STEP * k)
+        return self.encode(self.t + k)
 
     def previous(self, k=1):
         """Scalar PAST handle: the present instant retreated ``k`` ticks toward
         the past, ``encode(self.t - step*k)``."""
-        return self.encode(self.t - _WHEN_TENSE_STEP * k)
+        return self.encode(self.t - k)
 
     def forward(self, x):
         """Stamp the PRESENT instant ``.when = encode(self.t)`` (start == end ==
@@ -851,14 +820,8 @@ class WhenStartDurationEncoding(Encoding):
     estimate localizes within half an HF period). The band carries the field
     address within the chain's capacity. The exact long-int clock remains
     alongside it (the standalone caller-owned ``self.t``).
-    DURATION is REMOVED from the band (write-only in v1:
-    ``decode_span`` had zero callers, tense rotates the center only,
-    aspect is retired) -- exact extents belong to the record store when
-    aspect is built. Endpoint-sum bracketing no longer serves `.when`
-    (the analyzer keeps separate spatial brackets). Tense keys on the
-    LF pair vs ``self.t``. The class name keeps the plan's 4-value
-    lineage; the shipped band carries start only. nDim=4 enabled /
-    0 disabled.
+    The band carries a caller-supplied start only. The class name retains
+    its historical four-value lineage; nDim=4 enabled / 0 disabled.
     """
     index = []
 
@@ -943,17 +906,15 @@ class WhenStartDurationEncoding(Encoding):
         return torch.stack(out, dim=-1)
 
     def next(self, k=1):
-        """FUTURE handle: the present instant advanced ``k`` ticks (tense
-        keys on the LF pair vs ``self.t``)."""
-        return self.encode(self.t + _WHEN_TENSE_STEP * k)
+        """Encode the caller's position advanced by ``k`` steps."""
+        return self.encode(self.t + k)
 
     def previous(self, k=1):
-        """PAST handle: the present instant retreated ``k`` ticks."""
-        return self.encode(self.t - _WHEN_TENSE_STEP * k)
+        """Encode the caller's position retreated by ``k`` steps."""
+        return self.encode(self.t - k)
 
     def forward(self, x):
-        """Stamp the PRESENT instant ``encode(self.t)`` into the when slots
-        for every input event (the model clock advanced it pre-batch)."""
+        """Stamp the caller-supplied position into each event's when slots."""
         if self.nDim == 0:
             return x
         index = np.add([x.shape[-1]] * len(self.index), self.index)
@@ -979,7 +940,7 @@ def event_when_encoding(n_when):
     """Construct a standalone ladder from the LTM allocation.
 
     Model construction replaces these temporary references with one shared
-    model-owned encoding, including the tense operators.
+    model-owned document-position encoding.
     """
     capacity = int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024)
     return WhenEncoding(n_when=n_when).set_capacity(capacity)
@@ -2393,7 +2354,9 @@ class Codebook(Tensor):
 
     def getW(self):
         """Return the codebook prototype matrix ``[V, D]`` (or ``None``
-        when the codebook hasn't been built yet).
+        when the codebook hasn't been built yet). For occurrence-derived
+        concepts this is the shared stream-0 view. Per-row readers must use
+        ``lookup_rows(..., stream=b)`` or ``streams=True`` for a batch.
 
         On a membership-native Codebook (``is_percept_store``: radix PS or
         canonical WS properties) under ``meronomy_enabled()`` the read is
@@ -2418,7 +2381,7 @@ class Codebook(Tensor):
             return _unorm_ste(self.W)
         return self.W
 
-    def lookup_rows(self, idx):
+    def lookup_rows(self, idx, *, stream=0, streams=False):
         """Gather codebook rows by ``idx`` with the SAME read-time transform
         as :meth:`getW`, but applying the UNORM STE to ONLY the gathered rows.
 
@@ -2433,9 +2396,11 @@ class Codebook(Tensor):
             if isinstance(idx, slice):
                 idx = torch.arange(len(self.W), device=self.W.device)[idx]
             idx = torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
-            value = self.mereology.derive(idx)
-            with torch.no_grad():
-                self.W[idx] = value.detach()
+            value = (torch.stack([self.mereology.derive(row,b=b) for b,row in enumerate(idx)])
+                     if streams else self.mereology.derive(idx,b=stream))
+            if not streams and stream == 0:
+                with torch.no_grad():
+                    self.W[idx] = value.detach()
             return value
         if self.W is None:
             return None
@@ -10850,6 +10815,7 @@ class PartSpace(Space):
         complete = ((overlap * valid[:, None]).sum(-1) == size) & (size > 0)
         identity = getattr(store, 'identity', None)
         atom_ids = set(identity.atoms.values()) if identity is not None else set()
+        identity_ids = atom_ids | (set(identity.word_rows.values()) if identity is not None else set())
         atom_witnesses = None
         if atom_ids:
             # Byte descent is still the observed witness. Read its exact
@@ -10866,8 +10832,9 @@ class PartSpace(Space):
                                 if pid >= 0 and start <= a < z <= end]
                     raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)
                     parts = identity.words.get(raw, base_atoms(raw)) if raw else ()
-                    values.append({identity.atoms[a] for a in parts if a in identity.atoms}
-                                  if bool(complete[b, w]) else set())
+                    members = ({*identity.parts(raw), identity.word_rows[raw]} if raw in identity.words else
+                               {identity.atoms[a] for a in parts if a in identity.atoms})
+                    values.append(members if bool(complete[b, w]) else set())
                 atom_witnesses.append(values)
         pairs, supports = [], []
         for literal in features:
@@ -10876,7 +10843,7 @@ class PartSpace(Space):
             present = torch.zeros_like(complete)
             support = torch.zeros(*complete.shape, part_ids.shape[1],
                                   dtype=torch.bool, device=part_ids.device) if return_support else None
-            if ids and set(ids) <= atom_ids:
+            if ids and set(ids) <= identity_ids:
                 present = complete.new_tensor([[set(ids) <= members for members in row]
                                                for row in atom_witnesses])
                 if return_support:
@@ -11350,6 +11317,7 @@ class PartSpace(Space):
         admit = not getattr(self, "_online_learning_frozen", False)
         hits = self.__dict__.setdefault("_unit_hits", {})
         threshold = max(1, int(getattr(self, "chunk_promotion_threshold", 2) or 2))
+        units = []
         for b, row in enumerate(host_tokens):
             raw = b"".join(
                 (text.encode("utf-8") if isinstance(text, str)
@@ -11375,6 +11343,14 @@ class PartSpace(Space):
                 if cursor < len(raw):
                     complete.append((cursor, len(raw)))
                 spans = complete
+            units.append((raw,spans))
+        # Finish vocabulary observations before materializing any word's
+        # parts: a later word can expose a nested whole in an earlier word.
+        if identity is not None and admit:
+            for raw,spans in units:
+                for start,end in spans[:word_capacity]:
+                    identity.observe_nested(raw[start:end])
+        for b,(raw,spans) in enumerate(units):
             word_texts_rows.append([raw[s0:e0].decode("latin1") for s0, e0 in spans])
             native_rows.append([int(ps.get_id(bytes([value]))) for value in raw])
             native_spans.append([(i, i+1) for i in range(len(raw))])
@@ -11386,8 +11362,12 @@ class PartSpace(Space):
                     stop = end
                     pids = [int(ps.get_id(bytes([raw[i]]))) for i in range(start, stop)]
                     unit = raw[start:stop]
+                    nested = ()
                     if identity is not None:
+                        nested = tuple((identity.word_rows[part],lo,hi)
+                            for part,lo,hi in identity.nested.get(unit,()))
                         pids = list(identity.admit(unit))
+                        atom_count = len(pids) - len(nested)
                     part_capacity = max(part_capacity, len(pids))
                     if (identity is None and admit and len(unit) >= 2 and not truncated
                             and ps.get_id(unit) is None
@@ -11403,7 +11383,7 @@ class PartSpace(Space):
                     staged_words.append({
                         "pids": pids, "start": int(start), "end": int(end),
                         "word_index": int(word_index),
-                        "part_spans": ([(start, stop)] * len(pids) if identity is not None
+                        "part_spans": ([(start, stop)] * atom_count + [(start+lo,start+hi) for _pid,lo,hi in nested] if identity is not None
                                        else [(i, i + 1) for i in range(start, stop)]),
                         "active": True, "truncated": bool(truncated),
                     })
@@ -13440,7 +13420,13 @@ class ConceptualSpace(Space):
         # STOP preserves the value and its operand gradient. Compose logits
         # learn only from the sentence's detached paired-cost surrogate.
         out = torch.where((choice.valid & (choice.kind == 0))[:, None, None], buffer, out)
-        return out, depth - binary.long(), out_orders, out_grammar, out_rows, out_activations
+        transpose = choice.applied & (choice.kind == 3)
+        def swap(slab):
+            if K < 2:
+                return slab
+            swapped = torch.cat((slab[:,1:2], slab[:,:1], slab[:,2:]), 1)
+            return torch.where(transpose.reshape(B, *([1]*(slab.ndim-1))), swapped, slab)
+        return swap(out), depth - binary.long(), swap(out_orders), swap(out_grammar), swap(out_rows), swap(out_activations)
 
 
     def _stm_set_all_slots(self, slab):
@@ -17304,7 +17290,8 @@ class ConceptualSpace(Space):
             row_idx = torch.tensor(rows, dtype=torch.long, device=W.device)
             pos_idx = torch.tensor(
                 positions, dtype=torch.long, device=W.device)
-            gathered = cb.lookup_rows(row_idx)
+            gathered = torch.stack([cb.lookup_rows(row,stream=b)
+                                    for row,b in zip(row_idx,positions)])
             # Functional index_copy preserves the lookup's autograd edge. In
             # sparse mode that edge terminates at F.embedding(sparse=True), so
             # combining this read with the normal fold decoder cannot densify

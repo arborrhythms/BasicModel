@@ -65,6 +65,14 @@ WEEKLY_CONTRACTS = frozenset({
 })
 
 DEFAULT_CERTIFICATES = frozenset({
+    'test/test_item55_mechanisms.py::test_clock_independence',
+    'test/test_item55_mechanisms.py::test_offset_independence',
+    'test/test_item55_mechanisms.py::test_stream_chain',
+    'test/test_item55_mechanisms.py::test_interleaving',
+    'test/test_item55_mechanisms.py::test_preposition_idempotence',
+    'test/test_item55_mechanisms.py::test_surface_inverses',
+    'test/test_item55_mechanisms.py::test_nested_wholes',
+    'test/test_item55_mechanisms.py::test_absences',
     'test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles',
     'test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode',
     'test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]',
