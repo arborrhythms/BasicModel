@@ -21200,7 +21200,7 @@ class BasicModel(BaseModel):
             occupations = words.new_full((*words.shape[:2], argument_count), 1. / max(1, argument_count))
         if occupations.shape != (*words.shape[:2], argument_count):
             raise ValueError('staged occupation table does not match the word slab')
-        from PartsOfSpeech import update_heads
+        from PartsOfSpeech import update_flow
         active = isp._word_active_mask.to(dtype=torch.bool)
         B = int(words.shape[0])
         grammar_leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
@@ -21731,7 +21731,7 @@ class BasicModel(BaseModel):
             else:
                 operation_values, operation_refs, reference_relations = current_cs_lang[22:25]
             unary_history = language.push_unary_history(current_cs_lang[25], commit)
-            occupation_heads = torch.where(commit.reshape(B, 1, 1),
+            occupation_words = torch.where(commit.reshape(B, 1, 1),
                 torch.cat((_gather_word(occupations, index).reshape(B, 1, -1), current_cs_lang[28][:, :-1]), 1),
                 current_cs_lang[28])
             explorable_slab = current_cs_lang[26]
@@ -21780,7 +21780,7 @@ class BasicModel(BaseModel):
                     reference_relations, unary_history, explorable_slab,
                     log_probability_slab, post_op, unary_op, post_valid,
                     unary_valid, prediction, next_symbol_activations,
-                    next_loss_sum, next_loss_weight, row_gate, commit, intermediate_end, occupation_heads)
+                    next_loss_sum, next_loss_weight, row_gate, commit, intermediate_end, occupation_words)
             for round_index in range(3):
                 if (not torch.compiler.is_compiling() and not bool(round_active.any())
                         and (fork is None or not fork.pending(index, closing=False, width=width))):
@@ -21794,7 +21794,7 @@ class BasicModel(BaseModel):
                      unary_history, explorable_slab, log_probability_slab, post_op,
                      unary_op, post_valid, unary_valid, prediction,
                      next_symbol_activations, next_loss_sum, next_loss_weight,
-                     row_gate, commit, intermediate_end, occupation_heads
+                     row_gate, commit, intermediate_end, occupation_words
                     ) = fork.resume(slot, fork_state(final_stm, round_active))
                 before = final_stm
                 journal_slot = index.new_tensor(round_index)
@@ -21808,7 +21808,7 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, before[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_heads,
+                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
@@ -21836,7 +21836,7 @@ class BasicModel(BaseModel):
                         operation_refs, journal_slot, refs, choice.applied)
                     reference_relations = self._tensor_record_selected_values(
                         reference_relations, journal_slot, relative, choice.applied)
-                occupation_heads = update_heads(occupation_heads, choice, language._occupation_heads)
+                occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
                 final_stm = cs.apply_language_choice(before, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
                 final_stm = scope.publish_name(final_stm, clause_state, ended)
@@ -21874,7 +21874,7 @@ class BasicModel(BaseModel):
                      unary_history, explorable_slab, log_probability_slab, post_op,
                      unary_op, post_valid, unary_valid, prediction,
                      next_symbol_activations, next_loss_sum, next_loss_weight,
-                     row_gate, commit, intermediate_end, occupation_heads
+                     row_gate, commit, intermediate_end, occupation_words
                     ) = fork.resume(slot, fork_state(end_stm, closing_active))
                 pre_closing = end_stm
                 journal_slot = index.new_tensor(3 + closing_index)
@@ -21885,7 +21885,7 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_heads,
+                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
                 choice = proposal[0] if sentence_transactions else proposal
@@ -21913,7 +21913,7 @@ class BasicModel(BaseModel):
                         operation_refs, journal_slot, refs, choice.applied)
                     reference_relations = self._tensor_record_selected_values(
                         reference_relations, journal_slot, relative, choice.applied)
-                occupation_heads = update_heads(occupation_heads, choice, language._occupation_heads)
+                occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
                 end_stm = cs.apply_language_choice(pre_closing, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
                 end_stm = scope.publish_name(end_stm, clause_state, ended)
@@ -21981,7 +21981,7 @@ class BasicModel(BaseModel):
                 clause_state, closing_events, operation_values, operation_refs,
                 reference_relations,
                 torch.where(reset[:, None], -1, unary_history), explorable_slab, log_probability_slab,
-                torch.where(reset[:, None, None], 0., occupation_heads))
+                torch.where(reset[:, None, None], 0., occupation_words))
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)

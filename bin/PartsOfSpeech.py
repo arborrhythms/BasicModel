@@ -25,9 +25,23 @@ def formal_arguments(rules):
     return tuple(sorted(arguments))
 
 
-def head_role(rule):
-    """Only an existing head or a sole operand identifies a result's word."""
-    return int(getattr(rule, 'head_role', 0) or (len(rule.rhs_symbols) == 1))
+def flow_mask(rule):
+    """§2b: input-role bits whose words occupy a single result.
+
+    Heads select an operand, not a word within that operand. Symmetric
+    results retain every lexical occurrence; clauses retain none.
+    """
+    name = rule.method_name
+    if name in ('intersection', 'union', 'conjunction', 'disjunction'):
+        return 3
+    if name in ('not', 'non'):
+        return 1
+    if (name in ('lift', 'equal', 'part', 'whole', 'implies', 'generic', 'ask',
+                 'assertPart', 'isEqual', 'isPart')
+            or getattr(rule, 'clause_form', None) in ('S', 'implies')):
+        return 0
+    head = int(getattr(rule, 'head_role', 0) or 0)
+    return 1 << (head - 1) if head else 0
 
 
 class PartsOfSpeech(nn.Module):
@@ -75,7 +89,7 @@ class PartsOfSpeech(nn.Module):
             if kind == 0:
                 if not 0 <= position < len(words):
                     raise ValueError('occupation journal has an invalid leaf')
-                stack.append(int(words[position]))
+                stack.append((int(words[position]),))
                 continue
             if kind not in (1, 2, 3):
                 raise ValueError('occupation journal has an invalid operation kind')
@@ -93,12 +107,16 @@ class PartsOfSpeech(nn.Module):
                     raise ValueError('occupation journal underflows')
                 operands = stack[-2:]
             name = operation_name(rule)
-            for i, word in enumerate(operands):
-                self.add(word, f'{name}_argin{i+1}')
-            head = head_role(rule)
-            results = operands[::-1] if kind == 3 else [operands[head-1] if head else -1]
-            for i, word in enumerate(results):
-                self.add(word, f'{name}_argout{i+1}')
+            for i, carried in enumerate(operands):
+                for word in carried:
+                    self.add(word, f'{name}_argin{i+1}')
+            mask = flow_mask(rule)
+            results = operands[::-1] if kind == 3 else [tuple(
+                word for i, carried in enumerate(operands) if mask & (1 << i)
+                for word in carried)]
+            for i, carried in enumerate(results):
+                for word in carried:
+                    self.add(word, f'{name}_argout{i+1}')
             if kind == 2:
                 stack[at] = results[0]
             else:
@@ -129,15 +147,25 @@ class PartsOfSpeech(nn.Module):
                        for word, counts in self.counts.items()}
 
 
-def update_heads(heads, choice, binary_heads):
-    """Move head distributions with the newest-first STM, including transposes."""
-    B, K, R = heads.shape
-    if not binary_heads or K < 2:
-        return heads
-    role = heads.new_tensor(binary_heads, dtype=torch.long)[choice.local_op.clamp(0, len(binary_heads)-1)]
-    selected = heads.gather(1, (2-role.clamp(1, 2))[:, None, None].expand(B, 1, R))
-    selected = torch.where((role > 0)[:, None, None], selected, torch.zeros_like(selected))
-    folded = torch.cat((selected, heads[:, 2:], torch.zeros_like(heads[:, :1])), 1)[:, :K]
-    result = torch.where((choice.applied & (choice.kind == 1))[:, None, None], folded, heads)
-    swapped = torch.cat((heads[:, :2].flip(1), heads[:, 2:]), 1)
-    return torch.where((choice.applied & (choice.kind == 3))[:, None, None], swapped, result)
+def update_flow(words, choice, binary_flow, unary_flow):
+    """Carry sums of word probabilities with the newest-first STM.
+
+    The sum preserves one direct score contribution per carried occurrence;
+    it is not renormalized into a new phrase class.
+    """
+    _, K, _ = words.shape
+    result = words
+    if binary_flow and K >= 2:
+        mask = words.new_tensor(binary_flow, dtype=torch.long)[choice.local_op.clamp(0, len(binary_flow)-1)]
+        selected = (words[:, 1:2] * ((mask & 1) != 0)[:, None, None]
+                    + words[:, :1] * ((mask & 2) != 0)[:, None, None])
+        folded = torch.cat((selected, words[:, 2:], torch.zeros_like(words[:, :1])), 1)[:, :K]
+        result = torch.where((choice.applied & (choice.kind == 1))[:, None, None], folded, words)
+        swapped = torch.cat((words[:, :2].flip(1), words[:, 2:]), 1)
+        result = torch.where((choice.applied & (choice.kind == 3))[:, None, None], swapped, result)
+    if unary_flow:
+        mask = words.new_tensor(unary_flow, dtype=torch.long)[choice.local_op.clamp(0, len(unary_flow)-1)]
+        clear = choice.applied & (choice.kind == 2) & (mask == 0)
+        position = torch.arange(K, device=words.device)[None] == choice.position[:, None]
+        result = torch.where(clear[:, None, None] & position[..., None], 0., result)
+    return result

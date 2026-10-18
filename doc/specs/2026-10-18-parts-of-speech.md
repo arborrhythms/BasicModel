@@ -58,13 +58,59 @@ prior for the noun class and nothing else. All other classes arise by
 occupation and, under one operation at a time, by elimination. Nothing tries
 to find a common conceptual mapping over all words.
 
+## 2b. Which results carry their inputs' words *(Alec, 2026-10-18: the result of an intersection or union is the same as its input types; Claude's table from the catalogue, to confirm)*
+
+Occupation flows from a result to the arguments it later fills by this rule,
+read off the catalogue (`GRAMMAR_LAYER_CLASSES`: arity, declared head,
+order change):
+
+| Operators | Result's type | Words the result carries |
+|---|---|---|
+| `intersection`, `union`, `conjunction`, `disjunction` (symmetric, no head) | the inputs' type | all operands' words, each counted |
+| `not`, `non` (unary modifiers) | the operand's type | the operand's words |
+| `adverb` (modifier + head), `preposition`, `surface`, `bind`, `compound` (declared head) | the head's type | the head's words (`adverb` must declare its head: it has none today) |
+| `lower`, `definite` and their unary faces (order −1), `verb` (clause form VP) | a new type | the head operand's words: the bare noun, or both words of an intersected description; the verb for a VP. An NP carries those words into `lift` |
+| `lift`, `equal`, `part`, `whole`, `implies`, `generic`, `ask` | a clause or relation | nothing (a clause has no word occupant) |
+
+Every operator keeps its own output argument (the formal set stays
+exhaustive, as decided); the identity of a type-preserving output with its
+inputs is not assumed but enforced only in how words flow, so the collapse
+table measures the claim (`intersection_argout1` ≡ its inputs).
+
+Selecting a head operand does not select a single lexical word within it.
+Thus both `black` and `cat` flow through `lower(a, intersection(black, cat))`
+and into `lift`, after which neither is carried. Their chooser probabilities
+add, one contribution per carried occurrence. Operations outside this table
+with no declared head retain the existing empty carrier; this pass makes no
+new type claim for those operations, which are outside the NP menu.
+
+*Linguistic note (Claude).* Coordination preserves the conjuncts' type
+(Williams 1981's Law of Coordination of Likes); the counterexamples ("Pat is
+a Republican and proud of it", "slowly and with great care", Sag, Gazdar,
+Wasow & Weisler 1985; Bayer 1996) are unlike categories that satisfy the
+same selector, i.e. the same formal argument of the selecting operator,
+which is exactly what argument-level classes provide. Tense does not change
+a conjunct's part of speech: in converb and clause-chaining languages
+(Japanese -te, Korean -ko, Turkish -ip, Hindi -kar, Swahili narrative -ka-,
+Amharic; Haspelmath 1995, 2007) tense or finiteness is marked once for the
+chain, and in English, Latin or Russian each conjunct is marked but the
+marks must agree; either way tense is an operator on the coordinated verb
+phrase, the verb phrase's preposition of §4–5 applied once, and the
+conjuncts stay one part of speech. Where languages use different
+conjunction words by type (Japanese *to* for nouns, *-te/-shi* for verbs;
+Chinese *hé* versus *érqiě*; Swahili *na* versus sequence marking), the
+difference is in the marker word, learned as word-to-operator exposure, not
+in the operator's result type.
+
 ## 3. How the categorizer is learned *(decided; membership is not taught)*
 
 - **By occupation, from kept readings only.** When a kept reading applies an
-  operation, each operand's word (a phrase's head word) gains one count on
-  that argument. The prototypes themselves are the formal arguments and
-  need no training; collapse is reported as the cosine between arguments'
-  occupant distributions and is never merged by rule. The bracket
+  operation, each word an operand carries (§2b: a word itself; for a phrase,
+  the words its producing operation passes on) gains one count on that
+  argument, and the result carries words onward by the same table. The
+  prototypes themselves are the formal arguments and need no training;
+  collapse is reported as the cosine between arguments' occupant
+  distributions and is never merged by rule. The bracket
   annotation's operands never contribute. No labels, no clustering, no
   learned-category codebook. The noun prior of §2a (a word whose concept is
   tied to an individual column) is recorded as a table in this pass, not
@@ -100,8 +146,8 @@ reads, for each input argument, the categorizer's probability that the
 operand occupies it (its normalized occupation count on that argument, with
 a floor for an unseen word). *Claude's reading:* that term enters the
 operation's score directly, replacing the category vector the chooser
-receives today (§7). A phrase operand reads through its head word until
-output typing exists.
+receives today (§7). A phrase operand reads through the words it
+carries (§2b) until output typing exists.
 
 **Output prototypes** (the `argout` vectors) classify results, so that
 `lift`'s first input converges with the determiner operators' output; this
@@ -116,11 +162,20 @@ certificates restore it (artifact → fixture).
 
 1. **NP stage.** A generated corpus over the 4e vocabulary: every
    determiner, adjective and noun combination, with and without the
-   adjective, each as a whole sentence (NP → S, no VP), with the 4b-style
+   adjective, each as a whole sentence (NP → S, no VP), plus the bare
+   adjective-noun descriptions as unlowered controls, with the 4b-style
    question where one applies; a held-out quarter by the usual
-   counterbalance. Menu: STOP, `lower`, `definite`, `intersection`. The
-   bracket CE lesson on the student's states stays inside the stage as the
-   teacher of the operator choice (it never supplies membership evidence);
+   counterbalance (committed as `data/noun_phrases`). Menu: STOP, `lower`,
+   `definite`, `intersection`. The stage is a sequence of prerequisite
+   lessons, one unknown each, each gated on its own held-out items before
+   the next restores its artifact: `lower` on bare "a" NPs, `definite` on
+   bare "the" NPs, `description` (`intersection` alone, on bare
+   adjective-noun pairs), `adjective` ("a" + adjective + noun, where
+   `intersection` is scheduled inside an NP), `definite adjective`. After
+   the last lesson the stage's gates run once on the whole held-out quarter
+   from the last artifact, which is the NP VP stage's fixture. The bracket
+   CE lesson on the student's states stays inside each lesson as the
+   teacher of the operator choice (it never supplies occupation evidence);
    reconstruction and the questions are the keep credit, as now.
 2. **NP VP stage.** The 4c sentences; menu adds `lift` (and `verb` with its
    object NP at the same stage or the next, one new operation per stage).
@@ -163,12 +218,11 @@ prior.
 
 ## 8. Open
 
-**The recognizer's input** (§2–3): the probe shows the artifact's concept
-codes carry no class structure, so recognition by resemblance waits on the
-grounding stages; until then the categorizer classifies by occupation. Which
-earlier stage is responsible for giving things and properties distinct
-meaning structure, and its gate, is the next question for the curriculum.
-Superseded reading: that a word's class is read from
+Resolved 2026-10-18: the categorizer is distributional (§2a) and results
+carry words by §2b. Deferred: output typing (§4); which earlier stage gives
+things and properties distinct meaning structure, so that a new noun can be
+recognized by resemblance before it has occupied an argument (§3's probe).
+Superseded reading, kept for the record: that a word's class is read from
 the component families — individual columns for things, property columns
 for properties, change directions for changes, no content for markers — and
 that the earlier curriculum stages are what ground them. The probe of §6

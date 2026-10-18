@@ -411,6 +411,10 @@ rule.
 
 ## 4. Noun, adjective, verb and adverb
 
+**Occupation flow, 2026-10-18 (§2b of the parts-of-speech specification):**
+`adverb` declares `head=argin1`, the modified phrase in
+`apply_adverb(vp_content, adv_what)`. Its result carries that operand's words.
+
 The noun, the adjective, the compound and the adverb were resolved by Alec
 on 2026-09-29, after the measurements of 4.2 were put to him. What a verb
 phrase is to its noun phrase has a candidate, which holds both of the two

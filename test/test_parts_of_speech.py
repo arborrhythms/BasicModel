@@ -7,7 +7,7 @@ import pytest
 import torch
 from torch import nn
 
-from PartsOfSpeech import PartsOfSpeech, formal_arguments, update_heads
+from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask, update_flow
 from Language import OperationSelectionLayer
 
 
@@ -28,7 +28,7 @@ class Unary(nn.Module):
 
 @pytest.fixture
 def chooser():
-    binary = [rule('lower', head=2), rule('intersection')]
+    binary = [rule('lower', head=2), rule('intersection',head=0)]
     unary = [rule('surface_unary', 1)]
     arguments = formal_arguments(binary+unary)
     layer = OperationSelectionLayer(d_model=4, ops=[Pair(), Pair()], unary_ops=[Unary()], reduce_pressure=0.)
@@ -89,7 +89,7 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
             torch.testing.assert_close(program.actions,winner.actions,rtol=0,atol=0)
             torch.testing.assert_close(program.word_ids,winner.word_ids,rtol=0,atol=0)
             # Independent host replay compares every kept decision's input
-            # distributions with its actual program's lexical heads.
+            # distributions with the words its actual program carries.
             source = model.inputSpace._ar_word_concept_ids[b].tolist()
             words = winner.word_ids.tolist()
             places = sorted(source.index(word) for word in words)
@@ -97,21 +97,23 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
             stack, heads = [], {}
             for kind, op, position in winner.actions.tolist():
                 if kind == 0:
-                    node = ((positions[words[position]],), words[position])
+                    node = ((positions[words[position]],), (words[position],))
                     stack.append(node); heads[node[0]]=node[1]
                 elif kind == 1:
                     right,left=stack.pop(),stack.pop()
                     rule=model.languageSpace._compose_binary_rules[op]
                     role=getattr(rule,'head_role',0)
-                    node=(left[0]+right[0],(left,right)[role-1][1] if role else -1)
+                    carried = left[1]+right[1] if rule.method_name=='intersection' else (left,right)[role-1][1] if role else ()
+                    node=(left[0]+right[0],carried)
                     stack.append(node);heads[node[0]]=node[1]
                 elif kind == 3:
                     stack[-2:]=reversed(stack[-2:])
             for state in states:
                 for i,span in enumerate(state['spans']):
-                    word=heads[span]
-                    counts=initial.get(word,{})
-                    expected_probability=torch.tensor([counts.get(arg,0)/max(1,sum(counts.values())) for arg in parts.arguments])
+                    expected_probability=torch.zeros(len(parts.arguments))
+                    for word in heads[span]:
+                        counts=initial.get(word,{})
+                        expected_probability+=torch.tensor([counts.get(arg,0)/max(1,sum(counts.values())) for arg in parts.arguments])
                     torch.testing.assert_close(state['kwargs']['occupation'][b,i].cpu(),expected_probability,rtol=0,atol=0)
         return result
     monkeypatch.setattr(model,'_commit_sentence',committed)
@@ -127,36 +129,15 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
     for program, binary, unary in events:
         expected.observe_kept(program, binary, unary)
     assert parts.counts == expected.counts and parts.counts
-    # Independently pin every input and output, phrase head and pair rewrite.
-    binary = [rule('intersection', head=2), rule('lower',head=2), rule('transpose',outputs=2)]
-    unary = [rule('surface_unary',1)]
-    measured = PartsOfSpeech(formal_arguments(binary+unary))
-    program = NS(word_ids=torch.tensor([11,12,13]), actions=torch.tensor([
-        [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[2,0,0],[3,2,0],[3,2,0],[1,1,0]]))
-    measured.observe_kept(program,binary,unary)
-    assert measured.counts[12] == Counter(intersection_argin1=1)
-    assert measured.counts[13]['intersection_argout1'] == 1
-    assert measured.counts[13]['lower_argin2'] == measured.counts[13]['lower_argout1'] == 1
-    assert measured.counts[13]['surface_unary_argin1'] == measured.counts[13]['surface_unary_argout1'] == 1
-    assert sum(sum(row.values()) for row in measured.counts.values()) == 3+2+4+4+3
-    measured.frozen = True
-    before = {word:dict(counts) for word,counts in measured.counts.items()}
-    measured.observe_kept(program,binary,unary)
-    assert measured.counts == before
-    measured.frozen = False
+    before = {word:dict(counts) for word,counts in parts.counts.items()}
+    parts.frozen = True
+    for program,binary,unary in events:
+        observe(program,binary,unary)
+    assert parts.counts == before
     malformed = NS(word_ids=torch.tensor([11]),actions=torch.tensor([[0,-1,0],[2,0,2]]))
+    measured = PartsOfSpeech(formal_arguments([rule('surface_unary',1)]))
     with pytest.raises(ValueError,match='unary position'):
-        measured.observe_kept(malformed,binary,unary)
-    # A set-valued result with no declared head does not make either word
-    # its lexical head. In particular the adjective cannot acquire the
-    # enclosing determiner's argument by an invented first-leaf convention.
-    binary = [rule('intersection',head=0),rule('lower',head=2)]
-    unheaded = PartsOfSpeech(formal_arguments(binary))
-    program = NS(word_ids=torch.tensor([11,12,13]), actions=torch.tensor([
-        [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0]]))
-    unheaded.observe_kept(program,binary,())
-    assert unheaded.counts == {11:Counter(lower_argin1=1),
-        12:Counter(intersection_argin1=1),13:Counter(intersection_argin2=1)}
+        measured.observe_kept(malformed,(),[rule('surface_unary',1)])
     model.End()
 
 
@@ -176,7 +157,74 @@ def test_one_stored_part_of_speech_is_the_recomputed_argmax(chooser):
     assert torch.equal(before, parts.get_extra_state())
 
 
-def test_chooser_adds_input_probabilities_directly_and_carries_heads(chooser):
+def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
+    from Language import Grammar
+    from PartsOfSpeech import operation_name
+    grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
+    rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
+    expected=dict(intersection=3,union=3,conjunction=3,disjunction=3,
+        **{'not':1,'non':1},adverb=1,preposition=2,surface=2,bind=2,compound=2,
+        lower=2,definite=2,lower_unary=1,definite_unary=1,
+        preposition_unary=1,surface_unary=1,verb=1,
+        lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0)
+    assert rules['adverb'].head_role == 1
+    for name,mask in expected.items():
+        r=rules[name];arity=len(r.rhs_symbols)
+        assert flow_mask(r)==mask
+        parts=PartsOfSpeech(formal_arguments([r]))
+        actions=[[0,-1,i] for i in range(arity)]+[[2 if arity==1 else 1,0,0]]
+        parts.observe_kept(NS(word_ids=torch.tensor([101,102][:arity]),
+                              actions=torch.tensor(actions)),[r] if arity==2 else (),[r] if arity==1 else ())
+        for i,word in enumerate([101,102][:arity]):
+            gold=Counter({f'{name}_argin{i+1}':1})
+            if mask & (1<<i):gold[f'{name}_argout1']=1
+            assert parts.counts[word]==gold
+        # The compiled carrier must implement the same flow as the kept journal.
+        words=torch.tensor([[[0.,1.],[1.,0.],[3.,4.]]])
+        choice=NS(applied=torch.tensor([True]),kind=torch.tensor([1 if arity==2 else 2]),
+                  local_op=torch.tensor([0]),position=torch.tensor([1]))
+        binary,unary=((mask,),()) if arity==2 else ((),(mask,))
+        result=update_flow(words,choice,binary,unary)
+        if arity==2:
+            assert result[0,0].tolist()==[float(bool(mask&1)),float(bool(mask&2))]
+            assert torch.equal(result[0,1],words[0,2])
+        else:
+            assert torch.equal(result[0,1],words[0,1] if mask else torch.zeros(2))
+            assert torch.equal(result[0,0],words[0,0]) and torch.equal(result[0,2],words[0,2])
+        choice.applied.fill_(False)
+        assert torch.equal(update_flow(words,choice,binary,unary),words)
+    words=words.expand(7,-1,-1).clone()
+    choice=NS(applied=torch.ones(7,dtype=torch.bool),kind=torch.tensor([1,1,1,1,2,2,3]),
+              local_op=torch.tensor([0,1,2,3,0,1,0]),position=torch.ones(7,dtype=torch.long))
+    result=update_flow(words,choice,(0,1,2,3),(0,1))
+    assert result[:4,0].tolist()==[[0.,0.],[1.,0.],[0.,1.],[1.,1.]]
+    assert result[4,1].tolist()==[0.,0.] and torch.equal(result[5],words[5])
+    assert torch.equal(result[6,:2],words[6,:2].flip(0))
+    compiled=torch.compile(lambda x:update_flow(x,choice,(0,1,2,3),(0,1)),backend='eager',fullgraph=True)
+    torch.testing.assert_close(compiled(words),result,rtol=0,atol=0)
+    binary=[rules[name] for name in ('intersection','lower','lift','transpose')]
+    unary=[rules[name] for name in ('not','lower_unary')]
+    parts=PartsOfSpeech(formal_arguments(binary+unary))
+    # lower(a, intersection(black, cat)), then lift that NP with a VP word.
+    # The description's two words both cross the declared head operand.
+    program=NS(word_ids=torch.tensor([101,102,103,104]),actions=torch.tensor([
+        [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0],
+        [0,-1,3],[3,3,0],[3,3,0],[1,2,0],[2,0,0],[2,1,0]]))
+    parts.observe_kept(program,binary,unary)
+    for word in (102,103):
+        assert parts.counts[word]['intersection_argout1']==1
+        assert parts.counts[word]['lower_argin2']==parts.counts[word]['lower_argout1']==1
+        assert parts.counts[word]['lift_argin1']==1
+    assert parts.counts[101]==Counter(lower_argin1=1)
+    assert parts.counts[104]['lift_argin2']==1
+    assert not any(counts.get('lift_argout1') or counts.get('not_argin1') or counts.get('lower_unary_argin1')
+                   for counts in parts.counts.values())
+    cosines={(row['left'],row['right']):row['cosine'] for row in parts.collapse()}
+    assert cosines['intersection_argin1','intersection_argout1']==pytest.approx(2**-.5)
+    assert cosines['intersection_argin2','intersection_argout1']==pytest.approx(2**-.5)
+
+
+def test_chooser_adds_input_probabilities_directly_and_carries_words(chooser):
     layer, parts = chooser
     x = torch.randn(1,2,4)
     probabilities = torch.zeros(1,2,len(parts.arguments))
@@ -188,11 +236,11 @@ def test_chooser_adds_input_probabilities_directly_and_carries_heads(chooser):
     logits = layer(x,slots=2,occupation=probabilities)[2]['logits']
     torch.testing.assert_close(logits-base, torch.tensor([[1.,0.,.4,0.,0.]]))
     heads = torch.arange(12.).reshape(1,3,4)
-    choice = NS(applied=torch.tensor([True]),kind=torch.tensor([1]),local_op=torch.tensor([0]))
-    assert torch.equal(update_heads(heads,choice,(2,1))[:,0],heads[:,0])
-    assert torch.equal(update_heads(heads,choice,(0,1))[:,0],torch.zeros_like(heads[:,0]))
+    choice = NS(applied=torch.tensor([True]),kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]))
+    assert torch.equal(update_flow(heads,choice,(2,1),())[:,0],heads[:,0])
+    assert torch.equal(update_flow(heads,choice,(0,1),())[:,0],torch.zeros_like(heads[:,0]))
     choice.kind.fill_(3)
-    assert torch.equal(update_heads(heads,choice,(2,1))[:,:2],heads[:,:2].flip(1))
+    assert torch.equal(update_flow(heads,choice,(2,1),())[:,:2],heads[:,:2].flip(1))
     compiled = torch.compile(lambda p:layer(x,slots=2,occupation=p)[2]['logits'],backend='eager',fullgraph=True)
     torch.testing.assert_close(compiled(probabilities),logits,rtol=0,atol=0)
 
@@ -228,6 +276,21 @@ def test_stage_menu_masks_every_undeclared_operation(chooser):
     assert [len(part) for part in partitions]==[3,3,12,12,12]
     assert sum(4*len(list(batches(part))) for part in partitions)==44
     assert [sum(lesson_stage(row)==stage for row in heldout) for stage in STAGES]==[1,1,4,4,4]
+    # Final brackets include bare controls, even though occurrence credit is
+    # restricted to the ten determiner NPs. No model call is needed here.
+    from np_experiment import summarize_stage
+    _,labels=load('eval')
+    results=[dict(id=label['id'],family=label['family'],brackets=True,
+        nps=[dict(one_occurrence=True,reduction=True) for _ in label['nps']],
+        duplicate_writes=0,occurrence_collisions=0,unexpected_occurrences=0,
+        unlowered_clean=True if label['unlowered'] else None) for label in labels.values()]
+    final=summarize_stage(results,'final')
+    assert final['passed'] and [final['gates'][key]['total'] for key in ('brackets','occurrences','unlowered')]==[14,10,4]
+    controls=[row for row in results if row['unlowered_clean'] is not None]
+    for row in controls[:2]:row['brackets']=False
+    assert not summarize_stage(results,'final')['gates']['brackets']['passed']
+    results[0]['unexpected_occurrences']=1
+    assert not summarize_stage(results,'final')['gates']['occurrences']['passed']
 
 
 def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_path, monkeypatch):
@@ -236,13 +299,14 @@ def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_p
     from IndependentComponents import _unpack_state
     restore = BaseModel.load_weights
     model = make_model(tmp_path, monkeypatch)
-    archive = Path(__file__).resolve().parents[1]/'output/stage4e-student-order-20261017/order.ckpt'
+    archive = Path(__file__).resolve().parents[1]/'output/np-definite-restored-20261018/trained.ckpt'
     restore_warmup(model,archive,restore)  # Asserts every retained tensor, with declared migration.
     parts = model.languageSpace.parts_of_speech
-    assert parts.counts == {}
+    assert parts.counts
     for word in range(123,143):
         parts.add(word,parts.arguments[0]);parts.add(word,parts.arguments[-1])
     expected = _unpack_state(parts.get_extra_state())
+    expected_labels=dict(parts.labels)
     path = tmp_path/'occupation.ckpt'
     model.save_weights(str(path))
     saved_size=parts.get_extra_state().numel()
@@ -253,7 +317,7 @@ def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_p
     assert parts.counts=={} and parts.get_extra_state().numel()!=saved_size
     restore_warmup(model,path,restore)
     assert _unpack_state(parts.get_extra_state()) == expected
-    assert parts.labels == {word:parts.arguments[0] for word in range(123,143)}
+    assert parts.labels == expected_labels
     from GrammarCheckpoint import align,catalog
     damaged = model.state_dict()
     key = next(key for key in damaged if key.endswith('.parts_of_speech._extra_state'))

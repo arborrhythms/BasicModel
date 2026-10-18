@@ -58,7 +58,7 @@ def batches(rows, rng=None):
 
 def tables(model, forms):
     from Language import TheGrammar
-    from PartsOfSpeech import operation_name, head_role
+    from PartsOfSpeech import operation_name, flow_mask
     owner, parts = model._concept_owner(), model.languageSpace.parts_of_speech
     word_rows, noun_rows = [], []
     for form in sorted(forms):
@@ -70,19 +70,55 @@ def tables(model, forms):
                               counts=dict(parts.counts.get(word,{})),observed=word in parts.counts))
         noun_rows.append(dict(word=form, identity=word, concepts=concepts,
                               individual_columns=individuals, noun_prior=bool(individuals)))
-    head_pairs=set()
+    head_pairs,flow_pairs=set(),set()
     for rule in TheGrammar.rules_upward:
         name=operation_name(rule)
         if not name:
             continue
-        roles=(2,1) if len(rule.lhs.split(','))==2 else (head_role(rule),)
+        mask=flow_mask(rule)
+        roles=(2,1) if len(rule.lhs.split(','))==2 else ((1 if mask==1 else 2 if mask==2 else 0),)
+        if len(roles)==1:
+            flow_pairs.update(frozenset((f'{name}_argin{i+1}',f'{name}_argout1'))
+                              for i in range(len(rule.rhs_symbols)) if mask & (1<<i))
         for output, role in enumerate(roles,1):
             if role:
                 head_pairs.add(frozenset((f'{name}_argin{role}',f'{name}_argout{output}')))
     collapse=parts.collapse()
     for row in collapse:
         row['same_head_by_construction']=frozenset((row['left'],row['right'])) in head_pairs
-    return dict(words=word_rows, collapse=collapse, noun_prior=noun_rows)
+        row['flow_related_by_construction']=frozenset((row['left'],row['right'])) in flow_pairs|head_pairs
+    slots=('intersection_argin1','intersection_argin2','intersection_argout1')
+    occupants={slot:{str(word):counts[slot] for word,counts in parts.counts.items() if counts.get(slot)} for slot in slots}
+    combined={word:sum(occupants[slot].get(word,0) for slot in slots[:2])
+              for word in set(occupants[slots[0]])|set(occupants[slots[1]])}
+    intersection_flow=dict(occupants=occupants,combined_inputs=combined,
+        output_equals_combined_inputs=occupants[slots[2]]==combined,
+        observed=bool(combined),by_construction=True)
+    return dict(words=word_rows, collapse=collapse, noun_prior=noun_rows,intersection_flow=intersection_flow)
+
+
+def summarize_stage(results,stage):
+    final=stage=='final'
+    summary=summarize(results)
+    summary['gates'].pop('reductions')  # Reduction stamps remain reported.
+    if stage=='description':
+        summary['gates'].pop('occurrences')
+        summary['gates']['brackets'].update(correct=sum(row['brackets'] for row in results),total=len(results))
+        summary['gates']['brackets']['passed']=sum(row['brackets'] for row in results)/len(results)>=.9
+    elif not final:
+        summary['gates'].pop('unlowered')
+    if final:
+        correct=sum(row['brackets'] for row in results)
+        summary['gates']['brackets'].update(correct=correct,total=len(results),passed=correct/len(results)>=.9)
+    if not final:
+        expected_program={'lower':['lower'],'definite':['definite'],
+            'adjective':['intersection','lower'],'definite_adjective':['intersection','definite'],
+            'description':['intersection']}[stage]
+        operators=sum(row['observed'].get('program')==expected_program for row in results)
+        summary['gates']['learned_operation']=dict(correct=operators,total=len(results),threshold=1.,
+            passed=operators==len(results),requirement=f'kept program {expected_program}, not merely brackets')
+    summary['passed']=all(gate['passed'] for gate in summary['gates'].values())
+    return summary
 
 
 def run(args):
@@ -100,15 +136,16 @@ def run(args):
     lessons = json.loads((DEST/'train.lessons.json').read_text())
     questions = {split:json.loads((DEST/f'{split}.questions.json').read_text()) for split in ('train','eval')}
     assert len(train)==len(lessons)==42 and len(evaluation)==14
+    final=args.stage=='final'
     selected=[i for i,row in enumerate(train) if lesson_stage(row)==args.stage]
     train,lessons=[train[i] for i in selected],[lessons[i] for i in selected]
-    evaluation=[row for row in evaluation if lesson_stage(row)==args.stage]
+    evaluation=[row for row in evaluation if final or lesson_stage(row)==args.stage]
     training_presentations=EPOCHS*len(train)
     paired_updates=2*EPOCHS*len(list(batches(train)))
     previous=None
     if args.stage!='lower':
         previous=json.loads((args.warmup.parent/'results.json').read_text())
-        predecessor=STAGES[STAGES.index(args.stage)-1]
+        predecessor=STAGES[-1] if final else STAGES[STAGES.index(args.stage)-1]
         expected_ids=[row['id'] for row in all_training if lesson_stage(row)==predecessor]
         if (not previous['passed'] or previous['protocol']['selected_training']!=expected_ids
                 or previous['artifact']['sha256']!=digest(args.warmup)):
@@ -116,23 +153,23 @@ def run(args):
     # The unused 4e words stay visible in the report, never in the NP lesson.
     forms = set('a the black white small large cat dog bird horse runs sleeps chases sees is on near'.split())
     protocol = dict(seed=SEED,learning_rate=RATE,epochs=EPOCHS,batch_size=4,
-        stage=args.stage,lesson='one unknown construction, against the passed prerequisite',
+        stage=args.stage,lesson='final whole-quarter gate, no updates' if final else 'one unknown construction, against the passed prerequisite',
         training_presentations=training_presentations,paired_updates=paired_updates,evaluation_presentations=len(evaluation),
         generated_corpus=dict(sentences=56,training=42,heldout=14),
         selected_training=[row['id'] for row in train],selected_heldout=[row['id'] for row in evaluation],
         restored_artifact=str(args.warmup),restored_sha256=digest(args.warmup),
-        produced_artifact=str(args.out/'trained.ckpt'),
+        produced_artifact=str(args.warmup if final else args.out/'trained.ckpt'),
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         menu=MENU,family_order=[args.stage],sequence=STAGES,
-        curriculum='one unknown at a time; pass a lesson before restoring its artifact for the next; all five lessons partition the original 84 presentations / 44 paired updates / 14 held-out',
+        curriculum='one unknown at a time; passed predecessor required; successful path 84 presentations / 44 paired updates, plus the discarded branch 24 / 12; final whole-quarter gate follows the last lesson',
         within_family='seeded permutation; partial batch of three for each bare-NP lesson',
         rng=('all random streams reset to the declared seed after stage-3 restore' if previous is None else
              'model random states restored from the predecessor training artifact, before its held-out readings'),
         optimizer='fresh per lesson; the experiment artifacts contain model state and RNG, not optimizer moments',
         heldout='adjective distance 3 modulo 4; bare (noun+determiner) modulo 4 equals 3',
-        score='sum of the operand head occupation probabilities on the formal input arguments, coefficient 1',
+        score='sum of each carried word occurrence probability on the formal input arguments, coefficient 1; no phrase renormalization',
         unseen='uniform over all formal inputs and outputs; observed words use normalized counts without smoothing',
-        head='existing declared head or sole operand; an unheaded result has no word occupant, zero head probabilities, and no output/later-operand word counts',
+        word_flow='spec section 2b: symmetric operations carry all operand words; not/non preserve; headed operations carry the head operand words; clauses carry none; no first-word selector',
         category_evidence='kept readings only, every input and output; no annotation operands',
         questions='none for bare NPs; what is <adjective> ? otherwise, supplied answer only during training',
         heldout_labels='grader only; no model call receives a held-out tree, span, answer or occurrence label',
@@ -141,9 +178,12 @@ def run(args):
         compose_step_cost='WHAT_STEP_COST for every binary, unary or transpose step',
         gates=dict(exact_brackets=.9,one_order1_occurrence=.95,duplicates=0,collisions=0,
                    unexpected_occurrences=0,learned_operation=1.),
-        measurement='percentage thresholds are applied to this lesson only; lowering stamps remain reported; absent families have no gate and are never declared passed',
+        measurement='final stage: all 14 held-out brackets, 10 determiner NPs, 4 bare controls; otherwise the current lesson only; lowering stamps reported; absent families have no gate',
         deferred='the full NP→VP fixture requires all five lessons; stop the sequence at the first failure',
-        budget='paired updates only; batch-end update disabled; no extension or rerun',
+        budget='paired updates only; batch-end update disabled; stop at a failed gate',
+        authorized_np_budget=dict(cumulative_presentations=108,cumulative_paired_updates=56,
+            discarded_branch_presentations=24,discarded_branch_updates=12,
+            reused_adjective_heldout=4,final_heldout=14),
         corpus_sha256={path.name:digest(path) for path in sorted(DEST.iterdir()) if path.is_file()})
     save(args.out/'protocol.json',protocol)
     save(args.out/'source-manifest.json',source_snapshot(Path(__file__).resolve().parents[1]))
@@ -235,7 +275,7 @@ def run(args):
                 # This data-order RNG is separate from the model's archived
                 # RNG. Advance it over the fixed earlier partitions, without
                 # presenting or rescoring any example.
-                for earlier in STAGES[:STAGES.index(args.stage)]:
+                for earlier in (() if final else STAGES[:STAGES.index(args.stage)]):
                     prior_rows=[row for row in all_training if lesson_stage(row)==earlier]
                     for _ in range(EPOCHS):
                         list(batches(prior_rows,rng))
@@ -244,30 +284,19 @@ def run(args):
                         present(train,indices,training=True,epoch=epoch)
                 assert updates['paired']==paired_updates and sum(len(row['ids']) for row in progress)==training_presentations
                 save(args.out/'after.json',tables(model,forms))
-                model.save_weights(str(args.out/'trained.ckpt'))
-                artifact=dict(path=str(args.out/'trained.ckpt'),sha256=digest(args.out/'trained.ckpt'))
+                artifact_path=args.warmup if final else args.out/'trained.ckpt'
+                if not final:
+                    model.save_weights(str(artifact_path))
+                artifact=dict(path=str(artifact_path),sha256=digest(artifact_path))
                 parts.frozen=True
                 model._concept_owner()._online_learning_frozen=True
                 for indices in batches(evaluation):
                     present(evaluation,indices,training=False,epoch=None)
                 assert updates['paired']==paired_updates
-                summary=summarize(results)
-                summary['gates'].pop('reductions')  # Reduction stamps remain reported.
-                if args.stage=='description':
-                    summary['gates'].pop('occurrences')
-                    summary['gates']['brackets'].update(correct=sum(row['brackets'] for row in results),total=len(results))
-                    summary['gates']['brackets']['passed']=sum(row['brackets'] for row in results)/len(results)>=.9
-                else:
-                    summary['gates'].pop('unlowered')
-                expected_program={'lower':['lower'],'definite':['definite'],
-                    'adjective':['intersection','lower'],'definite_adjective':['intersection','definite'],
-                    'description':['intersection']}[args.stage]
-                operators=sum(row['observed'].get('program')==expected_program for row in results)
-                summary['gates']['learned_operation']=dict(correct=operators,total=len(results),threshold=1.,
-                    passed=operators==len(results),requirement=f'kept program {expected_program}, not merely brackets')
-                summary['passed']=all(gate['passed'] for gate in summary['gates'].values())
+                summary=summarize_stage(results,args.stage)
                 save(args.out/'results.json',dict(completed=True,protocol=protocol,**summary,
-                    artifact=artifact,results=results,updates=dict(updates),trajectory=trajectory.report(),
+                    artifact=artifact,results=results,updates=dict(updates),
+                    trajectory=trajectory.report() if trajectory.batches else dict(blocks=[],overall=None),
                     elapsed_seconds=time.monotonic()-started))
                 print(json.dumps(dict(completed=True,**summary)),flush=True)
         except BaseException:
@@ -282,5 +311,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('out',type=Path)
     parser.add_argument('--warmup',type=Path,required=True)
-    parser.add_argument('--stage',choices=STAGES,default='lower')
+    parser.add_argument('--stage',choices=(*STAGES,'final'),default='lower')
     run(parser.parse_args())

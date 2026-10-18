@@ -631,23 +631,30 @@ Production compose uses the hard derivations described below.
 ### Distributional parts of speech
 
 The [parts-of-speech specification](specs/2026-10-18-parts-of-speech.md),
-especially §2a, governs. `LanguageSpace.parts_of_speech` stores sparse counts
+especially §2a–b, governs. `LanguageSpace.parts_of_speech` stores sparse counts
 by word identity on the forms ladder. Every formal input and output of every
 compose operation is a fixed argument class, including distinct semantic
 faces and both outputs of transpose. A kept operation contributes one count
-per operand and output head. Annotation operands never contribute evidence.
+per word carried on an input or output. Annotation operands never contribute evidence.
 
 A word's distribution is its normalized counts; an unseen word has the
 uniform distribution. Its single label is the argmax, recomputed on every
 count change (ties use argument order). The chooser adds the sum of the input
 argument probabilities directly to the operation score, with coefficient one.
-Output classes receive evidence but are not read. Phrase head distributions
+Output classes receive evidence but are not read. Carried word distributions
 travel with the STM through composition, transposition and trial forks.
 Count updates occur only after the paired trials select their kept reading.
-Lexical attribution follows each operation's existing declared head (or its
-sole operand). An unheaded result has no word occupant: its head distribution
-is zero and it supplies no word count as an output or later operand. No
-first-word or noun-head convention is invented. Output typing remains deferred.
+Symmetric intersection, union, conjunction and disjunction retain every
+operand's words; not/non retain their operand's words. Headed operations
+retain the declared head operand's words, including lower/definite and their
+unary faces and verb. Adverb declares its modified phrase (argin1) as head.
+Clause-forming operations retain none, including unary ask and generic.
+Thus both black and cat in `lower(a, intersection(black, cat))` occupy
+lower's second argument and travel with the selected description operand;
+there is no lexical selector that removes black. Their distributions add in
+the chooser, one direct term per carried lexical occurrence, without phrase
+renormalization. Transpose swaps both word carriers. No first-word fallback
+is used. Output typing remains deferred.
 
 The fixed argument classes have no trained prototypes or merge rule.
 Cosines between their occupant distributions are reported as collapse.

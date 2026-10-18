@@ -3427,6 +3427,7 @@ class AdverbLayer(LiftLayer):
     inverse_kind = 'gain'
     witness_inverse = 'unapply_adverb'
     clause_form = None
+    head_role = 1  # apply_adverb(vp_content, adv_what)
     rule_name = "adverb"
     predicate_identity = 'adverb'
     arity = 2
@@ -12068,9 +12069,10 @@ class LanguageSpace(nn.Module):
             self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
         from ClauseScope import ClauseScope
         self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
-        from PartsOfSpeech import PartsOfSpeech, formal_arguments, head_role
+        from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
         self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
-        self._occupation_heads = tuple(head_role(rule) for rule in self._compose_binary_rules)
+        self._occupation_binary_flow = tuple(flow_mask(rule) for rule in self._compose_binary_rules)
+        self._occupation_unary_flow = tuple(flow_mask(rule) for rule in self._compose_unary_rules)
         if self._compose_binary_rules or self._compose_unary_rules:
             self.language_layer.operation_layer.configure_arguments(self.parts_of_speech.arguments,
                 self._compose_binary_rules, self._compose_unary_rules)

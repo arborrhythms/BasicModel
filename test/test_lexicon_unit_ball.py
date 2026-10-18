@@ -146,8 +146,32 @@ class TestTopkL2Chunked(unittest.TestCase):
         idx_chunk, dist_chunk, _ = topk_l2_chunked(
             x, W_index, W_norm2, k=16, chunk_size=512)
 
-        self.assertTrue(torch.equal(idx_full, idx_chunk))
-        self.assertTrue(torch.allclose(dist_full, dist_chunk, atol=1e-4))
+        def same_neighbors(indices_a, distances_a, indices_b, distances_b):
+            self.assertTrue(torch.equal(distances_a, distances_b))
+            for ia,ib,distances in zip(indices_a,indices_b,distances_a):
+                start=0
+                for count in torch.unique_consecutive(distances,return_counts=True)[1].tolist():
+                    end=start+count
+                    # The final group may continue beyond k: either path
+                    # may choose a different subset at exactly that distance.
+                    if end < len(distances):
+                        self.assertEqual(set(ia[start:end].tolist()),set(ib[start:end].tolist()))
+                    start=end
+        def direct_distances(weights,indices,returned):
+            # Compare exact distances in one common evaluation order, rather
+            # than the differently rounded matmul/norm subtraction paths.
+            exact=(x[:,None].double()-weights[indices].double()).square().sum(-1)
+            self.assertTrue(torch.allclose(returned,exact.to(returned),atol=1e-4))
+            return exact
+        same_neighbors(idx_full,direct_distances(W_index,idx_full,dist_full),
+                       idx_chunk,direct_distances(W_index,idx_chunk,dist_chunk))
+        # The previous landing's tie-order event, without selecting a seed.
+        tied=torch.zeros_like(W_index);norms=torch.zeros_like(W_norm2)
+        full,df,_=Lexicon.topk_l2(x,tied,norms,k=16)
+        chunk,dc,_=topk_l2_chunked(x,tied,norms,k=16,chunk_size=512)
+        same_neighbors(full,direct_distances(tied,full,df),chunk,direct_distances(tied,chunk,dc))
+        same_neighbors(full,direct_distances(tied,full,df),
+                       chunk+512,direct_distances(tied,chunk+512,dc))
 
     def test_chunk_size_larger_than_V(self):
 
