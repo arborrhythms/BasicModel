@@ -17,14 +17,18 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 6 is Done as a mechanism landing, accepted in
+**Current:** Item 5 is accepted for landing after Claude's repair review
+([receipt](doc/plans/2026-10-19-item5-start.md)); the paired zero-cost
+counterexample is carried under item 0. Item 6 is Done as a mechanism landing, accepted in
 [plan §16](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing).
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns. Stage 4e (constituents),
 VP vectors by temporal difference and order-2 kinds are not yet built.
 The learning sequence carries alongside 5.5 below and into item 0's gates.
 
-**Current sequence (item 6 closed as mechanism, October 16):**
+**Next mechanism (Alec, October 19):** item **4, expectation across the
+architecture**. Its draft spec and entry below retain the earlier 4.5 label.
+The October 16 sequence was:
 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
@@ -463,22 +467,6 @@ not by a passing identity lesson.
    offset-independence, addressed-chain, interleaving, preposition and
    surface-inverse certificates. Tense/aspect on VP phases waits for the
    carried identity sequence.
-- **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)). Implementation
-   candidate's review repairs are implemented; the single default sweep leaves
-   an unresolved bootstrap-snapshot failure; [record and validation](doc/plans/2026-10-19-item5-start.md).
-   Includes pressure-driven LTM value pruning, gradual detail loss, stable
-   references, expectation/definition/taxonomy repair, and concept reclamation
-   from exact redundancies, unused mints without definition/reference/posting/
-   sparse-placement evidence, or unreferenced zero-relevance columns. Source trust
-   is independent of the evidence pair. Alec retained age for LTM turnover on
-   October 19 and said to begin: the bounded penalty uses rows back in each
-   witnessing stream (youngest position for shared rows), in both profiles
-   under pressure. Re-witnessing does not refresh history. Concept meanings
-   start at zero and grow with witnessed definedness; smallness alone cannot
-   justify erasure. Maximum preallocation warns. Repair review and publication remain;
-   the item stays here until that landing.
-   Long-run sizing/learning remains with items 3/0. The historical 9b
-   reconstruction numbers require the item-0 rebaseline already recorded below.
 - **4.5. Expectation across the architecture** (Alec, 2026-10-08: "needs to
    go in sooner rather than later"; a spec of its own). **Spec (draft,
    2026-10-08 rev 3; two questions open in §8):**
@@ -548,7 +536,9 @@ not by a passing identity lesson.
    one command on a small config; the test in the suite.
 - **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
    measure sentence-list/address-table memory and loader time, confirm
-   `resume_skip` with the run's stream count. Measure admitted PartSpace rows
+   `resume_skip` with the run's stream count. Revisit item 5's retention cost
+   and long-run capacity at this scale; its learning measurements remain at
+   item 0. Measure admitted PartSpace rows
    on the target corpus and raise the current 32,768-row reserve before the
    million-sentence run. The required capacity depends on admitted parts,
    not one row per sentence; exhaustion now stops training. Record the chosen
@@ -708,6 +698,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 5 — forgetting:** reviewed source `b1a19c5b8`, receipt `d15bb89c3`, with the approved dead-branch cleanup; LTM surprise retention, live boundary/checkpoint coverage and conservative concept reclamation. The sweep carries item 0's paired zero-cost counterexample; the link failure was environmental. [Review and receipt](doc/plans/2026-10-19-item5-start.md).
 
 - **Item 6 — closing mechanism:** reviewed candidate `a3ec07fd0`/`b41cf3b5b`, consolidated on main in the [landing receipt](https://github.com/arborrhythms/WikiOracle/blob/main/doc/benchmarks/2026-10-16-item6-landing.md): shared bounded inverse and candidate type families; forward discard with the search exemption; positional operands and orders from stamps; paired stages 1–2; reference at the close with fixed mint/bind operators and revision. **No learning claim.** At that landing, VP vectors by temporal difference, order-2 kinds and stage 4e (constituents) were not built; §15's sequence carries alongside 5.5 and at item 0, with 4e first.
 

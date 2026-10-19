@@ -3050,8 +3050,7 @@ The cleared-cache word-overlap test remains expected-failing. Copular identity
 (1), FineWeb (5) and stage 4e (1) retain their phase prerequisite skips.
 This work starts no separate NP, identity or corpus learning experiment and
 makes no mature-checkpoint learning claim. Claude reviewed that candidate;
-the repair pass below supersedes its source. Publication remains pending.
-
+the repair pass below supersedes its source and is approved for landing.
 
 ### Item 5 review repair pass (2026-10-19)
 
@@ -3080,18 +3079,18 @@ retries. Phase skips are unchanged: copular identity 1, FineWeb 5, stage 4e 1.
 The isolated checkout reported no weekly slow-test record; none was run.
 Evidence: `output/item5-repair-default-20261019/result.json`.
 
-The Params link failure came from the isolated checkout missing the existing
-parent repository's `doc/Ethics.md`. That companion path is now present;
-source and assertion are unchanged, and its scoped recheck is recorded below.
-The other failure is **unresolved**:
-`test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot`
-observed **0.0517** where `audit['components'][..., 0]` must be zero. The test
-is unchanged and its captured output has no forgetting report; this does not
-establish the cause. It was not rerun to obtain a pass. The sweep was not
-repeated. The plan retains both failures, and this candidate is not claimed
-as a clean landing. The final receipt commit changes documentation only.
+| Default-sweep failure | Classification and disposition |
+|---|---|
+| `test_relative_links_resolve[doc/Params.md]` | **Environmental:** the isolated checkout lacked the existing parent repository's `doc/Ethics.md`. The companion path is now present; source and assertion are unchanged. The scoped recheck is recorded below. |
+| `test_both_training_trials_share_bootstrap_snapshot` | **Carried item-0 finding:** **0.0517** where `audit['components'][..., 0]` must be zero. Claude identifies the same paired zero-cost counterexample reproduced on accepted main in the [October 15 receipt](benchmarks/2026-10-15-item6-orders-paired/README.md), with the sampled row varying across runs. Alec carried it to item 0 on October 17, outside this landing's conditions. The assertion is unchanged and captured output has no forgetting report. No rerun was used to obtain a pass. |
+
+Claude and Alec approved landing with these classifications. Receipt commit
+`d15bb89c3` changes documentation only. The subsequent approved cleanup uses
+utility 1 directly in the proof-loss raise, deleting the unreachable
+`REL_NONE` surprise branch because `_supports` only keys part/implication
+rows. Alec explicitly requested **no re-sweep**; none was run.
 
 The scoped link recheck passed **4/4** after restoring the companion path:
 Params, Testing, the plan and the forgetting spec
 (`output/item5-repair-links-20261019/result.json`). The default result remains
-unchanged, and the bootstrap-snapshot failure remains unresolved.
+unchanged, and the paired zero-cost counterexample remains carried under item 0.

@@ -332,9 +332,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
                 if row not in alive or row in protected or row in advanced:
                     continue
                 if row in supports and not any(proof <= alive - coarsened for proof in supports[row]):
-                    utility = (max(0., min(1., float(store.surprise[row])))
-                               if int(store.rel_type[row]) == store.REL_NONE and float(store.surprise[row]) >= 0 else 1.)
-                    corrected = float(terms['value'][row]) + config.utility_weight * (utility - float(terms['utility'][row]))
+                    corrected = float(terms['value'][row]) + config.utility_weight * (1. - float(terms['utility'][row]))
                     if corrected > value:
                         heapq.heappush(queue, (corrected, age, key, row))
                         continue
