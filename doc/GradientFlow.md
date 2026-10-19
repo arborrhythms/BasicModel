@@ -25,14 +25,15 @@ pullback for reconstruction. Saved forward parameter values preserve the
 second graph. A batch-end step runs only when its remaining registered total
 has a derivative. No extra step is added for diagnostics.
 
-Explore is kept only when its reconstruction total `R` is **strictly lower**.
-A tie keeps greedy. The chooser's detached advantage uses the owner-step total
-`C = R + E + A`: registry reconstruction, sentence expectation gated per role
-by gain × predicted presence, and relative answer error when supplied.
+Under Item 4's October 19 rule, explore is kept only when `R + A` is
+**strictly lower**. A tie keeps greedy. The chooser's detached advantage uses
+that same owner-step total: registry reconstruction and relative answer error
+when supplied. E trains the shared predictor independently on its local
+residual; it enters neither keeping nor departure credit.
 Each answer is read from that trial with the understanding detached, before
 either optimizer step. Reconstruction and expectation train on both trials.
 Round 2e gives the answer owner two independent readers of the same form.
-The presented reader takes one step on the reconstruction-kept root only.
+The presented reader takes one step on the kept root only.
 The comparison reader supplies A and takes one step on the mean of both root
 losses for compose departures, or the kept root for narrowing departures.
 Both readers see detached roots. The batch-end answer read uses the presented

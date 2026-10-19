@@ -2626,12 +2626,13 @@ a tree. The greedy derivation is what the model expects of itself; one
 departure, drawn first uniformly among eligible walks (narrowing and compose),
 then uniformly among the selected walk's eligible rounds, is the question
 (operators round 2d); both are completed and costed at
-the owner step on the total of reconstruction, expectation (gated by the
-predictor's confidence) and, where supplied, the answer. The strict
-reconstruction keep commits the lower-R trial, with ties keeping greedy;
-the full total supplies the chooser's advantage. The committed trial is
+the owner step on `R + A`: reconstruction and, where supplied, the answer.
+The strict keep commits the lower-total trial, with ties keeping greedy;
+the same total supplies the chooser's advantage. Local expectation losses
+train the predictor independently. The committed trial is
 written to its row and presented; the chooser is credited by the score-function
-term at the departure, corrected by `K·R_walk·W` — the surprise at the choice. The
+term at the departure, corrected by the inverse alternative probability
+times the eligible walk and round counts. The
 choice stays discrete; no mixed forward, no straight-through.
 
 **Surprise at every layer (Item 4, October 19).** Percepts use field-wide

@@ -7,6 +7,10 @@ BasicModel baseline `9207f5e03`; WikiOracle baseline `929e4a8`. Both checkouts a
 Claude's [re-review of `7285b38`](claude-followup-review.md) confirms those
 repairs apart from B3, and identifies N1/N2 below. They are repaired under
 the existing raw-observation and R+A decisions; B3 remains undecided.
+The [short check of `282fcf918`](claude-n1-n2-review.md) confirms N1/N2 in
+source and their native regressions, with no new code defect. No further
+source review of those two repairs is requested. Sweep approval is still
+withheld pending B3 and the disclosed gates.
 
 ## §9.1 — Does zero gain preserve the previous landing?
 
@@ -196,6 +200,7 @@ losses. Toggling the sentence head preserves the configured word switch.
 | Focused native/gain/attention/device coverage | 92 passed, 1 skipped; `native-and-focus-final.log` |
 | Claude review of `f7e74af04` | Completed; not approved to sweep. `claude-review.md` and `claude-review-status.json`. |
 | Claude re-review of `7285b38` | Completed; prior code findings resolved, B3 pending, N1/N2 found. `claude-followup-review.md`. |
+| Claude short check of `282fcf918` | N1/N2 confirmed; no new code defect. `claude-n1-n2-review.md` and `claude-n1-n2-status.json`. |
 | Review-specific/native/schema/NP restoration checks | 64 passed, four slow cases skipped and separately exercised; `review-targeted-5/result.json`. |
 | Broader affected checks after review | 248 completed; three failures found; `review-regression-7/result.json`. Follow-up repairs recorded separately. |
 | Repair of those three regressions plus review/native/thought coverage | 90/90 passed with slow cases enabled; `review-repairs-9/result.json`. |
@@ -210,3 +215,10 @@ Generated runner source manifests and the transient verbose compiler trace are n
 Concurrent edits to the row-layout specs, Philosophy, the row diagram and
 todo are preserved with the candidate. Their future row/membership changes
 are not implemented as part of Item 4's expectation repair.
+
+N2's review asks Alec to confirm whether the prior thought work price should
+remain. The repair applies the user's existing instruction, “R + A for both
+keeping and credit,” literally to thought too: work is metered and reported
+but is not a third judge term. This interpretation is explicit in the
+thinking spec; it is not recorded as an additional Alec decision. The stale
+R-only / R+E+A live contracts in Architecture and GradientFlow are corrected.

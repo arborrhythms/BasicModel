@@ -43,6 +43,8 @@ retained keys. The selection-prime and φ defaults await Alec's decision
 The re-review of `7285b38` confirms those fixes and finds two further seams:
 raw P-to-S observation and the thought R+A keep/credit judge. Their repairs
 and native regressions are in the same round receipt.
+Claude's short check of `282fcf918` confirms both source fixes with no new
+code defect; 82 targeted cases pass, including the nonzero compiled boundary.
 **Item 4 remains open:** the copular-identity prerequisite is missing, the
 carried initial-binding distribution check fails, and global derivation
 optimality, per-level learning/collapse and all-level XOR are not established.
