@@ -17,8 +17,8 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 4's reviewed mechanism close-out is ready to publish on
-`codex/item4-repair` ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
+**Current:** Item 4's reviewed mechanism close-out is published at source
+`fdeef42b8` on `codex/item4-repair` ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
 Alec's defaults are all four gains zero, selection prime on and φ=.5;
 the declared enabled-prediction parity comparison and the whole §14 file
 complete. The single full sweep and scoped repairs are recorded separately.
@@ -34,10 +34,11 @@ difference; then the remaining 5.5 mechanisms. Each has its own receipt.
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns.
 
-**Item 4 completion:** commit and push every BasicModel change, including
-the newer LTM1/LTM3, occurrence, Philosophy and todo edits, then push the
-WikiOracle bump. Preserve unrelated parent-tree work; its pre-existing
-nanochat pointer change is outside this landing.
+**Item 4 publication:** source `fdeef42b8` includes every BasicModel edit,
+including the newer LTM1/LTM3, occurrence, Philosophy and todo changes.
+The final receipt commit and WikiOracle bump follow on the same branch.
+The pre-existing parent nanochat pointer is preserved outside Item 4; it
+is the only unrelated parent-tree change, not an uncommitted BasicModel edit.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -476,10 +477,6 @@ not by a passing identity lesson.
    surface-inverse certificates. Tense/aspect on VP phases waits for the
    carried identity sequence. **Remainder collected as item 3.5 (Alec,
    2026-10-19), after item 4.**
-- **Item 4 publication:** close-out code, documents and receipts are ready;
-   push the branch and WikiOracle bump, then move this line to Done with
-   the source commit. Learning residue is under Item 0 below.
-
 - **4. Run harness and resume test.** *Once pulled forward for the
    conference (Alec, 2026-09-27; no freeze since 2026-10-03, so it is built
    in 6.8-1 and evaluated here):* the word-level predictor as the NanoChat gate's
@@ -822,6 +819,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 4 — expectation mechanism:** `fdeef42b8` on `codex/item4-repair`; approved defaults, enabled parity measurement, whole §14 completion, one full sweep and scoped repairs ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)). Failed learning and carried Item 0/5.5 gates remain open.
 
 - **Item 5 — forgetting:** reviewed source `b1a19c5b8`, receipt `d15bb89c3`, with the approved dead-branch cleanup; LTM surprise retention, live boundary/checkpoint coverage and conservative concept reclamation. The sweep carries item 0's paired zero-cost counterexample; the link failure was environmental. [Review and receipt](doc/plans/2026-10-19-item5-start.md).
 

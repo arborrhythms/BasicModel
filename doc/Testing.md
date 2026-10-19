@@ -1,6 +1,6 @@
 # Bounded development tests
 
-Item 4's October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
+Item 4's source `fdeef42b8` and October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
 records each §9 gate, the review of record, and close-out measurements.
 Alec's B3 decision keeps the selection prime on and φ=.5 with all gains zero.
 The declared parity configuration keeps prediction enabled, disables selection

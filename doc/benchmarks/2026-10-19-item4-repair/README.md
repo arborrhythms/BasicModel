@@ -2,7 +2,7 @@
 
 BasicModel baseline `9207f5e03`; WikiOracle baseline `929e4a8`. Both checkouts are on `codex/item4-repair`. This round preserves the prior working-tree spec, todo, NP and documentation edits. No commit on main.
 
-**The single full landing sweep and scoped repairs are complete; publication is next.** Alec's
+**Item 4 mechanism close-out is published at source `fdeef42b8` on `codex/item4-repair`.** Alec's
 B3 decision retains the selection prime and φ=.5 as shipped defaults, with
 all four attenuation gains zero. The sole declared parity configuration is
 [`test/fixtures/item4-parity.json`](../../../test/fixtures/item4-parity.json).
@@ -256,7 +256,7 @@ losses. Toggling the sentence head preserves the configured word switch.
 | Repair of those three regressions plus review/native/thought coverage | 90/90 passed with slow cases enabled; `review-repairs-9/result.json`. |
 | N1/N2 repairs, controller coverage and nonzero compiled boundary | 82/82 passed with slow cases enabled; `review-n1-n2-11/result.json`. The first attempt found an undeclared raw-pole consumer; `SymbolField.read` is now in the consumer census. |
 | One full landing sweep | 5,834/5,834 complete: 5,475 passed, 322 skipped, 39 failed, 1 XFAIL; 1,340.06 s, 2.64 GiB peak worker / 9.48 GiB aggregate. No timeout or compile-cache retry. `landing-sweep/result.json`. |
-| Push / WikiOracle bump / Item 4 completion | Not done |
+| Publication | Source `fdeef42b8` is pushed; the final receipt commit and WikiOracle pointer update follow on `codex/item4-repair`. No commit on main. |
 
 The NP restoration fixture now preserves the native loader’s migrated sidecar fingerprints while retaining exact learned tensors. It previously restored old fingerprint bytes over migrated metadata and corrupted its next checkpoint. The production migration remains one routine at load.
 
@@ -324,3 +324,18 @@ is repeated or extended. The carried .0517 failure is not in that rerun.
 | Independent Item 5.5 gates | Unchanged |
 
 Documentation links pass **409/409** in `closeout-links/result.json`.
+
+
+## Publication and the next item
+
+Source commit **`fdeef42b8`** includes the complete close-out and all newer
+working-tree documents. Its code is covered by the full sweep plus the
+explicitly listed scoped repairs; there is no second full sweep. The final
+receipt commit records this source and the todo disposition. WikiOracle's
+branch bump names that final BasicModel commit. No Item 3.5 code is on the
+Item 4 branch; its first pass starts on a new branch after publication.
+
+The original parent checkout also has a nanochat pointer change
+`7be4dc3 → de813f4`. It is outside this BasicModel task and remains untouched;
+the user's scope choice was requested. BasicModel itself has no uncommitted
+files at its publication boundary.
