@@ -464,7 +464,8 @@ not by a passing identity lesson.
    surface-inverse certificates. Tense/aspect on VP phases waits for the
    carried identity sequence.
 - **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)). Implementation
-   candidate's review repairs are in validation; [record and validation](doc/plans/2026-10-19-item5-start.md).
+   candidate's review repairs are implemented; the single default sweep leaves
+   an unresolved bootstrap-snapshot failure; [record and validation](doc/plans/2026-10-19-item5-start.md).
    Includes pressure-driven LTM value pruning, gradual detail loss, stable
    references, expectation/definition/taxonomy repair, and concept reclamation
    from exact redundancies, unused mints without definition/reference/posting/

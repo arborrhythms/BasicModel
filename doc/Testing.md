@@ -3065,8 +3065,33 @@ smallness-based reclamation.
 The real BasicModel certificate logs the first document's **11→6** LTM
 pass at capacity 16, then reads and writes a second document. Its post-pass
 checkpoint restores occupancy, addresses and all four forgetting counters
-exactly. Focused checks passed **95** cases; the final isolated-source
+exactly. Focused checks had **93 passed, 2 existing skips**; the final isolated-source
 forgetting/concept selection passed **47**. XML and whitespace checks pass.
 No existing assertion is relaxed, no test seed is selected, and no separate
-learning experiment is run. One default sweep is pending on the committed
-repair source; its result will complete this receipt.
+learning experiment is run.
+
+The single default sweep on **b1a19c5b8ec94941d09f74190913f149d42484c1**
+completed **5,808 cases: 5,471 passed, 334 skipped, one existing XFAIL and
+two failures**, in **472.34 s** (exit 1). All three new repair certificates
+and both registered artifact-restoration certificates passed. The source
+remained unchanged throughout; peak worker/aggregate memory was
+**4.80/16.29 GiB**, below **8/28 GiB** limits. There were no compile-cache
+retries. Phase skips are unchanged: copular identity 1, FineWeb 5, stage 4e 1.
+The isolated checkout reported no weekly slow-test record; none was run.
+Evidence: `output/item5-repair-default-20261019/result.json`.
+
+The Params link failure came from the isolated checkout missing the existing
+parent repository's `doc/Ethics.md`. That companion path is now present;
+source and assertion are unchanged, and its scoped recheck is recorded below.
+The other failure is **unresolved**:
+`test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot`
+observed **0.0517** where `audit['components'][..., 0]` must be zero. The test
+is unchanged and its captured output has no forgetting report; this does not
+establish the cause. It was not rerun to obtain a pass. The sweep was not
+repeated. The plan retains both failures, and this candidate is not claimed
+as a clean landing. The final receipt commit changes documentation only.
+
+The scoped link recheck passed **4/4** after restoring the companion path:
+Params, Testing, the plan and the forgetting spec
+(`output/item5-repair-links-20261019/result.json`). The default result remains
+unchanged, and the bootstrap-snapshot failure remains unresolved.
