@@ -188,11 +188,10 @@ Training loop and I/O.
 | `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
 | `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |
 | `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
-| `byteExpectation`, `rowExpectation` | bool | `false` | Historical level switches, not separate predictors. Byte prediction is retired; document prediction uses the shared symbol owner. |
 | `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
-| `sentenceExpectationScope` | string | `symbols` | Two-lane activation forecast over the native bank. Only `symbols` is accepted. |
 | `perceptExpectationGain`, `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Independent P/S/R/D attenuation strengths. Zero passes admitted content whole; one permits zero content for a perfect prediction. R and D gains compose at closing. |
 | `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. |
+| `expectationOmissionThreshold` | float in `[0,1]` | `0.5` | Minimum for-lane omission confidence for the conceived absence thought. |
 | `expectationEpsilon` | positive finite float | `1e-6` | Denominator floor for normalized percept and symbol residuals. |
 | `expectationSaturation` | enum | `clip` | `clip` uses `min(1, ratio)`; `smooth` uses `magnitude/(denominator+magnitude)`. The entire gain is detached. |
 | `explorationUniformFraction` | float in `(0,1]` | `0.5` | Uniform mass in the alternative proposal; every eligible non-greedy action has positive probability. |

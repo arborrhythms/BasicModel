@@ -1,0 +1,4 @@
+test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]
+test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream
+
+2 tests collected in 2.33s

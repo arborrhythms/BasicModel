@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/review-compiled-8/worker-001.recycle.json"
+}

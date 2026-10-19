@@ -26,7 +26,8 @@ class SymbolField:
         keys = self.owner._bank_keys.to(values)[None].expand(len(values), -1, -1)
         occupied = torch.arange(values.shape[1], device=values.device)[None] < depth[:, None]
         context = ActivationPredictor.context_from(values, occupied)
-        source = symbol_activations(keys, values, occupied, self.source_lanes)
+        source = symbol_activations(keys, values, occupied, self.source_lanes,
+            identities=state[4], bank_ids=self.owner._bank_addresses)
         logits = self.owner._inter_predictor(keys, context, source)
         self.pending = keys, logits, context, source
         self.before = values.detach().clone(), occupied.detach().clone(), state[4].detach().clone()
@@ -38,7 +39,8 @@ class SymbolField:
         values, depth, orders, grammar, identities, activation = state
         present = torch.arange(values.shape[1], device=values.device)[None] < depth[:, None]
         occupied = present & rows[:, None]
-        observed = symbol_activations(keys, values, occupied, lanes)
+        observed = symbol_activations(keys, values, occupied, lanes,
+            identities=identities, bank_ids=self.owner._bank_addresses)
         self.source_lanes = (torch.stack((present.to(values), torch.zeros_like(present).to(values)), -1)
                              if lanes is None else lanes.detach().clone())
         expected = logits.sigmoid()
@@ -54,12 +56,22 @@ class SymbolField:
         self.reports[-1].update(content=field.content.detach(), gain=field.gain.detach())
         return state
 
-    def read(self):
+    def read(self, *, incoming_ids=None, incoming_lanes=None, incoming_rows=None):
         if self.pending is None:
             return None
-        keys, logits, _, _ = self.pending
+        keys, logits, _, source = self.pending
+        values, occupied, ids = self.before
+        addresses = self.owner._bank_addresses
+        known = symbol_activations(keys, values, occupied,
+            identities=ids, bank_ids=addresses)[..., 0] > 0
+        actual = source.detach().clone()
+        if incoming_ids is not None:
+            matches = (incoming_ids[:, None] == addresses[None]) & (addresses[None] >= 0)
+            matches &= incoming_rows[:, None]
+            actual = torch.maximum(actual, matches[..., None].to(actual)*incoming_lanes[:, None].detach())
+            known = known | matches
         return SymbolRead(keys, logits.detach().sigmoid(), self.strength,
-                          self.epsilon, self.saturation)
+                          self.epsilon, self.saturation, addresses, actual, known)
 
     def closing_predictions(self):
         """The shared head's last pre-arrival read, separate from the D prior."""

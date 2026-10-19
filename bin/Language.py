@@ -6561,14 +6561,14 @@ class OperationSelectionLayer(nn.Module):
             action=(selected/self.temperature+noise).argmax(-1)
         if masked_action is not None:
             departure = (masked_action >= 0) & torch.isfinite(other).any(-1)
-            from Expectation import alternative_probabilities
+            from Expectation import alternative_probabilities, sample_alternative
             free = logits if alternative_logits is None else alternative_logits
             free = free.masked_fill(~torch.isfinite(other), -torch.inf)
             proposal = alternative_probabilities(free, fraction=self.exploration_fraction,
                                                  temperature=self.exploration_temperature)
             # CDF sampling works for empty rows without NaNs or an invalid multinomial.
             draw = torch.rand_like(proposal[:, :1])
-            picked = (draw > proposal.cumsum(-1)).sum(-1).clamp_max(proposal.shape[-1]-1)
+            picked = sample_alternative(proposal, draw)
             action = torch.where(departure, picked, action)
             q = proposal.gather(1, action[:, None])[:, 0]
             proposal_inverse = torch.where(departure, q.clamp_min(torch.finfo(q.dtype).tiny).reciprocal(), 0.)
@@ -6796,7 +6796,7 @@ class OperationSelectionLayer(nn.Module):
                 grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
                 previous_unary=None, stop_exact=None, operand_activations=None,
-                operand_content_activations=None, policy_grad=True):
+                operand_content_activations=None, operand_identities=None, policy_grad=True):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -6851,7 +6851,7 @@ class OperationSelectionLayer(nn.Module):
                 # Identify before attenuation. Composed operands retain their
                 # raw norm and leaves their projection coefficient; S is one
                 # scalar on this consumer view and never mutates either.
-                operand_gain = symbol_read.gains(x, live)
+                operand_gain = symbol_read.gains(x, live, identities=operand_identities)
                 # Activation-aware operators also consume S. Their content
                 # candidates are scored beside the raw identity candidates;
                 # only the latter may be selected into STM or the journal.
@@ -9309,7 +9309,6 @@ class SymbolSubSpace(SubSpace):
             n_dim=muxed,
             concept_dim=int(concept_dim),
             ltm_capacity=int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024),
-            expectation_scope=str(TheXMLConfig.training("sentenceExpectationScope", "symbols")),
         ) if n_sym_rows > 0 and muxed > 0 else None)
         self._expectation_weight = float(TheXMLConfig.training('sentenceExpectationLossWeight', .1))
         if (bool(TheXMLConfig.training("sentenceExpectation", True)) or bool(TheXMLConfig.training("wordExpectation", True))) and self._expectation_options:
@@ -12461,7 +12460,8 @@ class LanguageSpace(nn.Module):
             # and the explicit gained coefficient for their consumer view.
             raw_activation = window.norm(dim=-1) if window_activations is None else window_activations
             occupied = torch.arange(n, device=buffer.device)[None] < window_depth[:, None]
-            content_activations = raw_activation * symbol_read.gains(window, occupied)
+            content_activations = raw_activation * symbol_read.gains(window, occupied,
+                identities=state[4].gather(1, source))
         arguments = dict(depth=window_depth, slots=stop_slots,
             occupation=(None if occupation is None else occupation.gather(1,
                 source[..., None].expand(B, n, occupation.shape[-1]))),
@@ -12470,7 +12470,7 @@ class LanguageSpace(nn.Module):
             rounds_left=rounds_left, load_depth=depth,
             stop_exact=stop_exact,
             operand_activations=window_activations,
-            operand_content_activations=content_activations, policy_grad=policy_grad,
+            operand_content_activations=content_activations, operand_identities=state[4].gather(1, source), policy_grad=policy_grad,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=self._structural_context(
                 phase='compose', input_stream=buffer), reference_data=references)

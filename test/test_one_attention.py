@@ -124,7 +124,7 @@ def test_word_expectation_is_a_trained_distribution_with_one_gain():
     bank=torch.eye(4,requires_grad=True)[None]
     words=bank[:,[0,1,2]].detach().requires_grad_()
     targets=torch.tensor([[0,1,2]])
-    out=layer.expect('word',words,bank,torch.ones(1,4,dtype=torch.bool),targets,teacher_forcing=True)
+    out=layer.expect('word',words,bank,torch.ones(1,4,dtype=torch.bool),targets)
     assert out.probabilities.shape==(1,3,4)
     torch.testing.assert_close(out.probabilities.sum(-1),torch.ones(1,3))
     torch.testing.assert_close(out.content, words.detach()*out.gain[...,None])
@@ -136,17 +136,17 @@ def test_word_expectation_is_a_trained_distribution_with_one_gain():
     assert layer.enabled_levels == ('word','sentence','row')
 
 
-def test_word_expectation_teacher_forcing_only_reads_earlier_targets():
+def test_word_expectation_only_reads_earlier_observations():
     from Layers import SymbolExpectation
     layer=SymbolExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
     layer.set_symbol_bank(torch.eye(layer.concept_dim))
     bank=torch.eye(4)[None];valid=torch.ones(1,4,dtype=torch.bool)
-    a=layer.expect('word',bank[:,[0,1,2]],bank,valid,torch.tensor([[0,1,2]]),teacher_forcing=True)
-    b=layer.expect('word',bank[:,[0,3,2]],bank,valid,torch.tensor([[0,3,2]]),teacher_forcing=True)
+    a=layer.expect('word',bank[:,[0,1,2]],bank,valid,torch.tensor([[0,1,2]]))
+    b=layer.expect('word',bank[:,[0,3,2]],bank,valid,torch.tensor([[0,3,2]]))
     torch.testing.assert_close(a.probabilities[:,:2],b.probabilities[:,:2])
     assert not torch.equal(a.probabilities[:,2],b.probabilities[:,2])
-    c=layer.expect('word',bank[:,[0,1,2]],bank,valid,torch.tensor([[0,1,2]]),teacher_forcing=False)
-    d=layer.expect('word',bank[:,[0,3,2]],bank,valid,torch.tensor([[0,3,2]]),teacher_forcing=False)
+    c=layer.expect('word',bank[:,[0,1,2]],bank,valid,torch.tensor([[0,1,2]]))
+    d=layer.expect('word',bank[:,[0,3,2]],bank,valid,torch.tensor([[0,3,2]]))
     torch.testing.assert_close(c.probabilities,a.probabilities)
     torch.testing.assert_close(d.probabilities,b.probabilities)
 
@@ -159,7 +159,7 @@ def test_word_forecast_conditions_on_observed_prefix_without_reading_future():
     prefix=torch.tensor([[True,True,False]])
     def predict(sequence):
         return layer.expect('word',bank[:,sequence],bank,valid,torch.tensor([sequence]),
-                            teacher_forcing=False,observed_prefix=prefix)
+                            observed_prefix=prefix)
     a=predict([0,1,2]);b=predict([0,1,3]);c=predict([1,0,2])
     torch.testing.assert_close(a.probabilities,b.probabilities)
     assert not torch.equal(a.probabilities[:,2],c.probabilities[:,2])
@@ -202,7 +202,7 @@ def test_normal_model_opens_narrows_and_scores_word_expectation():
     expected=model._word_expectation
     assert expected.probabilities.shape[:2] == model._attention_words.accepted.shape
     torch.testing.assert_close(expected.probabilities.sum(-1),torch.ones_like(expected.loss))
-    torch.testing.assert_close(model._word_surprise, expected.surprise)
+    torch.testing.assert_close(model._word_expectation.surprise, expected.surprise)
     expected.loss.sum().backward()
     assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
 
@@ -454,12 +454,12 @@ def test_inference_reuses_constant_padding_forecast_without_changing_results():
     targets = torch.full((2, 32), -1, dtype=torch.long)
     targets[:, :2] = torch.tensor([0, 1])
     args = ('word', words, bank, torch.ones(2, 4, dtype=torch.bool), targets)
-    reference = owner.expect(*args, teacher_forcing=False, active=active)
+    reference = owner.expect(*args,  active=active)
     calls = []
     hook = owner.word_predictor.register_forward_hook(lambda *args: calls.append(True))
     try:
         with torch.no_grad():
-            actual = owner.expect(*args, teacher_forcing=False, active=active)
+            actual = owner.expect(*args,  active=active)
     finally:
         hook.remove()
     for before, after in zip(vars(reference).values(), vars(actual).values()):

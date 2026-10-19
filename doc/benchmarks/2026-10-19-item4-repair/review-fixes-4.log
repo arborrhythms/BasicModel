@@ -1,0 +1,182 @@
+......................s.............................................s... [ 60%]
+...................FF........................F..                         [100%]
+=================================== FAILURES ===================================
+____ test_gate_grammars_retain_native_identity_at_zero_content[XOR_grammar] ____
+
+config = 'XOR_grammar'
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    def test_gate_grammars_retain_native_identity_at_zero_content(config):
+        from test_mm_xor import _fresh_model
+        from Meaning import ClosingImage
+        model,_,_=_fresh_model('data/'+config+'.xml')
+        try:
+            derived=model._concept_owner().similarity_codebook.mereology
+            raw=torch.ones(3,derived.code_width)
+            from meaning_fixtures import symbol_prediction
+            prior=symbol_prediction(raw[:1],torch.tensor([[1.,0.]]))
+>           image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,gain=1.)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round2.py:146:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'Meaning.ClosingImage'>
+observed = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]])
+estimate = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]])
+confidence = tensor([1., 1., 1.])
+prediction = MeaningExpectation(roles=tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1.,...1., 1., 1., 1., 1., 1., 1.]]), symbol_logits=tensor([[ 60., -60.]]), symbol_ids=tensor([0]), symbol_orders=tensor([0]))
+occupied = tensor([True, True, True]), identities = None, withheld = None
+lanes = None, activation = tensor([[1., 0.]]), epsilon = 1e-06
+saturation = 'clip', gain = 1.0, object_mask = None
+
+    @classmethod
+    def form(cls, observed, estimate, confidence, *, prediction=None, occupied=None, identities=None, withheld=None, lanes=None, activation=None, epsilon=1e-6,
+             saturation='clip', gain=0., object_mask=None):
+        from Expectation import gain_field, symbol_activations, match_symbols
+        raw = observed.detach().clone()
+        if prediction is None:
+            if estimate is not None:
+                raise ValueError('closing estimates require an explicit symbol-bank prediction')
+            return cls(raw, raw.clone(), torch.zeros_like(raw), raw.shape[-1],
+                       raw.new_ones(raw.shape[0]))
+        keys = prediction.symbol_keys.to(raw)
+        occupied = raw.abs().sum(-1)>0 if occupied is None else occupied
+        activation = (symbol_activations(keys[None], raw[None], occupied[None],
+                                       None if lanes is None else lanes[None], identities=None if identities is None else identities[None],
+                                       bank_ids=prediction.symbol_ids, key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])[0]
+                      if activation is None else activation.detach().to(raw))
+        if activation.shape != (len(keys), 2):
+            raise ValueError('retained activation target must align with its prior bank')
+        expected = prediction.symbol_logits.detach().to(raw).sigmoid()
+        prior_withheld = withheld_symbols(prediction, prediction)
+        if prior_withheld is not None:
+            expected = expected * (1.-prior_withheld[:, None])
+        indices, matched = match_symbols(keys[None], raw[None],
+            identities=None if identities is None else identities[None], bank_ids=prediction.symbol_ids,
+            key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])
+        indices, matched = indices[0], matched[0]
+        exempt = (torch.zeros(len(keys), device=raw.device, dtype=raw.dtype)
+                  if prior_withheld is None else prior_withheld.to(raw).clone())
+        role_exempt = object_mask
+        if role_exempt is not None:
+            exempt.scatter_reduce_(0, indices, role_exempt.to(raw)*matched, reduce='amax')
+        if withheld is not None:
+            exempt = torch.maximum(exempt, withheld.to(exempt))
+        suppressed = exempt.new_zeros(exempt.shape) if prior_withheld is None else prior_withheld.to(exempt)
+        if withheld is not None:
+            suppressed = torch.maximum(suppressed, withheld.to(suppressed))
+        confidence = torch.as_tensor(confidence, device=raw.device, dtype=raw.dtype)
+        if confidence.shape != (len(keys),):
+>           raise ValueError('closing confidence must align with native symbol identities')
+E           ValueError: closing confidence must align with native symbol identities
+
+bin/Meaning.py:71: ValueError
+____ test_gate_grammars_retain_native_identity_at_zero_content[MM_grammar] _____
+
+config = 'MM_grammar'
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    def test_gate_grammars_retain_native_identity_at_zero_content(config):
+        from test_mm_xor import _fresh_model
+        from Meaning import ClosingImage
+        model,_,_=_fresh_model('data/'+config+'.xml')
+        try:
+            derived=model._concept_owner().similarity_codebook.mereology
+            raw=torch.ones(3,derived.code_width)
+            from meaning_fixtures import symbol_prediction
+            prior=symbol_prediction(raw[:1],torch.tensor([[1.,0.]]))
+>           image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,gain=1.)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round2.py:146:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'Meaning.ClosingImage'>
+observed = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]])
+estimate = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]])
+confidence = tensor([1., 1., 1.])
+prediction = MeaningExpectation(roles=tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+         1.,...1., 1., 1., 1., 1., 1., 1.]]), symbol_logits=tensor([[ 60., -60.]]), symbol_ids=tensor([0]), symbol_orders=tensor([0]))
+occupied = tensor([True, True, True]), identities = None, withheld = None
+lanes = None, activation = tensor([[1., 0.]]), epsilon = 1e-06
+saturation = 'clip', gain = 1.0, object_mask = None
+
+    @classmethod
+    def form(cls, observed, estimate, confidence, *, prediction=None, occupied=None, identities=None, withheld=None, lanes=None, activation=None, epsilon=1e-6,
+             saturation='clip', gain=0., object_mask=None):
+        from Expectation import gain_field, symbol_activations, match_symbols
+        raw = observed.detach().clone()
+        if prediction is None:
+            if estimate is not None:
+                raise ValueError('closing estimates require an explicit symbol-bank prediction')
+            return cls(raw, raw.clone(), torch.zeros_like(raw), raw.shape[-1],
+                       raw.new_ones(raw.shape[0]))
+        keys = prediction.symbol_keys.to(raw)
+        occupied = raw.abs().sum(-1)>0 if occupied is None else occupied
+        activation = (symbol_activations(keys[None], raw[None], occupied[None],
+                                       None if lanes is None else lanes[None], identities=None if identities is None else identities[None],
+                                       bank_ids=prediction.symbol_ids, key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])[0]
+                      if activation is None else activation.detach().to(raw))
+        if activation.shape != (len(keys), 2):
+            raise ValueError('retained activation target must align with its prior bank')
+        expected = prediction.symbol_logits.detach().to(raw).sigmoid()
+        prior_withheld = withheld_symbols(prediction, prediction)
+        if prior_withheld is not None:
+            expected = expected * (1.-prior_withheld[:, None])
+        indices, matched = match_symbols(keys[None], raw[None],
+            identities=None if identities is None else identities[None], bank_ids=prediction.symbol_ids,
+            key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])
+        indices, matched = indices[0], matched[0]
+        exempt = (torch.zeros(len(keys), device=raw.device, dtype=raw.dtype)
+                  if prior_withheld is None else prior_withheld.to(raw).clone())
+        role_exempt = object_mask
+        if role_exempt is not None:
+            exempt.scatter_reduce_(0, indices, role_exempt.to(raw)*matched, reduce='amax')
+        if withheld is not None:
+            exempt = torch.maximum(exempt, withheld.to(exempt))
+        suppressed = exempt.new_zeros(exempt.shape) if prior_withheld is None else prior_withheld.to(exempt)
+        if withheld is not None:
+            suppressed = torch.maximum(suppressed, withheld.to(suppressed))
+        confidence = torch.as_tensor(confidence, device=raw.device, dtype=raw.dtype)
+        if confidence.shape != (len(keys),):
+>           raise ValueError('closing confidence must align with native symbol identities')
+E           ValueError: closing confidence must align with native symbol identities
+
+bin/Meaning.py:71: ValueError
+_________ test_sentence_prediction_trials_backpropagate_independently __________
+
+    def test_sentence_prediction_trials_backpropagate_independently():
+        from Layers import SymbolExpectation
+        layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
+            concept_dim=4, batch=1)
+        layer.set_symbol_bank(torch.eye(layer.concept_dim))
+        layer.set_inter_loss_weight(1.)
+        payloads = [torch.ones(3, 4)]
+        mask = torch.ones(1, dtype=torch.bool)
+        layer.observe_stm_end_state([3], payloads, train_prediction=False)
+        layer.expect_next_meaning(0, refresh=True)
+        pending = layer._inter_last_meaning[0]
+        size = len(layer._inter_context[0])
+        first, prior_a = layer.sentence_prediction_cost([3], payloads, mask)
+        second, prior_b = layer.sentence_prediction_cost([3], payloads, mask)
+        torch.testing.assert_close(first, second, rtol=0, atol=0)
+>       assert prior_a[0][0] is prior_b[0][0] is pending
+               ^^^^^^^^^^^^^
+E       TypeError: '_PendingMeaningExpectation' object is not subscriptable
+
+test/test_sentence_prediction_trials.py:20: TypeError
+=========================== short test summary info ============================
+FAILED test/test_operators_round2.py::test_gate_grammars_retain_native_identity_at_zero_content[XOR_grammar]
+FAILED test/test_operators_round2.py::test_gate_grammars_retain_native_identity_at_zero_content[MM_grammar]
+FAILED test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently
+3 failed, 115 passed, 2 skipped in 13.07s

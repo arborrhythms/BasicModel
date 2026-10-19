@@ -17,7 +17,7 @@ def test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated():
     torch.testing.assert_close(read.gains(values),torch.tensor([[0.,1.,0.]]))
     roles=values[0,:3]
     prior=symbol_prediction(keys[0],torch.tensor([1.,0.]).expand(32,2))
-    view=ClosingImage.form(roles,prior.roles,torch.ones(3),prediction=prior,gain=1.)
+    view=ClosingImage.form(roles,prior.roles,torch.ones(len(prior.symbol_keys)),prediction=prior,gain=1.)
     torch.testing.assert_close(view.conceived[1],roles[1])
     assert not view.conceived[0].any()
 
@@ -29,7 +29,7 @@ def test_native_compose_reads_dimmed_content_and_preserves_raw_candidates(gain,m
         def forward(self,a,b,**kwargs): return (a+b)/2
     layer=OperationSelectionLayer(d_model=4,ops=[Mean()],chooser='mlp')
     keys=torch.eye(4)[None]
-    layer._symbol_expectation_read=SymbolRead(keys,torch.tensor([1.,0.]).expand(1,4,2),gain,1e-6,'clip')
+    layer._symbol_expectation_read=SymbolRead(keys,torch.tensor([1.,0.]).expand(1,4,2),gain,1e-6,'clip', identities=torch.arange(4))
     host=SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
         _structural_context=lambda **kw:None,_compose_binary_rules=(),_compose_unary_rules=())
     values=keys[:,:2].clone()
@@ -72,7 +72,7 @@ def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
             return left*left_activation[...,None] + right*right_activation[...,None]
     layer = OperationSelectionLayer(d_model=4, ops=[Weighted()], chooser='mlp')
     keys = torch.eye(4)[None]
-    layer._symbol_expectation_read = SymbolRead(keys, torch.tensor([1.,0.]).expand(1,4,2), .5, 1e-6, 'clip')
+    layer._symbol_expectation_read = SymbolRead(keys, torch.tensor([1.,0.]).expand(1,4,2), .5, 1e-6, 'clip', identities=torch.arange(4))
     host = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
     state = (keys[:,:2].clone(), torch.tensor([2]), torch.tensor([[1,0]]), torch.zeros(1,2,dtype=torch.long),
@@ -87,21 +87,23 @@ def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
     torch.testing.assert_close(state[5], torch.tensor([[0.,.7]]), atol=0, rtol=0)
 
 
-def test_retention_surprise_is_not_diluted_by_bank_padding():
+def test_retention_surprise_counts_omission_but_not_empty_bank_padding():
     actual=torch.tensor([[1.,0.],[0.,0.]])
-    expected=torch.tensor([[.2,.1],[.4,.3]])
+    expected=torch.tensor([[1.,0.],[.1,0.]])
     first=retention_surprise(actual-expected,expected)
-    padded=torch.cat((expected,torch.full((1000,2),.5)))
+    padded=torch.cat((expected,torch.zeros(1000,2)))
     target=torch.cat((actual,torch.zeros(1000,2)))
     torch.testing.assert_close(retention_surprise(target-padded,padded),first)
-    assert first > .2
+    padded[-1,0]=1.
+    assert retention_surprise(target-padded,padded) > first
+    assert retention_surprise(torch.tensor([[-1.,0.]]),torch.tensor([[1.,0.]])) == pytest.approx(1/3)
 
 
 @pytest.mark.parametrize('confidence',[0.,.25,1.])
 def test_closing_confidence_multiplies_gain_and_open_role_keeps_prime(confidence):
     prior=symbol_prediction(torch.eye(4),torch.tensor([1.,0.]).expand(4,2))
     raw=torch.eye(4)[:3]
-    view=ClosingImage.form(raw,prior.roles,torch.full((3,),confidence),prediction=prior,gain=.8,
+    view=ClosingImage.form(raw,prior.roles,torch.full((len(prior.symbol_keys),),confidence),prediction=prior,gain=.8,
         object_mask=torch.tensor([0.,1.,0.]))
     torch.testing.assert_close(view.conceived[0],raw[0]*(1-.8*confidence))
     torch.testing.assert_close(view.conceived[1],raw[1])
@@ -149,7 +151,7 @@ def test_word_read_starts_from_factual_previous_context_and_never_forecasts_itse
     hook=head.word_predictor.register_forward_pre_hook(lambda _,args:inputs.append(tuple(v.detach().clone() for v in args)))
     try:
         head.predict_and_observe_stm_end_state([1],[torch.eye(4)[2:3]],layout='infix',evidence=[(0.,.8)])
-        word_distribution(head,words,keys,valid,torch.tensor([[0,1]]),teacher_forcing=False)
+        word_distribution(head,words,keys,valid,torch.tensor([[0,1]]))
         torch.testing.assert_close(inputs[-2][1],torch.cat((keys[:,2],keys[:,2]),-1))
         torch.testing.assert_close(inputs[-2][2][0,2],torch.tensor([0.,.8]))
         assert inputs[-2][2][0,0].sum()==0

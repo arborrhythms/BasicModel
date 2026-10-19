@@ -196,7 +196,7 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
             greedy=tuple(trace['actions']), explore=tuple(other['actions']),
             stable=trace['actions'] == other['actions'])
         from ThoughtCredit import complete
-        complete(model,greedy,explore,trace,other,departure,costs,row)
+        complete(model,trace,other,departure,costs,row)
         width = max(len(trace['actions']),len(other['actions']))
         audit = dict(model._last_thought_comparison, costs=(first[0],second[0]),
             greedy=tuple(trace['actions'])+(-1,)*(width-len(trace['actions'])),

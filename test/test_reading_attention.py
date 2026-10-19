@@ -41,7 +41,7 @@ def _distribution(percept,spans,*,training=True):
     targets=torch.arange(W)[None].expand(B,-1)
     valid=spans[...,1]>spans[...,0]
     def read():
-        return owner.expect('word',keys,keys,valid,targets,teacher_forcing=training,active=valid)
+        return owner.expect('word',keys,keys,valid,targets,active=valid)
     return owner,read
 
 

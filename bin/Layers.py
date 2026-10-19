@@ -9165,8 +9165,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 distances = torch.cdist(predicted, keys, compute_mode='donot_use_mm_for_euclid_dist')
                 confidence = keys.new_tensor(provenance['presence_logits'])[mask]
                 logits[:, 0].scatter_reduce_(0, distances.argmin(-1), confidence, reduce='amax')
-            bindings['_expected_symbols'] = tuple((i, 0, tuple(key), tuple(logit))
-                for i, (key, logit) in enumerate(zip(keys.cpu().tolist(), logits.cpu().tolist())))
+            bindings['_expected_symbols'] = tuple((-1, -1, tuple(key), tuple(logit))
+                for key, logit in zip(keys.cpu().tolist(), logits.cpu().tolist()))
             contexts[identifier] = dict(context, bindings=tuple(bindings.items()))
         return changed
 
@@ -9663,14 +9663,23 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         """Retain or re-witness both addresses; insufficient capacity raises."""
         if observation_kind not in ("observation", "question"):
             raise ValueError("expectation pair requires an observed input kind")
-        from Meaning import retained_symbol_prediction, retained_symbol_activation, ClosingImage, withheld_symbols
+        from Meaning import retained_symbol_prediction, retained_symbol_activation, ClosingImage, withheld_symbols, symbol_identities
         from Expectation import retention_surprise
         prediction = retained_symbol_prediction(estimate)
         if prediction is None:
             raise ValueError('new estimates require a complete symbol-bank prior')
+        from dataclasses import replace
+        packet = MeaningExpectation(estimate.roles, torch.as_tensor(presence_logits).to(estimate.roles),
+            estimate.bindings, estimate.scope, prediction.symbol_keys, prediction.symbol_logits,
+            prediction.symbol_ids, prediction.symbol_orders)
+        estimate = replace(estimate, bindings=packet.retained_bindings(
+            observed=observation.roles, occupied=observation.role_mask,
+            activation=retained_symbol_activation(observation, prediction),
+            identities=symbol_identities(observation), key_valid=prediction.key_valid))
+        prediction = retained_symbol_prediction(estimate)
         view = ClosingImage.form(observation.roles, estimate.roles,
-            torch.as_tensor(presence_logits).sigmoid(), prediction=prediction,
-            occupied=observation.role_mask, withheld=withheld_symbols(observation, prediction),
+            prediction.confidence, prediction=prediction,
+            occupied=observation.role_mask, identities=symbol_identities(observation), withheld=withheld_symbols(observation, prediction),
             activation=retained_symbol_activation(observation, prediction))
         surprise = retention_surprise(view.excess-view.omission, view.expected)
         old = self._address_for_write(observation, kind=observation_kind)[-1]
@@ -9742,12 +9751,12 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         logits = estimate.roles.new_tensor(estimate_provenance["presence_logits"])
         observed_mask = observation.role_mask.to(device=estimate.roles.device)
         observed_roles = observation.roles.to(estimate.roles)
-        from Meaning import ClosingImage, retained_symbol_prediction, retained_symbol_activation, withheld_symbols
+        from Meaning import ClosingImage, retained_symbol_prediction, retained_symbol_activation, withheld_symbols, symbol_identities
         prediction = retained_symbol_prediction(estimate)
         if prediction is None:
             raise ValueError('retained estimate lacks its symbol-bank prior')
-        view = ClosingImage.form(observed_roles, estimate.roles, logits.sigmoid(),
-            gain=gain, object_mask=object_mask, prediction=prediction, occupied=observed_mask,
+        view = ClosingImage.form(observed_roles, estimate.roles, prediction.confidence,
+            gain=gain, object_mask=object_mask, prediction=prediction, occupied=observed_mask, identities=symbol_identities(observation),
             activation=retained_symbol_activation(observation, prediction),
             withheld=None if prediction is None else withheld_symbols(observation, prediction))
         residual = view.excess-view.omission
@@ -10442,20 +10451,47 @@ class MeaningExpectation:
                 'symbol_keys', 'symbol_logits', 'symbol_ids', 'symbol_orders')})
 
     @property
+    def confidence(self):
+        """Certainty follows each bank identity, never the envelope's role slot."""
+        return self.symbol_logits.detach().sigmoid().amax(-1)
+
+    @property
     def expected_activation(self):
         from Meaning import withheld_symbols
         expected = self.symbol_logits.sigmoid()
         withheld = withheld_symbols(self, self)
         return expected if withheld is None else expected * (1.-withheld[:, None])
 
-    def retained_bindings(self):
-        """Keep the complete prior with its estimate occurrence, not just its top key."""
+    def retained_bindings(self, *, observed=None, occupied=None, activation=None, identities=None,
+                          key_valid=None):
+        """Retain all ids/logits, but keys only for this row's realized support.
+
+        The unary envelope's key remains available for awareness. Missing keys
+        are explicit; they are never guessed from a later mutable codebook.
+        """
+        from Expectation import match_symbols
+        keys = self.symbol_keys.detach()
+        keep = torch.ones(len(keys), device=keys.device, dtype=torch.bool) if observed is None else torch.zeros(len(keys), device=keys.device, dtype=torch.bool)
+        if observed is not None:
+            index, matched = match_symbols(keys[None], observed[None],
+                identities=None if identities is None else identities[None], bank_ids=self.symbol_ids,
+                key_valid=None if key_valid is None else key_valid[None])
+            live = observed.abs().sum(-1)>0 if occupied is None else occupied
+            keep.scatter_reduce_(0, index[0], matched[0] & live, reduce='amax')
+        index, matched = match_symbols(keys[None], self.roles[None],
+            key_valid=None if key_valid is None else key_valid[None])
+        keep.scatter_reduce_(0, index[0], matched[0] & self.roles.abs().sum(-1).ne(0), reduce='amax')
+        if activation is not None:
+            keep |= activation.detach().amax(-1)>0
+        if key_valid is not None:
+            keep &= key_valid
+        positions = keep.nonzero().flatten()
+        retained_keys = {i:tuple(key) for i,key in zip(positions.cpu().tolist(),keys[positions].cpu().tolist())}
         data = dict(self.bindings)
-        if self.symbol_keys is not None:
-            data['_expected_symbols'] = tuple((int(identity), int(order), tuple(key), tuple(logit))
-                for identity, order, key, logit in zip(self.symbol_ids.cpu().tolist(),
-                    self.symbol_orders.cpu().tolist(), self.symbol_keys.detach().cpu().tolist(),
-                    self.symbol_logits.detach().cpu().tolist()))
+        data.pop('_observed_symbol_activations', None)
+        data['_expected_symbols'] = tuple((int(identity), int(order), retained_keys.get(i), tuple(logit))
+            for i,(identity,order,logit) in enumerate(zip(self.symbol_ids.cpu().tolist(),
+                self.symbol_orders.cpu().tolist(),self.symbol_logits.detach().cpu().tolist())))
         return data
 
 
@@ -10472,11 +10508,22 @@ class ExpectationComparison:
     stream: object = None
     sentence_kind: object = None
     activation: object = None
+    identities: object = None
 
     @property
     def surprise(self):
+        return self.surprise_for()
+
+    def surprise_for(self, meaning=None):
         from Expectation import retention_surprise
-        return retention_surprise(self.residual, self.estimate.expected_activation)
+        from Meaning import ClosingImage, withheld_symbols
+        target = self.activation
+        if target is None:
+            target = self.residual + self.estimate.expected_activation
+        view = ClosingImage.form(self.observed, self.estimate.roles, self.estimate.confidence,
+            prediction=self.estimate, occupied=self.occupied, activation=target, identities=self.identities,
+            withheld=None if meaning is None else withheld_symbols(meaning, self.estimate))
+        return retention_surprise(view.excess-view.omission, view.expected)
 
 
 @dataclass(frozen=True)
@@ -10488,7 +10535,6 @@ class _PendingMeaningExpectation:
     stream: object
     document: object
     inputs: object = None
-    versions: tuple = ()
     frames: tuple = ()
 
     def detached(self):
@@ -10509,16 +10555,13 @@ class SymbolExpectation(Layer):
     name = 'Discourse'
 
     def __init__(self, n_symbols, max_depth, n_dim, *, concept_dim=None, batch=1,
-                 ltm_capacity=1024, hidden_dim=None, expectation_scope='symbols'):
+                 ltm_capacity=1024, hidden_dim=None):
         from Expectation import ActivationPredictor
-        if expectation_scope != 'symbols':
-            raise ValueError('expectation scope must be symbols')
         self.concept_dim = int(concept_dim or n_dim)
         super().__init__(self.concept_dim, self.concept_dim)
         self.n_symbols, self.max_depth, self.n_dim = int(n_symbols), int(max_depth), int(n_dim)
         self.sentence_dim = self.word_dim = self.concept_dim
-        self.expectation_scope = 'symbols'
-        self._inter_predictor = ActivationPredictor(self.concept_dim, hidden_dim or 64)
+        self._inter_predictor = ActivationPredictor(self.concept_dim, 64 if hidden_dim is None else hidden_dim)
         self.layers = []  # nn.Module registration owns the shared predictor.
         self.ltm_capacity = int(ltm_capacity)
         self._inter_chain_window = max(1, min(self.ltm_capacity, 8))
@@ -10534,6 +10577,7 @@ class SymbolExpectation(Layer):
         self._inter_errors = Error()
         self.register_buffer('_bank_keys', torch.empty(0, self.concept_dim), persistent=False)
         self.register_buffer('_bank_ids', torch.empty(0, dtype=torch.long), persistent=False)
+        self.register_buffer('_bank_addresses', torch.empty(0, dtype=torch.long), persistent=False)
         self.register_buffer('_bank_orders', torch.empty(0, dtype=torch.long), persistent=False)
         self._batch = 0
         self.ensure_batch(batch)
@@ -10543,13 +10587,14 @@ class SymbolExpectation(Layer):
     def word_predictor(self):
         return self._inter_predictor
 
-    def set_symbol_bank(self, keys, *, identities=None, orders=None):
+    def set_symbol_bank(self, keys, *, identities=None, orders=None, addresses=None):
         if keys.ndim != 2 or keys.shape[-1] != self.concept_dim:
             raise ValueError('symbol bank requires native full-width identity rows')
         self._bank_keys = keys.detach().clone()
         self._bank_ids = (torch.arange(len(keys), device=keys.device) if identities is None else identities.detach().clone())
+        self._bank_addresses = self._bank_ids.clone() if addresses is None else addresses.detach().clone()
         self._bank_orders = (torch.zeros(len(keys), device=keys.device, dtype=torch.long) if orders is None else orders.detach().clone())
-        if self._bank_ids.shape != (len(keys),) or self._bank_orders.shape != (len(keys),):
+        if any(value.shape != (len(keys),) for value in (self._bank_ids, self._bank_orders, self._bank_addresses)):
             raise ValueError('symbol identities and orders must align with the bank')
 
     def expect(self, level, *args, **kwargs):
@@ -10568,16 +10613,16 @@ class SymbolExpectation(Layer):
         self._stm_end_states = [collections.deque(maxlen=self.ltm_capacity) for _ in range(batch)]
         self._inter_context = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
         self._inter_context_lanes = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
+        self._inter_context_ids = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
         self._inter_context_occurrences = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
         self._inter_last_meaning = [None] * batch
-        self._inter_last_pred_root = [None] * batch
         self._expectation_documents = [None] * batch
         self._last_expectation_comparisons = [None] * batch
 
     @contextmanager
     def suspend_external_observations(self):
-        names = ('_batch', '_stm_end_states', '_inter_context', '_inter_context_lanes', '_inter_context_occurrences',
-                 '_inter_last_meaning', '_inter_last_pred_root', '_expectation_documents',
+        names = ('_batch', '_stm_end_states', '_inter_context', '_inter_context_lanes', '_inter_context_ids', '_inter_context_occurrences',
+                 '_inter_last_meaning', '_expectation_documents',
                  '_last_expectation_comparisons', '_inter_loss_accum', '_inter_loss_count',
                  '_inter_errors', '_external_observations_suspended')
         saved = {name: getattr(self, name) for name in names}
@@ -10601,13 +10646,14 @@ class SymbolExpectation(Layer):
         self._last_expectation_comparisons[b] = None
         self._inter_context[b].clear()
         self._inter_context_lanes[b].clear()
+        self._inter_context_ids[b].clear()
         self._inter_context_occurrences[b].clear()
-        self._inter_last_meaning[b] = self._inter_last_pred_root[b] = None
+        self._inter_last_meaning[b] = None
 
-    def _prediction_inputs(self, inputs, *, replay=False):
+    def _prediction_inputs(self, inputs):
         return tuple(value.detach() for value in inputs)
 
-    def _bank_inputs(self, chain, lanes=None):
+    def _bank_inputs(self, chain, lanes=None, identities=None):
         from Expectation import ActivationPredictor, symbol_activations
         parameter = next(self._inter_predictor.parameters())
         values = torch.stack([roles.to(parameter) for _, roles, _ in chain])[None]
@@ -10617,7 +10663,11 @@ class SymbolExpectation(Layer):
         lane_values = (None if lanes is None else torch.stack([
             roles.new_tensor((1., 0.) if pair is None else pair).expand(3, 2)
             for (_, roles, _), pair in zip(chain, lanes)]).to(parameter)[None].flatten(1, 2))
-        activation = symbol_activations(keys[None], values.flatten(1, 2), occupied.flatten(1), lane_values)
+        handles = None if identities is None else torch.stack([
+            torch.full((3,), -1, device=keys.device, dtype=torch.long) if value is None else value.to(keys.device)
+            for value in identities])[None].flatten(1)
+        activation = symbol_activations(keys[None], values.flatten(1, 2), occupied.flatten(1), lane_values,
+            identities=handles, bank_ids=ids)
         return (keys[None], context, activation), ids, orders
 
     def _prediction(self, inputs, ids, orders, *, bindings=(), scope=()):
@@ -10633,12 +10683,6 @@ class SymbolExpectation(Layer):
         return MeaningExpectation(roles, presence, bindings, scope,
                                   keys, logits, ids, orders)
 
-    def forecast_chain(self, chain):
-        if not chain or not len(self._bank_keys):
-            return None
-        inputs, ids, orders = self._bank_inputs(chain)
-        return self._prediction(inputs, ids, orders)
-
     @torch.compiler.disable
     def expect_next_meaning(self, b=0, *, record=True, work=None, frames=(),
                             frame_occurrences=(),
@@ -10651,6 +10695,7 @@ class SymbolExpectation(Layer):
             return pending.prediction
         chain = list(self._inter_context[b])
         lanes = list(self._inter_context_lanes[b])
+        identities = list(self._inter_context_ids[b])
         occurrences = list(self._inter_context_occurrences[b])
         if len(chain) != len(occurrences):
             raise RuntimeError('expectation context occurrence view is out of sync')
@@ -10665,7 +10710,11 @@ class SymbolExpectation(Layer):
             # evidence uses the ordinary positive observation convention.
             lanes = (lanes[:-1] + [getattr(m, 'evidence', None) for m in frames]
                      + lanes[-1:])[-self._inter_chain_window:]
-        inputs, ids, orders = self._bank_inputs(chain, lanes)
+        if retrieved:
+            from Meaning import symbol_identities
+            identities = (identities[:-1] + [symbol_identities(m) for m in frames]
+                          + identities[-1:])[-self._inter_chain_window:]
+        inputs, ids, orders = self._bank_inputs(chain, lanes, identities)
         bindings, scope = (), ()
         if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
             index = self._ltm_store._index_occurrences.get(occurrences[-1])
@@ -10677,20 +10726,22 @@ class SymbolExpectation(Layer):
             document = self._expectation_documents[b]
             self._inter_last_meaning[b] = _PendingMeaningExpectation(prediction,
                 tuple(dict.fromkeys(x for x in (*occurrences, *frame_occurrences) if x is not None)),
-                ('external', document), document, inputs, self._prediction_versions(),
+                ('external', document), document, inputs,
                 tuple(reference_frames))
         return prediction
 
-    def _activation_target(self, prediction, roles, occupied, lanes=None):
+    def _activation_target(self, prediction, roles, occupied, lanes=None, identities=None):
         from Expectation import symbol_activations
         return symbol_activations(prediction.symbol_keys[None], roles.detach()[None],
-                                  occupied[None], None if lanes is None else lanes[None])[0]
+                                  occupied[None], None if lanes is None else lanes[None],
+                                  identities=None if identities is None else identities[None],
+                                  bank_ids=prediction.symbol_ids)[0]
 
-    def _score(self, pending, roles, occupied, errors, *, row=None, evidence=None):
+    def _score(self, pending, roles, occupied, errors, *, row=None, evidence=None, identities=None):
         prediction = pending.prediction
         lanes = None if evidence is None else roles.new_tensor(evidence).expand(3, 2)
-        target = self._activation_target(prediction, roles, occupied, lanes)
-        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs, replay=True))[0]
+        target = self._activation_target(prediction, roles, occupied, lanes, identities)
+        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs))[0]
         from Meaning import withheld_symbols
         withheld = withheld_symbols(prediction, prediction)
         residual = (logits.sigmoid() - target) * (1.-withheld[:, None])
@@ -10701,7 +10752,7 @@ class SymbolExpectation(Layer):
     @torch.compiler.disable
     def observe_stm_end_state(self, depths, payloads, tetralemmas=None, mask=None, *,
                               documents=None, layout='stm', role_masks=None,
-                              train_prediction=True, sentence_kinds=None, evidence=None):
+                              train_prediction=True, sentence_kinds=None, evidence=None, symbol_ids=None):
         if self._external_observations_suspended or payloads is None:
             return
         self._prepare_expectation_documents(documents, mask, len(payloads))
@@ -10712,6 +10763,7 @@ class SymbolExpectation(Layer):
                 None if role_masks is None else role_masks[b])
             if not bool(occupied.any()):
                 continue
+            identities = None if symbol_ids is None else symbol_ids[b]
             pending = self._inter_last_meaning[b]
             self._last_expectation_comparisons[b] = None
             if self.expectation_enabled:
@@ -10722,13 +10774,13 @@ class SymbolExpectation(Layer):
                     prediction = pending.prediction.detached()
                     pair = None if evidence is None else evidence[b]
                     lanes = None if pair is None else roles.new_tensor(pair).expand(3, 2)
-                    target = self._activation_target(prediction, roles, occupied, lanes)
+                    target = self._activation_target(prediction, roles, occupied, lanes, identities)
                     residual = target - prediction.expected_activation
                     self._last_expectation_comparisons[b] = ExpectationComparison(
                         prediction, roles.detach().clone(), occupied.detach().clone(),
                         residual, self._expectation_documents[b],
                         pending.source_occurrences, pending.stream,
-                        None if sentence_kinds is None else sentence_kinds[b], target)
+                        None if sentence_kinds is None else sentence_kinds[b], target, identities)
                     stats['predicted_targets'] += 1
                     stats['feature_sum'] += float(residual.square().mean())
                     for order in prediction.symbol_orders.unique().tolist():
@@ -10737,14 +10789,15 @@ class SymbolExpectation(Layer):
                         self._order_errors[int(order)] = (total + float(residual[selected].square().sum()),
                                                          count + int(selected.sum()) * 2)
                     if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
-                        step = self._score(pending, roles, occupied, self._inter_errors, evidence=pair)
+                        step = self._score(pending, roles, occupied, self._inter_errors, evidence=pair, identities=identities)
                         self._inter_loss_accum = step if self._inter_loss_accum is None else self._inter_loss_accum + step
                         self._inter_loss_count += 1
                 self._inter_context[b].append((int(occupied.sum()), roles.detach().clone(), occupied.detach().clone()))
                 pair = None if evidence is None else evidence[b]
                 self._inter_context_lanes[b].append(None if pair is None else tuple(float(x) for x in pair))
+                self._inter_context_ids[b].append(None if identities is None else identities.detach().clone())
                 self._inter_context_occurrences[b].append(None)
-            self._inter_last_meaning[b] = self._inter_last_pred_root[b] = None
+            self._inter_last_meaning[b] = None
             if self._ltm_store is None:
                 depth = int(occupied.nonzero()[-1]) + 1
                 self._stm_end_states[b].append((depth, roles[:depth].detach().clone(),
@@ -10765,9 +10818,9 @@ class SymbolExpectation(Layer):
         return None if prediction is None else (1, prediction.roles[:1])
 
     def sentence_prediction_cost(self, depths, payloads, mask, *, documents=None,
-                                 layout='stm', role_masks=None, sentence_kinds=None, gain=1., evidence=None):
+                                 layout='stm', role_masks=None, sentence_kinds=None, evidence=None, symbol_ids=None):
         self._prepare_expectation_documents(documents, mask, len(payloads))
-        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+        before = list(self._inter_last_meaning)
         errors = Error(row_mask=mask)
         self._sentence_prediction_errors = errors
         self._sentence_comparison_errors = errors
@@ -10782,12 +10835,13 @@ class SymbolExpectation(Layer):
                         roles, occupied = self._canonical_meaning(payload, depths[b], layout,
                             None if role_masks is None else role_masks[b])
                         cost = self._score(self._inter_last_meaning[b], roles, occupied, errors, row=b,
-                            evidence=None if evidence is None else evidence[b])
+                            evidence=None if evidence is None else evidence[b],
+                            identities=None if symbol_ids is None else symbol_ids[b])
                 costs.append(cost)
-            pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+            pending = list(self._inter_last_meaning)
             return torch.stack(costs), pending
         finally:
-            self._inter_last_meaning, self._inter_last_pred_root = before
+            self._inter_last_meaning = before
 
     def migrate_expectation_checkpoint(self, state_dict, prefix=''):
         head = prefix + '_inter_predictor.'
@@ -10834,11 +10888,12 @@ class SymbolExpectation(Layer):
 
     def set_expectation_enabled(self, enabled):
         enabled = bool(enabled)
+        word_enabled = 'word' in self.enabled_levels
         if enabled != self.expectation_enabled:
             self.Reset()
         self.expectation_enabled = enabled
         self.enabled_levels = tuple(level for level in self.levels
-                                    if enabled or level == 'word')
+            if (word_enabled if level == 'word' else enabled))
 
 
 
@@ -10849,8 +10904,9 @@ class SymbolExpectation(Layer):
             self._stm_end_states[b].clear()
             self._inter_context[b].clear()
             self._inter_context_lanes[b].clear()
+            self._inter_context_ids[b].clear()
             self._inter_context_occurrences[b].clear()
-            self._inter_last_meaning[b] = self._inter_last_pred_root[b] = None
+            self._inter_last_meaning[b] = None
             self._last_expectation_comparisons[b] = None
             self._expectation_documents[b] = None
         if batch is None:
@@ -10884,8 +10940,6 @@ class SymbolExpectation(Layer):
                                       concept_dim=self.concept_dim)
 
 
-    def _prediction_versions(self):
-        return tuple(p._version for p in self._inter_predictor.parameters())
 
 
     @torch.compiler.disable
@@ -11017,7 +11071,6 @@ class SymbolExpectation(Layer):
                 (value.detached() if isinstance(value, SituationFrame) else
                  (value[0], value[1].detach(), value[2]) for value in chain),
                 maxlen=self._inter_chain_window)
-        self._inter_last_pred_root = [None] * self._batch
         self._inter_last_meaning = [
             None if value is None else value.detached()
             for value in self._inter_last_meaning]

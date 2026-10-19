@@ -113,8 +113,8 @@ def test_closing_gain_whole_identity_and_exact_restoration(gain,presence,mask):
     raw=torch.tensor([[8.,2.,4.]]).expand(3,-1).clone().requires_grad_()
     from meaning_fixtures import symbol_prediction
     prior=symbol_prediction(raw.detach()[:1],torch.tensor([[1.,0.]]))
-    image=ClosingImage.form(raw,raw,torch.full((3,),presence), prediction=prior,
-        object_mask=torch.full((3,),mask),gain=gain,form_width=1,content_width=2)
+    image=ClosingImage.form(raw,raw,torch.full((len(prior.symbol_keys),),presence), prediction=prior,
+        object_mask=torch.full((3,),mask),gain=gain)
     expected=1-gain*presence*(1-mask)
     torch.testing.assert_close(image.conceived,raw.detach()*expected)
     torch.testing.assert_close(image.restore(),raw,rtol=0,atol=0)
@@ -127,7 +127,7 @@ def test_gain_has_no_coordinatewise_complement_exception():
     for gain in (0.,.5,1.):
         from meaning_fixtures import symbol_prediction
         prior=symbol_prediction(raw,torch.tensor([[1.,0.]]).expand(3,2))
-        image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,form_width=4,content_width=4,gain=gain)
+        image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,gain=gain)
         assert image.concept_width==6
         torch.testing.assert_close(image.conceived,raw*(1-gain))
         torch.testing.assert_close(image.restore(),raw)
@@ -143,7 +143,7 @@ def test_gate_grammars_retain_native_identity_at_zero_content(config):
         raw=torch.ones(3,derived.code_width)
         from meaning_fixtures import symbol_prediction
         prior=symbol_prediction(raw[:1],torch.tensor([[1.,0.]]))
-        image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,gain=1.,form_width=model._image_form_width)
+        image=ClosingImage.form(raw,raw,prior.confidence,prediction=prior,gain=1.)
         assert image.concept_width==derived.code_width
         assert not image.conceived.any()
         torch.testing.assert_close(image.restore(),raw)

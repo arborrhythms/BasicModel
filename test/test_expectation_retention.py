@@ -27,7 +27,7 @@ def _discourse():
     torch.manual_seed(91)
     owner = SymbolExpectation(
         n_symbols=4, max_depth=4, n_dim=4, concept_dim=4,
-        batch=1, expectation_scope='symbols')
+        batch=1)
     owner.set_symbol_bank(torch.eye(owner.concept_dim))
     return owner
 

@@ -24,7 +24,7 @@ def test_activation_preview_and_committed_comparison_agree():
     source = torch.eye(4)[:3]
     model.predict_and_observe_stm_end_state([3], [source], layout='infix')
     cost, pending = model.sentence_prediction_cost([3], [source], [True], layout='infix')
-    model._inter_last_meaning, model._inter_last_pred_root = pending
+    model._inter_last_meaning = pending
     model.observe_stm_end_state([3], [source], layout='infix', sentence_kinds=['relation'])
     torch.testing.assert_close(model.consume_inter_loss(), cost[0])
     assert not hasattr(model.last_expectation_comparison(), 'kind_residual')

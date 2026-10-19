@@ -1,0 +1,16 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+[AMP] off (fp32, MODEL_AMP unset or =off)
+{
+  "original_assertion": "Tensor-likes are not close!\n\nMismatched elements: 9 / 312 (2.9%)\nGreatest absolute difference: 1.0 at index (0, 4) (up to 1e-05 allowed)\nGreatest relative difference: inf at index (0, 4) (up to 1.3e-06 allowed)",
+  "common_keys": 104,
+  "key_aligned_logit_difference": 0.0,
+  "bank_sizes": [
+    18,
+    18
+  ],
+  "common_ids": 18,
+  "key_difference": 1.0,
+  "logit_difference": 0.06932926177978516,
+  "representative_difference": 1.0
+}

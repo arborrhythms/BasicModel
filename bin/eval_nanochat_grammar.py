@@ -375,7 +375,7 @@ def word_candidate_scores(model, *, choices):
     targets[rows,last]=rows%choices
     prefix=(positions<last[:,None])&accepted
     expected=owner.expect('word',words,bank,valid,targets,
-        teacher_forcing=False,observed_prefix=prefix,active=accepted)
+        observed_prefix=prefix,active=accepted)
     score = -expected.probabilities[rows,last,rows%choices].clamp_min(1e-12).log()
     return (score.detach().cpu(),candidate.cpu(),
             expected.prediction[rows,last].detach().cpu(),accepted.sum(-1).cpu())

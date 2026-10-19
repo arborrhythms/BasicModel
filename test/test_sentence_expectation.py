@@ -17,7 +17,7 @@ def layer(batch=1, consolidated=False):
     torch.manual_seed(165)
     result = SymbolExpectation(
         n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
-        batch=batch, expectation_scope='symbols')
+        batch=batch)
     result.set_symbol_bank(torch.eye(result.concept_dim))
     result.set_symbol_bank(torch.eye(4))
     if consolidated:
@@ -85,7 +85,7 @@ def test_document_change_is_cold_preserves_scored_loss_and_other_row():
 
 def test_activation_loss_trains_predictor_but_never_source_or_target():
     model = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
-                               batch=1, expectation_scope='symbols')
+                               batch=1)
     model.set_symbol_bank(torch.eye(model.concept_dim))
     encoder = torch.nn.Linear(4, 4, bias=False)
     source = encoder(torch.arange(12.).reshape(3, 4) / 12)
@@ -115,7 +115,7 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
     torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
     assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
     packed = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='symbols')
+        concept_dim=8)
     packed.set_symbol_bank(torch.eye(packed.concept_dim))
     streaming = copy.deepcopy(packed)
     packed._ltm_store = f.store if consolidated else None
@@ -224,27 +224,22 @@ def test_single_sentence_cursor_keeps_true_document_continuations():
     assert [cursor.next_tick()[2][0] for _ in range(4)] == [False, True, False, True]
 
 
-def test_expectation_scope_is_a_checked_configuration_choice():
-    etree = pytest.importorskip("lxml.etree")
-
+def test_current_schema_validates_and_retired_scope_is_rejected():
+    from lxml import etree
     root = Path(__file__).resolve().parents[1]
-    schema = etree.XMLSchema(etree.parse(str(root / "data/model.xsd")))
-    tree = etree.parse(str(root / "data/model.xml"))
-    training = tree.find("architecture/training")
-    scope = training.find("sentenceExpectationScope")
-    if scope is None:
-        scope = etree.SubElement(training, "sentenceExpectationScope")
-    for value in ("symbols", "structured", "root"):
-        scope.text = value
+    schema = etree.XMLSchema(etree.parse(str(root / 'data/model.xsd')))
+    for name in ('model.xml', 'BasicModel.xml'):
+        tree = etree.parse(str(root / 'data' / name))
         assert schema.validate(tree), str(schema.error_log)
-    scope.text = "flattened"
-    assert not schema.validate(tree)
+        scope = etree.SubElement(tree.find('architecture/training'), 'sentenceExpectationScope')
+        for value in ('symbols', 'structured', 'root'):
+            scope.text = value
+            assert not schema.validate(tree)
 
 
-def test_unknown_expectation_scope_is_rejected_at_construction():
-    with pytest.raises(ValueError, match="expectation scope"):
-        SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
-                           concept_dim=4, expectation_scope='flattened')
+def test_retired_scope_is_rejected_at_construction():
+    with pytest.raises(TypeError, match='expectation_scope'):
+        SymbolExpectation(4, 8, 4, expectation_scope='symbols')
 
 
 def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch, eager_reading):

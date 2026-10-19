@@ -167,14 +167,13 @@
            the forward chooser retains its existing straight-through credit. -->
 
       <!-- Joint input reconstruction and local symbol activation expectation.
-           Each external observation supplies its own detached concept target;
-           the older ARMA, intra and contrastive objectives stay disabled. -->
+           Each external observation supplies its own detached activation target. -->
       <sentenceExpectation>true</sentenceExpectation>
-      <sentenceExpectationScope>symbols</sentenceExpectationScope>
       <perceptExpectationGain>0</perceptExpectationGain>
       <symbolExpectationGain>0</symbolExpectationGain>
       <rowExpectationGain>0</rowExpectationGain>
       <documentExpectationGain>0</documentExpectationGain>
+      <expectationOmissionThreshold>0.5</expectationOmissionThreshold>
       <perceptExpectationRate>0.05</perceptExpectationRate>
       <expectationEpsilon>0.000001</expectationEpsilon>
       <expectationSaturation>clip</expectationSaturation>

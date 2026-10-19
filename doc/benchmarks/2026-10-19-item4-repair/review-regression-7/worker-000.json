@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+    "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+    "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+    "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+    "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+    "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+    "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero"
+  ],
+  "completed": [
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+    "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+    "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+    "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+    "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+    "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+    "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000919833080843091,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010488874977454543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005719580221921206,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025199169758707285,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0029289170634001493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001930838916450739,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000705457990989089,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003528338856995106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0035813339054584503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003764170687645674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002463625045493245,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010063748341053724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007471248973160982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000514166196808219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002024041023105383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007265419699251652,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

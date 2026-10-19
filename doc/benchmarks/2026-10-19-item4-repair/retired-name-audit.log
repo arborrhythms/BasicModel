@@ -1,0 +1,12 @@
+test/test_sentence_expectation.py:234:        scope = etree.SubElement(tree.find('architecture/training'), 'sentenceExpectationScope')
+test/test_sentence_expectation.py:241:    with pytest.raises(TypeError, match='expectation_scope'):
+test/test_sentence_expectation.py:242:        SymbolExpectation(4, 8, 4, expectation_scope='symbols')
+test/test_expectation_defaults.py:87:        assert not hasattr(model, 'arma_scale')
+test/test_expectation_defaults.py:90:            assert not hasattr(model.symbolSpace.expectation, "expectation_scope")
+test/test_expectation_defaults.py:102:    assert training.find("sentenceExpectationArmaScale") is None
+test/test_expectation_kind.py:30:    assert not hasattr(model.last_expectation_comparison(), 'kind_residual')
+test/test_expectation_review.py:69:    assert not hasattr(Layers, "SentenceExpectation")
+test/test_expectation_review.py:70:    assert not hasattr(Layers, "BracketExpectation")
+test/test_negative_expectation.py:422:    for name in ('BracketExpectation', 'SentenceExpectation'):
+test/test_negative_expectation.py:425:    for name in ('set_inter_contrastive', 'consume_inter_contrastive_loss', 'stage_prediction',
+test/test_negative_expectation.py:431:        Layers.SymbolExpectation(4, 4, 4, expectation_scope='root')

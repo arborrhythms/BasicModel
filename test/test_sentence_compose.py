@@ -191,7 +191,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
 def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
     from Layers import SymbolExpectation
     layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, batch=2, expectation_scope='symbols')
+        concept_dim=4, batch=2)
     layer.set_symbol_bank(torch.eye(layer.concept_dim))
     layer.set_inter_loss_weight(1.)
     # This test uses real prediction equations; opposed row targets must not
@@ -205,7 +205,7 @@ def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
     assert cost.requires_grad
     assert [len(row) for row in layer._inter_context] == sizes
     assert all(value is None for value in layer._inter_last_meaning)
-    assert all(value is not None for value in pending[0])
+    assert all(value is not None for value in pending)
     cost.sum().backward()
     assert any(p.grad is not None for p in layer._inter_predictor.parameters())
 
@@ -248,7 +248,7 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
 def test_already_trained_observation_preserves_context_and_skips_duplicate_loss():
     from Layers import SymbolExpectation
     layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, batch=1, expectation_scope='symbols')
+        concept_dim=4, batch=1)
     layer.set_symbol_bank(torch.eye(layer.concept_dim))
     layer.set_inter_loss_weight(1.)
     payloads = [torch.ones(3, 4)]

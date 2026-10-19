@@ -143,7 +143,6 @@ def stage_input(model):
     pending = getattr(model, '_pending_attention_meters', ())
     model._pending_attention_meters = ()
     model._attention_meters = pending
-    model._word_surprise=None
     model._attention_forms=None
     if not torch.is_tensor(slab) or not torch.is_tensor(active):return
     stage_percept_expectation(model, active)
@@ -302,11 +301,10 @@ def stage_expectation(model):
     stage_symbol_bank(model, owner)
     model._word_expectation_input=(codes,bank,valid,targets)
     expected=owner.expect('word',codes,bank,valid,targets,
-        teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted,
+        gain=model.word_expectation_gain,active=accepted,
         epsilon=model.expectation_epsilon,saturation=model.expectation_saturation,
         lanes=getattr(model, '_attention_poles', None))
     model._word_expectation=expected
-    model._word_surprise=expected.surprise
     # The reader receives the attenuated whole; novelty has separate lanes.
     model.conceptualSpace._word_column=expected.content
     model._word_expectation_mask=accepted
@@ -323,8 +321,7 @@ def stage_symbol_bank(model, owner):
     indices = ids.new_tensor([row for row, _ in rows])
     keys = basis.lookup_rows(indices).detach()
     orders = ids.new_tensor([space._concept_source_order(int(identity)) for identity in ids])
-    owner.set_symbol_bank(keys, identities=ids, orders=orders)
-    owner._bank_addresses = indices.detach().clone()
+    owner.set_symbol_bank(keys, identities=ids, orders=orders, addresses=indices)
 
 
 def stage_percept_expectation(model, active):

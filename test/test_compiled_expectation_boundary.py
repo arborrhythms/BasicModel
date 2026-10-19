@@ -4,16 +4,19 @@ import torch
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize("gain", [0., .5])
 @pytest.mark.parametrize("compiled", [True, False])
 def test_unpacked_forward_observes_each_published_sentence_once(
-        tmp_path, monkeypatch, compiled):
+        tmp_path, monkeypatch, compiled, gain):
     from test_compiled_word_chunk import (
         _tiny_canonical_model, _stage_fullgraph_tensor_peer)
     from Models import _ensure_grad_anchors
 
     _ensure_grad_anchors(torch.device("cpu"))
     model = _tiny_canonical_model(tmp_path, monkeypatch,
-        input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1)
+        input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1,
+        training_overrides={f'{level}ExpectationGain': gain
+                            for level in ('percept', 'symbol', 'row', 'document')})
     model.set_sentence_expectation(True)
     import util
     monkeypatch.setattr(util, "TheCompileBackend", "eager" if compiled else "none")
@@ -74,7 +77,7 @@ def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypa
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='symbols')
+        concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     entry = fixture.program(('lift', 'cat', ('verb', 'chases', 'mouse')))
     for active in (True, False):

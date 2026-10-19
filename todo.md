@@ -34,14 +34,18 @@ architecture**. Its draft spec and entry below retain the earlier 4.5 label.
 `codex/item4-repair`, with the [round receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)
 recording each §9 gate. Legacy paths are removed, seed 23's tied compose
 exposure is explained, exact identity and one S gain are preserved, and
-compiled boundary checks now complete. Defaults are zero; R+A keeps and
+compiled boundary checks now complete. P/S/R/D gains are zero; R+A keeps and
 credits; the open role retains its prime; `non` clears both lanes.
+Claude reviewed candidate `f7e74af04` and did not approve a sweep. The
+follow-up fixes confidence, omission retention, native handles and compact
+retained keys. The selection-prime and φ defaults await Alec's decision
+(review B3); enabled-expectation zero-gain parity remains unproved.
 **Item 4 remains open:** the copular-identity prerequisite is missing, the
 carried initial-binding distribution check fails, and global derivation
 optimality, per-level learning/collapse and all-level XOR are not established.
 The original failed learning run stays failed. The independent Item 5.5
-learning track and Item 0 findings are unchanged. Candidate commit and
-Claude review precede the one full landing sweep.
+learning track and Item 0 findings are unchanged. A reviewed follow-up
+candidate precedes the one full landing sweep.
 The October 16 sequence was
 5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0; on October 19 Alec inserted **3.5**,
 the mechanism residue of items 6 and 5.5, to be completed after item 4.

@@ -79,7 +79,7 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
     if len(data.validation_input) < sentences:
         raise ValueError('held-out corpus is shorter than the declared evaluation')
     discourse = model.symbolSpace.expectation
-    if discourse is None or discourse.expectation_scope != 'symbols':
+    if discourse is None:
         raise ValueError('learning evaluation requires symbol activation expectation')
     if gain is not None:
         model.expectation_gain = gain

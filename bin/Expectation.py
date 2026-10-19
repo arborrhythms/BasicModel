@@ -80,16 +80,14 @@ def gain_field(observed, expected, *, strength=1., attention=1., confidence=1.,
 
 
 def retention_surprise(residual, expected):
-    """Mean squared residual on the row's attended (observed) support.
+    """Bounded MSE over the soft union of observed and expected support.
 
-    An entire absent row uses its expected support instead. Bank padding never
-    dilutes the retained row's residual. Both evidence poles share one symbol
-    weight; adding unused keys therefore cannot change an observed row's score.
+    Confident omissions count. Truly empty bank padding has zero weight.
+    Both evidence lanes contribute under one weight for each symbol.
     """
     residual, expected = residual.detach(), expected.detach()
     actual = (residual + expected).clamp_min(0.)
-    support = (actual.abs().amax(-1) > 1e-6).to(residual)
-    support = torch.where(support.sum() > 0, support, expected.amax(-1))
+    support = torch.maximum(actual, expected).amax(-1)
     error = (residual.square().mean(-1) * support).sum() / support.sum().clamp_min(1e-6)
     return error / (1. + error)
 
@@ -240,17 +238,25 @@ def alternative_probabilities(logits, *, fraction, temperature):
     return fraction * uniform + (1. - fraction) * policy
 
 
-def symbol_activations(keys, values, occupied, lanes=None):
+def sample_alternative(probabilities, draw):
+    """Inverse CDF with no holes at zero or a rounded-down terminal mass."""
+    cumulative = probabilities.cumsum(-1)
+    cumulative = cumulative / cumulative[:, -1:].clamp_min(torch.finfo(probabilities.dtype).tiny)
+    return (draw >= cumulative).sum(-1).clamp_max(probabilities.shape[-1]-1)
+
+
+def symbol_activations(keys, values, occupied, lanes=None, *, identities=None, bank_ids=None, key_valid=None):
     """Identify raw observations before applying gain; return two native lanes.
 
-    Only exact native keys (distance <= 1e-5) are observations of the bank.
+    Native handles identify activated rows. Without a handle, only exact
+    native keys (distance <= 1e-5) are observations of the bank.
     Unknown composed values never become targets for their nearest key.
     """
     keys, values = keys.detach(), values.detach()
     B, N, _ = keys.shape
     if not N:
         return values.new_zeros(B, 0, 2)
-    indices, matched = match_symbols(keys, values)
+    indices, matched = match_symbols(keys, values, identities=identities, bank_ids=bank_ids, key_valid=key_valid)
     if lanes is None:
         lanes = torch.stack((occupied.to(values), torch.zeros_like(occupied).to(values)), -1)
     source = torch.where((occupied & matched)[..., None], lanes.detach().to(values), 0.)
@@ -258,15 +264,27 @@ def symbol_activations(keys, values, occupied, lanes=None):
         1, indices[..., None].expand(-1, -1, 2), source, reduce='amax', include_self=True)
 
 
-def match_symbols(keys, values):
-    """Return an address and an exact-match bit; an address alone is not identity.
+def match_symbols(keys, values, *, identities=None, bank_ids=None, key_valid=None):
+    """Native handles identify activated codes; unhandled values require exact keys.
 
-    Direct distances avoid the matrix-product shortcut's cancellation error
-    for identical keys in a large bank at the 1e-5 identity tolerance.
+    A missing named handle is unknown, never its nearest neighbour. Direct
+    distances avoid cancellation in the 1e-5 fallback for composed values.
     """
-    distance, index = torch.cdist(values.detach(), keys.detach(),
-        compute_mode='donot_use_mm_for_euclid_dist').min(-1)
-    return index, distance <= 1e-5
+    distances = torch.cdist(values.detach(), keys.detach(),
+        compute_mode='donot_use_mm_for_euclid_dist')
+    if key_valid is not None:
+        distances = distances.masked_fill(~key_valid[:, None, :], torch.inf)
+    distance, index = distances.min(-1)
+    matched = distance <= 1e-5
+    if identities is not None:
+        if bank_ids is None:
+            raise ValueError('native handles require the bank address domain')
+        ids = bank_ids[None] if bank_ids.ndim == 1 else bank_ids
+        equal = (identities[..., None] == ids[:, None, :]) & (ids[:, None, :] != -1)
+        named = identities != -1
+        index = torch.where(named, equal.long().argmax(-1), index)
+        matched = torch.where(named, equal.any(-1), matched)
+    return index, matched
 
 
 @dataclass(frozen=True)
@@ -276,17 +294,24 @@ class SymbolRead:
     strength: float
     epsilon: float
     saturation: str
+    identities: object = None
+    observed: object = None
+    observed_mask: object = None
 
-    def gains(self, values, occupied=None, lanes=None):
+    def gains(self, values, occupied=None, lanes=None, *, identities=None):
         """A content view of exact raw identities, never a write to their carrier."""
         if self.strength == 0.:
             return values.new_ones(values.shape[:-1])
-        index, matched = match_symbols(self.keys, values)
+        index, matched = match_symbols(self.keys, values, identities=identities, bank_ids=self.identities)
         expected = self.expected.detach().gather(1, index[..., None].expand(-1,-1,2))
         if occupied is None:
             occupied = torch.ones_like(matched)
         actual = (torch.stack((occupied.to(values), torch.zeros_like(occupied).to(values)), -1)
                   if lanes is None else lanes.detach().to(values))
+        if lanes is None and self.observed is not None:
+            known = self.observed_mask.gather(1, index)
+            factual = self.observed.gather(1, index[..., None].expand(-1, -1, 2))
+            actual = torch.where(known[..., None], factual, actual)
         field = gain_field(actual, expected, strength=self.strength,
             epsilon=self.epsilon, saturation=self.saturation)
         return torch.where(matched & occupied, field.gain, 1.)

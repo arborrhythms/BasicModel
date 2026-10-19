@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_review.py::test_inverse_cdf_never_selects_a_zero_probability_edge",
+    "test/test_item4_review.py::test_bank_confidence_follows_each_symbol_in_every_role",
+    "test/test_item4_review.py::test_native_activated_word_is_observed_by_handle_with_both_lanes",
+    "test/test_item4_review.py::test_omission_surprise_and_non_marks_agree_at_both_native_writers",
+    "test/test_item4_review.py::test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact",
+    "test/test_item4_review.py::test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]"
+  ],
+  "completed": [
+    "test/test_item4_review.py::test_inverse_cdf_never_selects_a_zero_probability_edge",
+    "test/test_item4_review.py::test_bank_confidence_follows_each_symbol_in_every_role",
+    "test/test_item4_review.py::test_native_activated_word_is_observed_by_handle_with_both_lanes",
+    "test/test_item4_review.py::test_omission_surprise_and_non_marks_agree_at_both_native_writers",
+    "test/test_item4_review.py::test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact",
+    "test/test_item4_review.py::test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_review.py::test_inverse_cdf_never_selects_a_zero_probability_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032295798882842064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_review.py::test_bank_confidence_follows_each_symbol_in_every_role",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014418750070035458,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_review.py::test_native_activated_word_is_observed_by_handle_with_both_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.09503966616466641,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_review.py::test_omission_surprise_and_non_marks_agree_at_both_native_writers",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003155957907438278,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_review.py::test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005606208927929401,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_review.py::test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.08401504089124501,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014258500188589096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012518000090494752,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

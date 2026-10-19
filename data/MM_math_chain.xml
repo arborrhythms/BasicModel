@@ -36,7 +36,7 @@
       <reconstructionScale>0.1</reconstructionScale>
       <equalityLossWeight>1</equalityLossWeight>
       <sentenceExpectation>true</sentenceExpectation>
-      <sentenceExpectationScope>symbols</sentenceExpectationScope>
+
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
       <intraLossWeight>0.1</intraLossWeight>
     </training>

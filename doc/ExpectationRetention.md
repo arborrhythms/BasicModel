@@ -4,7 +4,7 @@ Item 4 follows [the October 19 rev 5 specification](specs/2026-10-08-expectation
 `SymbolExpectation` owns one activation predictor shared by the word, composed
 symbol, closing and document reads. It predicts independent for/against
 activations over native identity rows. It has no byte, ARMA, root-only or
-slot-structured prediction head. The existing three-role memory envelope is
+slot-structured prediction head. The existing three-role memory envelope
 retains a representative identity; the full symbol bank is the forecast.
 
 The content gain is `m * (1-g*κ + g*κ*s)`, where `s` is the saturated sum of
@@ -14,13 +14,17 @@ one gain over both evidence lanes and retains its raw identity. Expected
 activation separately primes selection. It is never added to comprehension.
 Perceptual mean and variance supply per-coordinate salience and a scalar
 region gain; codebook lookup reads the original coordinates.
+Closing confidence κ is per symbol, the maximum of its two predicted
+activations. It is never taken from the representative envelope's role slot.
 
-A bank identity requires raw-key distance at most `1e-5`. An unknown composed
-value passes whole and contributes no target to its nearest bank key. The STM
+A native handle identifies an activated symbol in its bank address domain.
+Without a handle, a bank identity requires raw-key distance at most `1e-5`.
+An unknown composed value passes whole and contributes no target to its nearest bank key. The STM
 keeps the raw identity and original projection coefficient. Compose scores a
 separate gained activation view, including operators that read a coefficient
 from a norm; its selected candidate retains the raw identity. Order-zero
-poles receive P at perception and S once at their symbol consumer. Repeated
+poles receive P at perception and S once at their symbol consumer. The S read
+uses the actual for/against lanes, including purely negative evidence. Repeated
 reads cannot compound S. The sentence prime and S read are cleared before
 closing thoughts and before the next peer-word input.
 
@@ -42,8 +46,13 @@ the chronological predictor context. Provisioned truths and internal thoughts
 are not additional external observations. Estimate rows are never facts or their
 own corroboration, and ordinary LTM evidence readers exclude them.
 
-The estimate retains the complete bank: native identity, order, raw key and
-two activation logits for every symbol. Checked bindings and scope come from
+The estimate retains native identity, order and two activation logits for
+every symbol. Full keys are retained for the observation's support and the
+representative envelope; absent keys are explicit, never reconstructed from
+later mutable weights. Before an observation is linked, a future prior may
+retain every key. The 1,024-symbol × 1,032-coordinate measurement is in
+[the repair receipt](benchmarks/2026-10-19-item4-repair/README.md).
+Checked bindings and scope come from
 preceding source occurrences. They never copy the incoming target. Provenance
 records those occurrences, the external stream/document and the intended
 observation. The observation retains its own raw carrier and metadata. When
@@ -61,10 +70,13 @@ when forgetting is required. Reads resolve stable occurrences through the store 
 including after compaction; they do not scan unrelated rows.
 
 For current pairs, surprise is the detached mean squared activation residual
-over the row's attended support, bounded by `s/(1+s)`, independent of bank size,
-content norm and gain. Local prediction
+over the soft union of observed and expected support: each symbol's weight is
+`max(o, ê)` across its two lanes, and the weighted error is bounded by
+`s/(1+s)`. Confident omissions count; empty bank padding does not dilute the
+score. Both writers apply the same withheld marks and formula, independent
+of content norm and gain. Local prediction
 training uses bounded activation MSE. Pre-Item-4 retained role estimates migrate once at load into an explicit
-symbol bank; their historical surprise is preserved. Unknown surprise remains
+symbol bank with unknown handles and orders (`-1`); their historical surprise is preserved. Unknown surprise remains
 `-1`. Item 5's forgetting formula, pending-source protection, stable links,
 compaction and conservative concept reclamation are unchanged.
 
@@ -80,6 +92,13 @@ anticipatory-query reward or separate expectation policy. Reading the object
 mask of a nested question follows its owned occurrence on the controller's
 ordinary work meter. The held prior remains immutable when its local loss is
 replayed against a newly arrived observation.
+
+An order-zero arrival has two local training reads of the shared head: the
+word read predicts the next admitted word from its preceding word context;
+the S read predicts the symbolic field before the ensuing composition and
+scores the resulting field. These distinct causal contexts and targets are
+intentional. They do not apply the content gain twice. Each local loss keeps
+its existing declared weight; neither enters the R+A trial judge.
 
 Source encodings, observed targets, thought effects and durable history are
 detached. Only the shared predictor receives local E gradients. Both the
@@ -98,7 +117,10 @@ batch sizing now has an explicit host integer; sentence completion and SVO
 reset retain their own existing owners.
 
 The previous attention context receives zero-initialized columns for the bank
-prime and normalized percept salience. Percept moments update only during
+prime and normalized percept salience, and loses the retired structured
+forecast slot. The expectation-free proposal view has zero prime and cold
+percept salience (`z=1`), with only the open request and gist as needs.
+Percept moments update only during
 training on external inputs and are checkpointed; an
 older checkpoint starts them cold. Old slot/ARMA head tensors migrate explicitly
 to a fresh shared activation predictor, while retained observations and their
@@ -114,3 +136,6 @@ contracts; their retirement is not evidence that a learning gate passed.
 
 All four gain strengths default to zero in both canonical configurations. A
 nonzero operating point must first pass the native zero-gain parity gate.
+The unscaled selection prime and exploration fraction `φ=.5` are separate
+from these gains. Claude's candidate review blocks the landing sweep pending
+Alec's decision on their defaults and enabled-expectation parity.

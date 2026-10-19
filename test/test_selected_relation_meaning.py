@@ -377,7 +377,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     entry = program()
     calls = []
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='symbols')
+        concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     predict = discourse.sentence_prediction_cost
     def capture(depths, payloads, mask, **kwargs):

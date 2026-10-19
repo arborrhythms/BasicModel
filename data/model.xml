@@ -300,9 +300,16 @@
 
       <!-- One shared native activation predictor, with local detached E. -->
       <sentenceExpectation>true</sentenceExpectation>
-      <sentenceExpectationScope>symbols</sentenceExpectationScope>
-      <!-- The legacy gain spelling remains a config migration fallback. -->
-      <!-- Residual credit for prior-only queries through the ordinary chooser. -->
+      <perceptExpectationGain>0</perceptExpectationGain>
+      <symbolExpectationGain>0</symbolExpectationGain>
+      <rowExpectationGain>0</rowExpectationGain>
+      <documentExpectationGain>0</documentExpectationGain>
+      <expectationOmissionThreshold>0.5</expectationOmissionThreshold>
+      <perceptExpectationRate>0.05</perceptExpectationRate>
+      <expectationEpsilon>0.000001</expectationEpsilon>
+      <expectationSaturation>clip</expectationSaturation>
+      <explorationUniformFraction>0.5</explorationUniformFraction>
+      <explorationTemperature>1.0</explorationTemperature>
 
       <!-- In-STM autoregressive prediction (IntraSentenceLayer, STM
            serial/parallel modes plan).  Loss weight on the per-word
@@ -312,11 +319,8 @@
            loss. -->
       <intraLossWeight>0.1</intraLossWeight>
 
-      <!-- Inter-sentence prediction: all-role MSE plus presence
-           loss in structured scope, root MSE in the historical baseline.
-           The predictor reads a bounded row/document observation view;
-           targets and durable history are detached, current-step source
-           representations may learn under the reconstruction budget. -->
+      <!-- Shared bank-activation predictor: sources and targets are detached;
+           the local residual alone trains its weights. -->
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
       <!-- Hard normal grammatical-thought choices use their own explicit
            REINFORCE credit; zero preserves the deterministic safe baseline. -->

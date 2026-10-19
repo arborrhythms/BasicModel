@@ -46,12 +46,12 @@ class FieldTraversal:
             if alternative is not None:
                 options = eligible.scatter(1, greedy.clamp_max(W-1)[:, None], False)
                 count = options.sum(-1)
-                from Expectation import alternative_probabilities
+                from Expectation import alternative_probabilities, sample_alternative
                 free = scores if alternative_scores is None else alternative_scores
                 proposal = alternative_probabilities(free.masked_fill(~options, -torch.inf),
                     fraction=getattr(self, 'exploration_fraction', .5),
                     temperature=getattr(self, 'exploration_temperature', 1.))
-                picked = (torch.rand(B, 1, device=scores.device) > proposal.cumsum(-1)).sum(-1).clamp_max(W-1)
+                picked = sample_alternative(proposal, torch.rand(B, 1, device=scores.device))
                 q = proposal.gather(1, picked[:, None])[:, 0]
 
                 taken = alternative & active & (count > 0)

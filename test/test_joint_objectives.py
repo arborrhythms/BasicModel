@@ -30,7 +30,7 @@ def test_packed_prediction_teardown_records_each_observation_once(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='symbols')
+        concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     calls = []
     observe = discourse.observe_stm_end_state
@@ -67,6 +67,9 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     m._chart_compose_per_word = lambda: None
     m.branch_diagnostics_every = 1
     m.loss.reconstruction_scale = 1.0
+    # Isolate the closing loss: word and S reads share this head but have
+    # their own weight and would keep training it when the D weight is zero.
+    m.word_expectation_weight = 0.
     m.reconstruct_in_loop = tied_reconstruction
     m.train()
     m._install_unit_span_fn()

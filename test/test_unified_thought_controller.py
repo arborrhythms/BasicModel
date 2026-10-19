@@ -169,11 +169,11 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
         model.attention_budget = 32
         observed = []
         original = ThoughtCredit.complete
-        def credit(owner, greedy, explore, trace, other, departure, costs, row, **kwargs):
+        def credit(owner, trace, other, departure, costs, row):
             assert owner is model
             assert len(costs) == 2 and all(torch.isfinite(torch.tensor(costs)))
             observed.append(row)
-            return original(owner, greedy, explore, trace, other, departure, costs, row, **kwargs)
+            return original(owner, trace, other, departure, costs, row)
         monkeypatch.setattr(ThoughtCredit, 'complete', credit)
         optimizer = model.getOptimizer(lr=.001)
         batch = (model.inputSpace.prepInput(['12 plus 1', '3 plus 4']), torch.zeros(2,1,1))
@@ -199,7 +199,7 @@ def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_e
     question = registry.form('isPart', part, whole)
     if with_expectation:
         from test_sentence_expectation import observe
-        discourse = SymbolExpectation(4, 8, 8, concept_dim=8, expectation_scope='symbols')
+        discourse = SymbolExpectation(4, 8, 8, concept_dim=8)
         discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
         model.symbolSpace.expectation = discourse
         observe(discourse, question.roles)

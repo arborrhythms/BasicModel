@@ -1155,8 +1155,6 @@ class ThoughtLTMCapability:
         discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
         if discourse is None:
             return None
-        if getattr(discourse, 'expectation_scope', None) != 'structured':
-            raise ValueError('thought arma requires the full structured predictor')
         value = discourse.expect_next_meaning(int(row), record=False, work=work)
         if value is None:
             return None

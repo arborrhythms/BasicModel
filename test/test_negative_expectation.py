@@ -74,8 +74,7 @@ def _anticipating_model():
     meaning = registry.form("part", part, whole)
     width = meaning.roles.shape[-1]
     store = TernaryTruthStore(width, capacity=64)
-    discourse = SymbolExpectation(4, 8, width, concept_dim=width,
-                                   expectation_scope='symbols')
+    discourse = SymbolExpectation(4, 8, width, concept_dim=width)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     discourse._ltm_store = store
     model.symbolSpace.ltm_store = store
@@ -407,7 +406,7 @@ def test_predictor_loss_and_gradients_are_identical_at_every_gain():
         observe(model, torch.eye(4)[1:4])
         comparison = model.last_expectation_comparison()
         ClosingImage.form(comparison.observed, comparison.estimate.roles,
-            comparison.estimate.presence_logits.sigmoid(), gain=gain,
+            comparison.estimate.confidence, gain=gain,
             prediction=comparison.estimate, occupied=comparison.occupied)
         loss = model.consume_inter_loss()
         loss.backward()
@@ -428,5 +427,5 @@ def test_retired_expectation_surfaces_are_absent():
         assert not hasattr(model, name)
     with pytest.raises(TypeError):
         Layers.SymbolExpectation(4, 4, 4, p=1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Layers.SymbolExpectation(4, 4, 4, expectation_scope='root')

@@ -2,7 +2,7 @@
 
 BasicModel baseline `9207f5e03`; WikiOracle baseline `929e4a8`. Both checkouts are on `codex/item4-repair`. This round preserves the prior working-tree spec, todo, NP and documentation edits. No commit on main.
 
-**Item 4 is not complete.** Mechanism repairs and scoped checks are ready for review. The missing copular-identity artifact prevents one requested certificate from executing. The carried initialization-distribution failure remains. The global derivation-optimality, per-level learning/collapse and all-level XOR gates are not established. The original failed learning run is unchanged; Item 0 and Item 5.5 remain open. No full sweep has run in this round.
+**Item 4 is not complete.** Claude reviewed candidate `f7e74af04` and did not approve the landing sweep; the full report is [claude-review.md](claude-review.md). The follow-up repairs below address the code findings, but B3 requires Alec's decision on the unscaled selection prime and `φ=.5`. All four attenuation gains are zero; those two other effects are not. The missing copular-identity artifact prevents one requested certificate from executing. The carried initialization-distribution failure remains. Global derivation optimality, per-level learning/collapse, learned repeated-cat recognition and all-level XOR are not established. The original failed learning run is unchanged; Item 0 and Item 5.5 remain open. No full sweep or push has run in this round.
 
 ## §9.1 — Does zero gain preserve the previous landing?
 
@@ -13,6 +13,9 @@ BasicModel baseline `9207f5e03`; WikiOracle baseline `929e4a8`. Both checkouts a
 | Standing XOR with all four gains on | Not established | The existing standing learning gates are not replaced by carrier probes. |
 
 Diagnostics: `zero_baseline_probe.py`, `zero-baseline.json`, `zero-repaired.json`. This is a matched consumer check, not parity between the retired predictor and the new head.
+It does not establish parity with expectation enabled in a multi-sentence
+training departure. Claude B3 requires that measurement after the default
+decision; the existing disabled-expectation result is not promoted to it.
 
 ## §9.1 / J — Do the requested math-chain certificates complete?
 
@@ -27,6 +30,9 @@ A skip is not a completed certificate. The four failures in the original `item4-
 ## §9.2 — What did the fixed repaired-tree run measure?
 
 The predeclared `native-repaired-protocol.md` fixes two seeds, four arms, six training batches each, and a single held-out before/after pair. All four gains are measured at 0.5; shipped defaults remain zero. No continuation or added updates.
+This measurement precedes Claude's follow-up fixes and belongs to the first
+repair candidate, `f7e74af04`. It has not been rerun or regraded to rescue a
+learning claim on the follow-up tree.
 
 | Seed / order | P normalized residual before → after | S activation MSE before → after | D final MSE | Raw final role norms |
 |---|---:|---:|---:|---|
@@ -69,7 +75,14 @@ Compose and narrowing share reducer parameters; candidate attention has its own 
 | 0 | 1 | 0 | Exact | Exact |
 | 0.5 | 0.5 | 0.25 | Exact | Exact |
 
-`test_item4_native.py` uses a registered identity, a controlled confident shared head, a causal pre-arrival row read, the production sentence commit, native answer materialization and `TernaryTruthStore`. Seven carrier cases plus prime-lifetime coverage pass. The separate cold surface-word probe (`native_gain_probe.json`) produced an unknown composed value and correctly passed it whole; it is not counted as the fully expected cat or learned recognition.
+`test_item4_native.py` uses a registered identity, a controlled confident shared head, a causal pre-arrival row read, the production sentence commit, native answer materialization and `TernaryTruthStore`. Seven carrier cases plus prime-lifetime coverage pass. The follow-up adds three-role native relation closings at `(g_R,g_D)=(1,0),(0,1),(.5,.5)`, all passing through storage. κ now follows each bank identity, so every occupied role receives its own confidence. These are mechanism checks, not the learned repeated-sentence gate.
+
+The separate cold surface-word probe (`native_gain_probe.json`) is not counted
+as the fully expected cat. Claude H1 identified the missing native-handle
+route: activated codes can differ from their raw bank keys. The follow-up
+native `(0.6,0.2)` and `(0,0.8)` cases identify through STM addresses and
+preserve both actual lanes. Only composed values without a known handle use
+the exact-distance fallback; an unmatched value passes whole.
 
 ## §9.4 — Does omission enter content?
 
@@ -81,6 +94,10 @@ Compose and narrowing share reducer parameters; candidate attention has its own 
 | Answer and retained raw observation | Exact |
 
 The omission case exercises both the closing image and the retained pair’s residual/content reader. `native_closing_gates.json` and the seven formal native certificates record the mechanism.
+Retention uses the soft union `max(o,ê)` as support, so confident omissions
+retain their residual. Both native writers use the same withheld-aware owner;
+empty bank padding has zero weight. This corrects Claude B2/M4 without
+changing Item 5's priority for surprising omissions.
 
 ## §9.5 — Does percept attenuation preserve identification?
 
@@ -114,8 +131,54 @@ Native codebook lookup consumes raw coordinates before region gain, so identific
 | Unpacked explicit sentence boundary | Passed | 41.8 s / 1.34 GiB |
 | Fullgraph output walk vs eager | Passed | 11.1 s / 0.69 GiB |
 | Packed training boundary, compiled=True | Passed | See `native-final-1/result.json` |
+| Unpacked explicit boundary, all four gains 0.5 | Passed | 47.0 s / 1.33 GiB; `review-compiled-8/result.json` |
+| Packed document stream after review repairs | Passed | 23.7 s / 1.25 GiB; `review-compiled-8/result.json` |
 
 `Generative.inverse_menu` previously traced all R operator dispatches for every one of R fixed menu entries: 17 operators produced 289 branches. Each entry now supplies its single operator. Word/STM choice kernels compile separately from the eager journal driver, CPU uses its native allocation default, and inference padding makes one host read before the word loop. No backend or timeout was relaxed. The failed/time-limited diagnostics remain failures; `compiled-8/result.json` is the successful rerun.
+
+`review-compiled-6` was interrupted when Codex changed the schema during the
+run. Its four completed cases passed, but the whole run is incomplete.
+The two outstanding cases were rerun with fixed source in `review-compiled-8`;
+the interruption is not counted as a pass.
+
+## H3 — What does retaining the prediction cost?
+
+The bound uses 1,024 bank symbols, 1,032 coordinates, three observed keys and
+one representative key, with LTM capacity 1,024. All IDs, orders and logits
+remain in both formats; the observed target retains only nonzero pairs.
+
+| Retained representation | Keys | Bytes per row | Serialized bytes | Projected bytes at capacity | Packing time |
+|---|---:|---:|---:|---:|---:|
+| Full key bank | 1,024 | 34,074,906 | 5,308,353 | 34,892,703,744 | 0.599 s |
+| Observation support and representative | 4 | 349,642 | 49,233 | 358,033,408 | 0.024 s |
+
+`retention_bound.json` records allocation and timing details. This is a
+metadata bound, not total model memory. A read materializes one transient
+dense bank view (4 MiB here); an unpaired future prior may retain all keys
+until its observation is attached. Missing keys are explicit and cannot
+match zero padding. The sparse-key checkpoint regression preserves the exact
+prior logits, target, omission and surprise.
+
+## Review follow-up — Which findings are addressed?
+
+| Claude finding | Repair / remaining decision |
+|---|---|
+| B1 | Per-symbol κ replaces envelope-role confidence; native three-role closings cover R and D. |
+| B2 / M4 | One withheld-aware retention formula over soft union support; confident omissions count. |
+| B3 | Awaiting Alec: prime weight default 0 and φ=1, or accepted changed defaults with enabled-expectation parity. No sweep approval. |
+| H1 / H2 | Native STM handles identify activated codes; the compose read uses actual for/against lanes. Unknown unhandled values require distance ≤1e-5. |
+| H3 | Sparse retained keys with full IDs/logits; measured bound above and exact checkpoint replay. |
+| M1 / M2 | Unused arguments, scope knob and dead guards removed; migrated unknown IDs/orders are −1. Retired query-reward forecast/end stubs removed. |
+| M3 | Free proposal view has zero prime and z=1; structured forecast need slot removed. Native checkpoint migration and free-view invariance checked. |
+| M5 | lxml installed from the existing requirements; both canonical configs validate and retired scope values are rejected. |
+| L1–L4 | CDF edge handling, configured omission threshold, dead state and stale configuration/docs repaired. |
+| L5 | Word and S reads intentionally train the shared head from different causal contexts and targets; documented in ExpectationRetention. Their content gain is not applied twice. |
+
+The native causality diagnostic distinguishes the forecast of a fixed key
+from the representative selected out of a changing vocabulary. The repaired
+test holds the vocabulary fixed and compares all bank logits. Closing-only
+optimizer tests isolate that loss from the independently weighted word/S
+losses. Toggling the sentence head preserves the configured word switch.
 
 ## Scoped regressions and publication
 
@@ -125,7 +188,10 @@ Native codebook lookup consumes raw coordinates before region gain, so identific
 | Repair of those 33 failures plus optimizer coverage | 55/55 passed; `regression-repairs/result.json` |
 | Native closings, retained NP checkpoints and packed boundaries | 13/13 passed; `native-final-1/result.json` |
 | Focused native/gain/attention/device coverage | 92 passed, 1 skipped; `native-and-focus-final.log` |
-| Claude review | Pending candidate commit |
+| Claude review of `f7e74af04` | Completed; not approved to sweep. `claude-review.md` and `claude-review-status.json`. |
+| Review-specific/native/schema/NP restoration checks | 64 passed, four slow cases skipped and separately exercised; `review-targeted-5/result.json`. |
+| Broader affected checks after review | 248 completed; three failures found; `review-regression-7/result.json`. Follow-up repairs recorded separately. |
+| Repair of those three regressions plus review/native/thought coverage | 90/90 passed with slow cases enabled; `review-repairs-9/result.json`. |
 | One full landing sweep | Not run; follows review |
 | Push / WikiOracle bump / Item 4 completion | Not done |
 

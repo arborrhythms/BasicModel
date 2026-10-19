@@ -30,6 +30,7 @@ def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
     assert new.semantic_extras()['version'] == 6
     assert 'kind_logit' not in new.expectation_of(e)
     bank = dict(new.meaning_of(e).bindings)['_expected_symbols']
+    assert all(identity == order == -1 for identity,order,*_ in bank)
     assert len(bank) == 4  # includes the historical occupied zero-valued role
     torch.testing.assert_close(new.meaning_of(o).roles, old.meaning_of(o).roles)
     assert new.row(o)['surprise'] == pytest.approx(.123)

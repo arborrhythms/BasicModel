@@ -13,13 +13,18 @@ from What import What
 import ThoughtClosing
 
 
-def case(row_gain, document_gain, *, omitted=False):
+def case(row_gain, document_gain, *, omitted=False, relation=False):
     with pytest.MonkeyPatch.context() as patch:
         fixture = SentenceFixture(patch)
-        entry = replace(fixture.program('cat'), leaf_evidence=torch.tensor([[1., 0.]]))
+        entry = fixture.program(('part', 'cat', 'dog') if relation else 'cat')
+        entry = replace(entry, leaf_evidence=torch.tensor([[1., 0.]]).expand(len(entry.leaves), -1))
         missing = fixture.program('dog') if omitted else None
         bank = entry.leaves if missing is None else torch.cat((entry.leaves, missing.leaves))
         ids = entry.concept_ids if missing is None else torch.cat((entry.concept_ids, missing.concept_ids))
+        if relation:
+            clause = fixture.clause(('part', 'cat', 'dog'))
+            bank = clause.meaning.roles
+            ids = torch.tensor([value if type(value) is int else value.identity for value in clause.refs])
         head = SymbolExpectation(8, 8, 8, concept_dim=8)
         head.set_symbol_bank(bank, identities=ids, orders=torch.ones(len(ids), dtype=torch.long))
         with torch.no_grad():
@@ -50,7 +55,7 @@ def case(row_gain, document_gain, *, omitted=False):
                      torch.cat((ids[:1], ids.new_full((2,), -1)))[None], torch.ones(1, 3))
             field = SymbolField(head, strength=0., epsilon=1e-6, saturation='clip')
             field.anticipate((torch.zeros_like(raw), torch.zeros_like(state[1]), *state[2:]))
-            field.arrive(state, torch.tensor([True]), lanes=entry.leaf_evidence[None].expand(1, 3, 2))
+            field.arrive(state, torch.tensor([True]), lanes=entry.leaf_evidence[:1][None].expand(1, 3, 2))
             row_prior = field.closing_predictions()
             commit_reading(fixture.language, fixture.registry, entry, fixture.store,
                            discourse=head, sid=sid, document='cat-stream', owner=host)
@@ -59,15 +64,16 @@ def case(row_gain, document_gain, *, omitted=False):
         host.eval()
         field, image = host._sentence_fields[1][0], captured[-1][0]
         understanding = Understanding(sentence_states=(field,))
-        answer = host.resolveAnswer(understanding, What.present(0))
-        idea, ready, _, _ = host._materialize_answer_idea(understanding, answer, What.present(0))
+        if not relation:
+            answer = host.resolveAnswer(understanding, What.present(0))
+            idea, ready, _, _ = host._materialize_answer_idea(understanding, answer, What.present(0))
+            torch.testing.assert_close(idea[0], entry.end_state, atol=0, rtol=0)
+            assert ready.all() and answer.resolved
         index = fixture.store.index_of_row(field.row_id)
         retained = fixture.store.expectation_pair(index, gain=document_gain)
         floor = (1-row_gain)*(1-document_gain)
         torch.testing.assert_close(image.conceived, image.observed*floor, atol=1e-7, rtol=1e-6)
-        torch.testing.assert_close(idea[0], entry.end_state, atol=0, rtol=0)
-        torch.testing.assert_close(retained['observation'].roles, entry.end_state, atol=0, rtol=0)
-        assert ready.all() and answer.resolved
+        torch.testing.assert_close(retained['observation'].roles, clause.meaning.roles if relation else entry.end_state, atol=0, rtol=0)
         if omitted:
             assert image.omission[1, 0] == 1 and image.excess[1].sum() == 0
             assert retained['omission'][1, 0] == 1 and retained['excess'][1].sum() == 0
@@ -75,7 +81,7 @@ def case(row_gain, document_gain, *, omitted=False):
             torch.testing.assert_close(retained['content'], entry.end_state*(1-document_gain), atol=1e-7, rtol=1e-6)
         return dict(row_gain=row_gain, document_gain=document_gain, floor=floor,
                     content_norm=float(image.conceived.norm()), raw_norm=float(image.observed.norm()),
-                    answer_correct=True, store_correct=True, omitted=omitted,
+                    answer_correct=None if relation else True, store_correct=True, omitted=omitted, relation=relation,
                     excess=image.excess.tolist(), omission=image.omission.tolist(),
                     prime=image.expected.tolist(), row_prime=image.row_expected.tolist())
 
@@ -85,6 +91,11 @@ def case(row_gain, document_gain, *, omitted=False):
     (0.,1.,False),(.5,.5,False),(.5,.5,True)])
 def test_expected_cat_and_omission_survive_native_answer_and_store(row_gain,document_gain,omitted):
     case(row_gain,document_gain,omitted=omitted)
+
+
+@pytest.mark.parametrize('row_gain,document_gain',[(1.,0.),(0.,1.),(.5,.5)])
+def test_three_role_relation_uses_symbol_confidence_through_native_close_and_store(row_gain,document_gain):
+    case(row_gain,document_gain,relation=True)
 
 
 def test_sentence_prime_is_cleared_before_thought_and_next_peer_input(tmp_path,monkeypatch,eager_reading):

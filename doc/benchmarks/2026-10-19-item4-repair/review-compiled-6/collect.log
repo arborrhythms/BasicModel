@@ -1,0 +1,8 @@
+test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]
+test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]
+test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]
+test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]
+test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]
+test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream
+
+6 tests collected in 2.13s

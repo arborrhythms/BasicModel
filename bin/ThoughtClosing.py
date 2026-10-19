@@ -78,7 +78,7 @@ def absence(model, row, observed, image=None):
     omission = image.omission[:, 0]
     index = omission.argmax()
     confidence = omission[index]
-    if not bool(confidence > .5):
+    if not bool(confidence > getattr(model, 'expectation_omission_threshold', .5)):
         return None
     roles = torch.cat((prior.symbol_keys[index:index+1], prior.roles.new_zeros(2, prior.roles.shape[-1])), 0)
     meaning = ConceptualMeaning(roles.detach(), roles.new_tensor([1,0,0], dtype=torch.bool),

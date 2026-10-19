@@ -414,13 +414,14 @@ class ClauseRows:
                 presence_logits=tuple(logits.cpu().tolist()),
                 stream=getattr(expectation, 'stream', None),
                 document=getattr(expectation, 'document', None)), namespace)
-            surprise = expectation.surprise
+            surprise = expectation.surprise_for(clause.meaning)
             if sources:
                 if any(source not in self._index_occurrences for source in sources):
                     raise ValueError('estimate source occurrence is unavailable')
                 estimate = ConceptualMeaning(prediction.roles,
                     torch.ones(3, dtype=torch.bool, device=prediction.roles.device),
-                    mode='unspecified', bindings=prediction.retained_bindings(), scope=prediction.scope)
+                    mode='unspecified', bindings=prediction.retained_bindings(observed=expectation.observed, occupied=expectation.occupied,
+                        activation=expectation.activation, identities=expectation.identities), scope=prediction.scope)
                 self._validate_local_references(estimate)
                 previous = self._address_for_write(estimate, kind='estimate',
                     **self._estimate_write_address(estimate,
@@ -492,11 +493,13 @@ class ClauseRows:
                     self.semantic_reference(ref) if ref not in (-1, 0) else None for ref in refs)
                 marks = dict(value.meaning.bindings)
                 retained = {key: marks[key] for key in ('_withheld_symbols',) if key in marks}
+                if asserted and primary and expectation is not None and expectation.identities is not None:
+                    retained['_symbol_handles'] = tuple(expectation.identities.cpu().tolist())
                 activation = None if expectation is None else getattr(expectation, 'activation', None)
                 if asserted and primary and activation is not None:
                     retained['_observed_symbol_activations'] = tuple(
                         (int(identity), tuple(pair)) for identity, pair in zip(
-                            prediction.symbol_ids.cpu().tolist(), activation.detach().cpu().tolist()))
+                            prediction.symbol_ids.cpu().tolist(), activation.detach().cpu().tolist()) if any(pair))
                 stored = ConceptualMeaning(stored.roles, stored.role_mask,
                     mode=value.meaning.mode, polarity=True, role_refs=role_refs, bindings=retained)
                 _, _, address_kwargs = source(value)

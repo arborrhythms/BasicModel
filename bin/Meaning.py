@@ -31,8 +31,7 @@ class ClosingImage:
     row_expected: object = None
 
     @classmethod
-    def form(cls, observed, estimate, presence, *, form_width=0, content_width=None,
-             prediction=None, occupied=None, withheld=None, lanes=None, activation=None, epsilon=1e-6,
+    def form(cls, observed, estimate, confidence, *, prediction=None, occupied=None, identities=None, withheld=None, lanes=None, activation=None, epsilon=1e-6,
              saturation='clip', gain=0., object_mask=None):
         from Expectation import gain_field, symbol_activations, match_symbols
         raw = observed.detach().clone()
@@ -44,7 +43,8 @@ class ClosingImage:
         keys = prediction.symbol_keys.to(raw)
         occupied = raw.abs().sum(-1)>0 if occupied is None else occupied
         activation = (symbol_activations(keys[None], raw[None], occupied[None],
-                                       None if lanes is None else lanes[None])[0]
+                                       None if lanes is None else lanes[None], identities=None if identities is None else identities[None],
+                                       bank_ids=prediction.symbol_ids, key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])[0]
                       if activation is None else activation.detach().to(raw))
         if activation.shape != (len(keys), 2):
             raise ValueError('retained activation target must align with its prior bank')
@@ -52,7 +52,9 @@ class ClosingImage:
         prior_withheld = withheld_symbols(prediction, prediction)
         if prior_withheld is not None:
             expected = expected * (1.-prior_withheld[:, None])
-        indices, matched = match_symbols(keys[None], raw[None])
+        indices, matched = match_symbols(keys[None], raw[None],
+            identities=None if identities is None else identities[None], bank_ids=prediction.symbol_ids,
+            key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])
         indices, matched = indices[0], matched[0]
         exempt = (torch.zeros(len(keys), device=raw.device, dtype=raw.dtype)
                   if prior_withheld is None else prior_withheld.to(raw).clone())
@@ -64,14 +66,9 @@ class ClosingImage:
         suppressed = exempt.new_zeros(exempt.shape) if prior_withheld is None else prior_withheld.to(exempt)
         if withheld is not None:
             suppressed = torch.maximum(suppressed, withheld.to(suppressed))
-        confidence = expected.new_ones(len(keys))
-        role_confidence = torch.as_tensor(presence, device=raw.device, dtype=raw.dtype)
-        if role_confidence.shape != (len(raw),):
-            raise ValueError('closing confidence must align with role carriers')
-        # Unmatched/empty roles cannot change another identity's confidence.
-        confidence.scatter_reduce_(0, indices, torch.where(matched & occupied,
-            role_confidence, -torch.inf), reduce='amax', include_self=False)
-        confidence = torch.where(torch.isfinite(confidence), confidence, 1.)
+        confidence = torch.as_tensor(confidence, device=raw.device, dtype=raw.dtype)
+        if confidence.shape != (len(keys),):
+            raise ValueError('closing confidence must align with native symbol identities')
         field = gain_field(activation, expected, strength=gain, confidence=confidence,
             exempt=exempt, withheld=suppressed, epsilon=epsilon, saturation=saturation)
         applied = torch.where(matched & occupied, field.gain[indices], 1.)
@@ -226,6 +223,15 @@ class ConceptualMeaning:
                           constituents=tuple(child.detached() for child in self.constituents))
 
 
+def symbol_identities(meaning):
+    """Typed native handles beside an observation; absent handles stay unknown."""
+    named = dict(meaning.bindings).get('_symbol_handles')
+    if named is None:
+        named = [ref[1] if isinstance(ref, tuple) and len(ref)==2 and ref[0]=='sym' else -1
+                 for ref in meaning.role_refs]
+    return torch.tensor(named, device=meaning.roles.device, dtype=torch.long)
+
+
 def retained_symbol_prediction(meaning):
     """Rehydrate a complete activation prior from an estimate occurrence."""
     from types import SimpleNamespace
@@ -234,9 +240,14 @@ def retained_symbol_prediction(meaning):
         return None
     ids, orders, keys, logits = zip(*entries)
     like = meaning.roles
-    return SimpleNamespace(symbol_keys=like.new_tensor(keys), symbol_logits=like.new_tensor(logits),
+    valid = torch.tensor([key is not None for key in keys], device=like.device, dtype=torch.bool)
+    values = like.new_zeros(len(keys), like.shape[-1])
+    if bool(valid.any()):
+        values[valid] = like.new_tensor([key for key in keys if key is not None])
+    return SimpleNamespace(symbol_keys=values, key_valid=valid, symbol_logits=like.new_tensor(logits),
         symbol_ids=torch.tensor(ids, device=like.device, dtype=torch.long),
-        symbol_orders=torch.tensor(orders, device=like.device, dtype=torch.long), bindings=meaning.bindings)
+        symbol_orders=torch.tensor(orders, device=like.device, dtype=torch.long), bindings=meaning.bindings,
+        confidence=like.new_tensor(logits).sigmoid().amax(-1))
 
 
 def retained_symbol_activation(meaning, prediction):
@@ -258,6 +269,13 @@ def withheld_symbols(meaning, prediction):
     mask = torch.zeros(len(keys), device=keys.device, dtype=keys.dtype)
     if marks:
         values = keys.new_tensor([point for _identity, point in marks])
-        distances = torch.cdist(keys, values)
-        mask = (distances <= 1e-5).any(-1).to(keys)
+        ids = prediction.symbol_ids
+        marked_ids = ids.new_tensor([identity for identity, _point in marks])
+        handles = (ids[:,None] == marked_ids[None]) & (ids[:,None] != -1) & (marked_ids[None] != -1)
+        distances = torch.cdist(keys, values, compute_mode='donot_use_mm_for_euclid_dist')
+        exact = distances <= 1e-5
+        valid = getattr(prediction, 'key_valid', None)
+        if valid is not None:
+            exact &= valid[:,None]
+        mask = (handles | exact).any(-1).to(keys)
     return mask

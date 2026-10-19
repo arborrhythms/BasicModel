@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+    "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+    "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+    "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+    "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+    "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+    "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/review-regression-7/worker-000.recycle.json"
+}

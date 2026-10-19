@@ -1642,6 +1642,7 @@ class BaseModel(Mereology, nn.Module):
     concept_order_limit = 0
     reconstruction_basis_limit = 16
     word_expectation_gain = 0.0
+    expectation_omission_threshold = 0.5
     word_expectation_weight = 0.1
     reconstruct_in_loop = False
     # PS/WS concept binding at the serial word boundary. ``mixing`` keeps the
@@ -2437,6 +2438,7 @@ class BaseModel(Mereology, nn.Module):
         self.word_expectation_gain = unit(TheXMLConfig.training('symbolExpectationGain', 0.), 'symbolExpectationGain')
         self.expectation_gain = unit(TheXMLConfig.training('rowExpectationGain', 0.), 'rowExpectationGain')
         self.document_expectation_gain = unit(TheXMLConfig.training('documentExpectationGain', 0.), 'documentExpectationGain')
+        self.expectation_omission_threshold = unit(TheXMLConfig.training('expectationOmissionThreshold', .5), 'expectationOmissionThreshold')
         self.expectation_epsilon = positive(TheXMLConfig.training('expectationEpsilon', 1e-6), 'expectationEpsilon')
         self.expectation_saturation = str(TheXMLConfig.training('expectationSaturation', 'clip'))
         if self.expectation_saturation not in ('clip', 'smooth'):
@@ -13156,9 +13158,6 @@ class BasicModel(BaseModel):
             depth = getattr(stm, "_depth", None) if stm is not None else None
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
-        from ThoughtCredit import finish_documents
-        finish_documents(self, (b for b, ended in enumerate(
-            getattr(self, '_thought_document_ends', ())) if ended))
         if any(getattr(self, '_thought_document_ends', ())):
             self._forget_document_boundary = True
             self._forget_all_streams_closed = all(self._thought_document_ends)
@@ -19589,9 +19588,22 @@ class BasicModel(BaseModel):
         meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
             self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
             clauses=clauses)
+        from Meaning import symbol_identities
+        handles = []
+        for meaning, clause, entry in zip(meanings, clauses, entries):
+            if meaning is None:
+                handles.append(None)
+                continue
+            ids = symbol_identities(meaning)
+            if clause is not None and clause.relation is not None:
+                ids = ids.new_tensor([value if type(value) is int and value not in (-1, 0) else -1
+                                      for value in clause.refs])
+            elif entry is not None and len(entry.leaves)==1 and bool((entry.actions[:, 0] == 0).all()):
+                ids[0] = entry.concept_ids[0]
+            handles.append(ids)
         result = dict(payloads=payloads, depths=depth_list, mask=mask, entries=entries,
                     meanings=meanings, observed=observed, observed_depths=observed_depths,
-                    layout=layout, roles=roles, clauses=clauses)
+                    layout=layout, roles=roles, clauses=clauses, symbol_ids=handles)
         if getattr(self, '_component_reading', False):
             resolver = self._concept_owner().components.reference_close
             from Occurrence import source_at
@@ -19923,11 +19935,10 @@ class BasicModel(BaseModel):
             inter, pending = disc.sentence_prediction_cost(
                 observation['observed_depths'], observation['observed'], observation['mask'],
                 documents=self._expectation_documents_for_slot(sid, B),
-                layout=observation['layout'], role_masks=observation['roles'],
+                layout=observation['layout'], role_masks=observation['roles'], symbol_ids=observation.get('symbol_ids'),
                 sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']],
                 evidence=[None if clause is None else clause.evidence for clause in
-                          observation.get('clauses', [None]*B)],
-                gain=self.expectation_gain)
+                          observation.get('clauses', [None]*B)])
             gated = disc._sentence_comparison_errors.total()
             if gated is not None:
                 self._sentence_expectation_comparison = gated * self.inter_loss_weight
@@ -19945,7 +19956,7 @@ class BasicModel(BaseModel):
             # or allowing the rest of E to choose a departure.
             observation['reference_credit'] = reference_cost * components.weight
             estimates = (None if pending is None else [
-                None if item is None else item.prediction for item in pending[0]])
+                None if item is None else item.prediction for item in pending])
             component_cost = components.cost(observation['meanings'], estimates, active,
                                               clauses=observation['clauses'])
             errors.add('expectation.components', component_cost, weight=components.weight,
@@ -19955,7 +19966,7 @@ class BasicModel(BaseModel):
                 else self._sentence_expectation_comparison + cost)
         word_inputs = getattr(self, '_word_expectation_input', None)
         word_expected = (None if word_inputs is None or disc is None else disc.expect('word', *word_inputs,
-            teacher_forcing=bool(self.training), gain=self.word_expectation_gain,
+             gain=self.word_expectation_gain,
             active=self._word_expectation_mask, lanes=getattr(self, '_attention_poles', None),
             epsilon=self.expectation_epsilon, saturation=self.expectation_saturation))
         if word_expected is not None and self.word_expectation_weight > 0:
@@ -20187,7 +20198,7 @@ class BasicModel(BaseModel):
                 reference_values=(program.leaves if program.reference_values is None
                                   and references is not None else program.reference_values)).detached())
         view['entries'] = tuple(entries)
-        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths'):
+        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths', 'symbol_ids'):
             view[key] = [source[key][b] for b, source in enumerate(chosen)]
         if any(source['roles'] is not None for source in chosen):
             view['roles'] = [None if source['roles'] is None else source['roles'][b]
@@ -20216,13 +20227,11 @@ class BasicModel(BaseModel):
         # comparison without training prediction twice.
         if disc is not None:
             pending_a, pending_b = predictions[0], predictions[-1]
-            disc._inter_last_meaning = [pending_b[0][b] if win else pending_a[0][b]
+            disc._inter_last_meaning = [pending_b[b] if win else pending_a[b]
                                        for b, win in enumerate(rows)]
-            disc._inter_last_pred_root = [pending_b[1][b] if win else pending_a[1][b]
-                                         for b, win in enumerate(rows)]
             disc.observe_stm_end_state(view['observed_depths'], view['observed'],
                 mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
-                layout=view['layout'], role_masks=view['roles'], train_prediction=False,
+                layout=view['layout'], role_masks=view['roles'], symbol_ids=view.get('symbol_ids'), train_prediction=False,
                 sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']],
                 evidence=[None if clause is None else clause.evidence for clause in view['clauses']])
             disc.detach_prediction_context()
@@ -20245,26 +20254,24 @@ class BasicModel(BaseModel):
                 if signature is not None:
                     for role in signature.open_roles:
                         mask[registry._slot_for_operand(role)] = 1
-            content_width = meaning.roles.shape[-1]
-            form_width = getattr(self, '_image_form_width', None)
-            form_width = content_width if form_width is None else min(content_width,int(form_width))
             images[b] = ClosingImage.form(meaning.roles,
                 None if estimate is None else estimate.roles.to(meaning.roles),
-                meaning.roles.new_zeros(3) if estimate is None else estimate.presence_logits.sigmoid(),
+                None if estimate is None else estimate.confidence,
                 gain=self.document_expectation_gain, object_mask=mask,
                 prediction=estimate, occupied=meaning.role_mask,
+                identities=None if view.get('symbol_ids') is None else view['symbol_ids'][b],
                 lanes=(None if view.get('clauses', [None]*len(view['meanings']))[b] is None else
                        meaning.roles.new_tensor(view.get('clauses', [None]*len(view['meanings']))[b].evidence).expand(3, 2)),
                 withheld=None if estimate is None else withheld_symbols(meaning, estimate),
-                epsilon=getattr(self, 'expectation_epsilon', 1e-6), saturation=getattr(self, 'expectation_saturation', 'clip'),
-                form_width=form_width, content_width=content_width)
+                epsilon=getattr(self, 'expectation_epsilon', 1e-6), saturation=getattr(self, 'expectation_saturation', 'clip'))
             row_predictions = chosen[b].get('row_expectations', ())
             row_prior = row_predictions[b] if b < len(row_predictions) else None
             if row_prior is not None:
                 row_image = ClosingImage.form(meaning.roles, row_prior.roles,
-                    row_prior.presence_logits.sigmoid(), prediction=row_prior,
+                    row_prior.confidence, prediction=row_prior,
                     gain=self.expectation_gain, object_mask=mask,
-                    occupied=meaning.role_mask, withheld=withheld_symbols(meaning, row_prior),
+                    occupied=meaning.role_mask, identities=None if view.get('symbol_ids') is None else view['symbol_ids'][b],
+                    withheld=withheld_symbols(meaning, row_prior),
                     lanes=(None if view.get('clauses', [None]*len(view['meanings']))[b] is None else
                            meaning.roles.new_tensor(view.get('clauses', [None]*len(view['meanings']))[b].evidence).expand(3, 2)),
                     epsilon=getattr(self, 'expectation_epsilon', 1e-6),
@@ -20729,7 +20736,9 @@ class BasicModel(BaseModel):
                     compound_field.observe(current_stm, payload[7].reshape(B),
                         None if field is None else field.support_window)
                     symbol_field.anticipate(current_stm)
-                    reducer._symbol_expectation_read = symbol_field.read()
+                    reducer._symbol_expectation_read = symbol_field.read(
+                        incoming_ids=torch.where(payload[4] >= 0, payload[4], payload[2]).reshape(B),
+                        incoming_lanes=payload[11], incoming_rows=payload[8].reshape(B))
                     current_lang, current_stm, current_feedback = compose_word(
                         payload, index, None, current_lang, current_stm)
                     if field is not None:

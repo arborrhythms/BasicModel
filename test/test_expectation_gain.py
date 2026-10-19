@@ -82,13 +82,13 @@ def test_word_forecast_never_feedbacks_prediction_and_only_attenuates():
     bank = words.clone()
     valid = torch.ones(1,4,dtype=torch.bool)
     targets = torch.arange(4)[None]
-    before = word_distribution(head, words, bank, valid, targets, teacher_forcing=False)
-    after = word_distribution(head, words, bank, valid, targets, teacher_forcing=True)
+    before = word_distribution(head, words, bank, valid, targets)
+    after = word_distribution(head, words, bank, valid, targets)
     torch.testing.assert_close(before.activation, after.activation)
     assert bool((before.content >= 0).all())
     assert bool((before.content <= words).all())
     changed = words.clone(); changed[:,2:] = .25
-    other = word_distribution(head, changed, bank, valid, targets, teacher_forcing=True)
+    other = word_distribution(head, changed, bank, valid, targets)
     torch.testing.assert_close(before.activation[:,:3], other.activation[:,:3])
 
 
@@ -106,7 +106,7 @@ def test_unlabelled_admitted_word_has_no_prior_and_passes_whole():
     words = torch.tensor([[[.2,.3,.4,.5], [.6,.7,.8,.9]]])
     result = word_distribution(head, words, torch.eye(4)[None],
         torch.ones(1,4,dtype=torch.bool), torch.full((1,2), -1),
-        teacher_forcing=False, gain=1., active=torch.tensor([[True, False]]))
+         gain=1., active=torch.tensor([[True, False]]))
     torch.testing.assert_close(result.content[:,0], words[:,0])
     assert not result.content[:,1].any()
     assert not result.loss.any()
@@ -130,7 +130,7 @@ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
     prediction = MeaningExpectation(roles, torch.tensor([60.,-60.,-60.]),
         symbol_keys=keys, symbol_logits=logits, symbol_ids=torch.arange(4), symbol_orders=torch.arange(4))
     occupied = torch.tensor([True,False,False])
-    view = ClosingImage.form(roles, prediction.roles, prediction.presence_logits.sigmoid(),
+    view = ClosingImage.form(roles, prediction.roles, prediction.confidence,
         prediction=prediction, occupied=occupied, gain=1.)
     assert not view.conceived.any()
     torch.testing.assert_close(view.restore(), roles)
@@ -166,7 +166,7 @@ def test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier():
         symbol_ids=torch.arange(4), symbol_orders=torch.zeros(4,dtype=torch.long))
     assert not prediction.expected_activation[0].any()
     actual = ConceptualMeaning(roles, torch.tensor([True,False,False]), bindings=mark)
-    view = ClosingImage.form(roles, roles, torch.ones(3), prediction=prediction,
+    view = ClosingImage.form(roles, roles, prediction.confidence, prediction=prediction,
         occupied=actual.role_mask, withheld=withheld_symbols(actual,prediction), gain=1.)
     assert view.gain[0] == 1
     assert not view.expected[0].any()

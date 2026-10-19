@@ -1,0 +1,24 @@
+{
+  "selectors": [
+    "test/test_expectation_gain.py",
+    "test/test_negative_expectation.py",
+    "test/test_expectation_migration.py",
+    "test/test_expectation_retention.py",
+    "test/test_expectation_defaults.py",
+    "test/test_inter_sentence_prediction_shape.py",
+    "test/test_expectation_kind.py",
+    "test/test_one_attention.py",
+    "test/test_candidate_attention.py",
+    "test/test_native_candidate_attention.py",
+    "test/test_selected_relation_meaning.py",
+    "test/test_joint_objectives.py",
+    "test/test_reading_attention.py",
+    "test/test_unified_thought_controller.py",
+    "test/test_item6_2_thinking.py",
+    "test/test_sentence_expectation.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -87,7 +87,7 @@ def test_omitted_enabled_and_disabled_model_settings(tmp_path, setting, enabled)
         assert not hasattr(model, 'arma_scale')
         assert not hasattr(model, 'inter_contrastive_weight')
         if enabled:
-            assert model.symbolSpace.expectation.expectation_scope == "symbols"
+            assert not hasattr(model.symbolSpace.expectation, "expectation_scope")
     finally:
         model.End()
         torch._dynamo.reset()
@@ -141,7 +141,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
 
 
 def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_path, monkeypatch, eager_reading):
-    from test_meronomy_ladder import _build_ladder_variant
+    from test_meronomy_ladder import _build_ladder_variant, _stage
     monkeypatch.setenv("MODEL_COMPILE", "none")
     estimates = []
     # Pair the counterfactuals at one unseeded initialization. The shared
@@ -163,17 +163,25 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
         model._install_unit_span_fn()
         model.set_sigma(0)
         try:
+            # Hold the available vocabulary constant. Otherwise the two
+            # inputs mint different candidate keys, so a different top-key
+            # envelope does not imply a changed prediction of the same key.
+            _stage(model, ['1 plus 2', '3 plus 4', '5 plus 6', '7 plus 8', '9 plus 0'])
+            model.End(); model.symbolSpace.soft_reset()
             inputs = model.inputSpace.prepPackedInput(rows)
             model.runBatch(train=False, batchSize=2, split="runtime",
                            batch_override=(inputs, torch.zeros(2, 1, 0)))
             comparison = model.symbolSpace.expectation.last_expectation_comparison(0)
             assert comparison is not None
-            estimates.append(comparison.estimate.roles)
+            estimates.append(comparison.estimate.detached())
         finally:
             model.End()
             model.symbolSpace.soft_reset()
             torch._dynamo.reset()
-    torch.testing.assert_close(estimates[0], estimates[1])
+    first, second = estimates
+    torch.testing.assert_close(first.symbol_ids, second.symbol_ids)
+    torch.testing.assert_close(first.symbol_keys, second.symbol_keys)
+    torch.testing.assert_close(first.symbol_logits, second.symbol_logits)
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -185,6 +193,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
+        ("<training>", "<training><wordExpectation>false</wordExpectation><wordExpectationLossWeight>0</wordExpectationLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
@@ -193,11 +202,12 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
     model.eval()
     optimizer = model.getOptimizer(lr=1e-5)
     owner = model._what_memory()
-    assert not model.symbolSpace.expectation.expectation_enabled
+    assert model.symbolSpace.expectation is None
     try:
         for enabled in (True, False, True):
             model.set_sentence_expectation(enabled)
             discourse = model.symbolSpace.expectation
+            assert 'word' not in discourse.enabled_levels
             parameters = list(discourse._inter_predictor.parameters())
             before = [p.detach().clone() for p in parameters]
             count = discourse.expectation_metrics()["predicted_targets"]
@@ -274,7 +284,7 @@ def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch)
     f = SentenceFixture(monkeypatch)
     entry = f.program('cat')
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='symbols')
+        concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     from reading_fixtures import commit_reading
     store = f.store

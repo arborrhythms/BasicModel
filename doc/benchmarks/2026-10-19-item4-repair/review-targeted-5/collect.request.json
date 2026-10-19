@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_item4_review.py",
+    "test/test_item4_native.py",
+    "test/test_operators_round2.py",
+    "test/test_sentence_prediction_trials.py",
+    "test/test_sentence_expectation.py",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly",
+    "test/test_compiled_expectation_boundary.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

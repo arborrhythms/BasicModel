@@ -1,0 +1,14 @@
+[collect] 3 selectors; limit 180s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.43 GiB
+[worker-000] 1 selectors; limit 180s, 8.0 GiB
+[worker-001] 1 selectors; limit 180s, 8.0 GiB
+[worker-000] exit 0; 42.4s; peak 1.33 GiB
+[worker-002] 1 selectors; limit 180s, 8.0 GiB
+[worker-002] exit 0; 5.3s; peak 0.91 GiB
+[worker-003] 1 selectors; limit 180s, 8.0 GiB
+[worker-003] exit 0; 5.2s; peak 0.91 GiB
+[worker-004] 1 selectors; limit 180s, 8.0 GiB
+[worker-004] exit 0; 10.8s; peak 1.05 GiB
+[worker-001] aborted 125; 64.8s; peak 1.46 GiB
+Result: runner_error, exit 125; 4/6 cases completed.
+doc/benchmarks/2026-10-19-item4-repair/review-compiled-6/result.json

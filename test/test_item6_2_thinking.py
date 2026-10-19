@@ -184,7 +184,7 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     prior=MeaningExpectation(keys,torch.tensor([60.,-60.,-60.]),
         symbol_keys=keys,symbol_logits=logits,symbol_ids=torch.arange(3),symbol_orders=torch.zeros(3,dtype=torch.long))
     observed=replace(predicted,roles=torch.zeros_like(keys))
-    image=ClosingImage.form(observed.roles,keys,prior.presence_logits.sigmoid(),
+    image=ClosingImage.form(observed.roles,keys,prior.confidence,
         prediction=prior,occupied=torch.zeros(3,dtype=torch.bool),gain=1.)
     assert not image.conceived.any()
     source=store.append_meaning(predicted,kind='observation',evidence=(1.,0.))
@@ -194,7 +194,7 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     assert index==1 and store.row(index)['kind']=='inference'
     assert store.row(index)['evidence']==pytest.approx((0.,1.))
     assert bindings(store.meaning_of(index))['_thought_witnesses']==(witness,)
-    complete=ClosingImage.form(keys,keys,prior.presence_logits.sigmoid(),prediction=prior,gain=1.)
+    complete=ClosingImage.form(keys,keys,prior.confidence,prediction=prior,gain=1.)
     assert absence(model,0,predicted,complete) is None
 
 
@@ -223,15 +223,13 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
 
 
 def test_expectation_only_credit_does_not_enter_departure_comparison():
-    from ThoughtCredit import complete, observe
+    from ThoughtCredit import complete
     model,registry,store,(a,b,c)=world()
     parameter=torch.nn.Parameter(torch.tensor([.2,-.1]))
     probability=parameter.softmax(0)
     trace=dict(eligible=[True,True])
     other=dict(choices=[dict(probability=probability[1],alternatives=1)])
-    complete(model,None,None,trace,other,0,(0.,0.),0)
-    target=registry.form('part',a,b,mode='assertive')
-    observe(model,[target],sentence=1)
+    complete(model,trace,other,0,(0.,0.),0)
     assert model._last_thought_score_function['costs']==(0.,0.)
     assert model._last_thought_score_function['surrogate'] is None
     assert parameter.grad is None
@@ -295,7 +293,7 @@ def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypat
     model,registry,store,goal,menu=credit_chain_world(monkeypatch)
     # Isolate expectation's ownership from the episode's own work credit.
     monkeypatch.setattr(model, 'WHAT_STEP_COST', 0.)
-    discourse=SymbolExpectation(4,8,8,concept_dim=8,expectation_scope='symbols')
+    discourse=SymbolExpectation(4,8,8,concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     model.symbolSpace.expectation=discourse
     expose(discourse,goal.roles*.25)
@@ -364,15 +362,14 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
 
 
 def test_answer_credit_is_complete_before_document_end():
-    from ThoughtCredit import complete, finish_documents
+    from ThoughtCredit import complete
     model,registry,store,(a,b,c)=world()
     parameter=torch.nn.Parameter(torch.zeros(2))
     probability=parameter.softmax(-1)[1]
-    complete(model,None,None,dict(eligible=[True]),
+    complete(model,dict(eligible=[True]),
         dict(choices=[dict(probability=probability,alternatives=1)]),0,(1.,.5),0)
     value=model._last_thought_score_function['surrogate']
-    finish_documents(model,(0,))
-    assert value is model._last_thought_score_function['surrogate']
+    assert model._last_thought_score_function['row']==0
     assert not hasattr(model,'_pending_thought_credit')
     value.backward()
     assert parameter.grad[1]<0

@@ -22,8 +22,7 @@ class ExpectedWords:
         return self.excess + self.omission
 
 
-def word_distribution(owner, words, bank, valid, targets, *, teacher_forcing,
-                      gain=1., observed_prefix=None, active=None, lanes=None,
+def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_prefix=None, active=None, lanes=None,
                       epsilon=1e-6, saturation='clip'):
     """Forecast before each arrival, then consume only actual admitted input.
 

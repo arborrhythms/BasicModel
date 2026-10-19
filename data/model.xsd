@@ -945,28 +945,18 @@
       <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
-      <!-- Automatic sentence expectation; ARMA remains separately weighted.
-           sentenceExpectation replaces the retired sentencePrediction name. -->
+      <!-- Local activation-prediction objectives at word and sentence boundaries. -->
       <xs:element name="wordExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="wordExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="rowExpectation" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="rowExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="rowExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="independenceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="independencePriorScale" type="positiveFloat" minOccurs="0"/>
       <xs:element name="independenceMintThreshold" type="positiveFloat" minOccurs="0"/>
-      <xs:element name="sentenceExpectationScope" minOccurs="0">
-        <xs:simpleType>
-          <xs:restriction base="xs:string">
-            <xs:enumeration value="symbols"/>
-          </xs:restriction>
-        </xs:simpleType>
-      </xs:element>
       <xs:element name="perceptExpectationGain" type="unitInterval" minOccurs="0"/>
       <xs:element name="symbolExpectationGain" type="unitInterval" minOccurs="0"/>
       <xs:element name="rowExpectationGain" type="unitInterval" minOccurs="0"/>
       <xs:element name="documentExpectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="expectationOmissionThreshold" type="unitInterval" minOccurs="0"/>
       <xs:element name="perceptExpectationRate" type="positiveFloat" minOccurs="0"/>
       <xs:element name="expectationEpsilon" type="positiveFloat" minOccurs="0"/>
       <xs:element name="expectationSaturation" minOccurs="0">

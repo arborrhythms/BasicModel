@@ -440,14 +440,11 @@ prevents generation or lessons from writing an operator.
 | `reconstruction.free_bytes` | Shared generate walk spelling vs observed bytes including NUL; `log 256` | `reconstructionScale` | Trial; R, including decoder and live root; candidate bank codes detached. Detached chosen report at batch end |
 | `reconstruction.what/where/when`, `reconstruction_reverse.what/where/when` | Grammar-free perceptual/masked or reverse event vs input target; origin per band | reconstruction scale × band scale | Batch; perception and the active input inverse |
 | `leaf_distill` | Historical root decoder's predicted exact leaves vs retained leaves; origin | `leafDistillWeight` | Batch; decoder and live input root where enabled |
-| `expectation.roles` | Predicted role payload vs arriving detached meaning, in identity-column coordinates once available; origin | `interLossWeight` | Trial or batch, once; E; latest source encoded through live columns, target and older context detached |
+| `expectation.activation` | Predicted two-lane bank activation vs the next row's actual activation; bounded MSE | `sentenceExpectationLossWeight` | Trial or batch, once; shared predictor only, sources and targets detached |
+| `expectation.word` | Pre-arrival word activation vs the admitted word's two lanes; bounded MSE | `wordExpectationLossWeight` | Trial or batch; shared predictor at the word read, sources and targets detached |
+| `expectation.symbols` | Pre-compose bank activation vs the resulting symbolic field's two lanes; bounded MSE | `wordExpectationLossWeight` | Trial; shared predictor at the S read, sources and targets detached |
 | `expectation.components` | Retained observation population plus current fused S; Laplace sparse-coding energy for A and one-sparse innovation energy for B | `independenceWeight` | Trial; E owns columns and relevance; the existing closing comparison credits the global grammar choice |
-| `expectation.presence` | Role-presence logits vs occupied-role bits; `log 2` | `interLossWeight` | Trial or batch, once; E |
-| `expectation.kind` | Idea/relation logit vs arriving kind; `log 2` | `interLossWeight` | Trial or batch, once; E |
-| `expectation.root` | Root predictor vs arriving root where structured roles are inactive; origin | `interLossWeight` | Trial or batch, once; E only |
-| `expectation.contrast` | Next-idea candidate CE vs actual next idea; `log(candidate count)` | `interContrastiveWeight` | Trial or batch, once; E only |
 | `expectation.intra` | Predict-then-perceive code vs arriving code; origin over active scalar entries | `intraLossWeight` | Trial or batch, once; within-sentence predictor only |
-| `expectation.arma` | ARMA forecast vs detached arriving representation; origin | `armaScale` | Batch; ARMA predictor only |
 | `grammar.compose.choice` | Joint compose probability vs annotated operator; `log(choice count)` | `grammarLessonWeight` | Trial; compose chooser; unlabelled waiting sites excluded |
 | `grammar.generate.choice` | Generate action logits vs annotated action; `log(choice count)` | `grammarLessonWeight` | Trial; R generate chooser only |
 | `grammar.generate.operands` | Generated children vs annotated detached codes; origin | `grammarLessonWeight` | Reporting only (`trained=False`); no operator gradient |

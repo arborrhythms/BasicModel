@@ -2,7 +2,7 @@
 
 The input layout is fixed by the existing codebooks and working fields. It
 contains their activation after spreading, their current content keys, the
-eight conceptual positions, and three needs. Candidate support is supplied by the field; this module assembles reader inputs.
+eight conceptual positions, and the open request and gist. Candidate support is supplied by the field; this module assembles reader inputs.
 """
 import torch
 from torch.nn import functional as F
@@ -36,15 +36,18 @@ def install(model):
                      for space in (model.perceptualSpace, model.wholeSpace))
     width = 7 * sum(sizes) + sum(n * d for n, d in geometry) + geometry[0][0]*geometry[0][1]
     width += int(cs.stm.capacity) * (int(cs.stm.concept_dim) + 16)
-    # One open slot, the complete three-role prediction, and one gist.
-    width += 5 * int(cs.stm.concept_dim)
+    # One open request and one gist; expectation has its own bank columns.
+    width += 2 * int(cs.stm.concept_dim)
     # Adding an attention reader must not change the ambient initialization
     # of the pre-existing composition/control architecture.
     with torch.random.fork_rng(devices=[]):
         model.candidate_attention = CandidateAttention(width, int(cs.stm.concept_dim) + 8).to(
             device=cs.stm._buffer.device, dtype=cs.stm._buffer.dtype)
     model._candidate_geometry = (sizes, geometry)
-    model.candidate_attention._expectation_insert = (5*sum(sizes), 2*sum(sizes)+geometry[0][0]*geometry[0][1])
+    insert = 2*sum(sizes)+geometry[0][0]*geometry[0][1]
+    old_context = width-insert+3*int(cs.stm.concept_dim)
+    model.candidate_attention._expectation_layout = (5*sum(sizes), insert,
+        old_context-4*int(cs.stm.concept_dim), 3*int(cs.stm.concept_dim))
 
 
 def _fit(value, batch, count, width, like):
@@ -86,20 +89,9 @@ def _needs(model, batch, width, like, opened=None):
         opened = lesson.need
     if opened is None:
         opened = getattr(bank, 'query', None)
-    # The prediction is a need, never evidence added to a field.
-    prediction = getattr(model.conceptualSpace, '_stm_predicted_idea', None)
-    discourse = getattr(model.symbolSpace, 'expectation', None)
-    pending = getattr(discourse, '_inter_last_meaning', ())
-    if pending:
-        images = [getattr(value, 'prediction', None) for value in pending]
-        if len(pending) != batch and any(value is not None for value in images):
-            raise ValueError('attention expectation history differs from the current batch')
-        if len(pending) == batch:
-            prediction = torch.stack([like.new_zeros(3, width) if value is None else
-                                      value.roles.detach().clone().to(like) for value in images])
     gist = getattr(model, '_last_gist', None)
     return torch.cat([_fit(value, batch, count, width, like).flatten(1)
-                      for value, count in ((opened, 1), (prediction, 3), (gist, 1))], -1)
+                      for value, count in ((opened, 1), (gist, 1))], -1)
 
 
 def context(model, values, addresses, valid, *, when=None, parts=None, wholes=None,
@@ -193,10 +185,9 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
                 prime[b].index_copy_(0, ids[present], prediction.expected_activation.detach()[present].to(values))
     native = _fit(parts, B, *geometry[0], values)
     prior = getattr(model, '_percept_prior', None)
-    z = model.percept_expectation.residual(native, prior=prior)
+    z = (torch.ones_like(native) if expectation_free else
+         model.percept_expectation.residual(native, prior=prior))
     needs = _needs(model, B, D, values, need)
-    if expectation_free:
-        needs = torch.cat((needs[:, :D], torch.zeros_like(needs[:, D:4*D]), needs[:, 4*D:]), -1)
     inputs = torch.cat((spread.flatten(1), heat, time.flatten(1), prime.flatten(1), z.flatten(1), *keys, conceptual.flatten(1),
                         needs), -1).detach()
     return inputs

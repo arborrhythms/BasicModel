@@ -5,7 +5,7 @@ import torch
 def test_sentence_prediction_trials_backpropagate_independently():
     from Layers import SymbolExpectation
     layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, batch=1, expectation_scope='symbols')
+        concept_dim=4, batch=1)
     layer.set_symbol_bank(torch.eye(layer.concept_dim))
     layer.set_inter_loss_weight(1.)
     payloads = [torch.ones(3, 4)]
@@ -17,7 +17,7 @@ def test_sentence_prediction_trials_backpropagate_independently():
     first, prior_a = layer.sentence_prediction_cost([3], payloads, mask)
     second, prior_b = layer.sentence_prediction_cost([3], payloads, mask)
     torch.testing.assert_close(first, second, rtol=0, atol=0)
-    assert prior_a[0][0] is prior_b[0][0] is pending
+    assert prior_a[0] is prior_b[0] is pending
     assert layer._inter_last_meaning[0] is pending
     assert len(layer._inter_context[0]) == size
     parameters = tuple(layer._inter_predictor.parameters())
