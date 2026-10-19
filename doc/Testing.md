@@ -1,14 +1,22 @@
 # Bounded development tests
 
 Item 4's October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
-records scoped checks and each §9 gate. Compiled boundaries now complete;
-exact identity, gain, prime lifetime and retained-checkpoint regressions pass.
-**Item 4 remains incomplete:** the copular artifact is missing, the carried
-initial-binding distribution assertion fails, and the full learning gates
-are not established. The original failed native learning run is preserved.
-Claude review must precede the one full landing sweep. Item 0 and independent
-5.5 prerequisites remain unchanged. Historical negative-image sections below
-describe their original sources and do not certify the gain path.
+records each §9 gate, the review of record, and close-out measurements.
+Alec's B3 decision keeps the selection prime on and φ=.5 with all gains zero.
+The declared parity configuration keeps prediction enabled, disables selection
+priming and restores uniform alternatives. Its native paired comparison has
+zero parameter updates and records the changed warm-document behavior.
+The full §14 file completes 13/13: 11 passed, the carried initial-distribution
+failure, and the absent copular-identity skip. All three N2 regressions pass.
+The single full landing sweep completes **5,834/5,834: 5,475 passed,
+322 skipped, 39 failed and one XFAIL**, in 1,340.06 s. Post-sweep source and
+fixture repairs are covered separately: 510 pass, one skip and two failures
+in the 513-case scoped check. One failure is the carried .0517 paired-cost
+counterexample; the other stale non-winner assertion is corrected. The final **10/10**
+check passes its witness contract, both compiled gain settings and both NP
+checkpoint restorations. The full sweep is not repeated or relabeled green. The original failed native learning run, Item 0
+findings and independent 5.5 gates are unchanged. Historical negative-image
+sections below describe their original sources and do not certify the gain path.
 
 Item 6 **part 1** lands the [reviewed repair pass](benchmarks/2026-10-10-item6/part1/README.md):
 shared bounded inversion, support charges in the keep cost, captured-input

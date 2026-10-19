@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+    "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+    "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+    "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+    "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+    "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+    "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+    "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+  ],
+  "completed": [
+    "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+    "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+    "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+    "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+    "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+    "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+    "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+    "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_evidence.py::test_discovered_symbol_remains_available_after_nonuse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.026689416030421853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0400152918882668,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005922249983996153,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003422332927584648,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00296374992467463,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005707040894776583,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004599542124196887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003562582889571786,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

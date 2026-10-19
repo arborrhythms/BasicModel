@@ -12,6 +12,12 @@ absolute lane residuals divided by expected lane mass plus epsilon. The
 entire saturation is detached, including its denominator. Each symbol keeps
 one gain over both evidence lanes and retains its raw identity. Expected
 activation separately primes selection. It is never added to comprehension.
+The shipped defaults are four zero gains, `expectationPrime=true` and
+`explorationUniformFraction=0.5` (Alec's B3 decision). The sole
+[§9.1 parity configuration](../test/fixtures/item4-parity.json) keeps
+prediction enabled, turns off the compose and candidate-attention selection
+prime and restores uniform eligible alternatives (`φ=1`). It is a gate
+fixture; zero attenuation alone does not promise the previous selection law.
 Perceptual mean and variance supply per-coordinate salience and a scalar
 region gain; codebook lookup reads the original coordinates.
 Closing confidence κ is per symbol, the maximum of its two predicted

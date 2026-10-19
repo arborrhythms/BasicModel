@@ -132,8 +132,10 @@ def test_global_expectation_retains_all_roles_without_a_thought_operation():
     layer=make_layer()
     roles=torch.arange(3*layer.concept_dim,dtype=torch.float32).reshape(3,-1)/100
     layer.predict_and_observe_stm_end_state([3],[roles],layout='infix')
-    marker=object();layer._inter_last_meaning[0]=marker
+    prediction=layer.expect_next_meaning(0)
+    marker=layer._inter_last_meaning[0]
     value=layer.expect_next_meaning(0,record=False)
+    assert value is prediction
     assert value.roles.shape==(3,layer.concept_dim) and value.presence_logits.shape==(3,)
     assert layer._inter_last_meaning[0] is marker
     assert 'arma' not in THOUGHT_EXECUTORS

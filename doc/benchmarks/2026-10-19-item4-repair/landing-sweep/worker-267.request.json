@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_exploration_coverage.py::test_trained_artifact_departs_every_eligible_sentence_round"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-267.recycle.json"
+}

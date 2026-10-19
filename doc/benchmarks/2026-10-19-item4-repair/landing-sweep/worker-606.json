@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[5]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[3]"
+  ],
+  "completed": [
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[5]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[3]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002366082975640893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012030829675495625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010865828953683376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001222708960995078,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001359916990622878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012386669404804707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011431670282036066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011691669933497906,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

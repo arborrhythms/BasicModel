@@ -1,0 +1,106 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+    "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
+    "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference0]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference1]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]"
+  ],
+  "completed": [
+    "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+    "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
+    "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference0]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference1]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]"
+  ],
+  "slow_selected": [
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0035167080350220203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005992921069264412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002802124945446849,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.053644625004381,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00012479210272431374,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_stored_idea_generation.py', 62, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006591251585632563,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032604183070361614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003013329114764929,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

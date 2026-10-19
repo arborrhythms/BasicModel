@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+    "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+    "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+    "test/test_adverb_eig_edit.py::test_delta_is_sparse"
+  ],
+  "completed": [
+    "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+    "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+    "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+    "test/test_adverb_eig_edit.py::test_delta_is_sparse"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015034170355647802,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_flag_off_apply_adverb_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003382079303264618,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_flag_on_builds_edit_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004044589586555958,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007847081869840622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005348748527467251,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005365831311792135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_delta_is_sparse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004792921245098114,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

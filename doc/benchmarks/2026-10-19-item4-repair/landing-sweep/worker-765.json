@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_sigmapi.py::TestPiLayerForward::test_2d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
+    "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+    "test/test_sigmapi.py::TestTanhFreePiSigmaXORTestpoint::test_mm_xor_solves_in_10_epochs_without_tanh"
+  ],
+  "completed": [
+    "test/test_sigmapi.py::TestPiLayerForward::test_2d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
+    "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+    "test/test_sigmapi.py::TestTanhFreePiSigmaXORTestpoint::test_mm_xor_solves_in_10_epochs_without_tanh"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiLayerForward::test_2d_input_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005969170015305281,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiLayerForward::test_3d_input_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006549160461872816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiLayerForward::test_gradient_flows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013770375167950988,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestSigmaLayerForward::test_3d_input_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003238329663872719,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003186250105500221,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024279183708131313,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011091670021414757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestTanhFreePiSigmaXORTestpoint::test_mm_xor_solves_in_10_epochs_without_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004275999963283539,
+      "message": "",
+      "stdout": "\n  tanh-free MM_xor loss=0.00000000, pred=[2.1457672119140625e-06, 0.9999992251396179, 0.9999960660934448, -7.510185241699219e-06]\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

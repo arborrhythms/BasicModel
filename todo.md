@@ -17,47 +17,27 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 5 is landed at BasicModel `9207f5e03` / WikiOracle `929e4a8`
-after Claude's repair review ([receipt](doc/plans/2026-10-19-item5-start.md)); the paired zero-cost
-counterexample is carried under item 0. Item 6 is Done as a mechanism landing, accepted in
-[plan §16](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing).
-There is no identity-learning claim: the native reference-close lesson remains
-0/146 bindings, 0/20 row pairs and zero A columns. Stage 4e (constituents),
-VP vectors by temporal difference and order-2 kinds are not yet built.
-The learning sequence's mechanism residue (stage 4e and what follows it)
-is collected with 5.5's remainder as item 3.5 below; the learning claims
-stay at item 0's gates.
+**Current:** Item 4's reviewed mechanism close-out is ready to publish on
+`codex/item4-repair` ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
+Alec's defaults are all four gains zero, selection prime on and φ=.5;
+the declared enabled-prediction parity comparison and the whole §14 file
+complete. The single full sweep and scoped repairs are recorded separately.
+The original failed learning run, the distribution bound and .0517 paired-cost
+counterexample stay open at Item 0. Independent 5.5 gates remain unchanged.
+Item 5's landing remains BasicModel `9207f5e03` / WikiOracle `929e4a8`.
 
-**Next mechanism (Alec, October 19):** item **4, expectation across the
-architecture**. Its draft spec and entry below retain the earlier 4.5 label.
-*Repair round, October 19:* the repaired candidate is on
-`codex/item4-repair`, with the [round receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)
-recording each §9 gate. Legacy paths are removed, seed 23's tied compose
-exposure is explained, exact identity and one S gain are preserved, and
-compiled boundary checks now complete. P/S/R/D gains are zero; R+A keeps and
-credits; the open role retains its prime; `non` clears both lanes.
-Claude reviewed candidate `f7e74af04` and did not approve a sweep. The
-follow-up fixes confidence, omission retention, native handles and compact
-retained keys. The selection-prime and φ defaults await Alec's decision
-(review B3); enabled-expectation zero-gain parity remains unproved.
-The re-review of `7285b38` confirms those fixes and finds two further seams:
-raw P-to-S observation and the thought R+A keep/credit judge. Their repairs
-and native regressions are in the same round receipt.
-Claude's short check of `282fcf918` confirms both source fixes with no new
-code defect; 82 targeted cases pass, including the nonzero compiled boundary.
-**Item 4 remains open:** the copular-identity prerequisite is missing, the
-carried initial-binding distribution check fails, and global derivation
-optimality, per-level learning/collapse and all-level XOR are not established.
-The original failed learning run stays failed. The independent Item 5.5
-learning track and Item 0 findings are unchanged. A reviewed follow-up
-candidate precedes the one full landing sweep.
-The October 16 sequence was
-5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0; on October 19 Alec inserted **3.5**,
-the mechanism residue of items 6 and 5.5, to be completed after item 4.
-**Item 4 completes with a clean tree:** every modification in the
-BasicModel tree committed on a reviewed candidate (or reverted with a
-note), pushed, WikiOracle's submodule bumped and pushed, `git status`
-clean in both, and this file reconciled (Alec, 2026-10-19).
+**Next mechanism:** Item **3.5**, on a new branch after Item 4 publication,
+in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
+gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
+continuation before identity; verb group element; tense/aspect and second
+difference; then the remaining 5.5 mechanisms. Each has its own receipt.
+There is no identity-learning claim: the native reference-close lesson remains
+0/146 bindings, 0/20 row pairs and zero A columns.
+
+**Item 4 completion:** commit and push every BasicModel change, including
+the newer LTM1/LTM3, occurrence, Philosophy and todo edits, then push the
+WikiOracle bump. Preserve unrelated parent-tree work; its pre-existing
+nanochat pointer change is outside this landing.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -496,46 +476,9 @@ not by a passing identity lesson.
    surface-inverse certificates. Tense/aspect on VP phases waits for the
    carried identity sequence. **Remainder collected as item 3.5 (Alec,
    2026-10-19), after item 4.**
-- **4.5 → item 4. Expectation across the architecture** (Alec, 2026-10-08:
-   "needs to go in sooner rather than later"; a spec of its own; made the
-   next mechanism item on 2026-10-19). **Spec (draft, 2026-10-19 rev 5;
-   toys 2, 7, 8 before the hand-off):**
-   [expectation at every level](doc/specs/2026-10-08-expectation-at-every-level.md)
-   — *Rev 5 (Alec, 2026-10-19):* expectation is **per level with a local
-   error**, never derived across levels; attention and expectation are
-   **one gain field** over a purely attenuated signal, `c = m ⊙ a ⊙ o`,
-   never a subtraction and never negative (spec §4.1, §4.3), with the
-   residual as a second output in two lanes carrying omission, retention
-   and the predictor's training; percepts are attended, with a
-   **mean-and-variance** statistic only, whose normalized residual
-   `|o − μ|/σ` drives the mask per coordinate and attenuates a region's
-   content as one scalar (§3 row P, §4.5); concepts get a **top-down
-   prediction of activations over the symbol bank** from the symbolic
-   activation bank and STM, not of deep structure (§3; `word_distribution`
-   generalized, `SentenceExpectation`'s slots retire); **expectation vs
-   desire** — opposite aims, local vs outcome error, desire writes to
-   selection, not content, in comprehension (§4.7); the fully expected cat
-   is still seen through the store, the prime and amended consumers (§4.8).
-   The unfolding by inversion (rev 3 §3.1) is withdrawn and the
-   invertible-path program (inverted targets, live sources, reconstruction
-   as audit, the width) **moves to item 3**; sources stay detached. Kept
-   from revs 2–4: exploit per level, exploration at least partly free of
-   expectation; one departure, read at the end of the sentence, judged by
-   `R + A`; a graded set here (the Viterbi-like principle: verified in a
-   toy, graded 0.96 vs root-only 0.04) and the age-appropriate corpus in
-   item 3; `hetTolerance` τ on the lanes. *Added 2026-10-15 (spec §4.6):*
-   `non` on a modifier withholds that dimension from the prior — no prime
-   and no attenuation there; modifiers only, position learned by exposure
-   ([Philosophy](doc/Philosophy.md#the-two-negations-on-a-modifier-not-heavy-and-non-heavy-alec-2026-10-15)).
-   Docs to amend at the hand-off (spec §6): accessible-mind §2.6 (image →
-   gain), Philosophy's `not`/`non` classification of expectation, FutureWork's
-   [expectation by inversion](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)
-   re-pointed at item 3. Exit: the spec's gates (§9).
-   **Repair, October 19:** production changes on `codex/item4-repair` from the
-   landed Item 5 baseline are under review; Item 4 is not complete. The [execution record](doc/plans/2026-10-19-item4-start.md)
-   separates mechanism checks, the bounded native graded/shuffled measurement,
-   and the proposed §9 learning gates. Carried Item 0 findings and the independent
-   5.5 continuation remain open under their existing budgets.
+- **Item 4 publication:** close-out code, documents and receipts are ready;
+   push the branch and WikiOracle bump, then move this line to Done with
+   the source commit. Learning residue is under Item 0 below.
 
 - **4. Run harness and resume test.** *Once pulled forward for the
    conference (Alec, 2026-09-27; no freeze since 2026-10-03, so it is built
@@ -583,7 +526,7 @@ not by a passing identity lesson.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
-   in the order §16.3 gives:
+   described below by origin; the first-pass order above supersedes the older sequencing:
    - **Stage 4e, constituents**, to a passing gate under
      [parts-of-speech §5a](doc/specs/2026-10-18-parts-of-speech.md#5a-gates-are-behaviors-decided-alec-2026-10-18)
      (behaviors, no operator named): the next pass from the stage-3
@@ -614,10 +557,15 @@ not by a passing identity lesson.
      **With it, the row amendment** ([two truths §1](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided),
      Alec 2026-10-19): three positions stay (argument, kind, argument;
      kinds `DEF`, *said*, *if-then*; arguments ideas or REFs); parthood
-     and kinds are folds in the main tree, not rows; an idea's fused
-     point need not be a codebook entry and a REF to it mints it
-     (`bind`'s job). Storage note: LTM may hold three reference positions
-     and one vector; STM keeps three vectors.
+     and kinds are folds in the main tree, not rows; two forms of LTM named by
+     their slots — **LTM1** (one concept per row, possibly unminted; ideas
+     and their addresses; retention by surprise) and **LTM3** (three
+     symbol references: argument, kind, argument; only minted concepts) —
+     with STM at three concept slots; a concept is minted by recurrence in
+     LTM1 (the re-witnessing count, the type criterion again) and `bind`
+     resolves references among minted individuals;
+     the definitions index becomes a rebuildable cache over the DEF rows
+     (verify item 5's forgetting clears it).
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.
@@ -848,6 +796,13 @@ not by a passing identity lesson.
    [stream-state §3](doc/plans/2026-10-08-stream-state.md#3-required-learning-stages-the-replacement-for-explicit-context-management).
    The support mechanism and the first two generated-curriculum stages are
    accepted; these learning claims are not.
+
+   **Item 4's learning gates** remain open: §9.6 graded versus shuffled
+   (seed 23's shuffled control has lower R); global derivation optimality;
+   per-level residual/collapse measurements and exposure; learned repeated-cat
+   recognition and all-level XOR. The original failed native run is not
+   regraded or extended. The mechanism and controlled carrier certificates
+   do not satisfy these learning gates ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
 
    **Item 6's learning gates** remain prerequisites at this checkpoint:
    stage 4e's ≥90% free-bracket and ≥95% NP-occurrence gates, zero duplicate

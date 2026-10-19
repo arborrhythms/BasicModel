@@ -98,11 +98,7 @@ def _write_tmp_xml(training_extra=""):
 # -- XSD validation --------------------------------------------------------
 
 class TestXsdRejectsRetiredElements(unittest.TestCase):
-    """The XSD must surface a validation warning when an XML uses the
-    retired ``<maskedPrediction>`` or ``<reconstruct>output</...>``
-    syntax — the parser is soft-validating so the warning is the only
-    signal that the deprecation took effect.
-    """
+    """Retired prediction/reconstruction configuration is a load error."""
 
     def _parse_with_validation(self, training_extra="", arch_extra=""):
         from util import XMLConfig
@@ -134,19 +130,13 @@ class TestXsdRejectsRetiredElements(unittest.TestCase):
 
     def test_rejects_maskedPrediction(self):
         self._require_lxml()
-        caught = self._parse_with_validation(
-            training_extra="      ")
-        msgs = " ".join(str(w.message) for w in caught)
-        self.assertIn("maskedPrediction", msgs,
-                      "XSD did not flag <maskedPrediction>")
+        with self.assertRaisesRegex(ValueError, 'maskedPrediction'):
+            self._parse_with_validation(training_extra='<maskedPrediction>true</maskedPrediction>')
 
     def test_rejects_reconstruct_output(self):
         self._require_lxml()
-        caught = self._parse_with_validation(
-            arch_extra="<reconstruct>output</reconstruct>")
-        msgs = " ".join(str(w.message) for w in caught)
-        self.assertIn("output", msgs,
-                      "XSD did not flag <reconstruct>output</...>")
+        with self.assertRaisesRegex(ValueError, 'reconstruct'):
+            self._parse_with_validation(arch_extra='<reconstruct>output</reconstruct>')
 
 
 # -- canonical reconstruction cost weight ------------------------------

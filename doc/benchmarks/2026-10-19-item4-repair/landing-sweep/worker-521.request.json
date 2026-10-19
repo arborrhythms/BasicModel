@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_operator_pole_bodies.py::test_saved_old_new_pole_bodies_and_current_source_agree"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-521.recycle.json"
+}

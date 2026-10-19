@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_and_off_differ",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ"
+  ],
+  "completed": [
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_and_off_differ",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010089999996125698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009619169868528843,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_and_off_differ",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007840830367058516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006334169302135706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003289170563220978,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004689169581979513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006345000583678484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008184590842574835,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

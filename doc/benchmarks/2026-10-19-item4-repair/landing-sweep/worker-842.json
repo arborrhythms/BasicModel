@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
+    "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
+    "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+    "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
+    "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity"
+  ],
+  "completed": [
+    "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
+    "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
+    "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+    "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
+    "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013005583081394434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008555916836485267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007861207937821746,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01514479098841548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.027097332989796996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008172292029485106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.19256904092617333,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7173/test_actual_model_entry_and_ch0/taxonomy.pt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7173/test_actual_model_entry_and_ch0/taxonomy.pt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

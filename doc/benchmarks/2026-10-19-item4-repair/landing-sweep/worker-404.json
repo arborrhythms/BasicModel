@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lexical_gate_lift_lower.py::test_two_verbs_distinct_with_masks_on_ablated_identical[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_gate_none_code_passthrough[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_projection_trains_end_to_end_with_composition_loss[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_weight_law_holds_under_arbitrary_gates",
+    "test/test_lexical_gate_lift_lower.py::test_signed_kernel_gated_roundtrip[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_gate_flows_through_meronymic_adapter"
+  ],
+  "completed": [
+    "test/test_lexical_gate_lift_lower.py::test_two_verbs_distinct_with_masks_on_ablated_identical[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_gate_none_code_passthrough[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_projection_trains_end_to_end_with_composition_loss[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_weight_law_holds_under_arbitrary_gates",
+    "test/test_lexical_gate_lift_lower.py::test_signed_kernel_gated_roundtrip[LiftLayer]",
+    "test/test_lexical_gate_lift_lower.py::test_gate_flows_through_meronymic_adapter"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_lexical_gate_lift_lower.py::test_two_verbs_distinct_with_masks_on_ablated_identical[LiftLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0032464999239891768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_gate_lift_lower.py::test_gate_none_code_passthrough[LiftLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009487499482929707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_gate_lift_lower.py::test_projection_trains_end_to_end_with_composition_loss[LiftLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.029134000185877085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_gate_lift_lower.py::test_weight_law_holds_under_arbitrary_gates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001190749928355217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_gate_lift_lower.py::test_signed_kernel_gated_roundtrip[LiftLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011628749780356884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_gate_lift_lower.py::test_gate_flows_through_meronymic_adapter",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008542088326066732,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

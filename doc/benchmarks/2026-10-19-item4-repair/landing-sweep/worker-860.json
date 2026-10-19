@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair3-right_pair3]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair4-right_pair4]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair5-right_pair5]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair6-right_pair6]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair7-right_pair7]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair8-right_pair8]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair9-right_pair9]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair10-right_pair10]"
+  ],
+  "completed": [
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair3-right_pair3]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair4-right_pair4]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair5-right_pair5]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair6-right_pair6]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair7-right_pair7]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair8-right_pair8]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair9-right_pair9]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair10-right_pair10]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair3-right_pair3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001296499976888299,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair4-right_pair4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004999998491257429,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair5-right_pair5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003215828910470009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair6-right_pair6]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000339374877512455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair7-right_pair7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002877921797335148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair8-right_pair8]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026358291506767273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair9-right_pair9]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026575010269880295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair10-right_pair10]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027879211120307446,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

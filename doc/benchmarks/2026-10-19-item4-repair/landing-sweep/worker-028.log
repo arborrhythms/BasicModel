@@ -1,0 +1,52 @@
+..FF....                                                                 [100%]
+=================================== FAILURES ===================================
+______________ TestSimpleModelCreation.test_simple_model_ergodic _______________
+test/test_basicmodel.py:457: in test_simple_model_ergodic
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8210: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23815: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13108: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:148: in stage_input
+    stage_percept_expectation(model, active)
+bin/ModelAttention.py:329: in stage_percept_expectation
+    moments = model.percept_expectation
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'percept_expectation'
+____________ TestSimpleModelCreation.test_simple_model_traditional _____________
+test/test_basicmodel.py:443: in test_simple_model_traditional
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8210: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23815: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13108: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:148: in stage_input
+    stage_percept_expectation(model, active)
+bin/ModelAttention.py:329: in stage_percept_expectation
+    moments = model.percept_expectation
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'percept_expectation'
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional
+2 failed, 6 passed in 3.74s

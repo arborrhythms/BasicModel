@@ -1,0 +1,104 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+    "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator",
+    "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+    "test/test_live_references.py::test_occurrence_is_operand_and_predictor_gradient_is_live",
+    "test/test_live_references.py::test_cold_reference_is_exact_and_pronoun_proposal_is_maskable",
+    "test/test_live_references.py::test_operation_runs_on_the_selected_occurrence_eager_and_compiled",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write"
+  ],
+  "completed": [
+    "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+    "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator",
+    "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+    "test/test_live_references.py::test_occurrence_is_operand_and_predictor_gradient_is_live",
+    "test/test_live_references.py::test_cold_reference_is_exact_and_pronoun_proposal_is_maskable",
+    "test/test_live_references.py::test_operation_runs_on_the_selected_occurrence_eager_and_compiled",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009613124886527658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007600421085953712,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005702502094209194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022449996322393417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_occurrence_is_operand_and_predictor_gradient_is_live",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012960709165781736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_cold_reference_is_exact_and_pronoun_proposal_is_maskable",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004727079067379236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_operation_runs_on_the_selected_occurrence_eager_and_compiled",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.003294292138889432,
+      "message": "test/test_live_references.py:148: in test_operation_runs_on_the_selected_occurrence_eager_and_compiled\n    eager = choose(state, scope)\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_live_references.py:145: in choose\n    return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:12477: in choose_operation\n    _, _, route = layer(window, **arguments)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6959: in forward\n    action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ValueError: not enough values to unpack (expected 4, got 3)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.3995050420053303,
+      "message": "test/test_live_references.py:232: in test_public_reading_fuses_the_reference_before_capture_and_write\n    model(model.inputSpace.prepInput(['alpha beta']))\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8210: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23832: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17090: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22384: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21936: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20895: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:142: in sentence_pair\n    exploit = compose(cache, None)\n              ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20791: in compose\n    word_step(index, masked_payload(payload, rows), native)\nbin/Models.py:20752: in word_step\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21689: in stage_cs_lang\n    proposal = choose_operation(\nbin/Language.py:12477: in choose_operation\n    _, _, route = layer(window, **arguments)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_live_references.py:200: in forced\n    result = original(x, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6959: in forward\n    action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ValueError: not enough values to unpack (expected 4, got 3)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

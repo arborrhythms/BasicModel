@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+    "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+    "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+    "test/test_item4_repair.py::test_word_read_starts_from_factual_previous_context_and_never_forecasts_itself"
+  ],
+  "completed": [
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+    "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+    "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+    "test/test_item4_repair.py::test_word_read_starts_from_factual_previous_context_and_never_forecasts_itself"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012068329378962517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005879169330000877,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015676671173423529,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006624578963965178,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_word_read_starts_from_factual_previous_context_and_never_forecasts_itself",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002221082802861929,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

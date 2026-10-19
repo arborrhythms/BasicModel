@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+  ],
+  "completed": [
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024629198014736176,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

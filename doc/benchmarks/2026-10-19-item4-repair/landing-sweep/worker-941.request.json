@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-941.recycle.json"
+}

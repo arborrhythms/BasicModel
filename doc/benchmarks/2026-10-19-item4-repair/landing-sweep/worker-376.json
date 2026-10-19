@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+    "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+    "test/test_item4_repair.py::test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view",
+    "test/test_item4_repair.py::test_retention_surprise_counts_omission_but_not_empty_bank_padding",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]"
+  ],
+  "completed": [
+    "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+    "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+    "test/test_item4_repair.py::test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view",
+    "test/test_item4_repair.py::test_retention_surprise_counts_omission_but_not_empty_bank_padding",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001441708067432046,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031611670274287462,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00237204204313457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001921334071084857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013735000044107437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024832498747855425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_retention_surprise_counts_omission_but_not_empty_bank_padding",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00044950004667043686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005107498727738857,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+    "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput"
+  ],
+  "completed": [
+    "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+    "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+    "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+    "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+    "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001455419696867466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011933315545320511,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.766686707735062e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.85830556601286e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014291703701019287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.833299554884434e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001016249880194664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nOutput",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001155841164290905,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

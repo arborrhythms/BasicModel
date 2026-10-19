@@ -1,0 +1,93 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation"
+  ],
+  "completed": [
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007221875013783574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004896000027656555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033508329652249813,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004843208938837051,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026982498820871115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028267919551581144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0033471249043941498,
+      "message": "test/test_query_executors.py:136: in test_global_expectation_retains_all_roles_without_a_thought_operation\n    value=layer.expect_next_meaning(0,record=False)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10695: in expect_next_meaning\n    return pending.prediction\n           ^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'object' object has no attribute 'prediction'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

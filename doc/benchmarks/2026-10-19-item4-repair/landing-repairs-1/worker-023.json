@@ -1,0 +1,137 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+    "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+    "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+    "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+  ],
+  "completed": [
+    "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+    "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+    "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+    "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03092345898039639,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012302498798817396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008901248220354319,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010354625061154366,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01011170819401741,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010000834008678794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008993541123345494,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012612792197614908,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002961249556392431,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00042837485671043396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017075007781386375,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

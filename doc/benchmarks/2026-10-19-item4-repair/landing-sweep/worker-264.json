@@ -1,0 +1,95 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_review.py::test_soft_reset_preserves_stream_and_bare_reset_is_hard",
+    "test/test_expectation_review.py::test_unaddressed_driver_rows_form_independent_streams",
+    "test/test_expectation_review.py::test_address_present_without_document_still_fails",
+    "test/test_expectation_review.py::test_one_interaction_owner_even_when_expectation_is_enabled",
+    "test/test_expectation_review.py::test_expectation_names_and_production_defaults",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+    "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream"
+  ],
+  "completed": [
+    "test/test_expectation_review.py::test_soft_reset_preserves_stream_and_bare_reset_is_hard",
+    "test/test_expectation_review.py::test_unaddressed_driver_rows_form_independent_streams",
+    "test/test_expectation_review.py::test_address_present_without_document_still_fails",
+    "test/test_expectation_review.py::test_one_interaction_owner_even_when_expectation_is_enabled",
+    "test/test_expectation_review.py::test_expectation_names_and_production_defaults",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+    "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream"
+  ],
+  "slow_selected": [
+    "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_review.py::test_soft_reset_preserves_stream_and_bare_reset_is_hard",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003786291927099228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_unaddressed_driver_rows_form_independent_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018832499627023935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_address_present_without_document_still_fails",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001552498433738947,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_one_interaction_owner_even_when_expectation_is_enabled",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.22801720793358982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_expectation_names_and_production_defaults",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006349158938974142,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.3423603749834,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00014350004494190216,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_expectation_review.py', 94, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

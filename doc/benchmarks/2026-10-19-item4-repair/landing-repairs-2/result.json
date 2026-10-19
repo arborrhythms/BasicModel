@@ -1,0 +1,280 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
+    "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+    "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "completed": [
+    "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
+    "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+    "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-000.json"
+      ],
+      "pid": 42710,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 755895056,
+      "elapsed_seconds": 12.743217749986798,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
+        "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+        "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined"
+      ],
+      "completed": [
+        "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
+        "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+        "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.09501341683790088,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 8.472197833936661,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.196s)\r\n"
+        },
+        {
+          "nodeid": "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007375420536845922,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-002.json"
+      ],
+      "pid": 42743,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1334036568,
+      "elapsed_seconds": 14.109214958036318,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+      ],
+      "completed": [
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": "np_definite",
+          "duration": 5.09815475018695,
+          "message": "",
+          "stdout": "Grammar checkpoint: 9 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta0/occupation.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta0/occupation.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": "np_description",
+          "duration": 5.124271375127137,
+          "message": "",
+          "stdout": "Grammar checkpoint: 9 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta1/occupation.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta1/occupation.ckpt\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-001.json"
+      ],
+      "pid": 42711,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2454490472,
+      "elapsed_seconds": 112.51958925020881,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+      ],
+      "completed": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 69.13380012498237,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 35.965412667021155,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.1556967918295413,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.5480189169757068,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014888624893501401,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2",
+  "elapsed_seconds": 116.76474820892327,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2576732624,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/collect.json"
+    ],
+    "pid": 42693,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 426280136,
+    "elapsed_seconds": 3.5532035420183092,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-2/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
+        "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+        "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+  }
+}

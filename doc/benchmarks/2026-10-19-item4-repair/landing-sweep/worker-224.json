@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]"
+  ],
+  "completed": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025708391331136227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031062494963407516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004774578846991062,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014641601592302322,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001824169885367155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005046660080552101,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024179089814424515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005018331576138735,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

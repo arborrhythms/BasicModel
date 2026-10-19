@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_operator_pole_bodies.py::test_saved_old_new_pole_bodies_and_current_source_agree"
+  ],
+  "completed": [
+    "test/test_operator_pole_bodies.py::test_saved_old_new_pole_bodies_and_current_source_agree"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operator_pole_bodies.py::test_saved_old_new_pole_bodies_and_current_source_agree",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.2723704590462148,
+      "message": "test/test_operator_pole_bodies.py:36: in test_saved_old_new_pole_bodies_and_current_source_agree\n    torch.testing.assert_close(Language.NonLayer(representation='poles')(poles), new['NonLayer'](representation='poles')(poles))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 3 / 8 (37.5%)\nE   Greatest absolute difference: 0.800000011920929 at index (1, 1) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0 at index (0, 1) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

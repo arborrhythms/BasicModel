@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]"
+  ],
+  "completed": [
+    "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01590441702865064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018041458912193775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007910083048045635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04703937494195998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02728879195638001,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009354125009849668,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010704207932576537,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009260124992579222,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

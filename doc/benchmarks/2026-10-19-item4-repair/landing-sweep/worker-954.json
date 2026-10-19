@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+    "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation"
+  ],
+  "completed": [
+    "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+    "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03554595890454948,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009996791835874319,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

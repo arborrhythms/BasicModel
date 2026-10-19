@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_finite_gradient_guard.py::test_finite_dense_gradient_updates_normally",
+    "test/test_finite_gradient_guard.py::test_single_optimizer_closure_runs_once_then_returns_its_loss",
+    "test/test_finite_gradient_guard.py::test_single_optimizer_closure_is_preflighted_after_it_runs",
+    "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[nan]",
+    "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[inf]",
+    "test/test_finite_gradient_guard.py::test_multi_optimizer_preflights_later_sparse_child_before_dense_step",
+    "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_runs_once_and_returns_its_loss",
+    "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_union_preflight_is_atomic"
+  ],
+  "completed": [
+    "test/test_finite_gradient_guard.py::test_finite_dense_gradient_updates_normally",
+    "test/test_finite_gradient_guard.py::test_single_optimizer_closure_runs_once_then_returns_its_loss",
+    "test/test_finite_gradient_guard.py::test_single_optimizer_closure_is_preflighted_after_it_runs",
+    "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[nan]",
+    "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[inf]",
+    "test/test_finite_gradient_guard.py::test_multi_optimizer_preflights_later_sparse_child_before_dense_step",
+    "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_runs_once_and_returns_its_loss",
+    "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_union_preflight_is_atomic"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_finite_dense_gradient_updates_normally",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01348083303309977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_single_optimizer_closure_runs_once_then_returns_its_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003666661214083433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_single_optimizer_closure_is_preflighted_after_it_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004163340199738741,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002542911097407341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019758311100304127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_multi_optimizer_preflights_later_sparse_child_before_dense_step",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003903750330209732,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_runs_once_and_returns_its_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00040812487713992596,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_union_preflight_is_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003580839838832617,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

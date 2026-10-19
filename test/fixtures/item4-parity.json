@@ -1,0 +1,15 @@
+{
+  "purpose": "Item 4 section 9.1 parity gate only",
+  "proposal_law": "uniform over eligible non-greedy alternatives (previous landing)",
+  "training": {
+    "sentenceExpectation": true,
+    "wordExpectation": true,
+    "perceptExpectationGain": 0.0,
+    "symbolExpectationGain": 0.0,
+    "rowExpectationGain": 0.0,
+    "documentExpectationGain": 0.0,
+    "expectationPrime": false,
+    "explorationUniformFraction": 1.0,
+    "explorationTemperature": 1.0
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+  ],
+  "completed": [
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008552498184144497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0009166249074041843,
+      "message": "test/test_math_chain_repair2.py:138: in test_expectation_cannot_change_departure_or_keep\n    assert audit['wins'].tolist() == [False, False, False]\nE   assert [False, False, True] == [False, False, False]\nE     \nE     At index 2 diff: True != False\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004185829311609268,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

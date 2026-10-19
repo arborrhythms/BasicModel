@@ -1,4 +1,4 @@
-"""Production composition is independent of the staged expectation (spec test 3).
+"""Conceptual content never adds the staged expectation (spec test 3).
 
 Replaces four tests that required the now-deleted additive prior.
 """
@@ -46,7 +46,6 @@ def _make_plain_model():
 @pytest.mark.parametrize("gain", [0., 1.])
 @pytest.mark.parametrize("staged", [False, True])
 def test_staged_expectation_never_enters_conceptual_forward(gain, staged):
-    torch.manual_seed(414)
     model = _make_plain_model()
     cs = model.conceptualSpace
     model.expectation_gain = gain
@@ -62,6 +61,7 @@ def test_staged_expectation_never_enters_conceptual_forward(gain, staged):
         if staged:
             discourse = model.symbolSpace.expectation
             roles = torch.ones(3, discourse.concept_dim)
+            discourse.set_symbol_bank(roles)
             discourse.predict_and_observe_stm_end_state([3], [roles], layout="infix")
             assert discourse.expect_next_meaning() is not None
         assert not hasattr(cs, "_c_prior")

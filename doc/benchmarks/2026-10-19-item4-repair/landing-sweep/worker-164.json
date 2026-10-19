@@ -1,0 +1,62 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[False]",
+    "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]",
+    "test/test_decoder_exploration.py::test_no_legal_departure_keeps_greedy",
+    "test/test_decoder_exploration.py::test_trial_selects_strictly_lower_full_reconstruction_before_backward"
+  ],
+  "completed": [
+    "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[False]",
+    "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]",
+    "test/test_decoder_exploration.py::test_no_legal_departure_keeps_greedy",
+    "test/test_decoder_exploration.py::test_trial_selects_strictly_lower_full_reconstruction_before_backward"
+  ],
+  "slow_selected": [
+    "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.027790875174105167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00012762495316565037,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_decoder_exploration.py', 36, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decoder_exploration.py::test_no_legal_departure_keeps_greedy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005807499401271343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decoder_exploration.py::test_trial_selects_strictly_lower_full_reconstruction_before_backward",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011395409237593412,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

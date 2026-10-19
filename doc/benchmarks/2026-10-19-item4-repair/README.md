@@ -2,15 +2,65 @@
 
 BasicModel baseline `9207f5e03`; WikiOracle baseline `929e4a8`. Both checkouts are on `codex/item4-repair`. This round preserves the prior working-tree spec, todo, NP and documentation edits. No commit on main.
 
-**Item 4 is not complete.** Claude reviewed candidate `f7e74af04` and did not approve the landing sweep; the full report is [claude-review.md](claude-review.md). The follow-up repairs below address the code findings, but B3 requires Alec's decision on the unscaled selection prime and `φ=.5`. All four attenuation gains are zero; those two other effects are not. The missing copular-identity artifact prevents one requested certificate from executing. The carried initialization-distribution failure remains. Global derivation optimality, per-level learning/collapse, learned repeated-cat recognition and all-level XOR are not established. The original failed learning run is unchanged; Item 0 and Item 5.5 remain open. No full sweep or push has run in this round.
+**The single full landing sweep and scoped repairs are complete; publication is next.** Alec's
+B3 decision retains the selection prime and φ=.5 as shipped defaults, with
+all four attenuation gains zero. The sole declared parity configuration is
+[`test/fixtures/item4-parity.json`](../../../test/fixtures/item4-parity.json).
+The enabled native comparison and the entire §14 certificate file have
+completed, as recorded below. The original failed learning run stays failed;
+Item 0 findings and separate Item 5.5 learning gates remain open.
 
-Claude's [re-review of `7285b38`](claude-followup-review.md) confirms those
-repairs apart from B3, and identifies N1/N2 below. They are repaired under
-the existing raw-observation and R+A decisions; B3 remains undecided.
-The [short check of `282fcf918`](claude-n1-n2-review.md) confirms N1/N2 in
-source and their native regressions, with no new code defect. No further
-source review of those two repairs is requested. Sweep approval is still
-withheld pending B3 and the disclosed gates.
+The **review of record** is [Claude's review of the repair round](../../plans/2026-10-19-item4-start.md#claudes-review-of-the-repair-round-codexitem4-repair-at-49629c6f2-2026-10-19-late).
+It approves the sweep after B3 and the three certificate regressions are
+addressed, with no further source review required for the verified repairs.
+The earlier headless Claude reports are diagnostic reviews invoked by Codex;
+they are not the reviewer of record.
+
+## §9.1 / B3 — What changes between parity and enabled defaults?
+
+The [declared protocol](closeout-protocol.md) uses two three-sentence documents,
+148 exactly matched initial parameter tensors and the same initial random
+state, captured once without seed selection. Prediction stays enabled in
+both arms. Native training departures execute; all 12 would-update boundaries
+only record loss, so there are **zero optimizer updates**. Chooser and predictor
+weights are verified unchanged. This is not a new learning run or regrade.
+
+| Question | Parity configuration | Enabled shipped defaults |
+|---|---|---|
+| Gains / selection prime / alternative law | P=S=R=D=0; off; uniform (φ=1) | P=S=R=D=0; on; φ=.5 mixture |
+| Warm document prediction comparisons | Both rows at sentences 2 and 3 | Both rows at sentences 2 and 3 |
+| Maximum compose prime norm, sentences 1 / 2 / 3 | 0 / 0 / 0 | 0 / .380329 / .362807 |
+| Maximum candidate prime norm, sentences 1 / 2 / 3 | 0 / 0 / 0 | 0 / 4.506649 / 4.428220 |
+| Input identities and keys | Exact agreement across arms at all three positions | Exact agreement |
+| Terminal STM, stored roles and judge | Exact across arms at cold sentence 1 | Differ at warm sentences 2 and 3 |
+| Departure audit | Same at sentences 1 and 2 | Differs at sentence 3 |
+
+`enabled-parity.json` contains every row/trial cost, source and stored view;
+`enabled_parity_probe.py` is the measurement, with process limits in
+`enabled-parity-process.json` (15.78 s, 1.32 GiB). A setup-only observer error
+before any presentation is retained as `enabled-parity-setup-1.*`.
+The accepted defaults change selection even at zero attenuation. This is a
+measured difference, **not exact parity of the shipped defaults**. The old
+expectation-disabled result below is not promoted to this measurement.
+Configuration and native prime-lifetime prechecks complete 6/6 in
+`closeout-parity-checks/result.json`.
+
+## §9.1 / J close-out — Does the entire §14 file complete after N2?
+
+| Certificate/question | Result on the close-out source |
+|---|---|
+| Work report and exact R+A tie | Pass; work_spent remains unequal, keep/credit costs both zero, no surrogate |
+| Forced c/e empty search, mint and question storage | Pass, 6.33 s |
+| Forced pending premise, both orders | Pass, 27.39 s / 28.44 s |
+| Unforced initial binding distribution | Carried failure, 75.27 s; relative-to-uniform .872515–1.063954 against unchanged [.9,1.1] |
+| Committed-question answer | Skipped: absent copular_identity phase artifact |
+| Entire file with RUN_SLOW=1 | 13/13 complete: 11 passed, 1 failed, 1 skipped; 144.16 s, 2.63 GiB aggregate peak |
+
+Diagnostics: `closeout-math-chain/result.json` and worker reports. The live
+historical observer accepts and forwards `row=`; its measurement and
+§14.10–14.13 protocol are unchanged. The work certificate is renamed for the
+R+A contract rather than retaining the retired work-priced judge. The three
+reported regressions pass; the older forced-c/e pass below is historical.
 
 ## §9.1 — Does zero gain preserve the previous landing?
 
@@ -21,9 +71,9 @@ withheld pending B3 and the disclosed gates.
 | Standing XOR with all four gains on | Not established | The existing standing learning gates are not replaced by carrier probes. |
 
 Diagnostics: `zero_baseline_probe.py`, `zero-baseline.json`, `zero-repaired.json`. This is a matched consumer check, not parity between the retired predictor and the new head.
-It does not establish parity with expectation enabled in a multi-sentence
-training departure. Claude B3 requires that measurement after the default
-decision; the existing disabled-expectation result is not promoted to it.
+This older check does not establish enabled multi-sentence parity. The B3
+comparison above supplies the newly requested measurement; this disabled
+result is not promoted to it.
 
 ## §9.1 / J — Do the requested math-chain certificates complete?
 
@@ -31,7 +81,7 @@ decision; the existing disabled-expectation result is not promoted to it.
 |---|---|---|
 | `forced_c_e_closings_exercise_empty_search_mint_and_question_storage` | Passed, 13.3 s process | `math-chain-1/worker-000.json`; forced fixture consumes all four `select_logits` results. |
 | `ordinary_initial_binding_distribution_includes_every_retained_candidate` | Failed, 225.6 s process | Relative-to-uniform range 0.8779656–1.1124873, required 0.9–1.1. Same carried class documented in todo Item 0; no threshold or initialization changed. `math-chain-2/worker-000.json`. |
-| `forced_ordinary_answer_fills_committed_question_without_its_own_episode` | Skipped; prerequisite absent | `copular_identity` is null in the phase registry. No replacement training or unrelated checkpoint. Existing artifact and producing receipt requested from Alec. |
+| `forced_ordinary_answer_fills_committed_question_without_its_own_episode` | Skipped; prerequisite absent | `copular_identity` is null in the phase registry. No replacement training or unrelated checkpoint. The skip remains a skip under the close-out instruction. |
 
 A skip is not a completed certificate. The four failures in the original `item4-final-native` row are now explicit in the plan: 120 passed, 1 skipped, 4 failed and 9 unfinished out of 134 selected.
 
@@ -173,7 +223,7 @@ prior logits, target, omission and surprise.
 |---|---|
 | B1 | Per-symbol κ replaces envelope-role confidence; native three-role closings cover R and D. |
 | B2 / M4 | One withheld-aware retention formula over soft union support; confident omissions count. |
-| B3 | Awaiting Alec: prime weight default 0 and φ=1, or accepted changed defaults with enabled-expectation parity. No sweep approval. |
+| B3 | Alec retains prime on and φ=.5; declared parity configuration and enabled native comparison complete above. |
 | H1 / H2 | Native STM handles identify activated codes; the compose read uses actual for/against lanes. Unknown unhandled values require distance ≤1e-5. |
 | H3 | Sparse retained keys with full IDs/logits; measured bound above and exact checkpoint replay. |
 | M1 / M2 | Unused arguments, scope knob and dead guards removed; migrated unknown IDs/orders are −1. Retired query-reward forecast/end stubs removed. |
@@ -205,20 +255,72 @@ losses. Toggling the sentence head preserves the configured word switch.
 | Broader affected checks after review | 248 completed; three failures found; `review-regression-7/result.json`. Follow-up repairs recorded separately. |
 | Repair of those three regressions plus review/native/thought coverage | 90/90 passed with slow cases enabled; `review-repairs-9/result.json`. |
 | N1/N2 repairs, controller coverage and nonzero compiled boundary | 82/82 passed with slow cases enabled; `review-n1-n2-11/result.json`. The first attempt found an undeclared raw-pole consumer; `SymbolField.read` is now in the consumer census. |
-| One full landing sweep | Not run; follows review |
+| One full landing sweep | 5,834/5,834 complete: 5,475 passed, 322 skipped, 39 failed, 1 XFAIL; 1,340.06 s, 2.64 GiB peak worker / 9.48 GiB aggregate. No timeout or compile-cache retry. `landing-sweep/result.json`. |
 | Push / WikiOracle bump / Item 4 completion | Not done |
 
 The NP restoration fixture now preserves the native loader’s migrated sidecar fingerprints while retaining exact learned tensors. It previously restored old fingerprint bytes over migrated metadata and corrupted its next checkpoint. The production migration remains one routine at load.
 
-Generated runner source manifests and the transient verbose compiler trace are not publication artifacts. The trace excerpt and result logs retain the diagnostic findings. Historical benchmark directories are unchanged.
+Generated runner source manifests and the transient verbose compiler trace are not publication artifacts. The trace excerpt and result logs retain the diagnostic findings. Historical result files are unchanged. The live math observer callback is ported to the current row argument; historical reported outcomes are not rewritten.
 
 Concurrent edits to the row-layout specs, Philosophy, the row diagram and
 todo are preserved with the candidate. Their future row/membership changes
 are not implemented as part of Item 4's expectation repair.
 
-N2's review asks Alec to confirm whether the prior thought work price should
-remain. The repair applies the user's existing instruction, “R + A for both
-keeping and credit,” literally to thought too: work is metered and reported
-but is not a third judge term. This interpretation is explicit in the
-thinking spec; it is not recorded as an additional Alec decision. The stale
-R-only / R+E+A live contracts in Architecture and GradientFlow are corrected.
+The review of record confirms R+A for thought keeping and credit, with work
+metered outside the judge. The stale R-only / R+E+A live contracts in
+Architecture and GradientFlow are corrected.
+
+
+## Landing sweep — What failed, and how is it addressed?
+
+The sweep ran once, with fixed source, and completed every case. Its 39
+failures remain in the original receipt. The following post-sweep changes
+are covered by scoped checks; the full sweep is not relabeled green or
+claimed to match these later edits exactly.
+
+| Failure group | Cases | Repair |
+|---|---:|---|
+| Direct construction lacks the percept statistic | 12 | Construct PerceptMoments once in the common model constructor, with the same configuration; it is no longer owned by candidate-attention installation. |
+| Forecast fixture has no symbol bank | 2 | Stage the explicit native bank before requesting a forecast. No production fallback. |
+| Reservoir fixtures consume proposal draws | 2 | Script rank-one reservoir draws separately from the CDF proposal draws. Same round-selection assertions. |
+| Forced chooser returns three values | 9 | Follow the requested return_proposal shape; the forced action has proposal mass one while learned policy probabilities retain credit. |
+| Superseded non lane expectations | 3 | Both lanes clear; trailing metadata survives. Archived one-pole bodies remain unchanged and labeled historical. |
+| Archived non forward-discard charge | 1 | Verify zero discard charge and exact recovery from the retained operand witness. The former winner assertion is retired with lossy non semantics. |
+| Short STM fixture | 1 | Supply the native identity/order/activation slots. No tuple adapter. |
+| XML tests expect soft warnings | 2 | Assert strict load errors; actually supply the retired maskedPrediction tag. |
+| R-only keep assertion | 1 | The lower answer cost wins under R+A; E remains excluded. |
+| Arbitrary pending-forecast marker | 1 | Read the real cached pending prediction without rewriting it. |
+| Old alternative sampler assumptions | 3 | Exercise the CDF draw, its uniform endpoint and original-policy credit. |
+| Undeclared word evidence reads | 1 | Route both reads through read_poles with the WordExpectation consumer declared. |
+| Future-answer fixture uses retired non-bracket observation | 1 | Use native bracket closing via consolidation; preserve target-isolation, future and recall assertions. |
+
+`landing-failure-index.json` retains every full-sweep failure. The first scoped
+repair selection completes **513/513: 510 passed, one skipped, two failed**
+in 114.11 s, aggregate peak 4.02 GiB (`landing-repairs-1/result.json`).
+One failure is the obsolete exact-tie assertion on the archived non fixture:
+its retained base costs differ at floating precision, even though both discard
+charges are zero. The fixture now tests witness recovery and zero charge;
+it does not manufacture an exact tie or alter the saved artifact.
+
+The other failure is the **carried Item 0 paired zero-cost counterexample**,
+`test_both_training_trials_share_bootstrap_snapshot`, with **.0517** in the
+explore R column. This is the already accepted October 15/Item 5 finding;
+its assertion remains unchanged. It is not retried to obtain a pass. The
+full-sweep pass at another unselected initialization does not close it.
+
+The final scoped check completes **10/10 passed**, including the non fixture,
+compiled expectation boundaries at g=0 and g=.5, and both registered NP
+checkpoint restorations (`landing-repairs-2/result.json`): 116.76 s,
+aggregate peak 2.40 GiB. No learning experiment
+is repeated or extended. The carried .0517 failure is not in that rerun.
+
+| Final question | Result |
+|---|---|
+| New full-sweep regressions | All addressed by the scoped checks; original failures remain in landing-sweep |
+| Compiled boundaries | Complete, g=0 and g=.5; no timeout |
+| Checkpoint restoration | Both registered NP artifacts pass |
+| Existing Item 0 findings | Distribution bound and .0517 paired-cost counterexample remain open |
+| Native learning run / §9.6 | Unchanged failed result; no regrade or continuation |
+| Independent Item 5.5 gates | Unchanged |
+
+Documentation links pass **409/409** in `closeout-links/result.json`.

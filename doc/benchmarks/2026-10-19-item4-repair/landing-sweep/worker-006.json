@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming"
+  ],
+  "completed": [
+    "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+    "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+    "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+    "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+    "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+    "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+    "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_configure_priming_none_args_leave_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018037506379187107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_priming_disabled_omits_kwargs_from_helper",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006452919915318489,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011716713197529316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_note_selection_counts_boosted_separately",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002598341088742018,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001749168150126934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_taxonomy_decay_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003814171068370342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_activation_priming_multiply.py::test_word_space_soft_reset_clears_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004352079704403877,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

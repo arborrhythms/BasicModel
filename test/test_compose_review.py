@@ -42,7 +42,8 @@ def test_zero_temperature_explore_joins_detached_state_at_its_departure(monkeypa
     x = torch.tensor([[[1.], [2.], [3.]]]).expand(3, -1, -1)
     draws = iter(([0., 0., 0.], [.9, .1, .9], [.9, .9, .1]))
     monkeypatch.setattr(torch, 'rand_like', lambda like, **kw:
-                        torch.tensor(next(draws), device=like.device))
+        torch.tensor(next(draws), device=like.device) if like.ndim == 1
+        else torch.full_like(like, .5))
     exploit = step.derive(x, slots=1, rounds=6)
     assert not exploit['fork'].state[0].requires_grad
     live = []

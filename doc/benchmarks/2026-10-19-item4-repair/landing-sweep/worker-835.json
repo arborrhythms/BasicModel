@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot"
+  ],
+  "completed": [
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018364579882472754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007637080270797014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00030762492679059505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00043195905163884163,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006443341262638569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015887501649558544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013191718608140945,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016724993474781513,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

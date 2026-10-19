@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
+    "test/test_pi2_sigma2_folds.py::test_pi_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_sigma_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_sigma_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_de_morgan_exact_with_shared_kernel",
+    "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
+    "test/test_pi2_sigma2_folds.py::test_sigma_kernel_kwargs_exclusive"
+  ],
+  "completed": [
+    "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
+    "test/test_pi2_sigma2_folds.py::test_pi_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_sigma_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_sigma_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_de_morgan_exact_with_shared_kernel",
+    "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
+    "test/test_pi2_sigma2_folds.py::test_sigma_kernel_kwargs_exclusive"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021782920230180025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_pi_absorber_is_a_theorem",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002248500008136034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_absorber_is_a_theorem",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002225165953859687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005882920231670141,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_identity_at_init",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006051249802112579,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_de_morgan_exact_with_shared_kernel",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001510875066742301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002543330192565918,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_kernel_kwargs_exclusive",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001846661325544119,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

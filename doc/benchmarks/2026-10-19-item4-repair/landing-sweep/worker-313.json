@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+    "test/test_grammar_separator.py::test_missing_word_text_row_uses_observed_bytes"
+  ],
+  "completed": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+    "test/test_grammar_separator.py::test_missing_word_text_row_uses_observed_bytes"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.2557675000280142,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.21996095916256309,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.243033834034577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.24105029203929007,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014091702178120613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011837482452392578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001310841180384159,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_missing_word_text_row_uses_observed_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012195808812975883,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-379.recycle.json"
+}

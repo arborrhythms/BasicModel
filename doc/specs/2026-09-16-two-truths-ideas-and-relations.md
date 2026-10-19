@@ -66,17 +66,32 @@ them, and what is a row at all**
   reading (*Alec is a part of running things in the kept worlds*) writes
   membership evidence, not a row; only the *de dicto* reading writes a row
   (occurrence spec §14.3).
-- **Absolute truths may hold vectors that are not codebook entries.** An
-  idea's position holds its fused point; it stays subsymbolic until
-  something refers to it, and a REF to it is what mints it (mint on
-  reference, `bind`'s job in item 3.5).
-- **Storage note (Claude, proposed):** the waste is in vectors, not
-  positions. A relation row's outer vectors are already null (refs name
-  the operands), and an idea leaves two vectors empty. LTM can hold three
-  reference positions (integers) and **one** concept-width vector (the
-  idea's fused point; empty for a relation); STM keeps three vectors
-  because composition needs the operands' vectors while the sentence is
-  open. This changes layout only, never the three-position logic.
+- **Two forms of LTM, named by their slots: LTM1 and LTM3** (Alec,
+  2026-10-19, superseding "mint on write" of the same day). **LTM1** holds
+  **one concept per row**, which may be **unminted**: an idea written at
+  the close goes in as its fused vector, with its address, lanes and
+  surprise as columns, and no symbol is needed; item 5's retention by
+  surprise acts on it as now. (The name says one slot, one concept — not
+  "absolute as all concepts".) **LTM3** holds **three symbol references**
+  — argument, kind, argument — so it remembers only known concepts; the
+  definition, attribution and conditional rows live here. **STM** keeps
+  three concept-width slots, because composition works on the operands'
+  vectors while the sentence is open. **The path to a concept is
+  recurrence in LTM1:** a row remembered several times (the store's
+  re-witnessing count) is minted as a concept row and a symbol at the
+  shared index — the type criterion of nested admission and the minting of
+  markers on recurrence, applied to ideas; only then can LTM3 reference
+  it, and `bind` (item 3.5) resolves among minted individuals. A *de
+  dicto* modal idea is an LTM1 row with the world as an address column,
+  as the document address is. Psychologically LTM1 is the episodic trace
+  and LTM3 the index over cortical codes (Tulving; Teyler & DiScenna),
+  with minting on recurrence as consolidation.
+- **The definition index is a cache.** Definitions are LTM rows (as
+  `Interpret.define` already writes them: `rel_type = REL_DEF`, refs
+  `[word, −1, obj]`); `cs.definitions` is a cache over those rows for fast
+  word lookup, rebuildable from them and never the record. To verify at
+  item 3.5: item 5's forgetting drops the cache entry when it reclaims a
+  definition row.
 
 **Fusion is fair iff every operand has a fused point.** Concept rows and
 idea rows have one; relation rows do not, being constraints rather than

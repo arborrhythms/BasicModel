@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+    "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+    "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+    "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only"
+  ],
+  "completed": [
+    "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+    "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+    "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+    "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013310249894857407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.046986125176772475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_radix_active_searches_do_not_read_physical_reserve",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000620333943516016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000327209010720253,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[bindings]",
+    "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[scope]"
+  ],
+  "completed": [
+    "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[bindings]",
+    "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[scope]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[bindings]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0032085420098155737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[scope]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002345832996070385,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

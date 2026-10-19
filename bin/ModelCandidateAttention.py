@@ -17,12 +17,6 @@ def install(model):
     model.het_tolerance = float(TheXMLConfig.get('architecture.hetTolerance', default=1.))
     validate_floor(model.attention_floor)
     tolerate_heterogeneity(torch.zeros(1, 2), model.het_tolerance)
-    from Expectation import PerceptMoments
-    width = int(model.perceptualSpace.subspace.muxedSize)
-    model.percept_expectation = PerceptMoments(width,
-        rate=float(TheXMLConfig.training('perceptExpectationRate', .05)),
-        epsilon=model.expectation_epsilon, saturation=model.expectation_saturation).to(
-            device=model.conceptualSpace.stm._buffer.device)
     if not getattr(model, 'attention_budget', 0):
         model.candidate_attention = None
         return
@@ -172,7 +166,7 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
                             occupied[..., None].to(values), salience[..., None], stamps), -1)
     prime = values.new_zeros(B, count, 2)
     discourse = getattr(model.symbolSpace, 'expectation', None)
-    if not expectation_free and discourse is not None:
+    if not expectation_free and discourse is not None and getattr(model, 'expectation_prime_enabled', True):
         for b, pending in enumerate(discourse._inter_last_meaning[:B]):
             prediction = None if pending is None else pending.prediction
             if prediction is not None and prediction.symbol_ids is not None:

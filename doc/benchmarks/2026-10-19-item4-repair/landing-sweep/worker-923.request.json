@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_two_truth_stores.py::test_structural_constraint_residuals"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-923.recycle.json"
+}

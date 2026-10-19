@@ -949,6 +949,7 @@
       <xs:element name="wordExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="wordExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="expectationPrime" type="xs:boolean" minOccurs="0"/>
       <xs:element name="independenceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="independencePriorScale" type="positiveFloat" minOccurs="0"/>
       <xs:element name="independenceMintThreshold" type="positiveFloat" minOccurs="0"/>

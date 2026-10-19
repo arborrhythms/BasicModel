@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "completed": [
+    "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013419459108263254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002965829335153103,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+    "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+    "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+    "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+    "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows"
+  ],
+  "completed": [
+    "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+    "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+    "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+    "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+    "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01427787495777011,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007172080222517252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031808391213417053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003566660452634096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009471671655774117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005857921205461025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033179204910993576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00043579190969467163,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

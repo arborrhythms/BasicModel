@@ -26,12 +26,13 @@ def test_departure_values_are_unique_and_identity_and_exact_stop_are_excluded():
     assert readable['departure_eligible'][0, -1]
 
 
-def test_uniform_departure_is_independent_of_logits_and_credits_the_original_probability(monkeypatch):
+def test_uniform_endpoint_is_independent_of_logits_and_credits_the_original_probability(monkeypatch):
     layer = OperationSelectionLayer(d_model=1, ops=[Add()])
+    layer.exploration_fraction = 1.
     logits = torch.tensor([[9., 8., -4., -torch.inf]]).expand(6, -1)
     eligible = torch.tensor([[False, True, True, False]]).expand(6, -1)
     draws = torch.tensor([[0.], [.25], [.499], [.5], [.75], [.999]])
-    monkeypatch.setattr(torch, 'rand', lambda *args, **kwargs: draws.to(device=kwargs.get('device')))
+    monkeypatch.setattr(torch, 'rand_like', lambda like: draws.to(like))
     action, probability, legal = layer.select_logits(logits,
         structural=(True,)*4, masked_action=torch.zeros(6, dtype=torch.long),
         departure_eligible=eligible)

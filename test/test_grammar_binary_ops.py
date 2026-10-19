@@ -48,14 +48,14 @@ class TestUnaryGrammarLayers(unittest.TestCase):
         # Self-inverse: pos/neg swap applied twice is identity.
         self.assertTrue(torch.allclose(layer.decompose(y), x, atol=1e-5))
 
-    def test_non_excludes_the_expressed_pole_without_an_inverse(self):
-        """Non-affirming exclusion preserves the other pole and metadata."""
+    def test_non_withholds_both_poles_without_an_inverse(self):
+        """Withholding clears both evidence lanes and preserves metadata."""
         layer = NonLayer(representation='poles')
         x = torch.rand(4, 3, 6)
         y = layer.compose(x)
         self.assertEqual(y.shape, x.shape)
-        self.assertTrue(torch.equal(y[..., 0], torch.zeros_like(x[..., 0])))
-        self.assertTrue(torch.equal(y[..., 1:], x[..., 1:]))
+        self.assertTrue(torch.equal(y[..., :2], torch.zeros_like(x[..., :2])))
+        self.assertTrue(torch.equal(y[..., 2:], x[..., 2:]))
         self.assertTrue(torch.equal(layer.compose(y), y))
         with self.assertRaises(NotImplementedError):
             layer.decompose(y)

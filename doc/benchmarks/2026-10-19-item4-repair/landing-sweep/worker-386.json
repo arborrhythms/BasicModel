@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
+  ],
+  "completed": [
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014147958951070905,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

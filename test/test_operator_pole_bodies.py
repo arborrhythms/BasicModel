@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 
 
-def test_saved_old_new_pole_bodies_and_current_source_agree():
+def test_saved_pole_bodies_and_current_decided_semantics():
     import Language
     root = Path(__file__).resolve().parents[1]
     saved = json.loads((root/'doc/benchmarks/2026-10-05-operators-update/pole-bodies.json').read_text())
@@ -33,7 +33,8 @@ def test_saved_old_new_pole_bodies_and_current_source_agree():
     assert torch.equal(old['NotLayer']()(poles), -poles)
     assert torch.equal(new['NotLayer']()(poles), poles)
     torch.testing.assert_close(Language.NotLayer(representation='poles')(poles), poles.flip(-1))
-    torch.testing.assert_close(Language.NonLayer(representation='poles')(poles), new['NonLayer'](representation='poles')(poles))
+    # Item 4 supersedes the archived one-pole exclusion with withholding.
+    torch.testing.assert_close(Language.NonLayer(representation='poles')(poles), torch.zeros_like(poles))
     expected = torch.stack((torch.minimum(poles[:, 0], other[:, 0]),
                             torch.maximum(poles[:, 1], other[:, 1])), -1)
     assert not torch.allclose(old['ConjunctionLayer']()(poles, other), expected)

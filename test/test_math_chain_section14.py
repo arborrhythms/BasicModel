@@ -116,16 +116,16 @@ def test_binding_answer_cost_scores_filled_referent_while_relation_is_open():
     assert not matches(model,value,'five')  # the frozen committed-row verifier is stricter
 
 
-def test_episode_work_credits_its_chooser_without_changing_reconstruction_keep(monkeypatch):
+def test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge(monkeypatch):
     from test_item6_2_thinking import credit_chain_world, run
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
     run(model, goal, work_budget=64)
     audit = model._last_thought_comparison
     assert audit['components'] == ((0.,0.),(0.,0.))
-    assert audit['costs'] == audit['work_costs']
-    assert audit['costs'][0] > audit['costs'][1]
+    assert audit['work_spent'][0] > audit['work_spent'][1]
+    assert audit['costs'] == (0.,0.)
     assert audit['keep_costs'] == (0.,0.) and not audit['explore_kept']
-    assert model._last_thought_score_function['surrogate'] is not None
+    assert model._last_thought_score_function['surrogate'] is None
 
 
 def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match():

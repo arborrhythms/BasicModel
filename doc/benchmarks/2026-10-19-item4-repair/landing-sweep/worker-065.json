@@ -1,0 +1,60 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-1.0]",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-0.0]",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-1.0]"
+  ],
+  "completed": [
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-1.0]",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-0.0]",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-1.0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.028729375218972564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018019499955698848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-0.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.018125874921679497,
+      "message": "test/test_c_prior_slotwise.py:66: in test_staged_expectation_never_enters_conceptual_forward\n    assert discourse.expect_next_meaning() is not None\nE   assert None is not None\nE    +  where None = expect_next_meaning()\nE    +    where expect_next_meaning = SymbolExpectation(\\n  (_inter_predictor): ActivationPredictor(\\n    (context): Sequential(\\n      (0): Linear(in_features...ias=True)\\n    )\\n    (local): Linear(in_features=4, out_features=2, bias=True)\\n  )\\n  (_ltm_store): TernaryTruthStore()\\n).expect_next_meaning",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-1.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.017217749962583184,
+      "message": "test/test_c_prior_slotwise.py:66: in test_staged_expectation_never_enters_conceptual_forward\n    assert discourse.expect_next_meaning() is not None\nE   assert None is not None\nE    +  where None = expect_next_meaning()\nE    +    where expect_next_meaning = SymbolExpectation(\\n  (_inter_predictor): ActivationPredictor(\\n    (context): Sequential(\\n      (0): Linear(in_features...ias=True)\\n    )\\n    (local): Linear(in_features=4, out_features=2, bias=True)\\n  )\\n  (_ltm_store): TernaryTruthStore()\\n).expect_next_meaning",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

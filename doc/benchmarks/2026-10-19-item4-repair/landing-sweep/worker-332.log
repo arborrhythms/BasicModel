@@ -1,0 +1,25 @@
+.F......                                                                 [100%]
+=================================== FAILURES ===================================
+_____ test_identity_candidates_share_the_operation_softmax_and_live_credit _____
+test/test_independent_components.py:208: in test_identity_candidates_share_the_operation_softmax_and_live_credit
+    _, _, route = layer(word, reference_data=candidates)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6959: in forward
+    action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: not enough values to unpack (expected 4, got 3)
+=============================== warnings summary ===============================
+test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_identity_candidates_share_the_operation_softmax_and_live_credit
+1 failed, 7 passed, 1 warning in 2.82s

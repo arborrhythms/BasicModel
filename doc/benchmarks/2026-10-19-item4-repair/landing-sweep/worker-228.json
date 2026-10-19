@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/reports/Expectation outside attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/computational_theories.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/expectation_attention_neuroscience.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/memory_statistical_learning_attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/preattentive_prediction_audition.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/prediction_in_reading.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/visual_capture_inattentional_blindness.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/three-surfaces.md]"
+  ],
+  "completed": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/reports/Expectation outside attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/computational_theories.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/expectation_attention_neuroscience.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/memory_statistical_learning_attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/preattentive_prediction_audition.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/prediction_in_reading.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/visual_capture_inattentional_blindness.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/three-surfaces.md]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/reports/Expectation outside attention.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005186249036341906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/computational_theories.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003246660344302654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/expectation_attention_neuroscience.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003196659963577986,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/memory_statistical_learning_attention.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018083304166793823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/preattentive_prediction_audition.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023579108528792858,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/prediction_in_reading.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032158312387764454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/visual_capture_inattentional_blindness.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021145795471966267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/research/three-surfaces.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008028747979551554,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

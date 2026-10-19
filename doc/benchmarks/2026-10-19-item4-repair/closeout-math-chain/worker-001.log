@@ -1,0 +1,34 @@
+Fs...                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_ordinary_initial_binding_distribution_includes_every_retained_candidate _
+test/test_math_chain_section14.py:211: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+    assert min(ratios) >= .9 and max(ratios) <= 1.1, report
+E   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.8725152611732483, 1.0639539957046509], 'initialization_documents': 32, ...}
+E   assert (0.8725152611732483 >= 0.9)
+E    +  where 0.8725152611732483 = min([1.0000944137573242, 0.999905526638031, 1.000023603439331, 0.9999764561653137, 1.0000170469284058, 0.999983012676239, ...])
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=4.329s)
+batch = 16 (Δ=3.820s)
+batch = 24 (Δ=4.245s)
+batch = 32 (Δ=5.490s)
+batch = 40 (Δ=3.359s)
+batch = 48 (Δ=4.195s)
+batch = 56 (Δ=5.836s)
+batch = 64 (Δ=5.488s)
+batch = 72 (Δ=3.370s)
+batch = 80 (Δ=4.204s)
+batch = 88 (Δ=3.720s)
+batch = 96 (Δ=5.495s)
+batch = 104 (Δ=5.482s)
+batch = 0 (Δ=12.252s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+1 failed, 3 passed, 1 skipped, 1 warning in 139.59s (0:02:19)

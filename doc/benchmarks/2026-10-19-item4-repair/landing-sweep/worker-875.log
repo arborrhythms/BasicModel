@@ -1,0 +1,9 @@
+.....F..                                                                 [100%]
+=================================== FAILURES ===================================
+______________________ test_path_ast_has_no_pole_collapse ______________________
+test/test_tetralemma_leaf.py:123: in test_path_ast_has_no_pole_collapse
+    assert report['sites'] and not report['violations']
+E   assert ([{'file': 'bin/ModelAttention.py', 'site': 'read_poles', 'line': 13, 'end_line': 18, ...}, {'file': 'bin/ModelAttentio...3, ...}, {'file': 'bin/Models.py', 'site': 'BasicModel._pushed_word_slab', 'line': 11739, 'end_line': 11785, ...}, ...] and not [{'file': 'bin/ModelAttention.py', 'line': 306, 'reason': 'unlisted evidence consumer', 'expression': "getattr(model, ...s.py', 'line': 19972, 'reason': 'unlisted evidence consumer', 'expression': "getattr(self, '_attention_poles', None)"}])
+=========================== short test summary info ============================
+FAILED test/test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse - ass...
+1 failed, 7 passed in 3.95s

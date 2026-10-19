@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/enabled_parity_probe.py", line 141, in <module>
+    measure(sys.argv[1])
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/enabled_parity_probe.py", line 64, in measure
+    choose = chooser.choose_operation
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1972, in __getattr__
+    raise AttributeError(
+AttributeError: 'OperationSelectionLayer' object has no attribute 'choose_operation'

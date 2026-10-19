@@ -7,7 +7,8 @@ from Attention import narrow_words, read_code_field, BracketKeys
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
                   'commit_word_reference_slab:per_word',
-                  'commit_word_reference_slab:whole_slab', 'SymbolField.read')
+                  'commit_word_reference_slab:whole_slab', 'SymbolField.read',
+                  'WordExpectation.word_distribution')
 
 
 def read_poles(model, consumer):
@@ -303,7 +304,7 @@ def stage_expectation(model):
     expected=owner.expect('word',codes,bank,valid,targets,
         gain=model.word_expectation_gain,active=accepted,
         epsilon=model.expectation_epsilon,saturation=model.expectation_saturation,
-        lanes=getattr(model, '_attention_poles', None))
+        lanes=read_poles(model, 'WordExpectation.word_distribution'))
     model._word_expectation=expected
     # The reader receives the attenuated whole; novelty has separate lanes.
     model.conceptualSpace._word_column=expected.content

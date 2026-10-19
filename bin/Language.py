@@ -2266,7 +2266,7 @@ class NonLayer(GrammarLayer):
             # operand witness, even though it is absent from asserted content.
             return self.compose_blocks(lambda form: form, x)
         self._check_bivector_shape(x)
-        return torch.zeros_like(x)
+        return torch.cat((torch.zeros_like(x[..., :2]), x[..., 2:]), -1)
 
     def reverse(self, y):
         self.raise_no_inverse('non discards the expressed evidence')

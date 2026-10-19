@@ -1642,6 +1642,7 @@ class BaseModel(Mereology, nn.Module):
     concept_order_limit = 0
     reconstruction_basis_limit = 16
     word_expectation_gain = 0.0
+    expectation_prime_enabled = True
     expectation_omission_threshold = 0.5
     word_expectation_weight = 0.1
     reconstruct_in_loop = False
@@ -2432,18 +2433,6 @@ class BaseModel(Mereology, nn.Module):
                 f"'per-word', 'boundary', 'both', 'off' (got {_rws_raw!r}).")
         self.router_wire_serial = _rws
 
-        from Expectation import unit, positive
-        self.word_expectation_weight = float(TheXMLConfig.training('wordExpectationLossWeight', .1))
-        self.percept_expectation_gain = unit(TheXMLConfig.training('perceptExpectationGain', 0.), 'perceptExpectationGain')
-        self.word_expectation_gain = unit(TheXMLConfig.training('symbolExpectationGain', 0.), 'symbolExpectationGain')
-        self.expectation_gain = unit(TheXMLConfig.training('rowExpectationGain', 0.), 'rowExpectationGain')
-        self.document_expectation_gain = unit(TheXMLConfig.training('documentExpectationGain', 0.), 'documentExpectationGain')
-        self.expectation_omission_threshold = unit(TheXMLConfig.training('expectationOmissionThreshold', .5), 'expectationOmissionThreshold')
-        self.expectation_epsilon = positive(TheXMLConfig.training('expectationEpsilon', 1e-6), 'expectationEpsilon')
-        self.expectation_saturation = str(TheXMLConfig.training('expectationSaturation', 'clip'))
-        if self.expectation_saturation not in ('clip', 'smooth'):
-            raise ValueError('expectationSaturation must be clip or smooth')
-        self.inter_loss_weight = float(TheXMLConfig.training('sentenceExpectationLossWeight', .1))
         # Every retained serial grammar reading uses its tied inverse.
         self.reconstruction_scope = self._understanding_reconstruction_scope()
         self.reconstruct_in_loop = self.reconstruction_scope == 'understanding'
@@ -16679,6 +16668,26 @@ class BasicModel(BaseModel):
         object.__setattr__(self.conceptualSpace, '_peer_prev_sym',
                            self._empty_seed_ss)
 
+        from Expectation import unit, positive
+        self.word_expectation_weight = float(TheXMLConfig.training('wordExpectationLossWeight', .1))
+        self.expectation_prime_enabled = bool(TheXMLConfig.training('expectationPrime', True))
+        self.percept_expectation_gain = unit(TheXMLConfig.training('perceptExpectationGain', 0.), 'perceptExpectationGain')
+        self.word_expectation_gain = unit(TheXMLConfig.training('symbolExpectationGain', 0.), 'symbolExpectationGain')
+        self.expectation_gain = unit(TheXMLConfig.training('rowExpectationGain', 0.), 'rowExpectationGain')
+        self.document_expectation_gain = unit(TheXMLConfig.training('documentExpectationGain', 0.), 'documentExpectationGain')
+        self.expectation_omission_threshold = unit(TheXMLConfig.training('expectationOmissionThreshold', .5), 'expectationOmissionThreshold')
+        self.expectation_epsilon = positive(TheXMLConfig.training('expectationEpsilon', 1e-6), 'expectationEpsilon')
+        self.expectation_saturation = str(TheXMLConfig.training('expectationSaturation', 'clip'))
+        if self.expectation_saturation not in ('clip', 'smooth'):
+            raise ValueError('expectationSaturation must be clip or smooth')
+        self.inter_loss_weight = float(TheXMLConfig.training('sentenceExpectationLossWeight', .1))
+        # Every construction entry point owns the same causal P statistic.
+        from Expectation import PerceptMoments
+        self.percept_expectation = PerceptMoments(
+            int(self.perceptualSpace.subspace.muxedSize),
+            rate=float(TheXMLConfig.training('perceptExpectationRate', .05)),
+            epsilon=self.expectation_epsilon, saturation=self.expectation_saturation)
+
         self.word_brackets = self._has_word_objects()
         self._install_unit_span_fn()
 
@@ -19964,10 +19973,11 @@ class BasicModel(BaseModel):
             cost = component_cost * components.weight
             self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
                 else self._sentence_expectation_comparison + cost)
+        from ModelAttention import read_poles
         word_inputs = getattr(self, '_word_expectation_input', None)
         word_expected = (None if word_inputs is None or disc is None else disc.expect('word', *word_inputs,
              gain=self.word_expectation_gain,
-            active=self._word_expectation_mask, lanes=getattr(self, '_attention_poles', None),
+            active=self._word_expectation_mask, lanes=read_poles(self, 'WordExpectation.word_distribution'),
             epsilon=self.expectation_epsilon, saturation=self.expectation_saturation))
         if word_expected is not None and self.word_expectation_weight > 0:
             mask = self._word_expectation_mask & (self.inputSpace._packed_sentence_ids == sid)
@@ -20639,7 +20649,8 @@ class BasicModel(BaseModel):
             if reducer is not None:
                 prime = before[0][0].new_zeros(B, reducer.d_model)
                 discourse = getattr(self.symbolSpace, 'expectation', None)
-                for b, pending in enumerate(() if discourse is None else discourse._inter_last_meaning):
+                for b, pending in enumerate(() if discourse is None or not self.expectation_prime_enabled
+                                            else discourse._inter_last_meaning):
                     prediction = None if pending is None else pending.prediction
                     if prediction is not None and prediction.symbol_keys is not None:
                         weight = prediction.expected_activation.detach()

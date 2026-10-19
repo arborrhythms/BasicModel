@@ -11,6 +11,14 @@ def selected_action(layer, action):
         chosen = action.to(device=logits.device, dtype=torch.long)
         legal = torch.isfinite(logits).gather(1, chosen[:, None]).squeeze(1)
         probabilities = torch.where(valid[:, None], logits, 0.).softmax(-1)
-        return chosen, probabilities, legal
+        result = (chosen, probabilities, legal)
+        if kwargs.get('return_proposal', False):
+            # This fixture forces one action with proposal probability one;
+            # the learned policy probabilities above still own its credit.
+            mask = kwargs.get('masked_action')
+            correction = (logits.new_zeros(len(logits)) if mask is None else
+                          (mask >= 0).to(logits))
+            return (*result, correction)
+        return result
     with patch.object(layer, 'select_logits', choose):
         yield

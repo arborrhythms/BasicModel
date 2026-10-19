@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+    "test/test_when_range_encoding.py::test_disabled_when_zero_width",
+    "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
+    "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
+    "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
+    "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
+    "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+    "test/test_when_range_encoding.py::test_decode_tensor_batch"
+  ],
+  "completed": [
+    "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+    "test/test_when_range_encoding.py::test_disabled_when_zero_width",
+    "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
+    "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
+    "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
+    "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
+    "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+    "test/test_when_range_encoding.py::test_decode_tensor_batch"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019254093058407307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_disabled_when_zero_width",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011383392848074436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038779107853770256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004823750350624323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00049045798368752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003525000065565109,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00030637485906481743,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_tensor_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032933312468230724,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-None]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-a scoped assertion]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-None]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-a scoped assertion]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences",
+    "test/test_existence_sidecar.py::test_source_update_cannot_certify_missing_semantic_context"
+  ],
+  "completed": [
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-None]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-a scoped assertion]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-None]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-a scoped assertion]",
+    "test/test_existence_sidecar.py::test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences",
+    "test/test_existence_sidecar.py::test_source_update_cannot_certify_missing_semantic_context"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-None]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018344579730182886,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[erase-a scoped assertion]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011205840855836868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-None]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009448330383747816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-a scoped assertion]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008210830856114626,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001001874916255474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_sidecar.py::test_source_update_cannot_certify_missing_semantic_context",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009030411019921303,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

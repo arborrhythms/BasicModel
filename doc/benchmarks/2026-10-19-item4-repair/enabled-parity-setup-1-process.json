@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-19-item4-repair/enabled_parity_probe.py",
+    "doc/benchmarks/2026-10-19-item4-repair/enabled-parity.json"
+  ],
+  "pid": 35745,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 806405536,
+  "elapsed_seconds": 3.610750792082399,
+  "log": "doc/benchmarks/2026-10-19-item4-repair/enabled-parity.log"
+}

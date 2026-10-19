@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+    "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+    "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+    "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+    "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+    "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field"
+  ],
+  "completed": [
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+    "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+    "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+    "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+    "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+    "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00839958293363452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010012791957706213,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005631500156596303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009148624958470464,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034680000972002745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003853792091831565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005332165863364935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00518241710960865,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

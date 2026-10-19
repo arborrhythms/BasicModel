@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_start_rule.py::test_start_symbol_parsed_from_inline_xml",
+    "test/test_grammar_start_rule.py::test_start_symbol_default_without_xml_tag",
+    "test/test_grammar_start_rule.py::test_start_symbol_alternate_root",
+    "test/test_grammar_start_rule.py::test_multiple_start_patterns_with_compact_order_set",
+    "test/test_grammar_start_rule.py::test_start_symbol_persists_across_ensure_configured"
+  ],
+  "completed": [
+    "test/test_grammar_start_rule.py::test_start_symbol_parsed_from_inline_xml",
+    "test/test_grammar_start_rule.py::test_start_symbol_default_without_xml_tag",
+    "test/test_grammar_start_rule.py::test_start_symbol_alternate_root",
+    "test/test_grammar_start_rule.py::test_multiple_start_patterns_with_compact_order_set",
+    "test/test_grammar_start_rule.py::test_start_symbol_persists_across_ensure_configured"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_start_rule.py::test_start_symbol_parsed_from_inline_xml",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002615791978314519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_start_rule.py::test_start_symbol_default_without_xml_tag",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020910839084535837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_start_rule.py::test_start_symbol_alternate_root",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020208749920129776,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_start_rule.py::test_multiple_start_patterns_with_compact_order_set",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021209579426795244,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_start_rule.py::test_start_symbol_persists_across_ensure_configured",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0019837908912450075,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

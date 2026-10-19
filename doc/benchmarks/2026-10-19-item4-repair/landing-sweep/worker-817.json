@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+    "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+    "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass"
+  ],
+  "completed": [
+    "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+    "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+    "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022220797836780548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013788542011752725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004783750046044588,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004112499300390482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006762498524039984,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007216660305857658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007567498832941055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.266682900488377e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

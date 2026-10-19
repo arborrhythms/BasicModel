@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[False]",
+    "test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-800.recycle.json"
+}

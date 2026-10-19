@@ -1,0 +1,8 @@
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_momentum.py:14: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    p.grad=torch.sparse_coo_tensor(rows[None],g,p.shape)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 2.55s

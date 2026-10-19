@@ -1,0 +1,9 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 2.1s; peak 0.17 GiB
+[worker-000] 8 selectors; limit 1800s, 8.0 GiB
+[worker-001] 5 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 4.0s; peak 0.48 GiB
+[worker-001] exit 1; 141.4s; peak 2.63 GiB
+Result: test_failure, exit 1; 13/13 cases completed.
+doc/benchmarks/2026-10-19-item4-repair/closeout-math-chain/result.json
+Skipped phase certificates: copular_identity: 1

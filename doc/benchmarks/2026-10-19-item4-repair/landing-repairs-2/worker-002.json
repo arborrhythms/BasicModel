@@ -1,0 +1,41 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "completed": [
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": "np_definite",
+      "duration": 5.09815475018695,
+      "message": "",
+      "stdout": "Grammar checkpoint: 9 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta0/occupation.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta0/occupation.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": "np_description",
+      "duration": 5.124271375127137,
+      "message": "",
+      "stdout": "Grammar checkpoint: 9 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta1/occupation.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7206/test_artifact_restoration_reta1/occupation.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

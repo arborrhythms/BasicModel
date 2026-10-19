@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_rewrite.py::test_pp_modifies_vp_via_lower",
+    "test/test_grammar_rewrite.py::test_per_operator_position_categories_present"
+  ],
+  "completed": [
+    "test/test_grammar_rewrite.py::test_pp_modifies_vp_via_lower",
+    "test/test_grammar_rewrite.py::test_per_operator_position_categories_present"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_rewrite.py::test_pp_modifies_vp_via_lower",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005013166926801205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_rewrite.py::test_per_operator_position_categories_present",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005210292059928179,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

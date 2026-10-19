@@ -792,6 +792,16 @@ Taken from Codex's candidate, implementation choice recorded: the row and
 document gains compose multiplicatively when thought reads the closing
 (one predictor read at two moments, two gains on one row's symbols).
 
+Decided (Alec, 2026-10-19, late, B3): **the selection prime stays on and
+`φ = 0.5` stays as the shipped default**, independently of the four zero
+attenuation gains. The sole declared §9.1 parity configuration has all four
+gains zero, selection prime off and the previous uniform alternative law
+(`φ = 1`); prediction and its residual/store cycle stay enabled. It is used
+only for the parity gate. Measure the enabled shipped behaviour against it
+before the landing sweep; the earlier disabled-expectation comparison does
+not certify this configuration. The declaration is
+[`test/fixtures/item4-parity.json`](../../test/fixtures/item4-parity.json).
+
 Taken as my consolidation, for Alec to object to: one predictor at S read
 at three moments (§3); the default `s(r)` and the floor `1 − g_L` (§4.1);
 `SentenceExpectation`'s structured prediction retiring rather than running

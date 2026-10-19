@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair11-right_pair11]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair12-right_pair12]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair13-right_pair13]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair14-right_pair14]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair15-right_pair15]",
+    "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair0]",
+    "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair1]",
+    "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair2]"
+  ],
+  "completed": [
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair11-right_pair11]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair12-right_pair12]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair13-right_pair13]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair14-right_pair14]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair15-right_pair15]",
+    "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair0]",
+    "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair1]",
+    "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair2]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair11-right_pair11]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007380000315606594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair12-right_pair12]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00029920809902250767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair13-right_pair13]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023929192684590816,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair14-right_pair14]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002941661514341831,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair15-right_pair15]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022754096426069736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000628374982625246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023612519726157188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002138749696314335,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,8 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.6s; peak 0.04 GiB
+[worker-000] 256 selectors; limit 1800s, 8.0 GiB
+[worker-001] 153 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 4.5s; peak 0.40 GiB
+[worker-000] exit 0; 5.6s; peak 0.40 GiB
+Result: passed, exit 0; 409/409 cases completed.
+doc/benchmarks/2026-10-19-item4-repair/closeout-links/result.json

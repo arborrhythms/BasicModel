@@ -1,0 +1,38 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compose_operations.py::test_reservoir_keeps_each_eligible_round_with_probability_one_over_k",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop"
+  ],
+  "completed": [
+    "test/test_compose_operations.py::test_reservoir_keeps_each_eligible_round_with_probability_one_over_k",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compose_operations.py::test_reservoir_keeps_each_eligible_round_with_probability_one_over_k",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.006237916182726622,
+      "message": "test/test_compose_operations.py:140: in test_reservoir_keeps_each_eligible_round_with_probability_one_over_k\n    explore = step.derive(x, slots=1, rounds=6, exploit=exploit)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7050: in derive\n    _, next_x, route = self(\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6959: in forward\n    action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,\nbin/Language.py:6570: in select_logits\n    draw = torch.rand_like(proposal[:, :1])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_compose_operations.py:138: in <lambda>\n    torch.tensor(next(draws), device=like.device))\n                 ^^^^^^^^^^^\nE   StopIteration",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020816249307245016,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

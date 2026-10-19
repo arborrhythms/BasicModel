@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[unimplementedTool(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y, Z)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isTrue()]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[query(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[tense(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y) trailing]",
+    "test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal"
+  ],
+  "completed": [
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[unimplementedTool(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y, Z)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isTrue()]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[query(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[tense(X)]",
+    "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y) trailing]",
+    "test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[unimplementedTool(X)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016808300279080868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011375010944902897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y, Z)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010395818389952183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isTrue()]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010233302600681782,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[query(X)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010108319111168385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[tense(X)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010304083116352558,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isPart(X, Y) trailing]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.908294305205345e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006112457951530814,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

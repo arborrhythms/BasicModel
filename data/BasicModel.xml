@@ -177,6 +177,7 @@
       <perceptExpectationRate>0.05</perceptExpectationRate>
       <expectationEpsilon>0.000001</expectationEpsilon>
       <expectationSaturation>clip</expectationSaturation>
+      <expectationPrime>true</expectationPrime>
       <explorationUniformFraction>0.5</explorationUniformFraction>
       <explorationTemperature>1.0</explorationTemperature>
       <intraLossWeight>0.0</intraLossWeight>

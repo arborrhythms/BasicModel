@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_modification_lessons.py::test_modification_target_accepts_either_operator_and_keeps_reference_choice_free",
+    "test/test_modification_lessons.py::test_identity_carrying_unary_faces_reverse_exactly_and_retire_free_marker_state",
+    "test/test_modification_lessons.py::test_np_gates_behaviors_and_reports_the_kept_operator",
+    "test/test_modification_lessons.py::test_np_section5a_keeps_behavior_thresholds_and_only_reports_empty_meanings",
+    "test/test_modification_lessons.py::test_np_menu_admits_both_modification_operators_at_the_native_mask"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-480.recycle.json"
+}

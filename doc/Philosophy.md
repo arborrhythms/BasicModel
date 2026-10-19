@@ -1694,8 +1694,8 @@ Synchronic generics are relations, relative truths; situated events and
 states are ideas, ultimate truths. In Alec's syntax an absolute truth is
 `S` and a relation between two truths is `S REL S`, which is the row's own
 shape: three positions, argument, kind, argument, of which an absolute
-truth fills one with a fused point that need not be a codebook entry and
-a relation fills three, the kind a relation that takes a truth as an
+truth fills one with a fused point (a vector, possibly unminted: LTM1) and
+a relation fills three symbol references (LTM3), the kind a relation that takes a truth as an
 argument (definition, attribution, conditional) and each argument an idea
 or a reference; parthood and kinds are folds in the main tree, not rows
 (2026-10-19). A modal sentence read

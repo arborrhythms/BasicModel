@@ -6,25 +6,37 @@ import torch
 from SentenceCredit import forward_discard
 
 
-def test_retained_four_clauses_keep_the_trial_skipping_one_meaning_removing_non(tmp_path, monkeypatch):
+def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tmp_path, monkeypatch):
     from pathlib import Path
     from identity_experiment import make_model
     from DerivationReconstruction import inverse_step
-    from SentenceCredit import comparison
     saved = torch.load(Path(__file__).resolve().parents[1] /
         'doc/benchmarks/2026-10-10-item6/identity-r2/validation/retained-trials.pt',
         map_location='cpu', weights_only=True)
     model = make_model(tmp_path, monkeypatch)
-    parts = []
     try:
-        for trial, expected in zip(saved['trials'], (3., 2.), strict=True):
+        for trial in saved['trials']:
             programs = [SimpleNamespace(**p) for p in trial['programs']]
             charge = forward_discard(model.languageSpace, programs, saved['meaning_start'], trial['other_cost'])
-            torch.testing.assert_close(charge, torch.full((4,), expected))
+            torch.testing.assert_close(charge, torch.zeros(4))
             torch.testing.assert_close(trial['other_cost'], torch.full((4,), 1.85))
-            cost = trial['other_cost'] + charge
-            parts.append(torch.stack((cost, torch.zeros_like(cost), torch.zeros_like(cost)), -1))
-        # A lower step remains locally defined even below an undefined non.
+        # Every non retains its occurrence operand, without claiming a free inverse.
+        witnesses = 0
+        for program in programs:
+            for step, (kind, operation, _) in enumerate(program.actions.tolist()):
+                if kind != 2:
+                    continue
+                wrapped = model.languageSpace._tree_layer(1).unary_ops[operation]
+                op = getattr(wrapped, 'gl', wrapped)
+                if op.rule_name != 'non':
+                    continue
+                frame = program.operation_values[step]
+                ((value, domain),) = inverse_step(model.languageSpace, kind, operation, frame[2:3], frame)
+                torch.testing.assert_close(value, frame[:1], rtol=0, atol=0)
+                assert domain.all()
+                witnesses += 1
+        assert witnesses > 0
+        # A lower step remains locally defined below a withheld parent.
         program = programs[0]
         index = int((program.actions[:, 0] == 1).nonzero()[0])
         kind, op, _ = program.actions[index].tolist()
@@ -36,9 +48,6 @@ def test_retained_four_clauses_keep_the_trial_skipping_one_meaning_removing_non(
         assert all(not domain.any() for _, domain in inherited)
     finally:
         model.End()
-    result = comparison(torch.stack(parts, 1), torch.ones(4, dtype=torch.bool))
-    assert result['keep_decision'] == ['explore'] * 4
-    assert result['advantage'].lt(0).all()
 
 
 def test_exact_or_reading_pays_zero_forward_discard(monkeypatch):

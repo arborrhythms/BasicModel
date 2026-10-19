@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+    "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+    "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true"
+  ],
+  "completed": [
+    "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+    "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+    "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10292433411814272,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.08225541701540351,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.07713987492024899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10872662509791553,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.15268195886164904,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

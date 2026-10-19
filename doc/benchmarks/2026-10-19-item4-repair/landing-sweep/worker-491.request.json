@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-491.recycle.json"
+}

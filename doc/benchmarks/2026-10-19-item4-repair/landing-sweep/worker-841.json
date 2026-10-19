@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence",
+    "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+    "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+    "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating"
+  ],
+  "completed": [
+    "test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence",
+    "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+    "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+    "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01803991594351828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008465041872113943,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0649969158694148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0076867081224918365,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

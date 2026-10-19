@@ -17,7 +17,7 @@ def test_departure_can_choose_below_second_rank_and_preserves_credit(monkeypatch
     from Language import OperationSelectionLayer
     chooser = OperationSelectionLayer(d_model=2)
     logits = torch.tensor([[3., 2., 1., -torch.inf], [3., 2., 1., -torch.inf]], requires_grad=True)
-    monkeypatch.setattr(torch, 'rand', high_draw)
+    monkeypatch.setattr(torch, 'rand_like', lambda like: torch.full_like(like, .999))
     action, probability, legal = chooser.select_logits(logits, structural=None,
         masked_action=torch.tensor([0, -1]), replay_action=torch.tensor([-1, -1]))
     assert action.tolist() == [2, 0]

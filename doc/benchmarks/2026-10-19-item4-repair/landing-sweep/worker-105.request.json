@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_compound_cases.py::test_free_decoder_uses_case_search_without_a_compose_witness",
+    "test/test_compound_cases.py::test_shipped_grammar_supplies_subtyping_without_a_predefined_surface",
+    "test/test_compound_cases.py::test_compound_choice_runs_in_the_shared_compiled_chooser",
+    "test/test_compound_cases.py::test_answer_case_bank_detaches_reader_keys_without_detaching_parent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-105.recycle.json"
+}

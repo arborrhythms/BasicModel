@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
+    "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
+    "test/test_symbol_learning_policy.py::test_observe_qe_clusters_separate_far_activations",
+    "test/test_symbol_learning_policy.py::test_qe_raises_on_nan_input",
+    "test/test_symbol_learning_policy.py::test_policy_default_thresholds_construct",
+    "test/test_symbol_learning_policy.py::test_policy_zero_order_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_threshold",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_stability"
+  ],
+  "completed": [
+    "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
+    "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
+    "test/test_symbol_learning_policy.py::test_observe_qe_clusters_separate_far_activations",
+    "test/test_symbol_learning_policy.py::test_qe_raises_on_nan_input",
+    "test/test_symbol_learning_policy.py::test_policy_default_thresholds_construct",
+    "test/test_symbol_learning_policy.py::test_policy_zero_order_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_threshold",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_stability"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002995000686496496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005290829576551914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_observe_qe_clusters_separate_far_activations",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022662500850856304,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_qe_raises_on_nan_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015808292664587498,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_default_thresholds_construct",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011137500405311584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_zero_order_promotion",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003467090427875519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000510707963258028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_stability",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019029201939702034,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

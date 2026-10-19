@@ -270,10 +270,13 @@ def test_temporal_question_content_is_causally_used(synth_model):
 def synth_discourse_config_path(tmp_path_factory):
     # <answerSynthesis> + the inter-sentence discourse layer, with every XOR
     # row placed in ONE document so past/future targets are answerable.
+    # Prediction observes native bracket closings; the non-bracket observer
+    # was retired with Item 4.
     src = (_DATA / "MM_xor.xml").read_text()
     patched = src.replace(
         "<architecture>",
-        "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
+        "<architecture>\n    <answerSynthesis>true</answerSynthesis>\n"
+        "    <ltmConsolidation>true</ltmConsolidation>"
         , 1)
     patched = patched.replace(
         "</training>",
@@ -303,6 +306,7 @@ def synth_discourse_model(synth_discourse_config_path):
 
 def test_past_and_future_text_answers_are_scored_in_input_space(synth_discourse_model):
     m = synth_discourse_model
+    assert m.word_brackets
     data = m.inputSpace.data
     for address in data.source_addresses["train"]:      # TheData is shared
         address["document"] = 0

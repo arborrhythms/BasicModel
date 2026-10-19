@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_forward_discard.py::test_retained_four_clauses_keep_the_trial_skipping_one_meaning_removing_non",
+    "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard",
+    "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-282.recycle.json"
+}

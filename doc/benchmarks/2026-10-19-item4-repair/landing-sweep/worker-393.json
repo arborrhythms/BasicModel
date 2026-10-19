@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_knowledge_artifact_writer.py::test_word_table_csr_round_trips_surface_bytes",
+    "test/test_knowledge_artifact_writer.py::test_word_table_ref_ids_initialize_to_minus_one",
+    "test/test_knowledge_artifact_writer.py::test_word_table_dtypes",
+    "test/test_knowledge_artifact_writer.py::test_word_table_empty_lexicon",
+    "test/test_knowledge_artifact_writer.py::test_knowledge_section_bundles_all_pieces",
+    "test/test_knowledge_artifact_writer.py::test_knowledge_section_works_without_wv",
+    "test/test_knowledge_artifact_writer.py::test_save_and_load_artifact_round_trips_knowledge",
+    "test/test_knowledge_artifact_writer.py::test_save_artifact_accepts_knowledge_only"
+  ],
+  "completed": [
+    "test/test_knowledge_artifact_writer.py::test_word_table_csr_round_trips_surface_bytes",
+    "test/test_knowledge_artifact_writer.py::test_word_table_ref_ids_initialize_to_minus_one",
+    "test/test_knowledge_artifact_writer.py::test_word_table_dtypes",
+    "test/test_knowledge_artifact_writer.py::test_word_table_empty_lexicon",
+    "test/test_knowledge_artifact_writer.py::test_knowledge_section_bundles_all_pieces",
+    "test/test_knowledge_artifact_writer.py::test_knowledge_section_works_without_wv",
+    "test/test_knowledge_artifact_writer.py::test_save_and_load_artifact_round_trips_knowledge",
+    "test/test_knowledge_artifact_writer.py::test_save_artifact_accepts_knowledge_only"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_word_table_csr_round_trips_surface_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003896669950336218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_word_table_ref_ids_initialize_to_minus_one",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014849985018372536,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_word_table_dtypes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013370788656175137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_word_table_empty_lexicon",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010991701856255531,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_knowledge_section_bundles_all_pieces",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004566670395433903,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_knowledge_section_works_without_wv",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027766614221036434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_save_and_load_artifact_round_trips_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020566668827086687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_save_artifact_accepts_knowledge_only",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011973748914897442,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_contextual_bind.py::test_bind_marker_preserves_its_input_until_the_close"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-142.recycle.json"
+}

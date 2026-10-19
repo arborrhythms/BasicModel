@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop"
+  ],
+  "completed": [
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005917919334024191,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010850001126527786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004264591261744499,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002331659197807312,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023895781487226486,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023858295753598213,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00037225009873509407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027637509629130363,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

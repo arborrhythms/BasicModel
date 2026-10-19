@@ -1,0 +1,106 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+    "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+    "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]"
+  ],
+  "completed": [
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+    "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+    "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]"
+  ],
+  "slow_selected": [
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003489169757813215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002288329415023327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002013340126723051,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03868824988603592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0019463340286165476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05769962491467595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4539656250271946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00013087503612041473,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_grammar_word_learning.py', 153, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

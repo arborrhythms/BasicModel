@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+    "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+    "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+    "test/test_primitive_properties.py::test_complement_requires_an_observation",
+    "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+    "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+    "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+    "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner"
+  ],
+  "completed": [
+    "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+    "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+    "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+    "test/test_primitive_properties.py::test_complement_requires_an_observation",
+    "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+    "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+    "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+    "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010669250041246414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03317979210987687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01659179199486971,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_complement_requires_an_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006152910646051168,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000669499859213829,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000649833120405674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.025749583961442113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03904095781035721,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

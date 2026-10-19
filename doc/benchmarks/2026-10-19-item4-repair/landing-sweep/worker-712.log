@@ -1,0 +1,26 @@
+FF......                                                                 [100%]
+=================================== FAILURES ===================================
+__ test_departure_can_choose_below_second_rank_and_preserves_credit[compose] ___
+test/test_review10_contracts.py:23: in test_departure_can_choose_below_second_rank_and_preserves_credit
+    assert action.tolist() == [2, 0]
+E   assert [1, 0] == [2, 0]
+E
+E     At index 0 diff: 1 != 2
+E     Use -v to get more diff
+___ test_departure_can_choose_below_second_rank_and_preserves_credit[input] ____
+test/test_review10_contracts.py:23: in test_departure_can_choose_below_second_rank_and_preserves_credit
+    assert action.tolist() == [2, 0]
+E   assert [1, 0] == [2, 0]
+E
+E     At index 0 diff: 1 != 2
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[compose]
+FAILED test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[input]
+2 failed, 6 passed, 1 warning in 3.54s

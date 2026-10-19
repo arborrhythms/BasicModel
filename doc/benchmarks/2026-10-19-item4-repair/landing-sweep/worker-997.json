@@ -1,0 +1,108 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026172499638050795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006682500243186951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008898749947547913,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004623329732567072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027391710318624973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00011429213918745518,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 154, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00010204198770225048,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 187, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 9.5791881904006e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 259, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

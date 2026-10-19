@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_levelled_thought_history.py::test_multiple_ordinary_thoughts_at_root_do_not_finish_or_make_qa_pairs",
+    "test/test_levelled_thought_history.py::test_nested_and_sibling_returns_restore_parent_scope_and_pending_roles",
+    "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[0]",
+    "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[1]",
+    "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[2]",
+    "test/test_levelled_thought_history.py::test_return_underflow_and_new_episode_do_not_corrupt_history",
+    "test/test_levelled_thought_history.py::test_replay_and_checkpoint_preserve_active_contexts_and_row_isolation",
+    "test/test_levelled_thought_history.py::test_episode_gradients_reach_earlier_roles_then_detach_after_step"
+  ],
+  "completed": [
+    "test/test_levelled_thought_history.py::test_multiple_ordinary_thoughts_at_root_do_not_finish_or_make_qa_pairs",
+    "test/test_levelled_thought_history.py::test_nested_and_sibling_returns_restore_parent_scope_and_pending_roles",
+    "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[0]",
+    "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[1]",
+    "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[2]",
+    "test/test_levelled_thought_history.py::test_return_underflow_and_new_episode_do_not_corrupt_history",
+    "test/test_levelled_thought_history.py::test_replay_and_checkpoint_preserve_active_contexts_and_row_isolation",
+    "test/test_levelled_thought_history.py::test_episode_gradients_reach_earlier_roles_then_detach_after_step"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_multiple_ordinary_thoughts_at_root_do_not_finish_or_make_qa_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015508329961448908,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_nested_and_sibling_returns_restore_parent_scope_and_pending_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001355375163257122,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007334582041949034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009072499815374613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001096332911401987,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_return_underflow_and_new_episode_do_not_corrupt_history",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003680840600281954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_replay_and_checkpoint_preserve_active_contexts_and_row_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001049624988809228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_levelled_thought_history.py::test_episode_gradients_reach_earlier_roles_then_detach_after_step",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013275125063955784,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

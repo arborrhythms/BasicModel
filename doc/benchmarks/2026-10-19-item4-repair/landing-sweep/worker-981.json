@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties"
+  ],
+  "completed": [
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00034708296880126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03279783413745463,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.026072833919897676,
+      "message": "",
+      "stdout": "[BasicModel] Activated aligned codebook prefix 4 -> 8 rows (physical capacity 16; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.024590417044237256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.024994124891236424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0264214591588825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.025009833043441176,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006760829128324986,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

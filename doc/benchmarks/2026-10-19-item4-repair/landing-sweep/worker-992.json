@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind"
+  ],
+  "completed": [
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10669837496243417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.21550416690297425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.45785012491978705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019154115580022335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031412080861628056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002845624927431345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002995540853589773,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0038636671379208565,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

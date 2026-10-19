@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_decomposition_chooser.py::test_initial_choice_is_exactly_the_residual_argmin_without_rng",
+    "test/test_decomposition_chooser.py::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order",
+    "test/test_decomposition_chooser.py::test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming",
+    "test/test_decomposition_chooser.py::test_absent_target_is_counted_and_has_no_training_gradient",
+    "test/test_decomposition_chooser.py::test_uniform_round_and_action_proposal_carries_both_count_factors",
+    "test/test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent"
+  ],
+  "completed": [
+    "test/test_decomposition_chooser.py::test_initial_choice_is_exactly_the_residual_argmin_without_rng",
+    "test/test_decomposition_chooser.py::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order",
+    "test/test_decomposition_chooser.py::test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming",
+    "test/test_decomposition_chooser.py::test_absent_target_is_counted_and_has_no_training_gradient",
+    "test/test_decomposition_chooser.py::test_uniform_round_and_action_proposal_carries_both_count_factors",
+    "test/test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_initial_choice_is_exactly_the_residual_argmin_without_rng",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002738083014264703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010448340326547623,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020229832967743278,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_absent_target_is_counted_and_has_no_training_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005773340817540884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_uniform_round_and_action_proposal_carries_both_count_factors",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014091749908402562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007439581677317619,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

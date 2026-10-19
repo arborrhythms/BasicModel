@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_util_device.py::TestCudaSanityChecks::test_visible_nvidia_gpu_present_via_nvidia_smi",
+    "test/test_util_device.py::TestCudaSanityChecks::test_warns_when_nvidia_visible_but_cuda_unavailable"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-945.recycle.json"
+}

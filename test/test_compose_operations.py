@@ -135,7 +135,8 @@ def test_reservoir_keeps_each_eligible_round_with_probability_one_over_k(monkeyp
     draws = iter(([0.] * 6, [.5, .99, .0, .49, .8, .8],
                   [.34, .99, .34, .99, .0, .32]))
     monkeypatch.setattr(torch, 'rand_like', lambda like, **kw:
-                        torch.tensor(next(draws), device=like.device))
+        torch.tensor(next(draws), device=like.device) if like.ndim == 1
+        else torch.full_like(like, .5))
     exploit = step.derive(x, slots=1, rounds=6, greedy=True)
     explore = step.derive(x, slots=1, rounds=6, exploit=exploit)
     assert explore['forced_round'].tolist() == [0, 0, 1, 1, 2, 2]

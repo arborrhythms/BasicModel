@@ -135,7 +135,7 @@ def test_expectation_cannot_change_departure_or_keep():
                           [[2., 0., 2.], [2., 100., 0.]]])
     audit = comparison(parts, torch.ones(3, dtype=torch.bool))
     assert audit['costs'].tolist() == [[2., 2.], [2., 3.], [4., 2.]]
-    assert audit['wins'].tolist() == [False, False, False]
+    assert audit['wins'].tolist() == [False, False, True]
     assert not audit['delta'][:, 1].eq(0).any()
     assert audit['deciding'] == ['tie:greedy', 'reconstruction', 'answer']
 

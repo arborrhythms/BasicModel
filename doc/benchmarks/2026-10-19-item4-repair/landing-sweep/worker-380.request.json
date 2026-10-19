@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item55_mechanisms.py::test_absences"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-380.recycle.json"
+}

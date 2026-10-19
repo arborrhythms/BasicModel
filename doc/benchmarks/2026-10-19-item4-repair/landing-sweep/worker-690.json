@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_lookup_gauge.py::test_gauge_orient_toward_positive_referent",
+    "test/test_reference_lookup_gauge.py::test_gauge_orient_quotient_consistency",
+    "test/test_reference_lookup_gauge.py::test_gauge_orient_zero_dot_keeps_row",
+    "test/test_reference_lookup_gauge.py::test_pole_lookup_relabeling_invariance",
+    "test/test_reference_lookup_gauge.py::test_certainty_survives_retrieval",
+    "test/test_reference_lookup_gauge.py::test_token_lookup_distinguishes_negation",
+    "test/test_reference_lookup_gauge.py::test_torus_snap_unaffected_by_knob",
+    "test/test_reference_lookup_gauge.py::test_sphere_snap_knob_off_is_legacy_cosine"
+  ],
+  "completed": [
+    "test/test_reference_lookup_gauge.py::test_gauge_orient_toward_positive_referent",
+    "test/test_reference_lookup_gauge.py::test_gauge_orient_quotient_consistency",
+    "test/test_reference_lookup_gauge.py::test_gauge_orient_zero_dot_keeps_row",
+    "test/test_reference_lookup_gauge.py::test_pole_lookup_relabeling_invariance",
+    "test/test_reference_lookup_gauge.py::test_certainty_survives_retrieval",
+    "test/test_reference_lookup_gauge.py::test_token_lookup_distinguishes_negation",
+    "test/test_reference_lookup_gauge.py::test_torus_snap_unaffected_by_knob",
+    "test/test_reference_lookup_gauge.py::test_sphere_snap_knob_off_is_legacy_cosine"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_gauge_orient_toward_positive_referent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013720409478992224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_gauge_orient_quotient_consistency",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005931248888373375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_gauge_orient_zero_dot_keeps_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014866609126329422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_pole_lookup_relabeling_invariance",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009347919840365648,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_certainty_survives_retrieval",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005794998724013567,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_token_lookup_distinguishes_negation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005187499336898327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_torus_snap_unaffected_by_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000911208800971508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_lookup_gauge.py::test_sphere_snap_knob_off_is_legacy_cosine",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008104171138256788,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

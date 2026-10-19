@@ -26,7 +26,7 @@ def test_non_excludes_without_affirming_or_claiming_an_inverse():
     from Language import NonLayer
     poles = torch.tensor([[.7, .2, 19.], [0., .8, 3.]])
     op = NonLayer(representation='poles')
-    torch.testing.assert_close(op(poles), torch.tensor([[0., .2, 19.], [0., .8, 3.]]))
+    torch.testing.assert_close(op(poles), torch.tensor([[0., 0., 19.], [0., 0., 3.]]))
     assert not op.invertible
     with pytest.raises((RuntimeError, NotImplementedError)):
         op.reverse(poles)

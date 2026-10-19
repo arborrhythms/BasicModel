@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_operators_round3a.py::test_numeric_mm_keeps_its_original_geometry",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-True-expected0]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-True-expected1]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-False-expected2]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-False-expected3]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.0-True-expected4]",
+    "test/test_operators_round3a.py::test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-537.recycle.json"
+}

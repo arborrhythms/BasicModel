@@ -189,6 +189,7 @@ Training loop and I/O.
 | `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |
 | `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
 | `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
+| `expectationPrime` | bool | `true` | Enables the selection prime in compose and candidate attention independently of attenuation. Off only in the declared Item 4 §9.1 parity configuration; prediction, residuals and retention stay enabled. |
 | `perceptExpectationGain`, `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Independent P/S/R/D attenuation strengths. Zero passes admitted content whole; one permits zero content for a perfect prediction. R and D gains compose at closing. |
 | `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. |
 | `expectationOmissionThreshold` | float in `[0,1]` | `0.5` | Minimum for-lane omission confidence for the conceived absence thought. |
