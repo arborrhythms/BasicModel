@@ -15,7 +15,7 @@ def corpus():
         if adjective >= 0:
             words.append(PROPERTIES[adjective])
         words.append(KINDS[noun])
-        description = ['intersection', 1, 2] if adjective >= 0 else 1
+        description = ['modification', 1, 2] if adjective >= 0 else 1
         tree = [('lower', 'definite')[determiner], 0, description]
         heldout = ((adjective-noun) % 4 == 3 if adjective >= 0 else (noun+determiner) % 4 == 3)
         key = f'np:np:{determiner}:{adjective}:{noun}'
@@ -29,7 +29,7 @@ def corpus():
     for adjective, noun in product(range(4), repeat=2):
         words = [PROPERTIES[adjective], KINDS[noun]]
         key = f'np:description:{adjective}:{noun}'
-        tree = ['intersection', 0, 1]
+        tree = ['modification', 0, 1]
         rows.append(('eval' if (adjective-noun) % 4 == 3 else 'train', dict(id=key, text=' '.join(words)),
             dict(text=' '.join(words), tree=tree, waits=True),
             dict(id=key, family='description', words=words, brackets=spans(tree), nps=[], unlowered=[[0,1]]),

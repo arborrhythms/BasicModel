@@ -12,6 +12,14 @@ import torch
 from torch.nn import functional as F
 
 
+MODIFICATION_OPERATORS = ('intersection', 'product')
+
+
+def target_operations(target):
+    """A bracket may admit several operators; STOP is not a fold target."""
+    return () if target == -1 else ((target,) if isinstance(target, int) else target)
+
+
 def _annotation_tree(language, tree, count):
     # A declared form can share an implementation and still have different
     # semantics (mint, bind, kind). Do not collapse those lesson targets.
@@ -27,7 +35,10 @@ def _annotation_tree(language, tree, count):
         if not isinstance(node, (tuple, list)) or len(node) not in (2, 3):
             raise ValueError("grammar lesson nodes need a declared unary/binary form")
         arity = len(node) - 1
-        if node[0] not in rules[arity]:
+        modification = arity == 2 and node[0] == 'modification'
+        if modification and not any(name in rules[2] for name in MODIFICATION_OPERATORS):
+            raise ValueError('modification bracket has no declared modification operator')
+        if not modification and node[0] not in rules[arity]:
             raise ValueError(f"grammar lesson uses undeclared {arity}-ary form {node[0]!r}")
         children = tuple(validate(child) for child in node[1:])
         result = (node[0], *children)
@@ -63,6 +74,8 @@ def compose_examples(language, program, tree, *, variables=()):
             return
         left, right = stack[-2:]
         parent = parents.get((left[0], right[0]))
+        if parent is not None and parent[0] == 'modification':
+            raise ValueError('modification brackets require student-state lessons (waits=True)')
         window = torch.stack((left[1], right[1]))
         target = -1 if parent is None else rules[2][parent[0]]
         if closing and target < 0:
@@ -176,7 +189,8 @@ def constituent_examples(language, program, tree):
         children = tuple(spans(child) for child in node[1:])
         if len(children) != 2:
             raise ValueError('constituent brackets require binary annotations')
-        parents[children] = rules[2][node[0]]
+        parents[children] = (tuple(rules[2][name] for name in MODIFICATION_OPERATORS if name in rules[2])
+                             if node[0] == 'modification' else rules[2][node[0]])
         return sum(children, ())
     spans(root)
     states = getattr(program, 'student_states', None)
@@ -197,15 +211,16 @@ def student_target_actions(layer, state):
     """Map a rule target to the native menu's reference-expanded actions.
 
     The captured window has one binary position (the two newest operands).
-    The annotation supplies an operator, not a choice among its references.
+    The annotation supplies admissible operators, not their references.
     STOP is the final action regardless of the menu's expansion.
     """
-    if state['target'] < 0:
+    if state['target'] == -1:
         return [-1]
     references = state['kwargs'].get('reference_data')
     menu = (tuple(range(layer.r_reduce)) if references is None else
             references.get('binary_ops', tuple(range(layer.r_reduce))))
-    return [index for index, operation in enumerate(menu) if operation == state['target']]
+    targets = target_operations(state['target'])
+    return [index for index, operation in enumerate(menu) if operation in targets]
 
 
 def student_target_probability(layer, state, probabilities):
@@ -236,7 +251,7 @@ def compose_loss(language, programs, lessons, *, errors=None):
             for example in constituent_examples(language, program, lesson['tree']):
                 probabilities = score_student_state(layer, example)
                 target = example['target']
-                name = 'compose.wait' if target < 0 else 'compose.choice'
+                name = 'compose.wait' if target == -1 else 'compose.choice'
                 # A bad prior fold can make the annotated wait illegal at the
                 # closing deadline. Count its full CE and report it explicitly;
                 # never substitute an unannotated fold or alter a native mask.

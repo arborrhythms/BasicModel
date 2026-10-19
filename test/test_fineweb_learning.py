@@ -4,7 +4,7 @@ import pytest
 from eval_fineweb_learning import load_model, read_validation
 
 
-@pytest.mark.slow
+@pytest.mark.phase("fineweb")
 @pytest.mark.artifact_eval
 def test_trained_fineweb_prediction_benefits_from_context(fineweb_trained_model):
     report = read_validation(fineweb_trained_model)
@@ -16,7 +16,7 @@ def test_trained_fineweb_prediction_benefits_from_context(fineweb_trained_model)
         assert objective(controls['ordered']) < objective(controls['context_free']), report
 
 
-@pytest.mark.slow
+@pytest.mark.phase("fineweb")
 @pytest.mark.artifact_eval
 def test_trained_fineweb_remainder_reduces_work_at_matched_error(fineweb_checkpoint):
     trials = {}

@@ -213,7 +213,8 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
         model.End()
 
 
-def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode(tmp_path, eager_reading):
+@pytest.mark.phase("copular_identity")
+def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode(tmp_path, eager_reading, restore_phase):
     """Certificate c, FORCED operation/binding; actual paired suffix and costs."""
     import json
     from BindingAnswers import matches
@@ -240,6 +241,7 @@ def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
                 assert store.occurrence_of(index) == address
                 assert not open_slots(value) and matches(model,value,'five')
     try:
+        restore_phase(lambda path: model.load_weights(str(path), require_match=True))
         with ForcedGrammar(model, open_names=('what',)) as forced:
             rows = train_documents(model, documents, tmp_path, after=after)
         assert len(questions) == 8 and len(report) == 8

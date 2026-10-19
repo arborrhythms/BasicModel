@@ -31,6 +31,19 @@ def align(model, state, old):
     """Return migrated tensors, explicit drift, and optimizer transformations."""
     live, new = model.state_dict(), catalog(model)
     result, drift, transforms = dict(state), {}, {}
+    from Language import MarkerUnaryLayer
+    identities = {name+'.marker' for name, module in model.named_modules(remove_duplicate=False)
+                  if isinstance(module, MarkerUnaryLayer)
+                  and getattr(module.base, 'left_identity', None) is not None}
+
+    def retire_markers():
+        for key in identities.intersection(result):
+            del result[key]
+            drift[key] = dict(action='replaced free unary marker with operator identity')
+            transforms[key] = None
+            for source, transform in tuple(transforms.items()):
+                if transform is not None and transform[0] == key:
+                    transforms[source] = None
     for key in tuple(result):
         if any(part in ('_category_vq', '_category_role') for part in key.split('.')):
             del result[key]
@@ -53,6 +66,7 @@ def align(model, state, old):
             result[key] = PartsOfSpeech(owner.arguments).get_extra_state()
             drift[key] = dict(action='initialized empty occupation counts; old categories are not evidence')
     if old is None:
+        retire_markers()
         return result, drift, transforms
 
     # ModuleList positions are storage locations, never operator identities.
@@ -73,6 +87,8 @@ def align(model, state, old):
                     drift[key] = dict(action='renamed',target=target)
                     transforms[key] = (target,None,None)
         result.update(pending)
+
+    retire_markers()
 
     rules = _mapping(old['rule_keys'],new['rule_keys'])
     roles = _mapping(old['roles'],new['roles'])

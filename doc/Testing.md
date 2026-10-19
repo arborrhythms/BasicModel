@@ -171,9 +171,16 @@ harness; what changes is when it runs.
 - **Default sweep, every landing:** every test under 5 s, plus every
   learning certificate regardless of its time — XOR composition
   (`test_grounded_xor`, `test_word_admission`'s XOR, `test_mm_xor`), the
-  operators' certificates, the math-chain c/e/pending-premise
+  operators' certificates, the math-chain e/pending-premise
   certificates, the curriculum stage gates, the trained-artifact
   coverage certificate. A round's measure is which gate moved.
+- **`PHASE_CERTIFICATES`, considered in every default sweep:** certificates
+  that require a preceding lesson use `@pytest.mark.phase('phase_name')`.
+  `test/fixtures/phase-artifacts.json` maps the phase to its artifact path,
+  SHA-256 and producing receipt. An absent artifact skips with the phase and
+  reason; an incorrect hash or a rejected restore fails. These certificates
+  run regardless of a historical slow mark when their prerequisite exists.
+  The JSON, HTML and terminal reports summarize skipped certificates by phase.
 - **Weekly `RUN_SLOW=1`:** mechanism contracts at or above 5 s. From the
   October 10 sweep's timings (1,634 s of test time over 5,745 cases): 76
   tests take 73 % of it; 53 of those are contracts (834 s) and move to the
@@ -183,6 +190,25 @@ harness; what changes is when it runs.
   mechanism retired by decision goes, and one that protects a behaviour the
   replacement must keep is rewritten against the new API. One regression
   per repaired defect; no families of mechanism checks.
+
+Phase prerequisites are separate from learning outcomes. `stage3` registers
+its archived order checkpoint, including the producing receipt's failed
+four-word confidence gate; registration does not certify that gate passed.
+The NP restoration certificate uses `np_definite`, its passed predecessor
+with nonempty occupation state. FineWeb, copular identity (`c`) and the full
+4e kept-readings certificate have no qualifying artifact registered yet.
+The column-copula test remains an unconditional mechanism contract.
+
+`restore_phase(loader)` verifies the marked prerequisite before calling the
+consumer's loader with its resolved path. There is no training or fresh-model
+fallback. Paths are relative to the repository root, or absolute. For an
+external artifact, select a complete registry with
+`BASICMODEL_PHASE_ARTIFACTS=/path/to/registry.json`. FineWeb entries also name
+`config` and optionally `minimum_sentences` (default 1,000,000); the completed
+training-progress check still applies. A `stage4e` entry hashes the produced
+`kept-programs.json` that the certificate grades. This replaces the old
+FineWeb and constituent artifact environment switches; archived receipts
+retain their historical commands.
 
 The slow set, from those timings (durations in seconds, call phase):
 
@@ -194,7 +220,7 @@ The slow set, from those timings (durations in seconds, call phase):
 | 68 | weekly (slow contract) | `test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-exploit]` |
 | 59 | weekly (slow contract) | `test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write` |
 | 56 | weekly (slow contract) | `test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager` |
-| 39 | default (certificate) | `test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode` |
+| 39 | phase (copular identity, 2026-10-18) | `test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode` |
 | 31 | default (certificate) | `test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]` |
 | 31 | default (certificate) | `test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]` |
 | 28 | weekly (slow contract) | `test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage` |

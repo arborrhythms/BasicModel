@@ -1,6 +1,7 @@
 """Read-only trajectory on training trials and their selected kept readings."""
 from collections import Counter
 import math
+from GrammarLessons import target_operations
 
 from constituent_corpus import FAMILY_ORDER
 
@@ -62,7 +63,7 @@ class TrainingTrajectory:
             first = None
             for state in states:
                 target = state['target']
-                group = ce['wait' if target < 0 else 'fold']
+                group = ce['wait' if target == -1 else 'fold']
                 probability = float(student_target_probability(layer, state, state['observed_probabilities']))
                 if probability > 0:
                     group['reachable'] += 1
@@ -71,9 +72,9 @@ class TrainingTrajectory:
                     group['unreachable'] += 1
                 if first is None and state['spans'] == ((0,), (1,)):
                     first = dict(target=target, kind=state['kind'], operation=state['operation'],
-                        correct=(state['kind'] == 0 if target < 0 else
-                                 state['kind'] == 1 and state['operation'] == target))
-            call.append(dict(text=lesson['text'], fold_targets=sum(state['target'] >= 0 for state in states), ce=ce,
+                        correct=(state['kind'] == 0 if target == -1 else
+                                 state['kind'] == 1 and state['operation'] in target_operations(target)))
+            call.append(dict(text=lesson['text'], fold_targets=sum(state['target'] != -1 for state in states), ce=ce,
                              first_pair=first))
         self.calls.append(call)
 

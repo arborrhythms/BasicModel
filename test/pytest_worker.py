@@ -41,6 +41,7 @@ class ResultCollector:
         self.slow_selected = []
         self.requested_devices = {}
         self.shared_training = {}
+        self.phase_certificates = {}
         self.recycle_file = Path(recycle_file) if recycle_file else None
         self.recycled = False
         self.failed = False
@@ -58,6 +59,7 @@ class ResultCollector:
             slow_selected=self.slow_selected,
             requested_devices=self.requested_devices,
             shared_training=self.shared_training,
+            phase_certificates=self.phase_certificates,
             reports=self.reports, recycled=self.recycled, active=self.active,
             device=self.device), indent=2) + "\n")
         temporary.replace(self.result_path)
@@ -65,8 +67,13 @@ class ResultCollector:
     def pytest_collection_finish(self, session):
         self.selected = [item.nodeid for item in session.items]
         self.slow_selected = [item.nodeid for item in session.items
-                              if item.get_closest_marker("slow") is not None]
+                              if item.get_closest_marker("slow") is not None
+                              and item.get_closest_marker('phase') is None]
         for item in session.items:
+            phase = item.get_closest_marker('phase')
+            if phase is not None:
+                from phase_artifacts import certificate_phase
+                self.phase_certificates[item.nodeid] = certificate_phase(item)
             training = item.get_closest_marker('shared_training')
             if training is not None:
                 if len(training.args) != 1 or training.kwargs or not isinstance(training.args[0], str):
@@ -112,6 +119,7 @@ class ResultCollector:
             outcome = "xfailed" if report.skipped else "xpassed"
         record = dict(
             nodeid=report.nodeid, phase=report.when, outcome=outcome,
+            certificate_phase=self.phase_certificates.get(report.nodeid),
             duration=report.duration, message=str(report.longrepr or "")[-4000:],
             stdout="\n".join(content for name, content in report.sections if "stdout" in name.lower())[-4000:])
         if getattr(report, "compile_cache_failure", None) is not None:

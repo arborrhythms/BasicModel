@@ -25,8 +25,8 @@ from np_trajectory import NPTrajectory
 from identity_experiment import make_model, restore_warmup, reset, save, digest
 
 SEED, RATE, EPOCHS = 20261010, .003, 2
-MENU = ('STOP', 'lower', 'definite', 'intersection')
-# Learn intersection on two familiar words before asking the reader to
+MENU = ('STOP', 'lower', 'definite', 'intersection', 'product')
+# Learn modification on two familiar words before asking the reader to
 # schedule it inside a larger NP. Nesting is then the next unknown.
 STAGES = ('lower', 'definite', 'description', 'adjective', 'definite_adjective')
 
@@ -87,37 +87,45 @@ def tables(model, forms):
     for row in collapse:
         row['same_head_by_construction']=frozenset((row['left'],row['right'])) in head_pairs
         row['flow_related_by_construction']=frozenset((row['left'],row['right'])) in flow_pairs|head_pairs
-    slots=('intersection_argin1','intersection_argin2','intersection_argout1')
-    occupants={slot:{str(word):counts[slot] for word,counts in parts.counts.items() if counts.get(slot)} for slot in slots}
-    combined={word:sum(occupants[slot].get(word,0) for slot in slots[:2])
-              for word in set(occupants[slots[0]])|set(occupants[slots[1]])}
-    intersection_flow=dict(occupants=occupants,combined_inputs=combined,
-        output_equals_combined_inputs=occupants[slots[2]]==combined,
-        observed=bool(combined),by_construction=True)
-    return dict(words=word_rows, collapse=collapse, noun_prior=noun_rows,intersection_flow=intersection_flow)
+    modification_flow={}
+    for name in ('intersection','product'):
+        slots=tuple(f'{name}_{slot}' for slot in ('argin1','argin2','argout1'))
+        occupants={slot:{str(word):counts[slot] for word,counts in parts.counts.items() if counts.get(slot)} for slot in slots}
+        combined={word:sum(occupants[slot].get(word,0) for slot in slots[:2])
+                  for word in set(occupants[slots[0]])|set(occupants[slots[1]])}
+        modification_flow[name]=dict(occupants=occupants,combined_inputs=combined,
+            output_equals_combined_inputs=occupants[slots[2]]==combined,
+            observed=bool(combined),by_construction=name=='intersection',
+            declared_flow='all operands' if name=='intersection' else 'empty')
+    return dict(words=word_rows, collapse=collapse, noun_prior=noun_rows,
+        intersection_flow=modification_flow['intersection'],product_flow=modification_flow['product'])
+
 
 
 def summarize_stage(results,stage):
-    final=stage=='final'
+    """Gate behaviors (§5a), and report the operators and description stamps."""
     summary=summarize(results)
-    summary['gates'].pop('reductions')  # Reduction stamps remain reported.
-    if stage=='description':
-        summary['gates'].pop('occurrences')
-        summary['gates']['brackets'].update(correct=sum(row['brackets'] for row in results),total=len(results))
-        summary['gates']['brackets']['passed']=sum(row['brackets'] for row in results)/len(results)>=.9
-    elif not final:
-        summary['gates'].pop('unlowered')
-    if final:
-        correct=sum(row['brackets'] for row in results)
-        summary['gates']['brackets'].update(correct=correct,total=len(results),passed=correct/len(results)>=.9)
-    if not final:
-        expected_program={'lower':['lower'],'definite':['definite'],
-            'adjective':['intersection','lower'],'definite_adjective':['intersection','definite'],
-            'description':['intersection']}[stage]
-        operators=sum(row['observed'].get('program')==expected_program for row in results)
-        summary['gates']['learned_operation']=dict(correct=operators,total=len(results),threshold=1.,
-            passed=operators==len(results),requirement=f'kept program {expected_program}, not merely brackets')
-    summary['passed']=all(gate['passed'] for gate in summary['gates'].values())
+    gates=summary['gates']
+    reports={name:gates.pop(name) for name in ('reductions','unlowered')}
+    # These are observations, not requirements for a particular reading.
+    for report in reports.values():
+        for field in ('passed','threshold','requirement'):
+            report.pop(field,None)
+    correct=sum(row['brackets'] for row in results)
+    gates['brackets'].update(correct=correct,total=len(results),
+        passed=bool(results) and correct/len(results)>=.9)
+    determiner=[row for row in results if row['nps']]
+    if determiner:
+        gates['occurrences']=summarize(determiner)['gates']['occurrences']
+    else:
+        gates.pop('occurrences')
+    questions=[row for row in results if row.get('question_expected', 'answer_exact' in row)]
+    if questions:
+        correct=sum(row.get('answer_exact',False) for row in questions)
+        gates['answers']=dict(correct=correct,total=len(questions),threshold=1.,passed=correct==len(questions))
+    from collections import Counter
+    reports['kept_programs']=dict(Counter(' → '.join(row.get('observed',{}).get('program',[])) for row in results))
+    summary.update(reports=reports,passed=all(gate['passed'] for gate in gates.values()))
     return summary
 
 
@@ -160,7 +168,7 @@ def run(args):
         restored_artifact=str(args.warmup),restored_sha256=digest(args.warmup),
         produced_artifact=str(args.warmup if final else args.out/'trained.ckpt'),
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        menu=MENU,family_order=[args.stage],sequence=STAGES,
+        menu=MENU,modification_targets=('intersection','product'),family_order=[args.stage],sequence=STAGES,
         curriculum='one unknown at a time; passed predecessor required; successful path 84 presentations / 44 paired updates, plus the discarded branch 24 / 12; final whole-quarter gate follows the last lesson',
         within_family='seeded permutation; partial batch of three for each bare-NP lesson',
         rng=('all random streams reset to the declared seed after stage-3 restore' if previous is None else
@@ -169,7 +177,7 @@ def run(args):
         heldout='adjective distance 3 modulo 4; bare (noun+determiner) modulo 4 equals 3',
         score='sum of each carried word occurrence probability on the formal input arguments, coefficient 1; no phrase renormalization',
         unseen='uniform over all formal inputs and outputs; observed words use normalized counts without smoothing',
-        word_flow='spec section 2b: symmetric operations carry all operand words; not/non preserve; headed operations carry the head operand words; clauses carry none; no first-word selector',
+        word_flow='spec section 2b: the listed symmetric operations carry all operand words; product has an empty carrier; not/non preserve; headed operations carry the head operand words; clauses carry none; no first-word selector',
         category_evidence='kept readings only, every input and output; no annotation operands',
         questions='none for bare NPs; what is <adjective> ? otherwise, supplied answer only during training',
         heldout_labels='grader only; no model call receives a held-out tree, span, answer or occurrence label',
@@ -177,8 +185,8 @@ def run(args):
         reference_variants='unchanged',nested_marker_pattern=None,
         compose_step_cost='WHAT_STEP_COST for every binary, unary or transpose step',
         gates=dict(exact_brackets=.9,one_order1_occurrence=.95,duplicates=0,collisions=0,
-                   unexpected_occurrences=0,learned_operation=1.),
-        measurement='final stage: all 14 held-out brackets, 10 determiner NPs, 4 bare controls; otherwise the current lesson only; lowering stamps reported; absent families have no gate',
+                   unexpected_occurrences=0,exact_answers=1.),
+        measurement='final stage: all 14 held-out brackets, 10 determiner NPs, 4 bare controls; otherwise the current lesson only; lowering stamps, kept operators and bare-description occurrences reported; absent families have no gate',
         deferred='the full NP→VP fixture requires all five lessons; stop the sequence at the first failure',
         budget='paired updates only; batch-end update disabled; stop at a failed gate',
         authorized_np_budget=dict(cumulative_presentations=108,cumulative_paired_updates=56,
@@ -259,6 +267,7 @@ def run(args):
                             word_ids=kept_word_ids[b],unidentified_word_leaves=sum(word<0 for word in kept_word_ids[b])))
                         if not training:
                             result=grade(labels[row['id']],observed)
+                            result['question_expected']=q[b] is not None
                             if asked:
                                 result['question']=q[b]['prompt']
                                 result['answer']=answers[b] if b<len(answers) else None

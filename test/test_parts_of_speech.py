@@ -250,11 +250,13 @@ def test_stage_menu_masks_every_undeclared_operation(chooser):
     layer.set_stage_menu(('STOP','lower'))
     logits = layer(torch.randn(1,2,4),slots=2,occupation=torch.ones(1,2,len(parts.arguments)))[2]['logits']
     assert torch.isfinite(logits).tolist() == [[True,False,False,False,True]]
-    from np_corpus import corpus, load
+    from np_corpus import corpus, load, DEST
     rows = corpus()
     assert len(rows)==56 and sum(row[0]=='train' for row in rows)==42
     assert sum(row[0]=='eval' and row[3]['family']=='np' for row in rows)==10
     assert len({row[1]['text'] for row in rows}) == 56
+    import json
+    assert json.loads((DEST/'train.lessons.json').read_text()) == [row[2] for row in rows if row[0]=='train']
     for split in ('train','eval'):
         text, labels = load(split)
         assert text == [row[1] for row in rows if row[0]==split]
@@ -285,7 +287,8 @@ def test_stage_menu_masks_every_undeclared_operation(chooser):
         duplicate_writes=0,occurrence_collisions=0,unexpected_occurrences=0,
         unlowered_clean=True if label['unlowered'] else None) for label in labels.values()]
     final=summarize_stage(results,'final')
-    assert final['passed'] and [final['gates'][key]['total'] for key in ('brackets','occurrences','unlowered')]==[14,10,4]
+    assert final['passed'] and [final['gates'][key]['total'] for key in ('brackets','occurrences')]==[14,10]
+    assert final['reports']['unlowered']['total']==4
     controls=[row for row in results if row['unlowered_clean'] is not None]
     for row in controls[:2]:row['brackets']=False
     assert not summarize_stage(results,'final')['gates']['brackets']['passed']
@@ -293,14 +296,14 @@ def test_stage_menu_masks_every_undeclared_operation(chooser):
     assert not summarize_stage(results,'final')['gates']['occurrences']['passed']
 
 
-def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_path, monkeypatch):
+@pytest.mark.phase("np_definite")
+def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_path, monkeypatch, restore_phase):
     from Models import BaseModel
     from identity_experiment import make_model,restore_warmup
     from IndependentComponents import _unpack_state
     restore = BaseModel.load_weights
     model = make_model(tmp_path, monkeypatch)
-    archive = Path(__file__).resolve().parents[1]/'output/np-definite-restored-20261018/trained.ckpt'
-    restore_warmup(model,archive,restore)  # Asserts every retained tensor, with declared migration.
+    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.
     parts = model.languageSpace.parts_of_speech
     assert parts.counts
     for word in range(123,143):

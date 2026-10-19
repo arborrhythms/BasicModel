@@ -21,7 +21,7 @@ class PilotProbe:
             for state in constituent_examples(language, program, lesson['tree']):
                 self.states.append(dict(state, text=lesson['text']))
                 target = state['target']
-                self.before_values['wait' if target < 0 else 'fold'].append(
+                self.before_values['wait' if target == -1 else 'fold'].append(
                     float(-student_target_probability(language._tree_layer(2), state,
                         state['observed_probabilities']).clamp_min(1e-30).log()))
 
@@ -42,7 +42,7 @@ class PilotProbe:
                 target = state['target']
                 probability = student_target_probability(layer, state, probabilities)
                 value = float(-probability.clamp_min(1e-30).log())
-                values['wait' if target < 0 else 'fold'].append(value)
+                values['wait' if target == -1 else 'fold'].append(value)
                 diagnostics.append(dict(text=state['text'], slot=state['slot'], spans=state['spans'],
                     target=target, target_actions=student_target_actions(layer, state), selected_kind=state['kind'],
                     before=float(-student_target_probability(layer, state,

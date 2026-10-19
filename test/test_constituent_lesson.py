@@ -248,16 +248,13 @@ def test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer(tmp_path, m
 
 @pytest.mark.learning_certificate
 @pytest.mark.artifact_eval
-def test_four_constituent_gates_on_trained_artifact():
+@pytest.mark.phase("stage4e")
+def test_four_constituent_gates_on_trained_artifact(phase_artifact, phase_registry):
     import json
-    import os
-    from pathlib import Path
     from constituent_corpus import load
-    path = os.environ.get('BASICMODEL_CONSTITUENT_ARTIFACT')
-    if not path:
-        pytest.skip('set BASICMODEL_CONSTITUENT_ARTIFACT to a stage 4e run')
+    path = phase_registry.resolve(phase_artifact.path)
     texts, labels = load('eval')
-    records = json.loads((Path(path)/'kept-programs.json').read_text())
+    records = json.loads(path.read_text())
     readings = [row for row in records if not row['training']]
     assert Counter(row['id'] for row in readings) == Counter(row['id'] for row in texts)
     result = summarize([grade(labels[row['id']], row['observed']) for row in readings])

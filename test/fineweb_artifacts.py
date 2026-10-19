@@ -1,26 +1,20 @@
 """Explicit trained-artifact prerequisites for learning-quality tests."""
-import os
-from pathlib import Path
 import pytest
 from LearningEvaluation import MIN_FINEWEB_SENTENCES, checkpoint_readiness
 
 
 @pytest.fixture
-def fineweb_checkpoint():
-    checkpoint = os.environ.get('BASICMODEL_FINEWEB_CHECKPOINT')
-    if not checkpoint:
-        pytest.skip('requires BASICMODEL_FINEWEB_CHECKPOINT with at least '
-                    f'{MIN_FINEWEB_SENTENCES:,} completed FineWeb training sentences')
-    config = os.environ.get('BASICMODEL_FINEWEB_CONFIG')
-    if not config:
-        pytest.fail('BASICMODEL_FINEWEB_CHECKPOINT requires its BASICMODEL_FINEWEB_CONFIG')
-    minimum = int(os.environ.get('BASICMODEL_FINEWEB_MIN_SENTENCES', MIN_FINEWEB_SENTENCES))
-    config, checkpoint = Path(config).resolve(), Path(checkpoint).resolve()
-    if not config.is_file() or not checkpoint.is_file():
-        pytest.fail('the explicitly configured FineWeb checkpoint/config does not exist')
+def fineweb_checkpoint(phase_artifact, phase_registry):
+    if not phase_artifact.config:
+        pytest.fail('FineWeb phase artifact requires its model config')
+    config = phase_registry.resolve(phase_artifact.config)
+    checkpoint = phase_registry.resolve(phase_artifact.path)
+    minimum = phase_artifact.minimum_sentences or MIN_FINEWEB_SENTENCES
+    if not config.is_file():
+        pytest.fail('the registered FineWeb config does not exist')
     readiness = checkpoint_readiness(checkpoint, minimum_sentences=minimum)
     if not readiness.eligible:
-        pytest.skip(readiness.reason)
+        pytest.fail(f'registered FineWeb artifact ineligible: {readiness.reason}', pytrace=False)
     return dict(config=config, checkpoint=checkpoint, minimum_sentences=minimum)
 
 

@@ -62,17 +62,39 @@ WEEKLY_CONTRACTS = frozenset({
     'test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons',
 })
 
+# The marker is the prerequisite; these initial ports must not lose it.
+PHASE_CERTIFICATES = {
+    'test/test_fineweb_learning.py::test_trained_fineweb_prediction_benefits_from_context':
+        'fineweb',
+    'test/test_fineweb_learning.py::test_trained_fineweb_remainder_reduces_work_at_matched_error':
+        'fineweb',
+    'test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning':
+        'fineweb',
+    'test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows':
+        'fineweb',
+    'test/test_thinking_kernel.py::TestDepth3RelativeEndState::test_first_trained_read_reaches_depth3_end_state':
+        'fineweb',
+    'test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact':
+        'stage3',
+    'test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly':
+        'np_definite',
+    'test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode':
+        'copular_identity',
+    'test/test_constituent_lesson.py::test_four_constituent_gates_on_trained_artifact':
+        'stage4e',
+}
+
+
 DEFAULT_CERTIFICATES = frozenset({
+    'test/test_item55_mechanisms.py::test_nested_wholes',
     'test/test_item55_mechanisms.py::test_clock_independence',
     'test/test_item55_mechanisms.py::test_offset_independence',
     'test/test_item55_mechanisms.py::test_stream_chain',
     'test/test_item55_mechanisms.py::test_interleaving',
     'test/test_item55_mechanisms.py::test_preposition_idempotence',
     'test/test_item55_mechanisms.py::test_surface_inverses',
-    'test/test_item55_mechanisms.py::test_nested_wholes',
     'test/test_item55_mechanisms.py::test_absences',
     'test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles',
-    'test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode',
     'test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]',
     'test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]',
     'test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode',
@@ -123,6 +145,8 @@ def _switch_gated(obj, decorators_only=False):
 
 
 def is_slow(item):
+    if item.get_closest_marker("phase"):
+        return False
     if item.nodeid in DEFAULT_CERTIFICATES or item.get_closest_marker('learning_certificate'):
         return False
     if item.nodeid in WEEKLY_CONTRACTS:
@@ -135,6 +159,7 @@ def is_slow(item):
 
 
 def pytest_configure(config):
+    config.addinivalue_line("markers", "phase(name): certificate restoring a registered lesson artifact")
     config.addinivalue_line(
         'markers','slow: long training/quality/compilation check; opt in with RUN_SLOW=1')
     config.addinivalue_line('markers', 'device(name): explicitly select a bounded worker device')
@@ -147,6 +172,10 @@ def pytest_collection_modifyitems(items):
     enabled=os.environ.get('RUN_SLOW')=='1'
     skipped=pytest.mark.skip(reason='slow -- set RUN_SLOW=1')
     for item in items:
+        if item.nodeid in PHASE_CERTIFICATES:
+            from phase_artifacts import certificate_phase
+            if certificate_phase(item) != PHASE_CERTIFICATES[item.nodeid]:
+                raise ValueError(f"phase certificate lost its prerequisite: {item.nodeid}")
         if item.nodeid in WEEKLY_CONTRACTS:
             item.add_marker(pytest.mark.slow)
         if is_slow(item):

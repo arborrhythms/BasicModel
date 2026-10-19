@@ -234,7 +234,11 @@ def test_surface_inverses(tmp_path, monkeypatch):
                       (PrepositionUnaryLayer,PrepositionLayer(8,8)),
                       (SurfaceUnaryLayer,surface)):
         unary = face(base)
-        with torch.no_grad(): unary.marker.fill_(.125)
+        if isinstance(base,SurfaceLayer):
+            with torch.no_grad(): unary.marker.fill_(.125)
+        else:
+            assert not list(unary.parameters())
+            assert torch.equal(unary.marker, torch.zeros_like(unary.marker))
         assert unary.base is base
         value = unary.compose(right)
         restored = unary.reverse(value)
@@ -400,11 +404,11 @@ def _native_step_comparison(tmp_path, monkeypatch):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_nested_wholes(tmp_path, monkeypatch):
+def test_nested_wholes():
     from Layers import RadixLayer
     from WordIdentity import WordIdentity
     from Meronomy import pin_word_spans
-    from constituent_corpus import corpus, STAGE3_ARTIFACT
+    from constituent_corpus import corpus
     store = RadixLayer(96, initial_cap=256)
     identity = WordIdentity(store)
     words = (b'walk',b'walked',b'walking',b'walks',b'cat',b'cats',b'went')
@@ -456,13 +460,21 @@ def test_nested_wholes(tmp_path, monkeypatch):
     values=PartSpace.part_memberships(store,[identity.word_rows[b'walk'],row],
                                       native,spans,locations,6)
     assert values[...,0].tolist()==[[[True,True,False]],[[True,False,True]]]
+
+
+@pytest.mark.usefixtures('eager_reading')
+@pytest.mark.phase('stage3')
+def test_nested_wholes_from_stage3_artifact(tmp_path, monkeypatch, restore_phase):
     # This phase's certificate restores the preceding phase's trained artifact.
+    from constituent_corpus import corpus
+    words = (b'walk',b'walked',b'walking',b'walks',b'cat',b'cats',b'went')
+    vocabulary = tuple(sorted({word.encode() for _,text,_,_ in corpus() for word in text['text'].split()}))
     from Models import BaseModel
     from identity_experiment import make_model, restore_warmup
     restore = BaseModel.load_weights
     model = make_model(tmp_path,monkeypatch)
     try:
-        restore_warmup(model, STAGE3_ARTIFACT, restore)
+        restore_phase(lambda path: restore_warmup(model, path, restore))
         current=model.perceptualSpace.percept_store.identity
         assert not current.nested and current._marker_pattern is None
         for _ in range(2):

@@ -429,7 +429,7 @@ def make_batches(nodes, batch_size=256, max_files=16, devices=None, shared_train
 
 def source_snapshot(root):
     paths = set()
-    for directory, suffixes in (("bin", {".py"}), ("test", {".py"}),
+    for directory, suffixes in (("bin", {".py"}), ("test", {".py", ".json"}),
                                 ("data", {".xml", ".xsd", ".grammar", ".json"})):
         paths.update(p for p in (root / directory).rglob("*") if p.suffix in suffixes and p.is_file())
     paths.update(root / name for name in ("pytest.ini", "Makefile", "requirements.txt", "README.md")
@@ -444,6 +444,15 @@ def documentation_snapshot(root):
     if (root / "todo.md").is_file():
         paths.add(root / "todo.md")
     return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+
+
+def phase_registry_override(root):
+    """A private prerequisite map is part of the measured input, too."""
+    selected = os.environ.get('BASICMODEL_PHASE_ARTIFACTS')
+    if selected is None:
+        return None
+    path = (Path(root)/selected).resolve()
+    return dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
 
 
 def requires_suite_lock(selectors, keyword, marker):
@@ -493,6 +502,18 @@ def worker_environment(root):
     return env
 
 
+def skipped_certificates_by_phase(result):
+    """Keep prerequisite skips visible in the landing receipt, by lesson."""
+    grouped = {}
+    for worker in result['workers']:
+        for report in worker.get('reports', []):
+            phase = report.get('certificate_phase')
+            if phase and report['outcome'] == 'skipped':
+                grouped.setdefault(phase, {})[report['nodeid']] = report.get('message', '')
+    return {phase: [dict(nodeid=node, reason=reason) for node, reason in sorted(nodes.items())]
+            for phase, nodes in sorted(grouped.items())}
+
+
 def render_report(path, result):
     rows = []
     for worker in result["workers"]:
@@ -508,6 +529,11 @@ def render_report(path, result):
         "<p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p>"
         + "".join(f"<p><strong>Warning:</strong> {html.escape(warning)}</p>"
                   for warning in result.get("warnings", []))
+        + '<h2>Skipped phase certificates</h2>'
+        + ''.join(f'<h3>{html.escape(phase)} ({len(records)})</h3><ul>' + ''.join(
+            f"<li>{html.escape(record['nodeid'])}: {html.escape(record['reason'])}</li>"
+            for record in records) + '</ul>'
+            for phase, records in result.get('skipped_certificates_by_phase', {}).items())
         +
         "<table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr>"
         + "".join(rows) + "</table></body></html>")
@@ -540,7 +566,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
     split_devices = not os.environ.get("BASICMODEL_DEVICE")
     devices, active, cache_retried = {}, {}, set()
     run_dir.mkdir(parents=True, exist_ok=False)  # Never reuse a stale success receipt.
-    started, frozen = time.monotonic(), None
+    started, frozen, frozen_registry = time.monotonic(), None, None
     result = dict(exit_code=125, reason="incomplete", selected=[], completed=[], workers=[],
                   compile_cache_retries=[],
                   limits=dict(memory_bytes=memory_bytes, aggregate_memory_bytes=memory_bytes,
@@ -560,6 +586,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
 
     def save():
         result["elapsed_seconds"] = time.monotonic() - started
+        result['skipped_certificates_by_phase'] = skipped_certificates_by_phase(result)
         write_json(run_dir / "result.json", result)
         render_report(run_dir / "report.html", result)
 
@@ -582,7 +609,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         remaining = suite_timeout - (time.monotonic() - started)
         if remaining <= 0:
             raise TimeoutError("Suite deadline reached")
-        if source_snapshot(root) != frozen:
+        if source_snapshot(root) != frozen or phase_registry_override(root) != frozen_registry:
             raise RuntimeError("Tested source changed during this run; validation is incomplete")
         request_file, response_file = run_dir / f"{name}.request.json", run_dir / f"{name}.json"
         recycle_file = None if request.get("collect") else run_dir / f"{name}.recycle.json"
@@ -708,9 +735,11 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                         else nullcontext())
         with lock_context, termination_signals():
             frozen = source_snapshot(root)
+            frozen_registry = phase_registry_override(root)
             documentation = documentation_snapshot(root)
             write_json(run_dir / "source-manifest.json", dict(
-                validated_source=frozen, recorded_documentation=documentation))
+                validated_source=frozen, recorded_documentation=documentation,
+                phase_registry_override=frozen_registry))
             collect_handle = launch_worker(
                 "collect", dict(selectors=selectors or ["test"], collect=True,
                                 keyword=keyword, marker=marker), worker_memory_bytes)
@@ -721,6 +750,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
             publish_active()
             result["collection"] = collect
             result["selected"] = collect.get("pytest", {}).get("selected", [])
+            result['phase_certificates'] = collect.get('pytest', {}).get('phase_certificates', {})
             if collect["exit_code"] != 0:
                 result.update(exit_code=collect["exit_code"], reason="collection_" + collect["reason"])
             elif not result["selected"]:
@@ -789,7 +819,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                             result.update(exit_code=0, reason="passed")
                     else:
                         result.update(exit_code=125, reason="incomplete_coverage")
-            if source_snapshot(root) != frozen:
+            if source_snapshot(root) != frozen or phase_registry_override(root) != frozen_registry:
                 result.update(exit_code=125, reason="source_changed")
     except _Interrupted as exc:
         result.update(exit_code=128 + exc.signum, reason="interrupted")
@@ -860,4 +890,6 @@ def main(argv=None):
         parser.error(str(exc))
     print(f"Result: {result['reason']}, exit {result['exit_code']}; "
           f"{len(result['completed'])}/{len(result['selected'])} cases completed.\n{run_dir / 'result.json'}", flush=True)
+    for phase, records in result.get('skipped_certificates_by_phase', {}).items():
+        print(f"Skipped phase certificates: {phase}: {len(records)}", flush=True)
     return result["exit_code"], run_dir / "report.html"

@@ -46,6 +46,7 @@ class TestReasoningCDEModel(unittest.TestCase):
             self.assertEqual(cs.intraSentenceLayer.routing_proj.in_features,
                              self.m.languageSpace._n_rules)
 
+    @pytest.mark.phase("fineweb")
     def test_truthset_provisions_source_rows(self):
         store = self.m.symbolSpace.ltm_store
         # This is a learning assertion, with no supplied relation annotation.

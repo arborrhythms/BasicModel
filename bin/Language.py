@@ -3475,6 +3475,8 @@ class LowerLayer(GrammarLayer):
     lossy = True
     space_role = 'CS'
 
+    left_identity = 0.  # The absent marker leaves the description unchanged.
+
     def __init__(self, nInput=0, nOutput=None, **kwargs):
         super().__init__(int(nInput or 0), int(nOutput or nInput or 0))
 
@@ -3558,6 +3560,7 @@ class PrepositionLayer(GrammarLayer):
     invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     event_aware = True          # operates on the muxed event (modifies .where)
     semantic_operand = 1
+    left_identity = 0.
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
@@ -3580,7 +3583,11 @@ class PrepositionLayer(GrammarLayer):
         return self.reverse(parent, **kwargs)
 
 class MarkerUnaryLayer(GrammarLayer):
-    """The same marker-headed kernel with its own learned, unwritten marker."""
+    """The binary kernel with its left identity, when it has one.
+
+    Surface's learned affine marker map has no fixed raw-input identity, so
+    its absent marker remains learned. Projection faces use constant zero.
+    """
     arity = 1
     head_role = 1
     inverse_kind = 'unary'
@@ -3595,7 +3602,11 @@ class MarkerUnaryLayer(GrammarLayer):
         # The host owns the binary implementation once. Only the missing
         # marker belongs to this face; no second implementation is trained.
         object.__setattr__(self, 'base', base)
-        self.marker = nn.Parameter(torch.zeros(width))
+        identity = getattr(base, 'left_identity', None)
+        if identity is None:
+            self.marker = nn.Parameter(torch.zeros(width))
+        else:
+            self.register_buffer('marker', torch.full((width,), identity), persistent=False)
 
     def compose(self, value):
         return self.base.compose(self.marker.expand_as(value), value)

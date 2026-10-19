@@ -82,7 +82,11 @@ Thus both `black` and `cat` flow through `lower(a, intersection(black, cat))`
 and into `lift`, after which neither is carried. Their chooser probabilities
 add, one contribution per carried occurrence. Operations outside this table
 with no declared head retain the existing empty carrier; this pass makes no
-new type claim for those operations, which are outside the NP menu.
+new type claim for those operations. The 2026-10-18 catalogue amendment admits
+`product` to the NP menu without adding it to this flow table; its carrier
+therefore remains empty. Menu admission alone does not declare an output type.
+The flow rule for `product` is still open and needs a decision before another
+adjective lesson.
 
 *Linguistic note (Claude).* Coordination preserves the conjuncts' type
 (Williams 1981's Law of Coordination of Likes); the counterexamples ("Pat is
@@ -166,16 +170,19 @@ certificates restore it (artifact → fixture).
    adjective-noun descriptions as unlowered controls, with the 4b-style
    question where one applies; a held-out quarter by the usual
    counterbalance (committed as `data/noun_phrases`). Menu: STOP, `lower`,
-   `definite`, `intersection`. The stage is a sequence of prerequisite
+   `definite`, `intersection`, `product`. The stage is a sequence of prerequisite
    lessons, one unknown each, each gated on its own held-out items before
    the next restores its artifact: `lower` on bare "a" NPs, `definite` on
-   bare "the" NPs, `description` (`intersection` alone, on bare
+   bare "the" NPs, `description` (modification on bare
    adjective-noun pairs), `adjective` ("a" + adjective + noun, where
-   `intersection` is scheduled inside an NP), `definite adjective`. After
+   modification is scheduled inside an NP), `definite adjective`. After
    the last lesson the stage's gates run once on the whole held-out quarter
    from the last artifact, which is the NP VP stage's fixture. The bracket
    CE lesson on the student's states stays inside each lesson as the
-   teacher of the operator choice (it never supplies occupation evidence);
+   teacher of the operator choice (it never supplies occupation evidence).
+   Adjective-noun annotations name a `modification` bracket; its fold target
+   sums the admissible `intersection` and `product` actions, including their
+   reference variants. The kept operator is reported under §5a;
    reconstruction and the questions are the keep credit, as now.
 2. **NP VP stage.** The 4c sentences; menu adds `lift` (and `verb` with its
    object NP at the same stage or the next, one new operation per stage).
@@ -183,6 +190,18 @@ certificates restore it (artifact → fixture).
 
 Budgets are declared per stage before the run, as 4e's were; no stage
 extends its budget to pass.
+
+## 5a. Gates are behaviors *(decided, Alec, 2026-10-18)*
+
+"Whatever does the job, great; in writing a UG, we do not demand which
+operators must be chosen, only which behaviors must be exhibited." No lesson
+gate names an operator. A lesson's gates are the behaviors its sentences
+exhibit: the held-out constituents (brackets), the answers to its questions,
+one individual per singular NP (one order-1 occurrence, no duplicates or
+collisions), and the stamps and the kept operators are reported, never
+required. The bare-description control (no occurrence for "small cat") is a
+report, not a gate; whether a bare description licenses a later reference is
+a behavior to be measured by a later sentence, not demanded of a reading.
 
 ## 6. Measurement
 
@@ -195,10 +214,11 @@ Per stage, on held-out sentences of the stage's kinds:
   distributions); the noun-prior table (which words' concepts are tied to
   individual columns); earlier classes unchanged by the new stage;
 - collapse reported as the agreement between slot sets (one table);
-- the four 4e gates once all four families' stages have run, from the last
-  stage's artifact, at the declared budget.
+- the §5a behavior gates once the NP prerequisite sequence has run, from
+  the last artifact on the whole held-out quarter at the declared budget;
+  kept operators, lowering stamps and bare-description occurrences reported.
 
-Mechanism certificates, unconditional: occupation counts move only on kept
+Mechanism certificates (artifact restoration is phase-gated): occupation counts move only on kept
 readings, never on the annotation; a word's single part of speech is the
 argmax of its counts and is recomputed when they change; the chooser's score
 reads the categorizer's probability for each input argument; the stage menu

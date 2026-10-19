@@ -7,6 +7,7 @@ from fineweb_artifacts import fineweb_checkpoint, fineweb_trained_model
 
 
 
+@pytest.mark.phase("fineweb")
 class TestDepth3RelativeEndState(unittest.TestCase):
     """Learning campaign over a mature checkpoint, never an untrained grammar.
 

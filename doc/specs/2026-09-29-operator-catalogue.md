@@ -1737,3 +1737,24 @@ the answer term; the receipt reports each action, including both directions
 of `not` credit. No standing training is replaced. Alec accepted this repair
 as the operators-update landing under plan §45 on October 7, authorizing
 commit, push and the WikiOracle bump. Item 6.5 follows with §44 first.
+
+## Amendment of 2026-10-18: adjective modification is not only intersection *(decided, Alec)*
+
+Intersection cannot be the operator for adjectives in general, because it
+does not apply universally across nouns: what is small for a big noun is
+larger than what is small for a small noun. A function like *times*, relative
+to its argument, fits better. Both options are present in the grammar
+(`intersection` and `product`), and the grammar chooses; if `lower` does the
+job, so be it. Nouns are adjectives pre-applied to the universe, which is the
+vector of all ones (the multiplicative identity); other operators should
+likewise have an identity element, so that an operator applied without its
+written operand is the operator applied to its identity (the unary faces of
+the parts-of-speech work carry that identity rather than a free learned
+marker). *Consequence for lessons (Claude):* an adjective-noun bracket names
+the constituent, not the operator; the lesson's fold target at that pair is
+any admissible modification operator, and the kept operator is reported.
+*Representation note (Claude):* on the present sparse bipolar meaning codes
+the Hadamard product is as empty as the intersection (a zero coordinate in
+either operand annihilates); "times" does its work when an adjective's code
+is the identity plus a deviation on its own dimensions, which is a grounding
+question before it is an operator question.
