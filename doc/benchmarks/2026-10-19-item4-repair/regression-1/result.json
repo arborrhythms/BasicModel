@@ -1,0 +1,2875 @@
+{
+  "exit_code": 124,
+  "reason": "timeout",
+  "selected": [
+    "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+    "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+    "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+    "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+    "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+    "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+    "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+    "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+    "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+    "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+    "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+    "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+    "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+    "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+    "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+    "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+    "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+    "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+    "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+    "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+    "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+    "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+    "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+    "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+    "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+    "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+    "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+    "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+    "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+    "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+    "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+    "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+    "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+    "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+    "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+    "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+    "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+    "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+    "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+    "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+    "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+    "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
+    "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+    "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+    "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+    "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]",
+    "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+    "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit",
+    "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width",
+    "test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly",
+    "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "test/test_output_walk.py::test_question_conditioner_legacy_singular_checkpoint_reloads_strictly",
+    "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows",
+    "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present",
+    "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule",
+    "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-False]",
+    "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[False-False]",
+    "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-True]",
+    "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits",
+    "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context",
+    "test/test_output_walk.py::test_materialised_answer_uses_one_conditioning_application",
+    "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+    "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "test/test_retired_names.py::test_retired_names_remain_absent",
+    "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[False-None]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[False-rows1]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[True-None]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[True-rows1]",
+    "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+    "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+    "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]",
+    "test/test_stream_state_shapes.py::test_word_references_clear_on_forward_start_and_document_reset",
+    "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[orders]",
+    "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[evidence]",
+    "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[orders]",
+    "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[evidence]",
+    "test/test_stream_state_shapes.py::test_rejected_taxonomy_resize_does_not_partially_resize_its_owner",
+    "test/test_stream_state_shapes.py::test_recall_batch_shape_cannot_change_before_reset",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_only_the_finished_rows_priming",
+    "test/test_walk_trials.py::test_output_pair_costs_complete_paths_and_keeps_greedy_ties",
+    "test/test_walk_trials.py::test_output_without_a_legal_alternative_never_switches",
+    "test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward",
+    "test/test_walk_trials.py::test_thought_pair_tie_keeps_greedy_state_and_shared_meter",
+    "test/test_walk_trials.py::test_thought_explore_starts_at_detached_departure_without_reopening_episode",
+    "test/test_walk_trials.py::test_walk_audit_records_strict_wins_and_sentence_stability",
+    "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+    "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation",
+    "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+    "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+    "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+    "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+    "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+    "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+    "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+    "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+    "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+    "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+    "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+    "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+    "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+    "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+    "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+    "test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot",
+    "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row",
+    "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+    "test/test_expectation_benchmark.py::test_windows_exclude_targets_future_sentences_and_other_documents",
+    "test/test_expectation_benchmark.py::test_masked_target_roles_and_history_are_reported_separately",
+    "test/test_expectation_benchmark.py::test_throughput_excludes_warmup_and_counts_actual_sentences_pairs_and_labels",
+    "test/test_expectation_benchmark.py::test_sentence_rate_is_independent_of_predictor_observation_eligibility",
+    "test/test_expectation_benchmark.py::test_counts_one_joint_step_for_native_dense_and_sparse_optimizer",
+    "test/test_expectation_benchmark.py::test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device",
+    "test/test_expectation_benchmark.py::test_context_free_control_removes_presence_and_length_as_well_as_values",
+    "test/test_expectation_benchmark.py::test_forecast_scoring_uses_exact_bank_activations"
+  ],
+  "completed": [
+    "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+    "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+    "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+    "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+    "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+    "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+    "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+    "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+    "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+    "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+    "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+    "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+    "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+    "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+    "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+    "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+    "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+    "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+    "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+    "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+    "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+    "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+    "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+    "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+    "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+    "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+    "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+    "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+    "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+    "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+    "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+    "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+    "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+    "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+    "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+    "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+    "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+    "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
+    "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+    "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+    "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+    "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+    "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+    "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+    "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+    "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+    "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+    "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+    "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+    "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+    "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+    "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+    "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+    "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+    "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+    "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+    "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+    "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+    "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+    "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+    "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+    "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+    "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+    "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+    "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+    "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+    "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+    "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-000.json"
+      ],
+      "pid": 21094,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429868352,
+      "elapsed_seconds": 3.87102112499997,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]"
+      ],
+      "completed": [
+        "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016186668071895838,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003065292024984956,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002332707867026329,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002147125080227852,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-001.json"
+      ],
+      "pid": 21095,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434079064,
+      "elapsed_seconds": 4.845674875192344,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+        "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]"
+      ],
+      "completed": [
+        "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+        "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0123650839086622,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00044658384285867214,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009336669463664293,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006148340180516243,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-003.json"
+      ],
+      "pid": 21146,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426820904,
+      "elapsed_seconds": 3.789148167008534,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+        "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+        "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+        "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates"
+      ],
+      "completed": [
+        "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+        "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+        "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+        "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011724540963768959,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010384160559624434,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003296959213912487,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004825666081160307,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-002.json"
+      ],
+      "pid": 21145,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426411280,
+      "elapsed_seconds": 4.898893374949694,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+        "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+        "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+        "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs"
+      ],
+      "completed": [
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+        "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+        "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+        "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0012812078930437565,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001565583050251007,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007472920697182417,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0008955409284681082,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-004.json"
+      ],
+      "pid": 21158,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426247464,
+      "elapsed_seconds": 3.8478128330316395,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+        "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+        "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+        "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore"
+      ],
+      "completed": [
+        "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+        "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+        "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+        "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006625000387430191,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017629999201744795,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00041304202750325203,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004454209003597498,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-005.json"
+      ],
+      "pid": 21177,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 400196952,
+      "elapsed_seconds": 3.853137040976435,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+        "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+        "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+        "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign"
+      ],
+      "completed": [
+        "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+        "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+        "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+        "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0013644578866660595,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004263625014573336,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001641416922211647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001160917105153203,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-006.json"
+      ],
+      "pid": 21189,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429606208,
+      "elapsed_seconds": 4.136385708115995,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+        "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+        "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+        "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor"
+      ],
+      "completed": [
+        "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+        "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+        "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+        "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0012683749664574862,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0065340830478817225,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002152166096493602,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004061917075887322,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-007.json"
+      ],
+      "pid": 21195,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 406045968,
+      "elapsed_seconds": 4.133207416860387,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+        "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+        "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001804291969165206,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.04032950010150671,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.032671833178028464,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011489541968330741,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-008.json"
+      ],
+      "pid": 21205,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430114088,
+      "elapsed_seconds": 4.016322167124599,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.0001343749463558197,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_negative_expectation.py', 115, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011230457806959748,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011938040843233466,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009817625163123012,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-009.json"
+      ],
+      "pid": 21226,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 406340904,
+      "elapsed_seconds": 4.020578624913469,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+        "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+        "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+        "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+        "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+        "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+        "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.015183374984189868,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.027403500163927674,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010485125007107854,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013401833828538656,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-010.json"
+      ],
+      "pid": 21236,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435406168,
+      "elapsed_seconds": 4.114338333951309,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+        "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+        "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+        "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+        "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.036740874871611595,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011514041805639863,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00892495783045888,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009006659965962172,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-011.json"
+      ],
+      "pid": 21241,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 363381840,
+      "elapsed_seconds": 4.073108499869704,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00013520894572138786,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_negative_expectation.py', 309, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00147387501783669,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00037679215893149376,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003406249452382326,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-012.json"
+      ],
+      "pid": 21270,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 427771176,
+      "elapsed_seconds": 4.042045416077599,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+        "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+        "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+        "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+        "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+        "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+        "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001501500140875578,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004988624947145581,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.018540832912549376,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007325001060962677,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-013.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-013.json"
+      ],
+      "pid": 21271,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 427590952,
+      "elapsed_seconds": 5.0161106660962105,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-013.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+        "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+        "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+        "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+        "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+        "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+        "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004761209012940526,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0023853331804275513,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017504999414086342,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000985375139862299,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-014.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-014.json"
+      ],
+      "pid": 21296,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 769525320,
+      "elapsed_seconds": 4.804523207945749,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-014.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+        "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+        "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.32382183405570686,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.27041650004684925,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.27561862487345934,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00030683306977152824,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-016.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-016.json"
+      ],
+      "pid": 21334,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 626230808,
+      "elapsed_seconds": 4.884134541032836,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-016.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+        "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+        "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+        "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+        "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+        "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+        "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.03378725005313754,
+          "message": "test/test_expectation_defaults.py:283: in test_packed_ltm_ignores_masked_slots_even_with_retained_storage\n    commit_reading(f.language, f.registry, entry, store, discourse=discourse,\ntest/reading_fixtures.py:274: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20366: in _commit_sentence\n    history = self._recall_sentence_history(batch=len(fields))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_recall_sentence_history'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.3132762920577079,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008331167045980692,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014222909230738878,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-015.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-015.json"
+      ],
+      "pid": 21297,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 816219648,
+      "elapsed_seconds": 10.730374542064965,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-015.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 2.948442457942292,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.0001477920450270176,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_expectation_defaults.py', 143, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00013037491589784622,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_expectation_defaults.py', 179, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 3.494743833085522,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-017.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-017.json"
+      ],
+      "pid": 21369,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 427607384,
+      "elapsed_seconds": 4.107453791890293,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-017.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]"
+      ],
+      "completed": [
+        "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0044919580686837435,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0032740000169724226,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0024454582016915083,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016855830326676369,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-018.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-018.json"
+      ],
+      "pid": 21374,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 361284688,
+      "elapsed_seconds": 4.0745032909326255,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-018.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+        "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+        "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+        "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+        "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+        "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+        "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004355708137154579,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002894749864935875,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003129624994471669,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011213083053007722,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-020.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-020.json"
+      ],
+      "pid": 21428,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 433128744,
+      "elapsed_seconds": 4.115298459073529,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-020.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+        "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+        "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+        "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+        "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0037218329962342978,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001574082998558879,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014699541963636875,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006973340641707182,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-019.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-019.json"
+      ],
+      "pid": 21427,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 558482728,
+      "elapsed_seconds": 5.206873791059479,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-019.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+        "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+        "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+        "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+        "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.04235795792192221,
+          "message": "test/test_sentence_expectation.py:125: in test_streaming_and_packed_boundary_use_same_full_roles\n    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,\ntest/reading_fixtures.py:274: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20366: in _commit_sentence\n    history = self._recall_sentence_history(batch=len(fields))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_recall_sentence_history'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.01816237485036254,
+          "message": "test/test_sentence_expectation.py:125: in test_streaming_and_packed_boundary_use_same_full_roles\n    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,\ntest/reading_fixtures.py:274: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20366: in _commit_sentence\n    history = self._recall_sentence_history(batch=len(fields))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_recall_sentence_history'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003426042152568698,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012199999764561653,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-021.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-021.json"
+      ],
+      "pid": 21459,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 508806536,
+      "elapsed_seconds": 5.7061877499800175,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-021.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+        "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+        "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+        "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+        "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00017212494276463985,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+          "phase": "call",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.0002247910015285015,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sentence_expectation.py', 228, \"Skipped: could not import 'lxml.etree': No module named 'lxml'\")",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010528750717639923,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.604328416986391,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-022.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-022.json"
+      ],
+      "pid": 21464,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 510690648,
+      "elapsed_seconds": 5.822591540869325,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-022.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+        "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+        "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+        "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+        "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.5982283749617636,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006000420544296503,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007799591403454542,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001444169320166111,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-024.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-024.json"
+      ],
+      "pid": 21502,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 477152624,
+      "elapsed_seconds": 4.663112042006105,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-024.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003464791923761368,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.12835608306340873,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.10772620909847319,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08940187515690923,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-025.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-025.json"
+      ],
+      "pid": 21559,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 527631752,
+      "elapsed_seconds": 5.224230416119099,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-025.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.2607009999919683,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.09306399989873171,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.528593499911949,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.09040949982590973,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-023.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-023.json"
+      ],
+      "pid": 21497,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1020200640,
+      "elapsed_seconds": 12.138614875031635,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-023.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 7.451816499931738,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00017362507060170174,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sentence_compose.py', 75, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00208229199051857,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007531251758337021,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-026.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-026.json"
+      ],
+      "pid": 21573,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 540820896,
+      "elapsed_seconds": 5.062000708188862,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-026.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.672991834115237,
+          "message": "",
+          "stdout": "\": \"conceptualSpaces.2.layers.4.reference_close.policy\", \"writers\": []}, {\"elements\": 42, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.2.layers.4.reference_close.cue_policy\", \"writers\": []}, {\"elements\": 3584, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.0.weight\", \"writers\": []}, {\"elements\": 64, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.0.bias\", \"writers\": []}, {\"elements\": 1792, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.2.weight\", \"writers\": []}, {\"elements\": 28, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.2.bias\", \"writers\": []}, {\"elements\": 8, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.local.weight\", \"writers\": []}, {\"elements\": 2, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.local.bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace._readout_bias\", \"writers\": []}, {\"elements\": 112, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.W\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.biasWeight\", \"writers\": []}, {\"elements\": 112, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.W\", \"writers\": []}, {\"elements\": 112, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.biasWeight\", \"writers\": []}, {\"elements\": 6, \"owner\": \"output\", \"parameter\": \"answer_attention.space_bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.consume_gate\", \"writers\": []}, {\"elements\": 64, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.bias\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.bias\", \"writers\": []}, {\"elements\": 406, \"owner\": \"output\", \"parameter\": \"question_conditioners.14.weight\", \"writers\": []}, {\"elements\": 196, \"owner\": \"output\", \"parameter\": \"conceptualSpaces.2.synthesis_layer.raw_L\", \"writers\": []}, {\"elements\": 14, \"owner\": \"output\", \"parameter\": \"conceptualSpaces.2.synthesis_layer.d\", \"writers\": []}, {\"elements\": 196, \"owner\": \"output\", \"parameter\": \"conceptualSpaces.2.synthesis_layer.raw_U\", \"writers\": []}, {\"elements\": 14, \"owner\": \"output\", \"parameter\": \"conceptualSpaces.2.synthesis_layer.biasWeight\", \"writers\": []}, {\"elements\": 196, \"owner\": \"output\", \"parameter\": \"perceptualSpace.synthesis_layer.raw_L\", \"writers\": []}, {\"elements\": 14, \"owner\": \"output\", \"parameter\": \"perceptualSpace.synthesis_layer.d\", \"writers\": []}, {\"elements\": 196, \"owner\": \"output\", \"parameter\": \"perceptualSpace.synthesis_layer.raw_U\", \"writers\": []}, {\"elements\": 14, \"owner\": \"output\", \"parameter\": \"perceptualSpace.synthesis_layer.biasWeight\", \"writers\": []}, {\"elements\": 112, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_L\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.d\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_U\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.biasWeight\", \"writers\": []}, {\"elements\": 225536, \"owner\": \"attention\", \"parameter\": \"candidate_attention.hidden.0.weight\", \"writers\": []}, {\"elements\": 64, \"owner\": \"attention\", \"parameter\": \"candidate_attention.hidden.0.bias\", \"writers\": []}, {\"elements\": 64, \"owner\": \"attention\", \"parameter\": \"candidate_attention.readout.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"attention\", \"parameter\": \"candidate_attention.readout.bias\", \"writers\": []}]}\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08715937496162951,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.1070866659283638,
+          "message": "test/test_output_synthesis.py:283: in test_past_resolves_by_recall_from_discourse_memory\n    assert d.source == \"recall\" and d.resolved\nE   AssertionError: assert ('identity:cold-memory' == 'recall'\nE     \nE     - recall\nE     + identity:cold-memory)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.09335987502709031,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-027.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-027.json"
+      ],
+      "pid": 21578,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 529335712,
+      "elapsed_seconds": 5.188784499885514,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-027.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.1310357500333339,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.10045162495225668,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.67545250011608,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.083s)\r\nbatch = 0 (\u0394=0.072s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.10039237490855157,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-028.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-028.json"
+      ],
+      "pid": 21592,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 533513608,
+      "elapsed_seconds": 5.125497041037306,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-028.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.12375079095363617,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08767966693267226,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08995525003410876,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.6728705829009414,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.093s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-029.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-029.json"
+      ],
+      "pid": 21616,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 544130440,
+      "elapsed_seconds": 5.421787915984169,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-029.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.0453799590468407,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.084s)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6973/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6973/test_synthesized_answer_checkp0/synth.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6973/test_synthesized_answer_checkp0/synth.ckpt\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.04659195803105831,
+          "message": "test/test_output_synthesis.py:557: in test_batched_questions_resolve_per_row\n    assert all(len(history[b]) >= 3 for b in range(2))\nE   assert False\nE    +  where False = all(<generator object test_batched_questions_resolve_per_row.<locals>.<genexpr> at 0x125697220>)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.030556790996342897,
+          "message": "test/test_output_synthesis.py:587: in test_recall_returns_the_most_recent_sentence_during_ring_fill\n    assert len(seen[0]) == 2 < memory._inter_chain_window\nE   assert 0 == 2\nE    +  where 0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08656183304265141,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-030.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-030.json"
+      ],
+      "pid": 21632,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1338738680,
+      "elapsed_seconds": 59.6594785831403,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-030.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+        "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents"
+      ],
+      "completed": [
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+        "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.7937598749995232,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.096s, 50.00%)\r\nbatch = 2 (\u0394=0.084s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=True).\r\nTraining throughput: 2 batches in 0.168s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014311833074316382,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.16356179118156433,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 52.90169933298603,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-032.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-032.json"
+      ],
+      "pid": 21824,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1875151200,
+      "elapsed_seconds": 118.60399645799771,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-032.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+        "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+        "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+        "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+        "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+        "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+        "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 54.47940341709182,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.36649158294312656,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 55.62352379085496,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.835065291961655,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-031.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-031.json"
+      ],
+      "pid": 21655,
+      "exit_code": 124,
+      "reason": "timeout",
+      "peak_memory_bytes": 2091993632,
+      "elapsed_seconds": 181.05674520786852,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-031.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+        "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+        "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+        "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+        "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+        "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 53.91250366694294,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 55.84868499985896,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00012512505054473877,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_output_walk.py', 134, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row"
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-033.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-033.json"
+      ],
+      "pid": 22056,
+      "exit_code": 125,
+      "reason": "aborted",
+      "peak_memory_bytes": 956941992,
+      "elapsed_seconds": 5.178430125117302,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-033.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]",
+        "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.0001354999840259552,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_output_walk.py', 295, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]"
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 180.0,
+    "suite_seconds": 10800,
+    "batch_size": 4,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1",
+  "elapsed_seconds": 266.0842610420659,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 3952989056,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/collect.json"
+    ],
+    "pid": 21066,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 504530168,
+    "elapsed_seconds": 4.353095999918878,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+        "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+        "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+        "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]",
+        "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
+        "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
+        "test/test_item4_repair.py::test_content_assertion_and_exact_tie_credit_are_fail_loud",
+        "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+        "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+        "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+        "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+        "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+        "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+        "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+        "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+        "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+        "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
+        "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+        "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
+        "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
+        "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+        "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+        "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+        "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+        "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+        "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+        "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+        "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+        "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+        "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+        "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+        "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+        "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+        "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+        "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+        "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+        "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+        "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+        "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+        "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+        "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+        "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+        "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+        "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+        "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+        "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+        "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+        "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+        "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+        "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+        "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+        "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+        "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+        "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+        "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+        "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+        "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+        "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+        "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+        "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+        "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
+        "test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict",
+        "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+        "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+        "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+        "test/test_output_synthesis.py::test_output_does_not_consume_reconstruction_carriers",
+        "test/test_output_synthesis.py::test_training_step_scores_the_constructed_answer",
+        "test/test_output_synthesis.py::test_think_constructs_the_root_answer_through_output",
+        "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+        "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+        "test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory",
+        "test/test_output_synthesis.py::test_future_resolves_by_prediction_without_committing_memory",
+        "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
+        "test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only",
+        "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+        "test/test_output_synthesis.py::test_perceptual_context_reaches_output_only_through_named_bindings",
+        "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
+        "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+        "test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted",
+        "test/test_output_synthesis.py::test_what_report_separates_families_and_thinking",
+        "test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model",
+        "test/test_output_synthesis.py::test_batched_questions_resolve_per_row",
+        "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+        "test/test_output_synthesis.py::test_reverse_output_is_carrier_pure_without_the_guard",
+        "test/test_output_synthesis.py::test_model_trains_with_teacher_detached",
+        "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
+        "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
+        "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+        "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+        "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+        "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+        "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
+        "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+        "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+        "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+        "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+        "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]",
+        "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+        "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit",
+        "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width",
+        "test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly",
+        "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+        "test/test_output_walk.py::test_question_conditioner_legacy_singular_checkpoint_reloads_strictly",
+        "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows",
+        "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present",
+        "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule",
+        "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-False]",
+        "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[False-False]",
+        "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-True]",
+        "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits",
+        "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context",
+        "test/test_output_walk.py::test_materialised_answer_uses_one_conditioning_application",
+        "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+        "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+        "test/test_retired_names.py::test_retired_names_remain_absent",
+        "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+        "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[False-None]",
+        "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[False-rows1]",
+        "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[True-None]",
+        "test/test_stream_state_shapes.py::test_document_reset_clears_both_recall_histories[True-rows1]",
+        "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+        "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+        "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+        "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_history]",
+        "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+        "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_history]",
+        "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]",
+        "test/test_stream_state_shapes.py::test_word_references_clear_on_forward_start_and_document_reset",
+        "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[orders]",
+        "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[evidence]",
+        "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[orders]",
+        "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[evidence]",
+        "test/test_stream_state_shapes.py::test_rejected_taxonomy_resize_does_not_partially_resize_its_owner",
+        "test/test_stream_state_shapes.py::test_recall_batch_shape_cannot_change_before_reset",
+        "test/test_stream_state_shapes.py::test_document_reset_clears_only_the_finished_rows_priming",
+        "test/test_walk_trials.py::test_output_pair_costs_complete_paths_and_keeps_greedy_ties",
+        "test/test_walk_trials.py::test_output_without_a_legal_alternative_never_switches",
+        "test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward",
+        "test/test_walk_trials.py::test_thought_pair_tie_keeps_greedy_state_and_shared_meter",
+        "test/test_walk_trials.py::test_thought_explore_starts_at_detached_departure_without_reopening_episode",
+        "test/test_walk_trials.py::test_walk_audit_records_strict_wins_and_sentence_stability",
+        "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+        "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation",
+        "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+        "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+        "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+        "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+        "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+        "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+        "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+        "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+        "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+        "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+        "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+        "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+        "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+        "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+        "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+        "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+        "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+        "test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot",
+        "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row",
+        "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+        "test/test_expectation_benchmark.py::test_windows_exclude_targets_future_sentences_and_other_documents",
+        "test/test_expectation_benchmark.py::test_masked_target_roles_and_history_are_reported_separately",
+        "test/test_expectation_benchmark.py::test_throughput_excludes_warmup_and_counts_actual_sentences_pairs_and_labels",
+        "test/test_expectation_benchmark.py::test_sentence_rate_is_independent_of_predictor_observation_eligibility",
+        "test/test_expectation_benchmark.py::test_counts_one_joint_step_for_native_dense_and_sparse_optimizer",
+        "test/test_expectation_benchmark.py::test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device",
+        "test/test_expectation_benchmark.py::test_context_free_control_removes_presence_and_length_as_well_as_values",
+        "test/test_expectation_benchmark.py::test_forecast_scoring_uses_exact_bank_activations"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+        "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+        "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+        "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

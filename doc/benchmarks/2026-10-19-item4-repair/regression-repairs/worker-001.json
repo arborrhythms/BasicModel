@@ -1,0 +1,195 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ltm_chain_grows.py::TestLtmPerRow::test_out_of_range_row_returns_empty",
+    "test/test_ltm_chain_grows.py::TestLtmPerRow::test_rows_are_independent",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_ensure_batch_resizes_chain",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_all_rows_clears_chain",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_single_row_clears_only_that_row",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_shared_prediction_uses_the_same_observed_chain",
+    "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_default_capacity_is_1024",
+    "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_explicit_capacity_is_honored",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+    "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+    "test/test_retired_names.py::test_retired_names_remain_absent",
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused"
+  ],
+  "completed": [
+    "test/test_ltm_chain_grows.py::TestLtmPerRow::test_out_of_range_row_returns_empty",
+    "test/test_ltm_chain_grows.py::TestLtmPerRow::test_rows_are_independent",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_ensure_batch_resizes_chain",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_all_rows_clears_chain",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_single_row_clears_only_that_row",
+    "test/test_ltm_chain_grows.py::TestLtmContextReset::test_shared_prediction_uses_the_same_observed_chain",
+    "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_default_capacity_is_1024",
+    "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_explicit_capacity_is_honored",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+    "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+    "test/test_retired_names.py::test_retired_names_remain_absent",
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmPerRow::test_out_of_range_row_returns_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.08150166715495288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmPerRow::test_rows_are_independent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06835170811973512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_ensure_batch_resizes_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0730951251462102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_all_rows_clears_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.07102237502112985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_single_row_clears_only_that_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06832900014705956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_shared_prediction_uses_the_same_observed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06923475000075996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_default_capacity_is_1024",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06599595816805959,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_explicit_capacity_is_honored",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06700891582295299,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06837179092690349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06981266592629254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.07182054198347032,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.61143720918335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": "np_definite",
+      "duration": 4.885164000093937,
+      "message": "",
+      "stdout": "Grammar checkpoint: 9 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7009/test_artifact_restoration_reta0/occupation.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7009/test_artifact_restoration_reta0/occupation.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": "np_description",
+      "duration": 5.072123582940549,
+      "message": "",
+      "stdout": "Grammar checkpoint: 9 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7009/test_artifact_restoration_reta1/occupation.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7009/test_artifact_restoration_reta1/occupation.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.1233294578269124,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009529171511530876,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

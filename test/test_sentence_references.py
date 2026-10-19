@@ -37,7 +37,7 @@ def frame(cid=5, point=None):
 
 
 def prediction(point):
-    return MeaningExpectation(torch.stack((point, point * 0, point * 0)), torch.ones(3))
+    return MeaningExpectation(torch.stack((point, point * 0, point * 0)), torch.ones(3), symbol_keys=torch.stack((point, point * 0, point * 0)), symbol_logits=torch.stack((torch.ones(3),torch.full_like(torch.ones(3),-30.)),-1), symbol_ids=torch.arange(3), symbol_orders=torch.zeros(3,dtype=torch.long))
 
 
 def test_same_individual_uses_prior_sentence_point_and_keeps_own_words():

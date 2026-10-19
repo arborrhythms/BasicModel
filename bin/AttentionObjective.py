@@ -26,7 +26,7 @@ def tolerate_heterogeneity(lanes, tolerance):
 
 
 def field_cost(observed, reconstructed, admission, valid, *, floor,
-               defined=None, negative_image=None, iterations=None, step_cost=0.):
+               defined=None, iterations=None, step_cost=0.):
     """Return per-row terms, summing every located item exactly once.
 
     ``admission`` is the hard union of candidates already read.
@@ -34,8 +34,8 @@ def field_cost(observed, reconstructed, admission, valid, *, floor,
     aligned to the admitted source supports after inversion.
     ``defined`` is the inverse's coordinate domain: undefined coordinates
     have no expectation and contribute no inside surprise (kappa = 0).
-    An image, when implemented, affects the outside residual only here.
-    The current native caller supplies none: n = 0 until item 4.5.
+    The outside residual is the actual observation; expectation never
+    substitutes evidence in this reconstruction judge.
     """
     validate_floor(floor)
     if (observed.ndim < 3 or reconstructed.shape != observed.shape
@@ -43,10 +43,7 @@ def field_cost(observed, reconstructed, admission, valid, *, floor,
             or valid.dtype != torch.bool):
         raise ValueError('whole-field costs require aligned observations, reconstruction and admission')
     target = observed.detach()
-    image = 0. if negative_image is None else negative_image.detach().to(target)
-    if torch.is_tensor(image) and image.shape != target.shape:
-        raise ValueError('negative image must align with the observed field')
-    residual = (target + image).abs().flatten(2).sum(-1)
+    residual = target.abs().flatten(2).sum(-1)
     if defined is not None and (defined.shape != target.shape or defined.dtype != torch.bool):
         raise ValueError('inverse definedness must be a boolean mask over field coordinates')
     difference = target - reconstructed

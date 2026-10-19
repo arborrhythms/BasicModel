@@ -64,36 +64,31 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
 
 
 def absence(model, row, observed, image=None):
-    """Cancel the expected direction against observation before negating it."""
-    from ThoughtFaces import negate
+    """Conceive the strongest missing symbol from omission, never from content."""
     from ThoughtStream import write
-    disc = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
-    if disc is None or image is None or not image.concept_width:
+    discourse = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
+    if discourse is None or image is None or image.omission is None:
         return None
-    comparison = disc.last_expectation_comparison(row)
+    comparison = discourse.last_expectation_comparison(row)
     prior = None if comparison is None else comparison.estimate
-    if prior is None:
+    if prior is None or prior.symbol_keys is None:
         return None
-    start = image.image.shape[-1]-image.concept_width
-    expected = -image.image[:, start:]
-    norm = expected.square().sum(-1)
-    # Negative projection in the shifted origin is the uncancelled image.
-    residual = -(image.conceived[:, start:]*expected).sum(-1)
-    remaining = torch.where(norm > 0, (residual/norm.clamp_min(1e-12)).clamp(0, 1), 0.)
-    confidence = (remaining * prior.presence_logits.sigmoid()
-                  * float(getattr(model, 'expectation_gain', 1.))).clamp(0, 1)
-    if not bool((confidence > 0).any()):
+    # The evidence against a symbol and the omission of positive evidence are
+    # different axes. Only the latter licenses this conceived absence.
+    omission = image.omission[:, 0]
+    index = omission.argmax()
+    confidence = omission[index]
+    if not bool(confidence > .5):
         return None
-    meaning = ConceptualMeaning(prior.roles.detach(), confidence > 0,
-        sentence_kind=observed.sentence_kind)
-    meaning = with_slots(meaning, (), pair=(float(confidence.max()), 0.))
-    result = negate(None, {'argin1': meaning})
-    value = replace(result['meaning'], polarity=False)
-    data = bindings(value)
+    roles = torch.cat((prior.symbol_keys[index:index+1], prior.roles.new_zeros(2, prior.roles.shape[-1])), 0)
+    meaning = ConceptualMeaning(roles.detach(), roles.new_tensor([1,0,0], dtype=torch.bool),
+                                polarity=False, sentence_kind='idea')
+    meaning = with_slots(meaning, (), pair=(0., float(confidence)))
+    data = bindings(meaning)
     data['_producing_operation'] = 'not'
-    data['_thought_witnesses'] = tuple(getattr(comparison, 'source_occurrences', ()))
-    value = replace(value, bindings=data)
-    return write(model, value, row=row)
+    data['_thought_witnesses'] = tuple(comparison.source_occurrences)
+    data['_omitted_symbol'] = int(prior.symbol_ids[index])
+    return write(model, replace(meaning, bindings=data), row=row)
 
 
 def close(model, fields, *, sentence, ready, score=None, images=None):

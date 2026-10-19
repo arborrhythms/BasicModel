@@ -146,6 +146,7 @@ def stage_input(model):
     model._word_surprise=None
     model._attention_forms=None
     if not torch.is_tensor(slab) or not torch.is_tensor(active):return
+    stage_percept_expectation(model, active)
     B,W,D=slab.shape
     if len(model._attention_meters) != B:
         model._attention_meters=tuple(QueryWorkBudget(model.attention_budget) for _ in range(B))
@@ -298,12 +299,58 @@ def stage_expectation(model):
     valid=matches.any(-1)[None].expand(B,-1)
     accepted=model._attention_words.accepted & live
     targets=torch.where(accepted,identities,-1)
+    stage_symbol_bank(model, owner)
     model._word_expectation_input=(codes,bank,valid,targets)
     expected=owner.expect('word',codes,bank,valid,targets,
-        teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+        teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted,
+        epsilon=model.expectation_epsilon,saturation=model.expectation_saturation,
+        lanes=getattr(model, '_attention_poles', None))
     model._word_expectation=expected
     model._word_surprise=expected.surprise
-    # The word column has its observation and negative image together. The
-    # answer-owned reader consumes surprise; grammar retains factual evidence.
-    model.conceptualSpace._word_column=expected.surprise
+    # The reader receives the attenuated whole; novelty has separate lanes.
+    model.conceptualSpace._word_column=expected.content
     model._word_expectation_mask=accepted
+
+
+def stage_symbol_bank(model, owner):
+    """Snapshot the native shared index, including every represented order."""
+    space = model._concept_owner()
+    rows = sorted({int(row): int(identity) for (_, identity), row in space._csw_rows.items()}.items())
+    if not rows:
+        return
+    basis = space.similarity_codebook
+    ids = torch.tensor([identity for _, identity in rows], device=basis.getW().device)
+    indices = ids.new_tensor([row for row, _ in rows])
+    keys = basis.lookup_rows(indices).detach()
+    orders = ids.new_tensor([space._concept_source_order(int(identity)) for identity in ids])
+    owner.set_symbol_bank(keys, identities=ids, orders=orders)
+    owner._bank_addresses = indices.detach().clone()
+
+
+def stage_percept_expectation(model, active):
+    """One causal field-wide moment update per external input, before trials."""
+    moments = model.percept_expectation
+    fi = getattr(model.perceptualSpace, '_forward_input', None) or {}
+    values = fi.get('seed_event')
+    indices = fi.get('indices')
+    model._percept_word_gain = None
+    model._percept_prior = tuple(value.detach().clone() for value in
+                                (moments.mean, moments.variance, moments.count))
+    if not torch.is_tensor(values) or not torch.is_tensor(indices):
+        return
+    width = moments.mean.numel()
+    values = values[..., :width]
+    if values.shape[-1] != width:
+        raise ValueError('percept field differs from its moment width')
+    valid = indices >= 0
+    z = moments.residual(values)
+    model._percept_residual = z
+    groups = fi.get('word_groups')
+    if torch.is_tensor(groups) and groups.shape == valid.shape:
+        # A word bracket is the perceptual region by construction: the
+        # accepted reduction consumes exactly these valid source positions.
+        model._percept_word_gain = moments.region_gain(values, valid,
+            strength=model.percept_expectation_gain, groups=groups, regions=active.shape[1])
+    discourse = getattr(model.symbolSpace, 'expectation', None)
+    if model.training and not getattr(discourse, '_external_observations_suspended', False):
+        moments.observe(values, valid)

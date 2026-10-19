@@ -494,6 +494,18 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     continue
                 pending.extend(reversed(part['children']))
         retain_completed(root)
+        # non retains the selected modifier identity beside its cleared
+        # evidence. The inverse and next prior can distinguish it from absence.
+        withheld, pending = [], [root]
+        while pending:
+            part = pending.pop()
+            if getattr(part['rule'], 'polarity_effect', None) == 'exclude' and part['children']:
+                operand = part['children'][0]
+                withheld.append((int(operand['ref']), tuple(operand['value'].detach().cpu().tolist())))
+            pending.extend(part['children'])
+        if withheld:
+            from ThoughtReferences import bindings
+            described = replace(described, bindings=dict(bindings(described), _withheld_symbols=tuple(withheld)))
         evidence = metadata(root['leaves'])
         def node_order(item):
             # Deep sentence folds must not depend on Python's recursion limit.
@@ -549,7 +561,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     pair=evidence['evidence'])
         if excluded:
             support = evidence['evidence']
-            evidence['evidence'] = (0., support[1])
+            evidence['evidence'] = (0., 0.)
         if cache_operands and relation is None:
             from ThoughtReferences import bindings
             constructor = getattr(node['rule'], 'predicate_identity', None) or 'reference'

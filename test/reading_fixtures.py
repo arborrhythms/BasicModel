@@ -227,6 +227,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     from Layers import WhatInteractionMemory
     owner.symbolSpace.what_memory = WhatInteractionMemory(batch=1,capacity=32,detach_mode='episode')
     owner.attention_budget = 0
+    owner.document_expectation_gain = getattr(owner, 'document_expectation_gain', 0.)
+    owner.expectation_gain = getattr(owner, 'expectation_gain', 0.)
     owner.training = False
     owner.spaces = []
     readings = (entry if active else None,)
@@ -241,7 +243,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     for name in ('_assert_queries_outside_sentence','_assert_query_boundary',
                  '_query_boundary_scope','_committed_thought_scope',
                  'run_selected_thought','_run_selected_thought_once',
-                 '_what_memory','_end_finished_selected_thought_episodes'):
+                 '_what_memory','_end_finished_selected_thought_episodes',
+                 '_recall_sentence_history','_check_recall_batch'):
         setattr(owner,name,MethodType(getattr(BasicModel,name),owner))
     owner._sentence_understandings = {}
     owner._last_sentence_understanding = None
@@ -265,9 +268,10 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     view = owner._sentence_observation(state, sid, active)
     cost, pending = None, None
     if discourse is not None:
-        cost, _, pending = discourse.sentence_prediction_cost(
+        cost, pending = discourse.sentence_prediction_cost(
             view['observed_depths'], view['observed'], active, documents=[document],
             layout=view['layout'], role_masks=view['roles'],
+            evidence=[None if clause is None else clause.evidence for clause in view['clauses']],
             sentence_kinds=[None if meaning is None else meaning.sentence_kind
                             for meaning in view['meanings']])
     BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],

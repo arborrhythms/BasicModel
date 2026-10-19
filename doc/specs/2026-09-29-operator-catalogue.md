@@ -201,6 +201,11 @@ graded form of what an adjective does, and `intersection` the crisp form.
 
 ### 3.3 `bind`
 
+*Decided 2026-10-19 (Alec):* `bind` is one operation of the **thought**
+grammar, called once per referent; forward = the close-time resolver
+(`ReferenceClose`), reverse = the description or determiner re-emitted; the
+binary compose-side layer below is deleted. Record in todo item 3.5.
+
 Alec, 2026-09-29: "Should 'bind' be handled within the grammar?"
 
 *What the code has (read).* `bind` is a binary operator of `<compose>`

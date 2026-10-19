@@ -1,0 +1,22 @@
+.FF.                                                                     [100%]
+=================================== FAILURES ===================================
+____________________ test_batched_questions_resolve_per_row ____________________
+test/test_output_synthesis.py:557: in test_batched_questions_resolve_per_row
+    assert all(len(history[b]) >= 3 for b in range(2))
+E   assert False
+E    +  where False = all(<generator object test_batched_questions_resolve_per_row.<locals>.<genexpr> at 0x125697220>)
+________ test_recall_returns_the_most_recent_sentence_during_ring_fill _________
+test/test_output_synthesis.py:587: in test_recall_returns_the_most_recent_sentence_during_ring_fill
+    assert len(seen[0]) == 2 < memory._inter_chain_window
+E   assert 0 == 2
+E    +  where 0 = len([])
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_batched_questions_resolve_per_row
+FAILED test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill
+2 failed, 2 passed, 1 warning in 3.57s

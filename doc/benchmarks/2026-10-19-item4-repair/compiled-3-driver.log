@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 180s, 8.0 GiB
+[collect] exit 0; 1.8s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 180s, 8.0 GiB
+[worker-000] timeout 124; 181.0s; peak 2.33 GiB
+Result: timeout, exit 124; 0/1 cases completed.
+doc/benchmarks/2026-10-19-item4-repair/compiled-3/result.json

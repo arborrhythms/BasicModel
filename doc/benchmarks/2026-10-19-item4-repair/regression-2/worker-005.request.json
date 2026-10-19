@@ -1,0 +1,30 @@
+{
+  "selectors": [
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+    "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_maskedPrediction",
+    "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_reconstruct_output",
+    "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reconstruction_scale_parses_cleanly",
+    "test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d",
+    "test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts",
+    "test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error",
+    "test/test_ir_only_refactor.py::TestGenerateSentenceSmoke::test_generate_sentence_runs",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_close_input_does_not_insert",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_cold_codebook_seeds_first_rows",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_eps_zero_is_noop",
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+    "test/test_item55_mechanisms.py::test_absences",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-2/worker-005.recycle.json"
+}

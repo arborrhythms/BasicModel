@@ -213,7 +213,24 @@ def restore_warmup(model, path, restore):
     for name,module in model.named_modules(remove_duplicate=False):
         migrate=getattr(type(module),'migrate_generate_checkpoint',None)
         if migrate is not None:migrate(module,saved,name+'.')
+        migrate=getattr(type(module),'migrate_expectation_checkpoint',None)
+        if migrate is not None:migrate(module,saved,name+'.')
     current=model.state_dict()
+    # The native loader authenticates and migrates pre-Item-4 estimate
+    # sidecars. Restoring their old fingerprint bytes would undo that
+    # migration while leaving the new sidecar in place, corrupting the next
+    # checkpoint. Only this derived metadata tensor changes; learned tensors
+    # still receive the exact-retention checks below.
+    from Layers import TernaryTruthStore
+    migrated_stores={id(model.get_submodule(name)) for name,extras in
+        (bundle.get('structural_extras',{}).get('truth_semantics') or {}).items()
+        if extras.get('version',0)<6}
+    for name,module in model.named_modules(remove_duplicate=False):
+        if isinstance(module,TernaryTruthStore) and id(module) in migrated_stores:
+            key=name+'.semantic_fingerprint'
+            if key in saved and not torch.equal(saved[key],current[key]):
+                drift[key]={'schema_migration':'retained estimate sidecar v6'}
+                saved[key]=current[key].detach().clone()
     with torch.no_grad():
         for key,value in saved.items():
             if key.endswith('parts_of_speech._extra_state'):

@@ -947,18 +947,11 @@
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <!-- Automatic sentence expectation; ARMA remains separately weighted.
            sentenceExpectation replaces the retired sentencePrediction name. -->
-      <xs:element name="byteExpectation" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="byteExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="byteExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="byteExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="wordExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="wordExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="wordExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="wordExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="rowExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="rowExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="rowExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="rowExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="independenceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="independencePriorScale" type="positiveFloat" minOccurs="0"/>
@@ -966,15 +959,27 @@
       <xs:element name="sentenceExpectationScope" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="structured"/>
-            <xs:enumeration value="root"/>
+            <xs:enumeration value="symbols"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
-      <xs:element name="sentenceExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="expectationGain" type="unitInterval" minOccurs="0"/>
-      <xs:element name="expectationPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="expectationQueryBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="perceptExpectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="symbolExpectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="rowExpectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="documentExpectationGain" type="unitInterval" minOccurs="0"/>
+      <xs:element name="perceptExpectationRate" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="expectationEpsilon" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="expectationSaturation" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:string">
+          <xs:enumeration value="clip"/><xs:enumeration value="smooth"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <xs:element name="explorationUniformFraction" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:float">
+          <xs:minExclusive value="0"/><xs:maxInclusive value="1"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <xs:element name="explorationTemperature" type="positiveFloat" minOccurs="0"/>
       <!-- In-STM autoregressive prediction (IntraSentenceLayer). Loss
            weight on the per-word L_intra = MSE(predicted idea, observed
            idea), added to the IR-loss path. The PI-then-Sigma predictor
@@ -989,8 +994,6 @@
            Reuses the InterSentenceLayer end-state chain (positive next root
            ranked above the chain's past roots). 0.0 weight -> MSE-only
            (byte-identical). -->
-      <xs:element name="sentenceExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="interContrastiveTemp" type="positiveFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -1411,14 +1414,9 @@
 
   <!-- ═══════════════════════════════════════════════════════════════════
        SymbolSpace section — unified container for grammar infrastructure
-       (SyntacticLayers, TruthLayer) and the per-batch inter-sentence
-       ARMA(p, q) predictor (InterSentenceLayer). Sentence-level AR
-       lives here, not in the within-sentence body — the body is now
-       a pure IR (masked-LM) forward.
-
-       InterSentenceLayer shape knobs live in this section
-       (armaP / armaQ / armaHiddenDim); the loss weight lives under
-       <architecture><training> as <armaScale>.
+       (SyntacticLayers, TruthLayer) and the native symbol-activation
+       predictor. The predictor reads detached factual context and never
+       feeds a forecast back as an observation.
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="symbolSpaceType">
     <xs:all>
@@ -1426,18 +1424,8 @@
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- InterSentenceLayer ARMA(p, q) shape knobs. p = AR lag count
-           (number of previous sentence reps); q = MA lag count
-           (number of previous prediction errors); armaHiddenDim is
-           the MLP predictor's hidden layer width.  Defaults: p=5,
-           q=2, hiddenDim=2*sentence_dim (computed at construction
-           time when omitted). -->
-      <xs:element name="armaP" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="armaQ" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="armaHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- Long-term-memory (LTM) chain capacity: the InterSentenceLayer
-           bounds its per-row chain of STM end-states (the AR sequence
-           used for inter-sentence prediction) at this many entries.
+      <!-- Long-term-memory (LTM) chain capacity: the SymbolExpectation
+           bounds its per-row chain of observed STM end-states at this many entries.
            Separate from <truthMaxEntries> (TruthLayer's SS-codebook
            capacity). Default 1024. -->
       <xs:element name="ltmCapacity" type="xs:positiveInteger" minOccurs="0"/>

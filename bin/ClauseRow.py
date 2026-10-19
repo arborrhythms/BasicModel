@@ -407,23 +407,20 @@ class ClauseRows:
         surprise = -1.
         estimate = None
         if prediction is not None:
-            from Meaning import expectation_surprise
             logits = prediction.presence_logits.detach().reshape(-1)
             namespace = self.address_domain
             self._normalise_expectation_provenance(dict(kind='estimate',
                 source_occurrences=sources, intended_occurrence=None,
                 presence_logits=tuple(logits.cpu().tolist()),
-                kind_logit=None if prediction.kind_logit is None else float(prediction.kind_logit),
                 stream=getattr(expectation, 'stream', None),
                 document=getattr(expectation, 'document', None)), namespace)
-            surprise = expectation_surprise(clause.meaning.roles, prediction.roles,
-                clause.meaning.role_mask, prediction.presence_logits.sigmoid())
+            surprise = expectation.surprise
             if sources:
                 if any(source not in self._index_occurrences for source in sources):
                     raise ValueError('estimate source occurrence is unavailable')
                 estimate = ConceptualMeaning(prediction.roles,
                     torch.ones(3, dtype=torch.bool, device=prediction.roles.device),
-                    mode='unspecified', bindings=prediction.bindings, scope=prediction.scope)
+                    mode='unspecified', bindings=prediction.retained_bindings(), scope=prediction.scope)
                 self._validate_local_references(estimate)
                 previous = self._address_for_write(estimate, kind='estimate',
                     **self._estimate_write_address(estimate,
@@ -443,7 +440,7 @@ class ClauseRows:
             children = tuple(write(child) for child in value.children)
             if asserted and primary and estimate is not None:
                 estimate_index = self.append_estimate(estimate,
-                    presence_logits=prediction.presence_logits, kind_logit=prediction.kind_logit,
+                    presence_logits=prediction.presence_logits,
                     source_occurrences=sources, stream=getattr(expectation, 'stream', None),
                     document=getattr(expectation, 'document', None))
             references = tuple(self._clause_reference(ref, children) for ref in value.refs)
@@ -493,8 +490,15 @@ class ClauseRows:
                         return update(int(found[0]))
                 role_refs = (None, None, None) if relation is None else tuple(
                     self.semantic_reference(ref) if ref not in (-1, 0) else None for ref in refs)
+                marks = dict(value.meaning.bindings)
+                retained = {key: marks[key] for key in ('_withheld_symbols',) if key in marks}
+                activation = None if expectation is None else getattr(expectation, 'activation', None)
+                if asserted and primary and activation is not None:
+                    retained['_observed_symbol_activations'] = tuple(
+                        (int(identity), tuple(pair)) for identity, pair in zip(
+                            prediction.symbol_ids.cpu().tolist(), activation.detach().cpu().tolist()))
                 stored = ConceptualMeaning(stored.roles, stored.role_mask,
-                    mode=value.meaning.mode, polarity=True, role_refs=role_refs)
+                    mode=value.meaning.mode, polarity=True, role_refs=role_refs, bindings=retained)
                 _, _, address_kwargs = source(value)
                 row = self.append_meaning(stored, rel_type=tag, kind=kind if asserted else 'unverified',
                     trust=degree, stream=stream, surprise=surprise if asserted else -1.,

@@ -569,18 +569,15 @@ ADMITTED rows write back through `prime_seen`: awareness primes. Gated
 `<architecture><relevance>` (default false, byte-identical);
 `<primingDecay>` sets the seen decay.
 
-**Attention and expectation are different faculties (2026-09-20).** This
-surface is unsigned (floor 0), so what it expresses is the non-affirming
-negation: the non-object is withdrawn and nothing is put in its place. That
-is why attention needs no prediction in order to focus — neither write
-channel reads the sentence predictor. Expectation is the other negation: the
-predicted idea, sign-reversed, is added to the *ended idea* (order 1 and
-above, where a signed carrier exists), never to activations and never to
-this surface, so what is conceived is what was not predicted and composition
-stays pure. The one interaction is that the image is applied to everything
-but the object of observation. Specified in the
-[accessible-mind spec §2.6](specs/2026-09-20-accessible-mind-subsystems.md#26-expectation); letting the estimate
-also lower row priority here is [FutureWork §9](FutureWork.md#9-exclusion-at-the-readout).
+**Attention and expectation share a gain mechanism (Item 4, 2026-10-19).**
+Attention contains the admitted region; expectation attenuates predicted
+activation within it. Neither changes the native identity or adds predicted
+content to the observation. Expected activations separately prime selection,
+while excess and omission train the predictor and supply retention surprise.
+The existing desire channel remains distinct. Open objects and withheld
+properties are spared. This supersedes the September 20 signed-image account;
+see [ExpectationRetention](ExpectationRetention.md) and the
+[rev 5 specification](specs/2026-10-08-expectation-at-every-level.md).
 
 **The bases interact (cross-basis priming).** The psychological literature
 is unambiguous that symbolic activation primes the subsymbolic layers:
@@ -956,13 +953,14 @@ The answer owns the learned primed-symbol reader and its initially zero
 consume gate. Priming also enters bracket logits through the codebook prior
 `max_v cos(key, row_v) * boost_v`.
 
-One `BracketExpectation` owner serves word and sentence levels. At a word it
-produces a categorical distribution over the native candidate bank and trains
-with cross entropy. Training advances with the observed word; inference
-advances with its own prediction. Its negative image and observation form the
-word surprise column consumed by the answer reader. The sentence level keeps
-the structured closing, negative image and chronological context. Byte and row
-levels are declared but disabled in this landing.
+One `SymbolExpectation` owner serves word, symbol, closing and next-row reads.
+It predicts independent for/against activations over native bank identities and
+trains with local activation MSE. Every source and target is detached; observed
+input advances context in both training and inference. The word's positive
+lane is normalized only for rank/NLL reporting. Content gain, expected prime
+and residual lanes have separate consumers. Byte, ARMA and slot-structured
+heads are retired. The chronological observation and stable-occurrence
+lifecycle remain owned by the same component.
 
 Compose, thought and generation compare a greedy walk with one legal departure,
 replaying the greedy prefix and following a greedy suffix. Both are costed
@@ -2418,139 +2416,29 @@ See [Ergodic.md](Ergodic.md).
 
 ---
 
-## Sentence-level AR (`InterSentenceLayer`)
+## Local expectation and retained document context
 
-Within-sentence training is IR-only (BERT-style masked-LM at the
-subsymbolic (PS); see `doc/Spaces.md` Section "Within-sentence AR retirement"). The
-**autoregressive** signal in this architecture lives one scale up:
-between sentences, on a per-sentence representation `s_t`. That's the
-job of `InterSentenceLayer` (alias `wordSpace.discourse`).
+`SymbolExpectation` owns the shared activation head. Its bounded chronological
+context contains only actual external observations, with independent evidence
+lanes. Predictions are made before their targets and never feed their own
+future context. The same head is read at symbol arrival, row closing and next
+row prediction. The original identity and activation gain stay separate.
 
-### Sentence representation
+Document addresses from the corpus cursor reset only the affected row's
+transient prediction context. Soft boundaries retain it; hard resets and
+checkpoint restoration start it cold. Provisioning and internal thought run
+with external observations suspended. Stable source occurrence links, full
+bank estimates and original observations live in the existing LTM owner.
+[Expectation retention](ExpectationRetention.md) specifies the pair and its
+checkpoint sidecar. The structured sentence and byte/chain ARMA heads are
+retired, including their contrastive objective and recursive forecast feedback.
 
-The production inter objective uses each ended sentence's occupied local
-NP1/VP/NP2 roles, with an explicit mask. `SentenceExpectation` preserves
-role and chronological position and predicts independent role vectors plus
-occupancy logits. The packed observer reads the existing live end-slot/depth
-outputs, including the final closing, and adapts newest-first STM layout into
-canonical infix order. The structured inter objective is distinct from the
-legacy ARMA objective described below. Compound-reference retention and
-prediction are tracked separately in the integrated spec's nesting migration.
-
-Source addresses from the corpus cursor select the document for every packed
-sentence. A change clears only that row's transient prediction context and
-pending estimate, retaining already-scored losses and durable memory. Soft resets
-after a packed brick preserve that stream, its document key and ARMA rings;
-hard EOS resets start it cold. Restoring
-weights starts prediction context cold. Neither global LTM recency nor internal
-thoughts initialize an external-observation sequence. See
-[`begin_document`](../bin/Layers.py#L10027) and the
-[packed observer](../bin/Models.py#L12837).
-
-When the unified LTM is enabled and a warm stream has durable source
-occurrences, the owner retains a separate `estimate` row before the matching
-external `observation`/`question` row. The pair has explicit source,
-stream/document and bidirectional occurrence provenance. Only the actual input
-joins the transient predictor view; estimates never become extra observations,
-facts, self-supervision, or untyped global-LTM keys. Provisioning and
-request-ingestion run with external observations suspended, so their ordinary
-source rows never bind a caller's prediction stream. Their role vectors, mask,
-confidence and derived residual are detached checkpoint evidence. The current
-predictor does not yet generate bindings or scope for a novel estimate, so it
-records that limitation rather than copying target metadata. [Expectation
-retention](ExpectationRetention.md)
-describes the sidecar, capacity, checkpoint and gradient boundaries.
-
-### Historical root / ARMA representation
-
-`s_t` is the **root SS slot** of the body's final stage: the
-single vector the start-symbol reduction wrote into. The chart's
-parse trace already commits to this slot at sentence end; the layer
-pools `[B, N, D] -> [B, D]` by taking row 0 (root). Width is
-`sentence_dim = n_dim` (one vector per row), **not** the full
-`n_symbols * n_dim` flatten that the pre-2026-05-14 contrastive layer
-used --- that broader rep would have blown the predictor's Linear past
-the allocator budget on large MM_5M-scale configs.
-
-### ARMA(p, q) predictor
-
-`InterSentenceLayer` runs an autoregressive moving-average predictor:
-
-```
-s_hat_t = predictor(s_{t-1..t-p}, e_{t-1..t-q})
-e_t     = s_t - s_hat_t
-loss    = MSE(s_hat_t, s_t)        # accumulated per batch
-```
-
-- `p` = AR lag count (default 5) --- last p sentence reps.
-- `q` = MA lag count (default 2) --- last q prediction errors.
-- `predictor` = `nn.Sequential(Linear(p*D + q*D, H), Tanh,
-  Linear(H, D))`, with `H = min(1024, 2*sentence_dim)`.
-
-The MA term lets the predictor correct for systematic bias in the AR
-extrapolation: if the AR model consistently under-predicts the
-sentence rep, the residual `e_t` carries that signal forward.
-
-Buffers (per row, non-persistent):
-
-- `_s_history`: `[B, p, sentence_dim]` ring of last p sentence reps
-  (most recent at index `-1`).
-- `_e_history`: `[B, q, sentence_dim]` ring of last q residuals.
-- `_s_count` / `_e_count`: `[B]` long, fill levels (cap at p / q).
-
-`ensure_batch(B)` resizes these on cascade from
-`SymbolSpace.ensure_batch`; `Reset()` clears them on hard / discourse
-boundary. The addressed sentence observer resets the selected row's AR lags
-at a document change. Unaddressed direct callers must supply an explicit
-boundary rather than relying on an inferred corpus identity. Historically,
-the AR lags carried information through discourse
-continuity unless the caller explicitly calls `Reset`.
-
-### Wiring into the training loop
-
-1. After the body finishes (sentence end), `_forward_per_stage`
-   stashes the SS event on `_current_discourse_s`.
-2. In `runBatch`, when training, `discourse.observe(s_tensor)`:
-   - Pools `s_t = sigma_S(s_tensor[:, 0, :])`.
-   - Computes `s_hat_t = predictor(_s_history, _e_history)`.
-   - Returns `MSE(s_hat_t, s_t)` (None on the first call per row
-     when the ring is empty).
-   - Computes `e_t = s_t - s_hat_t`, pushes both into the rings.
-3. `runBatch` adds the loss to `TheError` under category
-   `"discourse"` with weight `armaScale` (training XSD knob, default
-   0.0; this auxiliary predictor is off in production).
-
-### Expectation at comprehension and generation boundaries
-
-Composition is pure. At the closing, the estimate is sign-reversed per role:
-`c = o - expectationGain * (1-object_mask) * presence * estimate`.
-The observation row keeps `o`, and the linked pair derives the conceived view.
-The chooser sees that detached view; prediction learns the all-role `o-estimate`
-residual regardless of gain. No image changes the order-zero field or reading
-attention. See [ExpectationRetention](ExpectationRetention.md).
-
-`BasicModel.generate_sentence(seed_text)` understands the text normally, then
-uses the positive predicted idea as the existing `<generate>` walk's seed.
-It returns generated words through the full owned spelling inverse and never
-feeds generated output to the external observation stream.
-
-### Configuration
-
-| XSD knob | Section | Default | Notes |
-|---|---|---|---|
-| `<armaP>` | `<SymbolSpace>` | 5 | AR lag count |
-| `<armaQ>` | `<SymbolSpace>` | 2 | MA lag count |
-| `<armaHiddenDim>` | `<SymbolSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
-| `<armaScale>` | `<architecture><training>` | 0.0 | ARMA loss weight added to `TheError` |
-| `<sentenceExpectation>` | `<architecture><training>` | true | Enables the structured expectation cycle; replaces `sentencePrediction` |
-
-The retired pre-2026-05-14 knobs (`<sentenceContextWindow>`,
-`<sentenceCentroidHistory>`, `<sentenceLambda>`,
-`<sentencePredictionScale>`, `<sentencePredictiveScale>`,
-`<sentenceContrastiveScale>`) shaped the legacy contrastive cosine
-machinery (recent-centroid attraction + older-centroid repulsion).
-They are not parsed; configs that still set them are tolerated
-silently.
+The configuration exposes `perceptExpectationGain`, `symbolExpectationGain`,
+`rowExpectationGain` and `documentExpectationGain` in `[0,1]`,
+`perceptExpectationRate`, positive `expectationEpsilon`, and clipped or smooth
+`expectationSaturation`. `explorationUniformFraction` is in `(0,1]` and
+`explorationTemperature` is positive. The canonical gains are 0.5; this default
+is a configuration choice, not a learning result. `hetTolerance` stays at 1.
 
 ### Checked thought execution phases
 
@@ -2746,18 +2634,26 @@ written to its row and presented; the chooser is credited by the score-function
 term at the departure, corrected by `K·R_walk·W` — the surprise at the choice. The
 choice stays discrete; no mixed forward, no straight-through.
 
-**Surprise at every layer.** The one unconditioned prediction is the next
-row from the previous rows (the world-model; conditioning it on the current
-input would copy it). Inverted through the committed operations of the
-actual derivation it yields an expected operand at every round, conditioned
-on the actual structure; the actual operand against it is that layer's
-surprise, deterministic and local, exact for an invertible layer; from
-below, the teacher-forced next-step predictor conditions on the propagated
-input. Expectation completes no derivation of its own — one inverse pass on
-the reverse path. This is predictive coding's two directions, and
-equilibrium propagation's two phases, with the only sampled estimate left
-being the chooser's (rounds 3–4; the confidence-gated image at the closing,
-spec §2.6.1, lands in round 2).
+**Surprise at every layer (Item 4, October 19).** Percepts use field-wide
+running mean and variance, supplying per-coordinate salience to attention and
+one pooled scalar gain per admitted region. Symbols of every order use one
+shared predictor of independent for/against activations over the native bank,
+conditioned on detached observed bank activations and STM. The same weights
+are read at composition, closing and document continuation. Identity is read
+before gain and retained beside it. Content is `m * a * o`; excess and omission
+are separate residual lanes. Only the local residual trains the predictor;
+its entire gain calculation is detached. An expected activation is a selection
+prime, never a fabricated observation. Awareness retains raw observation and
+prior even when content gain is zero. The former slot/ARMA predictor and
+expectation by inversion are retired; the latter program belongs to Item 3.
+See the [implementation record](plans/2026-10-19-item4-start.md) for validation
+status and the still separate Item 0 and 5.5 gates.
+
+The paired departure is sampled from a positive uniform floor mixed with the
+policy evaluated without expectation gain or prime. One departure is followed
+by a greedy suffix. Both the keep rule and chooser credit compare `R + A` at
+the sentence boundary; `E` remains independent predictor training. Sampling
+credit uses the actual alternative probability, including its uniform floor.
 
 **The invertible path.** The projections (SVD-factored), the butterflies,
 the LDU readout and the operators' tied inverses are invertible now; the

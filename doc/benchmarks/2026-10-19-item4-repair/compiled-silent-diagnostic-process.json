@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "import torch,pytest; torch._dynamo.config.side_effect_replay_policy='silent'; raise SystemExit(pytest.main(['-q','-s','-o','faulthandler_timeout=60','test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]']))"
+  ],
+  "pid": 22157,
+  "exit_code": 124,
+  "reason": "timeout",
+  "peak_memory_bytes": 2532904344,
+  "elapsed_seconds": 181.0167413330637,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-silent-diagnostic.log"
+}

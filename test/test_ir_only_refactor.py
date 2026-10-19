@@ -10,9 +10,9 @@ Covers the new-test items from
   * C3 (spec sec 7): the legacy input reverse is concepts-seeded, with no
     ``<reconstruct>`` enum (retired in A1). Its ``reconstruction_reverse``
     diagnostic remains separate from the tied completed-input objective.
-  * ``BracketExpectation.predict_next()`` returns the right shape
-    after ``armaP`` observations.
-  * ``BracketExpectation.observe(s_t)`` accumulates a non-zero ARMA
+  * ``SymbolExpectation.predict_next()`` returns the right shape
+    after factual observations.
+  * ``SymbolExpectation.observe(s_t)`` accumulates a non-zero ARMA
     loss after the ring has been primed.
   * ``BasicModel.generate_sentence(...)`` produces a non-empty
     decode list after one warm-up sentence.
@@ -285,24 +285,14 @@ class TestReconstructConceptsLoss(unittest.TestCase):
 
 # -- ARMA layer shape + loss --------------------------------------------
 
-class TestArmaPredictAndObserve(unittest.TestCase):
-
-    def test_predict_next_shape_after_p_observations(self):
-        p, q = 5, 2
-        layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=2, n_dim=6, p=p, q=q, batch=3)
-        for _ in range(p):
-            layer.observe(torch.randn(3, 4, 6))
-        pred = layer.predict_next()
-        self.assertEqual(tuple(pred.shape), (3, 6))
-
-    def test_observe_accumulates_nonzero_loss(self):
-        layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=2, n_dim=6, p=5, q=2, batch=2)
-        layer.observe(torch.randn(2, 4, 6))  # primes
-        loss = layer.observe(torch.randn(2, 4, 6))
-        self.assertIsNotNone(loss)
-        self.assertGreater(float(loss), 0.0)
+class TestActivationPredictAndObserve(unittest.TestCase):
+    def test_shared_head_shape_and_nonzero_local_error(self):
+        layer = Layers.SymbolExpectation(4, 2, 6, batch=2)
+        layer.set_symbol_bank(torch.eye(6))
+        for _ in range(2):
+            layer.predict_and_observe_stm_end_state([1,1], [torch.eye(6)[:1], torch.eye(6)[1:2]])
+        self.assertEqual(layer.expect_next_meaning().symbol_logits.shape, (6,2))
+        self.assertGreater(float(layer.consume_inter_loss().detach()), 0.)
 
 
 # -- generate_sentence smoke --------------------------------------------

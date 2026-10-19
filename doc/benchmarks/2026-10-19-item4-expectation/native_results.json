@@ -1,0 +1,1196 @@
+{
+  "protocol": "native_protocol.md",
+  "source": "ce5eacd4afd856fb8ee7b0ce6e19043cb6031c55d486c34f48ba20c104f92be5",
+  "corpus": [
+    [
+      "red cat",
+      "blue dog"
+    ],
+    [
+      "blue cat",
+      "red dog"
+    ],
+    [
+      "red cat runs",
+      "blue dog walks"
+    ],
+    [
+      "blue cat walks",
+      "red dog runs"
+    ],
+    [
+      "red cat runs fast",
+      "blue dog walks slowly"
+    ],
+    [
+      "blue cat walks fast",
+      "red dog runs slowly"
+    ]
+  ],
+  "heldout": [
+    "red dog walks fast",
+    "blue cat runs slowly"
+  ],
+  "runs": [
+    {
+      "seed": 19,
+      "control": "graded",
+      "batches": [
+        {
+          "phase": "before",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2667165994644165,
+              "E": 0.044234372675418854,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 0.8709780417848378
+        },
+        {
+          "phase": "train-0",
+          "samples": [
+            "red cat",
+            "blue dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 0.8684547543525696,
+              "E": 0.0675925463438034,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                6,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 0.8684547543525696,
+              "E": 0.059105291962623596,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                6,
+                16
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 6.806238707853481
+        },
+        {
+          "phase": "train-1",
+          "samples": [
+            "blue cat",
+            "red dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.4870887994766235,
+              "E": 0.06662455201148987,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 1.4870887994766235,
+              "E": 0.06662455201148987,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            }
+          ],
+          "elapsed": 12.694996582809836
+        },
+        {
+          "phase": "train-2",
+          "samples": [
+            "red cat runs",
+            "blue dog walks"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2084417343139648,
+              "E": 0.06542050093412399,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            },
+            {
+              "R": 1.210787296295166,
+              "E": 0.0647159069776535,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            }
+          ],
+          "elapsed": 18.834710208000615
+        },
+        {
+          "phase": "train-3",
+          "samples": [
+            "blue cat walks",
+            "red dog runs"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.209954857826233,
+              "E": 0.06475335359573364,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            },
+            {
+              "R": 1.2099461555480957,
+              "E": 0.06472520530223846,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            }
+          ],
+          "elapsed": 24.873221999965608
+        },
+        {
+          "phase": "train-4",
+          "samples": [
+            "red cat runs fast",
+            "blue dog walks slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2400000095367432,
+              "E": 0.06303049623966217,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            },
+            {
+              "R": 1.2400000095367432,
+              "E": 0.06313175708055496,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 30.95160987484269
+        },
+        {
+          "phase": "train-5",
+          "samples": [
+            "blue cat walks fast",
+            "red dog runs slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2400000095367432,
+              "E": 0.06219188868999481,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            },
+            {
+              "R": 1.2400000095367432,
+              "E": 0.0613975003361702,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 37.198764874832705
+        },
+        {
+          "phase": "after",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2400000095367432,
+              "E": 0.061065465211868286,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 40.70982287498191
+        }
+      ],
+      "order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "predictor_delta": 107.11087646149099,
+      "chooser_delta": 34.27989576815842,
+      "paired_trials": true,
+      "before_R": 1.2667165994644165,
+      "after_R": 1.2400000095367432
+    },
+    {
+      "seed": 19,
+      "control": "shuffled",
+      "batches": [
+        {
+          "phase": "before",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2667165994644165,
+              "E": 0.044234372675418854,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 41.578918291954324
+        },
+        {
+          "phase": "train-4",
+          "samples": [
+            "red cat runs fast",
+            "blue dog walks slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1135910749435425,
+              "E": 0.0666358470916748,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                22,
+                24
+              ],
+              "symbol_reads": 5
+            },
+            {
+              "R": 1.1135910749435425,
+              "E": 0.0666358470916748,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                22,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 54.68130833283067
+        },
+        {
+          "phase": "train-5",
+          "samples": [
+            "blue cat walks fast",
+            "red dog runs slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.241613507270813,
+              "E": 0.06538685411214828,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            },
+            {
+              "R": 1.2460569143295288,
+              "E": 0.05908020958304405,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 7
+            }
+          ],
+          "elapsed": 60.873643916798756
+        },
+        {
+          "phase": "train-0",
+          "samples": [
+            "red cat",
+            "blue dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1681149005889893,
+              "E": 0.06557899713516235,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 1.749612808227539,
+              "E": 0.06533432751893997,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            }
+          ],
+          "elapsed": 66.93100637500174
+        },
+        {
+          "phase": "train-3",
+          "samples": [
+            "blue cat walks",
+            "red dog runs"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2096161842346191,
+              "E": 0.056894972920417786,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 6
+            },
+            {
+              "R": 1.2096161842346191,
+              "E": 0.05688111111521721,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 6
+            }
+          ],
+          "elapsed": 73.17952866689302
+        },
+        {
+          "phase": "train-1",
+          "samples": [
+            "blue cat",
+            "red dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1684256792068481,
+              "E": 0.06449553370475769,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 1.1384257078170776,
+              "E": 0.0629485547542572,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                10
+              ],
+              "symbol_reads": 3
+            }
+          ],
+          "elapsed": 79.10942108300515
+        },
+        {
+          "phase": "train-2",
+          "samples": [
+            "red cat runs",
+            "blue dog walks"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2081284523010254,
+              "E": 0.061558037996292114,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            },
+            {
+              "R": 1.2000000476837158,
+              "E": 0.061691198498010635,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            }
+          ],
+          "elapsed": 99.00293341698125
+        },
+        {
+          "phase": "after",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2474968433380127,
+              "E": 0.051063910126686096,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 9
+            }
+          ],
+          "elapsed": 102.61400816682726
+        }
+      ],
+      "order": [
+        4,
+        5,
+        0,
+        3,
+        1,
+        2
+      ],
+      "predictor_delta": 114.58353465236723,
+      "chooser_delta": 36.73411216889508,
+      "paired_trials": true,
+      "before_R": 1.2667165994644165,
+      "after_R": 1.2474968433380127
+    },
+    {
+      "seed": 23,
+      "control": "graded",
+      "batches": [
+        {
+          "phase": "before",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2457233667373657,
+              "E": 0.051494911313056946,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 103.87186104198918
+        },
+        {
+          "phase": "train-0",
+          "samples": [
+            "red cat",
+            "blue dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1682400703430176,
+              "E": 0.07939136028289795,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 1.1647573709487915,
+              "E": 0.06887631863355637,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 107.29344299994409
+        },
+        {
+          "phase": "train-1",
+          "samples": [
+            "blue cat",
+            "red dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.21867036819458,
+              "E": 0.07877945154905319,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 1.1677441596984863,
+              "E": 0.06816171854734421,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 110.77696924982592
+        },
+        {
+          "phase": "train-2",
+          "samples": [
+            "red cat runs",
+            "blue dog walks"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2054316997528076,
+              "E": 0.0670580267906189,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 6
+            },
+            {
+              "R": 1.2054316997528076,
+              "E": 0.06718775629997253,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 6
+            }
+          ],
+          "elapsed": 114.67719633295201
+        },
+        {
+          "phase": "train-3",
+          "samples": [
+            "blue cat walks",
+            "red dog runs"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.205873966217041,
+              "E": 0.06383749097585678,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 7
+            },
+            {
+              "R": 1.4033138751983643,
+              "E": 0.0751214474439621,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                20,
+                20
+              ],
+              "symbol_reads": 4
+            }
+          ],
+          "elapsed": 118.22486829198897
+        },
+        {
+          "phase": "train-4",
+          "samples": [
+            "red cat runs fast",
+            "blue dog walks slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2097392082214355,
+              "E": 0.06644846498966217,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                17
+              ],
+              "symbol_reads": 7
+            },
+            {
+              "R": 1.244739294052124,
+              "E": 0.06249120458960533,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 9
+            }
+          ],
+          "elapsed": 122.48890462494455
+        },
+        {
+          "phase": "train-5",
+          "samples": [
+            "blue cat walks fast",
+            "red dog runs slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.211242437362671,
+              "E": 0.06569322943687439,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                17,
+                24
+              ],
+              "symbol_reads": 7
+            },
+            {
+              "R": 1.211242437362671,
+              "E": 0.061594292521476746,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                17,
+                24
+              ],
+              "symbol_reads": 9
+            }
+          ],
+          "elapsed": 126.75900895800442
+        },
+        {
+          "phase": "after",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2357598543167114,
+              "E": 0.06471408158540726,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                22,
+                24
+              ],
+              "symbol_reads": 7
+            }
+          ],
+          "elapsed": 128.46395545778796
+        }
+      ],
+      "order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "predictor_delta": 104.49342942237854,
+      "chooser_delta": 0.0,
+      "paired_trials": true,
+      "before_R": 1.2457233667373657,
+      "after_R": 1.2357598543167114
+    },
+    {
+      "seed": 23,
+      "control": "shuffled",
+      "batches": [
+        {
+          "phase": "before",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.2457233667373657,
+              "E": 0.051494911313056946,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                24,
+                24
+              ],
+              "symbol_reads": 5
+            }
+          ],
+          "elapsed": 129.72285720799118
+        },
+        {
+          "phase": "train-3",
+          "samples": [
+            "blue cat walks",
+            "red dog runs"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1049600839614868,
+              "E": 0.07733306288719177,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                10,
+                10
+              ],
+              "symbol_reads": 4
+            },
+            {
+              "R": 1.1449600458145142,
+              "E": 0.06896872818470001,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                18,
+                10
+              ],
+              "symbol_reads": 6
+            }
+          ],
+          "elapsed": 133.451471749926
+        },
+        {
+          "phase": "train-4",
+          "samples": [
+            "red cat runs fast",
+            "blue dog walks slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.3282321691513062,
+              "E": 0.06514601409435272,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                22,
+                14
+              ],
+              "symbol_reads": 9
+            },
+            {
+              "R": 1.3706488609313965,
+              "E": 0.06902773678302765,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                22,
+                22
+              ],
+              "symbol_reads": 7
+            }
+          ],
+          "elapsed": 137.56010858295485
+        },
+        {
+          "phase": "train-1",
+          "samples": [
+            "blue cat",
+            "red dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.2350608110427856,
+              "E": 0.05840752273797989,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 5
+            },
+            {
+              "R": 1.166060447692871,
+              "E": 0.06889620423316956,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            }
+          ],
+          "elapsed": 141.224724332802
+        },
+        {
+          "phase": "train-5",
+          "samples": [
+            "blue cat walks fast",
+            "red dog runs slowly"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1588249206542969,
+              "E": 0.0630086213350296,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                14,
+                17
+              ],
+              "symbol_reads": 9
+            },
+            {
+              "R": 1.1588249206542969,
+              "E": 0.0630982294678688,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                14,
+                17
+              ],
+              "symbol_reads": 9
+            }
+          ],
+          "elapsed": 145.49957879190333
+        },
+        {
+          "phase": "train-2",
+          "samples": [
+            "red cat runs",
+            "blue dog walks"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1036468744277954,
+              "E": 0.07372702658176422,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                10,
+                10
+              ],
+              "symbol_reads": 4
+            },
+            {
+              "R": 1.1086468696594238,
+              "E": 0.07417233288288116,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                10,
+                11
+              ],
+              "symbol_reads": 4
+            }
+          ],
+          "elapsed": 149.34343258291483
+        },
+        {
+          "phase": "train-0",
+          "samples": [
+            "red cat",
+            "blue dog"
+          ],
+          "training": true,
+          "trials": [
+            {
+              "R": 1.1661388874053955,
+              "E": 0.07481636852025986,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            },
+            {
+              "R": 1.1661388874053955,
+              "E": 0.07512790709733963,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                16,
+                16
+              ],
+              "symbol_reads": 3
+            }
+          ],
+          "elapsed": 152.94500879198313
+        },
+        {
+          "phase": "after",
+          "samples": [
+            "red dog walks fast",
+            "blue cat runs slowly"
+          ],
+          "training": false,
+          "trials": [
+            {
+              "R": 1.1584088802337646,
+              "E": 0.05968121439218521,
+              "depths": [
+                3,
+                3
+              ],
+              "rounds": [
+                14,
+                17
+              ],
+              "symbol_reads": 9
+            }
+          ],
+          "elapsed": 154.56434258283116
+        }
+      ],
+      "order": [
+        3,
+        4,
+        1,
+        5,
+        2,
+        0
+      ],
+      "predictor_delta": 114.07486782968044,
+      "chooser_delta": 29.485000965185463,
+      "paired_trials": true,
+      "before_R": 1.2457233667373657,
+      "after_R": 1.1584088802337646
+    }
+  ],
+  "status": "complete",
+  "execution_gate": false,
+  "learning_gate": false,
+  "seconds": 154.5666365828365
+}

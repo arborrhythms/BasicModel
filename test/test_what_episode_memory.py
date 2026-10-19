@@ -18,7 +18,7 @@ _DATA = _ROOT / "data"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Layers import BracketExpectation, WhatInteractionMemory  # noqa: E402
+from Layers import SymbolExpectation, WhatInteractionMemory  # noqa: E402
 from What import LTMSlot, What, WhatSlotOperation  # noqa: E402
 
 

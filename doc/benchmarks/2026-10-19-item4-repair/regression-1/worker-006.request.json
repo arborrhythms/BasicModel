@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+    "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
+    "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-006.recycle.json"
+}

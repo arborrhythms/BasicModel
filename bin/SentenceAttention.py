@@ -6,6 +6,9 @@ from AttentionTraversal import FieldTraversal
 class SentenceField(FieldTraversal):
     def __init__(self, model, cache, active, sentence_ids, sid, allowance, observed):
         self.model, self.observed = model, observed.detach()
+        chooser = model._stm_reducer()
+        self.exploration_fraction = chooser.exploration_fraction
+        self.exploration_temperature = chooser.exploration_temperature
         self.scope = active & (sentence_ids == sid)
         self.positions = torch.stack([entry[0] for entry in cache]).long()
         valid = self.scope.index_select(1, self.positions)
@@ -113,7 +116,7 @@ class SentenceField(FieldTraversal):
         result['lanes'] = torch.einsum('bkw,bwf->bkf', self.support_window, self.support.sum(-2))
         return result
 
-    def place(self, stm):
+    def place(self, stm, *, expectation_free=False):
         from ModelCandidateAttention import context
         layer = self.model.candidate_attention
         if layer is None:
@@ -123,7 +126,7 @@ class SentenceField(FieldTraversal):
         when = self.when[:, :, None].expand(-1, -1, K, -1).reshape(B, W * K, 2)
         inputs = context(self.model, self.support.reshape(B, W * K, 2),
             self.addresses.reshape(B, W * K), valid.reshape(B, W * K), when=when,
-            parts=self.parts, wholes=self.wholes, stm=stm, placements=self.placements())
+            parts=self.parts, wholes=self.wholes, stm=stm, placements=self.placements(), expectation_free=expectation_free)
         # Native key, structural stamps, both support magnitudes, unreadness,
         # and priming salience; no desired text or target position enters.
         heat = self.model._concept_owner().priming_weights(batch=B)

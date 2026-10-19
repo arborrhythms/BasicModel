@@ -1,24 +1,4 @@
-"""Tests for BracketExpectation -- ARMA(p, q) next-sentence predictor.
-
-Replaces the pre-2026-05-14 contrastive cosine tests (retired alongside
-``<maskedPrediction>``).  Within-sentence training is now IR-only;
-sentence-level AR lives here.
-
-Covers:
-  1. Unit-level ARMA layer: observe pushes ``s_t`` into the ring,
-     ``predict_next`` produces a stable-shape prediction, MSE loss
-     fires after the ring has been primed by p observations.
-  2. Buffer + lifecycle: ``ensure_batch`` resizes per-row state,
-     ``Reset`` clears both rings, ``__len__`` reports max ring depth.
-  3. Back-compat shims: ``predict``/``snapshot``/``contrastive_loss``
-     keep their pre-ARMA signatures so existing call sites in
-     ``runBatch`` still work during the transition.
-  4. Integration: building a BasicModel under ``<sentenceExpectation>``
-     wires an ``BracketExpectation`` on ``symbolSpace.expectation`` and
-     forward() populates ``_current_discourse_s`` for the runBatch
-     observe call.
-"""
-
+"""Shared activation owner: local error, causal context and model lifecycle."""
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
@@ -66,153 +46,39 @@ class _DiscourseTestBase(unittest.TestCase):
         _release_allocator_cache()
 
 
-class TestArmaUnit(_DiscourseTestBase):
-    """Stand-alone BracketExpectation (no model) -- ring + loss arithmetic."""
-
+class TestActivationOwner(_DiscourseTestBase):
     def setUp(self):
-        self.n_symbols = 4
-        self.n_dim = 3
-        self.p = 5
-        self.q = 2
-        self.layer = Layers.BracketExpectation(
-            n_symbols=self.n_symbols,
-            max_depth=2,
-            n_dim=self.n_dim,
-            p=self.p, q=self.q,
-            batch=2,
-        )
+        self.layer = Layers.SymbolExpectation(4, 2, 3, batch=2)
+        self.layer.set_symbol_bank(torch.eye(3))
 
-    def test_sentence_dim_equals_n_dim(self):
-        """Sentence rep is the root S-space_role slot -- dim is just n_dim,
-        not n_symbols * n_dim.  Without this the predictor's Linear
-        would balloon to V_S * n_dim and OOM the allocator on
-        MM_5M_bivector-scale configs.
-        """
-        self.assertEqual(self.layer.sentence_dim, self.n_dim)
-
-    def test_observe_pushes_and_returns_zero_on_cold_start(self):
-        """First observe primes the ring; no AR prediction to score
-        against on the first sentence. Returns a training-neutral 0.0
-        tensor (the prior ``None`` sentinel required a
-        ``bool(primed.any())`` host gate + boolean-mask gather, i.e. a
-        per-step cudaMemcpyDtoH; the masked form returns zero instead --
-        diff is exactly zero so it carries no gradient)."""
-        s = torch.randn(2, self.n_symbols, self.n_dim)
-        loss = self.layer.observe(s)
-        self.assertIsNotNone(loss)
-        self.assertEqual(float(loss.detach()), 0.0)
-        self.assertEqual(self.layer._s_count.tolist(), [1, 1])
-
-    def test_observe_accumulates_loss_after_first_step(self):
-        """Once the ring has any entry, the next observe scores
-        s_hat (from history) against s_t and returns a scalar tensor."""
-        self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        loss = self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        self.assertIsNotNone(loss)
-        self.assertIsInstance(loss, torch.Tensor)
-        self.assertEqual(loss.dim(), 0)
-        self.assertTrue(torch.isfinite(loss).all())
-
-    def test_observe_ring_saturates_at_p(self):
-        """``_s_count`` clamps at ``p`` once the AR ring fills."""
-        for _ in range(self.p + 4):
-            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        self.assertEqual(self.layer._s_count.tolist(), [self.p, self.p])
-
-    def test_e_history_saturates_at_q(self):
-        """MA ring fills to ``q`` and stays there."""
-        for _ in range(self.q + 4):
-            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        self.assertEqual(self.layer._e_count.tolist(), [self.q, self.q])
-
-    def test_predict_next_shape(self):
-        """``predict_next`` returns ``[B, sentence_dim]`` for B>1."""
-        for _ in range(2):
-            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        pred = self.layer.predict_next()
-        self.assertEqual(tuple(pred.shape), (2, self.n_dim))
-
-    def test_predict_next_stable_shape_on_cold_start(self):
-        """Empty history still produces a (zero-input) prediction so
-        callers don't need to special-case the cold-start shape."""
-        pred = self.layer.predict_next()
-        self.assertEqual(tuple(pred.shape), (2, self.n_dim))
-
-    def test_reset_clears_both_rings(self):
-        for _ in range(3):
-            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        self.assertGreater(int(self.layer._s_count.max().item()), 0)
-        self.layer.Reset()
-        self.assertEqual(self.layer._s_count.tolist(), [0, 0])
-        self.assertEqual(self.layer._e_count.tolist(), [0, 0])
-        self.assertTrue(torch.all(self.layer._s_history == 0))
-        self.assertTrue(torch.all(self.layer._e_history == 0))
-
-    def test_loss_gradient_flows_through_predictor(self):
-        """Predictor parameters get gradient when the MSE loss is
-        backpropagated (verifies the head is actually being trained)."""
-        self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        loss = self.layer.observe(
-            torch.randn(2, self.n_symbols, self.n_dim, requires_grad=False))
-        self.assertIsNotNone(loss)
+    def test_cold_then_warm_local_error_and_detached_history(self):
+        values = torch.eye(3, requires_grad=True)
+        self.layer.predict_and_observe_stm_end_state([1, 1], [values[:1], values[1:2]])
+        self.assertIsNone(self.layer.consume_inter_loss())
+        self.layer.predict_and_observe_stm_end_state([1, 1], [values[1:2], values[2:]])
+        loss = self.layer.consume_inter_loss()
+        self.assertTrue(torch.isfinite(loss))
         loss.backward()
-        any_grad = False
-        for p in self.layer.predictor.parameters():
-            if p.grad is not None and p.grad.abs().sum() > 0:
-                any_grad = True
-                break
-        self.assertTrue(any_grad,
-                        "ARMA predictor did not receive any gradient")
+        self.assertIsNone(values.grad)
+        self.assertTrue(any(p.grad is not None and p.grad.abs().sum() for p in self.layer.parameters()))
+        self.assertIsNone(self.layer.consume_inter_loss())
 
-    def test_ensure_batch_resizes_buffers(self):
+    def test_bounded_context_and_row_reset(self):
+        for _ in range(12):
+            self.layer.observe_stm_end_state([1, 1], [torch.eye(3)[:1], torch.eye(3)[1:2]])
+        self.assertEqual(len(self.layer), self.layer._inter_chain_window)
+        self.layer.Reset(batch=0)
+        self.assertFalse(self.layer._inter_context[0])
+        self.assertTrue(self.layer._inter_context[1])
+        self.assertFalse(self.layer._inter_context_lanes[0])
         self.layer.ensure_batch(4)
-        self.assertEqual(self.layer._batch, 4)
-        self.assertEqual(tuple(self.layer._s_history.shape),
-                         (4, self.p, self.n_dim))
-        self.assertEqual(tuple(self.layer._e_history.shape),
-                         (4, self.q, self.n_dim))
-
-    def test_len_reports_max_ring_depth(self):
+        self.assertEqual(len(self.layer._inter_context), 4)
         self.assertEqual(len(self.layer), 0)
-        self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        self.assertEqual(len(self.layer), 1)
-        for _ in range(self.p + 3):
-            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
-        self.assertEqual(len(self.layer), self.p)
 
-
-class TestBackCompatShims(_DiscourseTestBase):
-    """The legacy contrastive call sites in ``runBatch`` and
-    ``Language`` use ``snapshot`` / ``contrastive_loss`` / ``predict``.
-    The ARMA layer keeps those names as thin shims so the wiring keeps
-    working until callers migrate to observe / predict_next directly.
-    """
-
-    def setUp(self):
-        self.layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=2, n_dim=3, p=5, q=2,
-            concept_dim=6, batch=1,
-        )
-
-    def test_predict_returns_two_tuple(self):
-        """Legacy callers unpack ``(prediction, confidence)``.
-        ARMA has no native confidence score, but downstream priming
-        callers gate on ``conf is None`` so the shim emits a
-        placeholder ``1.0`` after the ring is primed; cold-start
-        still returns ``(None, None)``.
-        """
-        pred, conf = self.layer.predict()
-        self.assertIsNone(pred)
-        self.assertIsNone(conf)
-        self.layer.observe(torch.randn(1, 4, 3))
-        pred, conf = self.layer.predict()
-        self.assertIsNotNone(pred)
-        self.assertIsNotNone(conf)
-        self.assertEqual(float(conf), 1.0)
-
-
-
-
+    def test_one_shared_head_without_legacy_comprehension_cast(self):
+        self.assertIs(self.layer.word_predictor, self.layer._inter_predictor)
+        for name in ('predictor', '_s_history', '_e_history', 'observe', 'predict_next', 'predict'):
+            self.assertFalse(hasattr(self.layer, name), name)
 
 
 class TestModelIntegration(_DiscourseTestBase):
@@ -228,9 +94,9 @@ class TestModelIntegration(_DiscourseTestBase):
                 os.path.join(_DATA_DIR, 'MentalModel.xml'))
             self.assertIsNotNone(model.symbolSpace.expectation)
             self.assertIsInstance(
-                model.symbolSpace.expectation, Layers.BracketExpectation)
-            self.assertEqual(model.symbolSpace.expectation.p, 5)
-            self.assertEqual(model.symbolSpace.expectation.q, 2)
+                model.symbolSpace.expectation, Layers.SymbolExpectation)
+            self.assertIs(model.symbolSpace.expectation.word_predictor,
+                          model.symbolSpace.expectation._inter_predictor)
             self.model = model
         finally:
             TheXMLConfig.set(

@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+    "test/test_item4_repair.py::test_retention_surprise_is_not_diluted_by_bank_padding",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-001.recycle.json"
+}

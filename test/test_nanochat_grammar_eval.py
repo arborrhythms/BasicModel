@@ -74,10 +74,14 @@ def test_manifest_round_trip_and_digest_guard(tmp_path):
 
 
 def test_word_distribution_score_uses_final_active_word_per_row():
-    from Layers import BracketExpectation
-    layer=BracketExpectation(n_symbols=2,max_depth=2,n_dim=2,concept_dim=2,p=1,q=0)
-    layer.word_predictor=torch.nn.Linear(2,2,bias=False)
-    with torch.no_grad():layer.word_predictor.weight.copy_(torch.eye(2))
+    from Layers import SymbolExpectation
+    layer=SymbolExpectation(n_symbols=2,max_depth=2,n_dim=2,concept_dim=2)
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
+    class PrefixHead(torch.nn.Module):
+        def forward(self, keys, context, activation):
+            mass=torch.einsum('bd,bnd->bn',context[:,2:],keys)
+            return torch.stack((mass,torch.zeros_like(mass)),-1)
+    layer._inter_predictor=PrefixHead()
     codes=torch.tensor([[[1.,0.],[1.,0.],[0.,0.]],
                         [[1.,0.],[0.,1.],[0.,0.]],
                         [[0.,0.],[0.,1.],[1.,0.]],
@@ -88,7 +92,8 @@ def test_word_distribution_score_uses_final_active_word_per_row():
         _attention_words=SimpleNamespace(accepted=active),
         inputSpace=SimpleNamespace(_word_active_mask=active))
     scores,targets,predictions,counts=gate.word_candidate_scores(model,choices=2)
-    expected=-torch.tensor([[1.,0.],[0.,1.]]).log_softmax(-1).reshape(-1)
+    mass=torch.tensor([[1.,0.],[0.,1.]]).sigmoid()
+    expected=-(mass/mass.sum(-1,keepdim=True)).log().reshape(-1)
     torch.testing.assert_close(scores,expected)
     torch.testing.assert_close(targets,torch.eye(2).repeat(2,1))
     assert counts.tolist()==[2,2,2,2]

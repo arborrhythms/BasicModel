@@ -35,8 +35,6 @@
       <sentenceExpectation>true</sentenceExpectation>
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
       <!-- the InfoNCE next-idea contrastive term -->
-      <sentenceExpectationContrastiveWeight>0.5</sentenceExpectationContrastiveWeight>
-      <interContrastiveTemp>0.1</interContrastiveTemp>
     </training>
   </architecture>
 

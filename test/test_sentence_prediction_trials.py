@@ -3,18 +3,19 @@ import torch
 
 
 def test_sentence_prediction_trials_backpropagate_independently():
-    from Layers import BracketExpectation
-    layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, batch=1, expectation_scope='structured')
+    from Layers import SymbolExpectation
+    layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
+        concept_dim=4, batch=1, expectation_scope='symbols')
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     layer.set_inter_loss_weight(1.)
     payloads = [torch.ones(3, 4)]
     mask = torch.ones(1, dtype=torch.bool)
     layer.observe_stm_end_state([3], payloads, train_prediction=False)
-    layer.expect_next_meaning(0, refresh=True, policy=('prior-query',), policy_work=2)
+    layer.expect_next_meaning(0, refresh=True)
     pending = layer._inter_last_meaning[0]
     size = len(layer._inter_context[0])
-    first, _, prior_a = layer.sentence_prediction_cost([3], payloads, mask)
-    second, _, prior_b = layer.sentence_prediction_cost([3], payloads, mask)
+    first, prior_a = layer.sentence_prediction_cost([3], payloads, mask)
+    second, prior_b = layer.sentence_prediction_cost([3], payloads, mask)
     torch.testing.assert_close(first, second, rtol=0, atol=0)
     assert prior_a[0][0] is prior_b[0][0] is pending
     assert layer._inter_last_meaning[0] is pending

@@ -1,0 +1,30 @@
+{
+  "selectors": [
+    "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+    "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+    "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+    "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+    "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+    "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+    "test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch",
+    "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_cascades_to_discourse",
+    "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_method_explicit_BK",
+    "test/test_ensure_microbatch_cascade.py::test_sentence_completed_survives_K_change",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-2/worker-000.recycle.json"
+}

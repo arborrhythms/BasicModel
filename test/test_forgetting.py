@@ -191,7 +191,9 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
 def test_pair_unlinking_preserves_observation_and_restores_cleanly():
     store = TernaryTruthStore(4, capacity=4)
     value = ConceptualMeaning.from_description(torch.tensor([1., 0., 0., 0.]))
-    estimate = store.append_estimate(value, presence_logits=torch.zeros(3))
+    from meaning_fixtures import symbol_prediction, estimate_meaning
+    estimate = store.append_estimate(estimate_meaning(symbol_prediction(torch.eye(4),
+        torch.full((4,2), .5))), presence_logits=torch.zeros(3))
     observation = store.append_meaning(value, kind='observation', trust=1., sentence_index=1, stream=0)
     store.link_estimate_observation(estimate, observation)
     observed = store.occurrence_of(observation)

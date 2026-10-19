@@ -30,7 +30,7 @@ from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer
 from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
-from Layers import SortingLayer, TruthLayer, TernaryTruthStore, LiftingLayer, BracketExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, TernaryTruthStore, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import WhatInteractionMemory
 from Meaning import ConceptualMeaning
 from Queries import ConceptualSpaceCapability, StructuralGrammarContext
@@ -2237,10 +2237,11 @@ class NotLayer(GrammarLayer):
         return self.forward(y)
 
 class NonLayer(GrammarLayer):
-    """Non-affirming exclusion: clear the expressed pole, never complement."""
+    """Withhold both evidence poles, retaining the operand as a marked witness."""
     footprint_reads = footprint_writes = ('meaning', 'poles')
     scope_transparent = True
     polarity_effect = 'exclude'
+    retains_operand = True
     field_eligible = True
     rule_name  = "non"
     meaning_rule = 'non'
@@ -2261,9 +2262,11 @@ class NonLayer(GrammarLayer):
     def forward(self, x):
         """Remove the expressed concept without asserting its opposite."""
         if self.representation == 'code':
+            # The excluded dimension remains in the journal's explicit
+            # operand witness, even though it is absent from asserted content.
             return self.compose_blocks(lambda form: form, x)
         self._check_bivector_shape(x)
-        return torch.cat((x[..., :1]*0, x[..., 1:]), dim=-1)
+        return torch.zeros_like(x)
 
     def reverse(self, y):
         self.raise_no_inverse('non discards the expressed evidence')
@@ -6495,6 +6498,11 @@ class OperationSelectionLayer(nn.Module):
         require_opaque_mlp((*self.ops, *self.unary_ops), chooser)
         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+        from Expectation import unit, positive
+        self.exploration_fraction = unit(TheXMLConfig.training('explorationUniformFraction', .5), 'explorationUniformFraction')
+        if self.exploration_fraction == 0.:
+            raise ValueError('explorationUniformFraction must be positive')
+        self.exploration_temperature = positive(TheXMLConfig.training('explorationTemperature', 1.), 'explorationTemperature')
         self.temperature = float(temperature)
         if not math.isfinite(self.temperature) or self.temperature < 0:
             raise ValueError("compose temperature must be finite and nonnegative")
@@ -6536,8 +6544,8 @@ class OperationSelectionLayer(nn.Module):
 
 
     def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False,
-                      departure_eligible=None):
-        """The 7.5 categorical selection law, shared by every candidate kind."""
+                      departure_eligible=None, alternative_logits=None, return_proposal=False):
+        """One departure with a positive uniform floor and g=0 policy mix."""
         probabilities=_masked_softmax_lastdim(logits)
         selected=logits
         if masked_action is not None:
@@ -6546,21 +6554,30 @@ class OperationSelectionLayer(nn.Module):
             if departure_eligible is not None:
                 other=other.masked_fill(~departure_eligible,-torch.inf)
             selected=torch.where((masked_action>=0)[:,None] & torch.isfinite(other).any(-1,keepdim=True),other,logits)
+        proposal_inverse = logits.new_zeros(logits.shape[0])
         action=structural_argmax(selected,structural)
         if self.training and sample and self.temperature>0:
             noise=-torch.log(-torch.log(torch.rand_like(logits).clamp(torch.finfo(logits.dtype).tiny,1-torch.finfo(logits.dtype).eps)))
             action=(selected/self.temperature+noise).argmax(-1)
         if masked_action is not None:
             departure = (masked_action >= 0) & torch.isfinite(other).any(-1)
-            # Compose uses a uniform proposal over distinct values. Its own
-            # softmax remains the probability credited by the surrogate.
-            proposal = (selected if departure_eligible is None else
-                        torch.where(torch.isfinite(selected), 0., -torch.inf))
-            action = torch.where(departure, sample_eligible_logits(proposal), action)
+            from Expectation import alternative_probabilities
+            free = logits if alternative_logits is None else alternative_logits
+            free = free.masked_fill(~torch.isfinite(other), -torch.inf)
+            proposal = alternative_probabilities(free, fraction=self.exploration_fraction,
+                                                 temperature=self.exploration_temperature)
+            # CDF sampling works for empty rows without NaNs or an invalid multinomial.
+            draw = torch.rand_like(proposal[:, :1])
+            picked = (draw > proposal.cumsum(-1)).sum(-1).clamp_max(proposal.shape[-1]-1)
+            action = torch.where(departure, picked, action)
+            q = proposal.gather(1, action[:, None])[:, 0]
+            proposal_inverse = torch.where(departure, q.clamp_min(torch.finfo(q.dtype).tiny).reciprocal(), 0.)
+
         if replay_action is not None:
             action=torch.where(replay_action>=0,replay_action,action)
         legal=torch.isfinite(selected.gather(1,action[:,None])).squeeze(1)
-        return action,probabilities,legal
+        result = (action, probabilities, legal)
+        return (*result, proposal_inverse.detach()) if return_proposal else result
 
     @staticmethod
     def _compact_departure_groups(x, depth, candidates, binary, unary, position):
@@ -6711,13 +6728,13 @@ class OperationSelectionLayer(nn.Module):
         scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
         stop=torch.where(legal.reshape(B,-1).any(-1),-torch.inf,0.)
         logits=torch.cat((scores,stop[:,None]),-1)
-        action,probability,valid=self.select_logits(logits,structural=(True,)*logits.shape[-1],
+        action,probability,valid,proposal_inverse=self.select_logits(logits,structural=(True,)*logits.shape[-1],
                   masked_action=masked_action,replay_action=replay_action,
-                  departure_eligible=torch.isfinite(logits))
+                  departure_eligible=torch.isfinite(logits),return_proposal=True)
         weight=probability.gather(1,action[:,None])[:,0]
         counts = (torch.isfinite(logits).sum(-1)-1).clamp_min(0)
         result = (action, torch.ones_like(weight), counts > 0)
-        return (*result, dict(probability=weight, alternative_count=counts,
+        return (*result, dict(probability=weight, alternative_count=torch.where(proposal_inverse>0,proposal_inverse,counts.to(logits)),
                               logits=logits)) if return_details else result
 
     def thought_logits(self, active, requests):
@@ -6778,7 +6795,8 @@ class OperationSelectionLayer(nn.Module):
                 masked_action=None, what_ctx=None, op_prior=None, occupation=None,
                 grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
-                previous_unary=None, stop_exact=None, operand_activations=None, policy_grad=True):
+                previous_unary=None, stop_exact=None, operand_activations=None,
+                operand_content_activations=None, policy_grad=True):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -6800,6 +6818,7 @@ class OperationSelectionLayer(nn.Module):
         pair_rewrites = tuple(self.pair_rewrites[i] for i in binary_ops)
         swaps = torch.tensor(pair_rewrites, device=x.device, dtype=torch.bool)
         content = x[..., :self.d_model]
+        symbol_read = getattr(self, '_symbol_expectation_read', None)
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
         score_context = None if what_ctx is None else what_ctx.detach()
         # Only a sampled departure owns a policy graph. Other chooser
@@ -6827,6 +6846,35 @@ class OperationSelectionLayer(nn.Module):
                 content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
                 self.apply_anchor.index_select(0, ui), what_ctx=score_context,
                 op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
+            score_delta = None
+            if symbol_read is not None and symbol_read.strength > 0.:
+                # Identify before attenuation. Composed operands retain their
+                # raw norm and leaves their projection coefficient; S is one
+                # scalar on this consumer view and never mutates either.
+                operand_gain = symbol_read.gains(x, live)
+                # Activation-aware operators also consume S. Their content
+                # candidates are scored beside the raw identity candidates;
+                # only the latter may be selected into STM or the journal.
+                content_activations = operand_content_activations
+                if content_activations is None:
+                    raw_activation = x.norm(dim=-1) if operand_activations is None else operand_activations
+                    content_activations = raw_activation * operand_gain
+                content_binary = self._stacked_reduced(x, grammar_context, reference_data,
+                                                       content_activations)
+                binary_gain = symbol_read.gains(binary.flatten(1,2)).reshape(binary.shape[:-1])
+                unary_gain = symbol_read.gains(unary.flatten(1,2)).reshape(unary.shape[:-1])
+                dimmed = content.detach() * operand_gain[...,None]
+                stop_content, binary_content = self.chooser.score_binary(dimmed,
+                    content_binary[..., :self.d_model].detach()*binary_gain[...,None], self.stop_anchor,
+                    self.reduce_anchor.index_select(0,bi), what_ctx=score_context,
+                    op_indices=bi, **reference_contexts[0])
+                _, unary_content = self.chooser.score_unary(dimmed,
+                    unary[..., :self.d_model].detach()*unary_gain[...,None], self.stop_anchor,
+                    self.apply_anchor.index_select(0,ui), what_ctx=score_context,
+                    op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
+                stop_delta = ((stop_content-stop_scores).squeeze(-1)*live).sum(-1)/depth.clamp_min(1)
+                score_delta = torch.cat(((binary_content-binary_scores).flatten(1),
+                    (unary_content-unary_scores).flatten(1), stop_delta[:,None]), -1)
             if occupation is not None:
                 inputs = self.argument_inputs.to(x.device)
                 left = inputs[:self.r_reduce, 0].index_select(0, bi)
@@ -6891,6 +6939,13 @@ class OperationSelectionLayer(nn.Module):
         nu = N * r_apply
         candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
                                 x.new_zeros(B, 1, D)), 1)
+        alternative_logits = logits
+        if score_delta is not None:
+            logits = logits + score_delta
+        prime = getattr(self, '_expectation_prime', None)
+        if prime is not None:
+            bias = torch.einsum('bad,bd->ba', F.normalize(candidates.detach()[..., :self.d_model], dim=-1), prime.to(x))
+            logits = logits + bias.detach()
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else
                      torch.where(masked_action >= 0, masked_action, greedy))
@@ -6901,9 +6956,9 @@ class OperationSelectionLayer(nn.Module):
                 torch.full((B, 1, 2), -1, device=x.device, dtype=torch.long)), 1)
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
             nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids, pair_rewrites=pair_rewrites)
-        action, probabilities, has_choice = self.select_logits(logits, structural=flags,
-            masked_action=masked_action,sample=sample,
-            departure_eligible=departure_eligible)
+        action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,
+            masked_action=masked_action,sample=sample, departure_eligible=departure_eligible,
+            alternative_logits=alternative_logits, return_proposal=True)
         torch._assert_async((~active | has_choice).all(),
                             "compose has no legal alternative at the selected exploration round")
         active = active & has_choice
@@ -6949,6 +7004,7 @@ class OperationSelectionLayer(nn.Module):
         routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
         routing['alternatives'] = active & departure_eligible.any(-1)
         routing['departure_eligible'] = departure_eligible
+        routing['proposal_inverse'] = torch.where(proposal_inverse > 0, proposal_inverse, departure_eligible.sum(-1).to(x))
         if reference_data is not None:
             b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
             u_operands = torch.stack(
@@ -6999,7 +7055,7 @@ class OperationSelectionLayer(nn.Module):
                 previous_unary=history)
             if self.training:
                 fork.record(SimpleNamespace(valid=route['valid'], action=route['action'],
-                    alternative_count=route['departure_eligible'].sum(-1)), slot, before,
+                    alternative_count=route['proposal_inverse']), slot, before,
                     word=slot, latches=())
             if exploit is not None:
                 route = select_rows(detached(exploit['traces'][i]), route, fork.joined)
@@ -8111,7 +8167,7 @@ class ReconstructionStack:
         self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
         self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
         self._choice_explorable = torch.zeros_like(self._choice_attempted)
-        self._choice_alternative_counts = torch.zeros_like(self._choice_actions)
+        self._choice_alternative_counts = torch.zeros_like(self._choice_actions, dtype=torch.get_default_dtype())
         self._choice_arities = torch.zeros(
             batch, max_steps, dtype=torch.int8, device=device)
         self._choice_mask = torch.zeros(
@@ -8787,7 +8843,7 @@ class SymbolSubSpace(SubSpace):
         ``ConceptualSpace._stm_typed``; the ``ShortTermMemory`` Layer
         on ``ConceptualSpace`` reads/writes these buffers (Phase D of
         doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md);
-      * inter-sentence discourse substrate (``BracketExpectation`` /
+      * inter-sentence discourse substrate (``SymbolExpectation`` /
         priming taxonomy).
 
     The standalone ``SentenceState`` carrier was retired (2026-05-21):
@@ -9235,14 +9291,8 @@ class SymbolSubSpace(SubSpace):
         self.detached_reverse = False
         self.reverse_chooser = None
 
-        # 7. Sentence expectation defaults on; structured roles and presence
-        # use sentenceExpectationLossWeight. Explicit sentenceExpectation=false bypasses
-        # that cycle while the single interaction-memory owner remains live.
-        # The separately weighted ARMA baseline uses SymbolSpace armaP,
-        # armaQ and armaHiddenDim, with training.sentenceExpectationArmaScale (default zero).
-        # Capture construction options even while off so a runtime enable
-        # creates the same configured head and adopts its optimizer weights.
-        # Interaction state never belongs to the expectation layer.
+        # Shared activation prediction has one owner. What memory remains
+        # independent when expectation is disabled.
         self.expectation = None
         # Interaction state has one owner, independent of expectation.
         self.what_memory = WhatInteractionMemory(
@@ -9253,22 +9303,15 @@ class SymbolSubSpace(SubSpace):
             n_sym_rows = int(wholeSpace.outputShape[0])
         except (AttributeError, IndexError, TypeError):
             n_sym_rows = int(getattr(wholeSpace, 'nVectors', 0) or 0)
-        arma_hidden = TheXMLConfig.space("SymbolSpace", "armaHiddenDim", default=None)
         self._expectation_options = (dict(
             n_symbols=n_sym_rows,
             max_depth=int(getattr(self.__dict__.get('subspace'), 'max_depth', 256) or 256),
             n_dim=muxed,
-            p=int(TheXMLConfig.space("SymbolSpace", "armaP", default=5) or 5),
-            q=int(TheXMLConfig.space("SymbolSpace", "armaQ", default=2) or 2),
-            hidden_dim=int(arma_hidden) if arma_hidden is not None else None,
             concept_dim=int(concept_dim),
             ltm_capacity=int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024),
-            expectation_scope=str(TheXMLConfig.training("sentenceExpectationScope", "structured")),
+            expectation_scope=str(TheXMLConfig.training("sentenceExpectationScope", "symbols")),
         ) if n_sym_rows > 0 and muxed > 0 else None)
-        self._expectation_weights = (
-            float(TheXMLConfig.training("sentenceExpectationLossWeight", 0.1)),
-            float(TheXMLConfig.training("sentenceExpectationContrastiveWeight", 0.0)),
-            float(TheXMLConfig.training("interContrastiveTemp", 0.1)))
+        self._expectation_weight = float(TheXMLConfig.training('sentenceExpectationLossWeight', .1))
         if (bool(TheXMLConfig.training("sentenceExpectation", True)) or bool(TheXMLConfig.training("wordExpectation", True))) and self._expectation_options:
             self.ensure_sentence_expectation()
 
@@ -11650,17 +11693,15 @@ class SymbolSubSpace(SubSpace):
         device_type = torch.device(str(TheDevice.get())).type
         devices = [] if device_type == "cpu" else [TheDevice.get().index or 0]
         with torch.random.fork_rng(devices=devices, device_type=device_type):
-            discourse = BracketExpectation(**self._expectation_options)
+            discourse = SymbolExpectation(**self._expectation_options)
         parameter = next(self.parameters(), None)
         if parameter is not None:
             discourse.to(device=parameter.device, dtype=parameter.dtype)
         discourse.train(self.training)
-        discourse.enabled_levels = tuple(level for level in ('word','sentence')
-            if bool(TheXMLConfig.training(level+'Expectation', True)))
-        discourse.set_expectation_enabled('sentence' in discourse.enabled_levels)
-        weight, contrastive, temperature = self._expectation_weights
-        discourse.set_inter_loss_weight(weight)
-        discourse.set_inter_contrastive(contrastive, temperature)
+        discourse.set_expectation_enabled(bool(TheXMLConfig.training('sentenceExpectation', True)))
+        discourse.enabled_levels = tuple(level for level in discourse.levels
+            if bool(TheXMLConfig.training(('word' if level == 'word' else 'sentence')+'Expectation', True)))
+        discourse.set_inter_loss_weight(self._expectation_weight)
         store = getattr(self, "ltm_store", None)
         if store is not None:
             discourse._ltm_store = store
@@ -11814,7 +11855,7 @@ class SymbolSubSpace(SubSpace):
           * **Cleared**: parse stack, category stack, reconstruction
             stack, ``_last_svo[batch]``, ``_sentence_completed[batch]`` (cleared);
             sentence-completed flag.
-          * **Preserved**: ``BracketExpectation`` discourse history (the
+          * **Preserved**: ``SymbolExpectation`` discourse history (the
             chronological context and predictor) — this is the
             inter-sentence prior, accumulating across true sentences
             within a document.
@@ -11993,7 +12034,7 @@ class SymbolSubSpace(SubSpace):
         Body-side state (subspace, stacks, last_svo, svo_valid) is sized
         to B*K — each window has its own row inside the body's flattened
         view. Sentence completion stays at B, shared by all K windows.
-        Discourse buffers (BracketExpectation) also stay at B: discourse
+        Discourse buffers (SymbolExpectation) also stay at B: discourse
         history accumulates across sentences within one source stream,
         and all K windows of a stream share that history (the post-body
         snapshot collapses K to mirror legacy last-cursor semantics).
@@ -12413,6 +12454,14 @@ class LanguageSpace(nn.Module):
                                                 reference_scope[..., 0].bitwise_and(16) != 0),
                                           active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
         layer = self.language_layer.operation_layer
+        content_activations = None
+        symbol_read = getattr(layer, '_symbol_expectation_read', None)
+        if symbol_read is not None and symbol_read.strength > 0.:
+            # Keep the raw norm/projection coefficient for identity operators
+            # and the explicit gained coefficient for their consumer view.
+            raw_activation = window.norm(dim=-1) if window_activations is None else window_activations
+            occupied = torch.arange(n, device=buffer.device)[None] < window_depth[:, None]
+            content_activations = raw_activation * symbol_read.gains(window, occupied)
         arguments = dict(depth=window_depth, slots=stop_slots,
             occupation=(None if occupation is None else occupation.gather(1,
                 source[..., None].expand(B, n, occupation.shape[-1]))),
@@ -12420,7 +12469,8 @@ class LanguageSpace(nn.Module):
             allowance=slots if allowance is None else allowance,
             rounds_left=rounds_left, load_depth=depth,
             stop_exact=stop_exact,
-            operand_activations=window_activations, policy_grad=policy_grad,
+            operand_activations=window_activations,
+            operand_content_activations=content_activations, policy_grad=policy_grad,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=self._structural_context(
                 phase='compose', input_stream=buffer), reference_data=references)
@@ -12453,7 +12503,7 @@ class LanguageSpace(nn.Module):
                 torch.log_softmax(torch.where(route['valid'][:, None],
                     route['logits'], torch.zeros_like(route['logits'])), -1)
                 .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
-            route['departure_eligible'].sum(-1), output_order)
+            route['proposal_inverse'], output_order)
         if reference_scope is None:
             return choice
         return choice, route['refs'], route['relations'], route['operands']

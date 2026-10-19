@@ -115,27 +115,14 @@ def test_context_free_control_removes_presence_and_length_as_well_as_values():
     assert masks.any(), 'the control must not mutate the original input'
 
 
-def test_prediction_thought_scoring_rejects_unknown_truth_and_wrong_operations():
-    from types import SimpleNamespace
-    from bench_sentence_expectation import score_prediction_thought
-    from Layers import MeaningExpectation
 
-    target = torch.arange(12.).reshape(3, 4) / 12
-    occupied = torch.tensor([True, True, False])
-    prediction = MeaningExpectation(target + .25, torch.zeros(3))
-    def trial(checked):
-        return SimpleNamespace(result=checked, work=SimpleNamespace(spent=17),
-            records=[SimpleNamespace(kind='thought'), SimpleNamespace(kind='finish')])
-    for checked in (None, SimpleNamespace(semantic_id='part', result_kind='truth',
-                                         value=None),
-                    SimpleNamespace(semantic_id='arma', result_kind='prediction', value=None)):
-        result = score_prediction_thought(trial(checked), target, occupied)
-        assert not result['answered']
-        assert result['feature_mse'] is None
-        assert result['work'] == 17
-    result = score_prediction_thought(trial(SimpleNamespace(
-        semantic_id='arma', result_kind='prediction', value=prediction)), target, occupied)
-    assert result['answered']
-    assert result['feature_mse'] == pytest.approx(.25 ** 2)
-    assert result['presence_bce'] == pytest.approx(float(torch.log(torch.tensor(2.))))
-    assert result['steps'] == 1
+
+def test_forecast_scoring_uses_exact_bank_activations():
+    from bench_sentence_expectation import score_prediction_thought
+    from meaning_fixtures import symbol_prediction
+    keys = torch.eye(4)
+    prediction = symbol_prediction(keys, torch.full((4, 2), .5))
+    result = score_prediction_thought(prediction, keys[:3], torch.tensor([True,True,False]))
+    assert result['answered'] and result['metric_version'] == 2
+    assert result['activation_mse'] == pytest.approx(.25)
+    assert not score_prediction_thought(None, keys[:3], torch.ones(3,dtype=torch.bool))['answered']

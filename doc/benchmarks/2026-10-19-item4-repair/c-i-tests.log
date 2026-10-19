@@ -1,0 +1,83 @@
+......FFF.......................s...........s........F.................. [ 93%]
+.....                                                                    [100%]
+=================================== FAILURES ===================================
+____ test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0] ____
+
+confidence = 0.0
+
+    @pytest.mark.parametrize('confidence',[0.,.25,1.])
+    def test_closing_confidence_multiplies_gain_and_open_role_keeps_prime(confidence):
+        prior=symbol_prediction(torch.eye(4),torch.tensor([1.,0.]).expand(4,2))
+        raw=torch.eye(4)[:3]
+        view=ClosingImage.form(raw,prior.roles,torch.full((3,),confidence),prediction=prior,gain=.8,
+            object_mask=torch.tensor([0.,1.,0.]))
+        torch.testing.assert_close(view.conceived[0],raw[0]*(1-.8*confidence))
+        torch.testing.assert_close(view.conceived[1],raw[1])
+>       torch.testing.assert_close(view.expected,prior.expected_activation)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 1 / 8 (12.5%)
+E       Greatest absolute difference: 1.0 at index (1, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (1, 0) (up to 1.3e-06 allowed)
+
+test/test_item4_repair.py:83: AssertionError
+___ test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25] ____
+
+confidence = 0.25
+
+    @pytest.mark.parametrize('confidence',[0.,.25,1.])
+    def test_closing_confidence_multiplies_gain_and_open_role_keeps_prime(confidence):
+        prior=symbol_prediction(torch.eye(4),torch.tensor([1.,0.]).expand(4,2))
+        raw=torch.eye(4)[:3]
+        view=ClosingImage.form(raw,prior.roles,torch.full((3,),confidence),prediction=prior,gain=.8,
+            object_mask=torch.tensor([0.,1.,0.]))
+        torch.testing.assert_close(view.conceived[0],raw[0]*(1-.8*confidence))
+        torch.testing.assert_close(view.conceived[1],raw[1])
+>       torch.testing.assert_close(view.expected,prior.expected_activation)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 1 / 8 (12.5%)
+E       Greatest absolute difference: 1.0 at index (1, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (1, 0) (up to 1.3e-06 allowed)
+
+test/test_item4_repair.py:83: AssertionError
+____ test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0] ____
+
+confidence = 1.0
+
+    @pytest.mark.parametrize('confidence',[0.,.25,1.])
+    def test_closing_confidence_multiplies_gain_and_open_role_keeps_prime(confidence):
+        prior=symbol_prediction(torch.eye(4),torch.tensor([1.,0.]).expand(4,2))
+        raw=torch.eye(4)[:3]
+        view=ClosingImage.form(raw,prior.roles,torch.full((3,),confidence),prediction=prior,gain=.8,
+            object_mask=torch.tensor([0.,1.,0.]))
+        torch.testing.assert_close(view.conceived[0],raw[0]*(1-.8*confidence))
+        torch.testing.assert_close(view.conceived[1],raw[1])
+>       torch.testing.assert_close(view.expected,prior.expected_activation)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 1 / 8 (12.5%)
+E       Greatest absolute difference: 1.0 at index (1, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (1, 0) (up to 1.3e-06 allowed)
+
+test/test_item4_repair.py:83: AssertionError
+__________ test_expectation_gate_does_not_cancel_against_its_baseline __________
+
+    def test_expectation_gate_does_not_cancel_against_its_baseline():
+        from Layers import Error
+>       from SentenceCredit import expectation_terms
+E       ImportError: cannot import name 'expectation_terms' from 'SentenceCredit' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCredit.py). Did you mean: 'expectation_costs'?
+
+test/test_operators_round2.py:30: ImportError
+=============================== warnings summary ===============================
+test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]
+FAILED test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.25]
+FAILED test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]
+FAILED test/test_operators_round2.py::test_expectation_gate_does_not_cancel_against_its_baseline
+4 failed, 71 passed, 2 skipped, 1 warning in 3.07s

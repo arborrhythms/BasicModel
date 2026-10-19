@@ -6,9 +6,9 @@ from types import SimpleNamespace
 import torch
 import pytest
 
-from Layers import BracketExpectation, TernaryTruthStore
+from Layers import SymbolExpectation, TernaryTruthStore
 from Meaning import ConceptualMeaning
-from meaning_fixtures import record_observation
+from meaning_fixtures import record_observation, symbol_prediction, estimate_meaning
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 
 
@@ -25,9 +25,11 @@ def _meaning(value, *, scope=()):
 
 def _discourse():
     torch.manual_seed(91)
-    return BracketExpectation(
+    owner = SymbolExpectation(
         n_symbols=4, max_depth=4, n_dim=4, concept_dim=4,
-        batch=1, expectation_scope="structured")
+        batch=1, expectation_scope='symbols')
+    owner.set_symbol_bank(torch.eye(owner.concept_dim))
+    return owner
 
 
 def _observe(discourse, meaning, document):
@@ -76,11 +78,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
     paired = store.expectation_pair(second)
     assert paired["estimate_occurrence"] == estimate["occurrence"]
     assert paired["observation_occurrence"] == observation["occurrence"]
-    torch.testing.assert_close(
-        paired["residual"],
-        torch.where(observed.role_mask[:, None],
-                    observed.roles - estimate["meaning"].roles,
-                    torch.zeros_like(observed.roles)))
+    torch.testing.assert_close(paired["residual"], comparison.residual)
     # A high-confidence prediction remains an estimate, never self-support.
     result = TruthGroundedReasoner(store=store).evaluate(
         QuerySpec.from_surface("exist", estimate["meaning"]))
@@ -102,7 +100,7 @@ def test_estimate_pair_overflow_raises_without_publishing_half_a_pair():
     source_row = store.append_meaning(source, kind="observation", stream=0)
     with pytest.raises(OverflowError, match='forgetting'):
         store.append_expectation_pair(
-            _meaning(.5), _meaning(2.0),
+            estimate_meaning(symbol_prediction(torch.eye(4), torch.full((4,2), .5))), _meaning(2.0),
             presence_logits=torch.tensor([1.0, 0.0, -1.0]),
             source_occurrences=(store.row(source_row)["occurrence"],),
             stream=("external", "capacity"), document="capacity")
@@ -116,12 +114,12 @@ def test_retained_estimates_do_not_enter_the_generic_ltm_chain():
     source = _meaning(1.0)
     source_row = store.append_meaning(source, kind="observation", stream=0)
     estimate_row, observed_row = store.append_expectation_pair(
-        _meaning(.5), _meaning(2.0),
+        estimate_meaning(symbol_prediction(torch.eye(4), torch.full((4,2), .5))), _meaning(2.0),
         presence_logits=torch.tensor([1.0, 0.0, -1.0]),
         source_occurrences=(store.row(source_row)["occurrence"],),
         stream=("external", "chain"), document="chain", index_stream=0)
 
-    chain = BracketExpectation.get_stm_chain(
+    chain = SymbolExpectation.get_stm_chain(
         SimpleNamespace(_ltm_store=store))
     assert estimate_row >= 0
     assert len(chain) == 2

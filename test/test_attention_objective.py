@@ -20,12 +20,11 @@ def test_real_reconstruction_and_floor_count_each_valid_item_once():
     assert admission.grad[0, 2] == 0
 
 
-def test_future_negative_image_changes_only_the_outside_residual():
+def test_outside_residual_is_the_full_observation():
     observed = torch.tensor([[[.8, .6]]])
-    image = torch.tensor([[[-.3, -.1]]])
     costs = field_cost(observed, torch.zeros_like(observed), torch.zeros(1, 1),
-                       torch.ones(1, 1, dtype=torch.bool), floor=.2, negative_image=image)
-    assert costs['outside'].item() == pytest.approx(.2)
+                       torch.ones(1, 1, dtype=torch.bool), floor=.2)
+    assert costs['outside'].item() == pytest.approx(.28)
 
 
 def test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient():

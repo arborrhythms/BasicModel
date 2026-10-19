@@ -422,9 +422,10 @@ class TestDiscourseConsolidationWiring(unittest.TestCase):
         # consolidation/sentenceExpectation here -> just assert the wiring
         # default on a non-consolidated build (the OFF fixture has no
         # discourse, so check the attribute default on a fresh layer).
-        from Layers import BracketExpectation
-        layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=8,
-                                   p=2, q=1, concept_dim=8)
+        from Layers import SymbolExpectation
+        layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=8,
+                                     concept_dim=8)
+        layer.set_symbol_bank(torch.eye(layer.concept_dim))
         self.assertIsNone(layer._ltm_store)
         self.assertFalse(layer._ltm_consolidation)
 

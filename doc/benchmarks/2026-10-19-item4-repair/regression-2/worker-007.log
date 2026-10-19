@@ -1,0 +1,60 @@
+.s...........sFFFFFFFFFF                                                 [100%]
+=================================== FAILURES ===================================
+__________ TestLtmChainGrows.test_chain_is_time_ordered_oldest_first ___________
+test/test_ltm_chain_grows.py:57: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+____________ TestLtmChainGrows.test_get_stm_chain_none_returns_all _____________
+test/test_ltm_chain_grows.py:57: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+____ TestLtmChainGrows.test_payload_is_snapshot_decoupled_from_live_buffer _____
+test/test_ltm_chain_grows.py:57: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+________ TestLtmChainGrows.test_processing_n_sentences_grows_chain_to_n ________
+test/test_ltm_chain_grows.py:57: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+______ TestLtmChainGrows.test_ragged_absolute_and_relative_depths_coexist ______
+test/test_ltm_chain_grows.py:57: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+________ TestLtmChainGrows.test_tetralemma_field_records_when_provided _________
+test/test_ltm_chain_grows.py:57: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+_____________ TestLtmBounded.test_chain_evicts_oldest_at_capacity ______________
+test/test_ltm_chain_grows.py:144: in test_chain_evicts_oldest_at_capacity
+    layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+___________________ TestLtmFailLoud.test_inf_payload_raises ____________________
+test/test_ltm_chain_grows.py:163: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+___________________ TestLtmFailLoud.test_nan_payload_raises ____________________
+test/test_ltm_chain_grows.py:163: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+______________ TestLtmPerRow.test_out_of_range_row_returns_empty _______________
+test/test_ltm_chain_grows.py:186: in setUp
+    self.layer = Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+=============================== warnings summary ===============================
+test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_ltm_chain_grows.py::TestLtmChainGrows::test_chain_is_time_ordered_oldest_first
+FAILED test/test_ltm_chain_grows.py::TestLtmChainGrows::test_get_stm_chain_none_returns_all
+FAILED test/test_ltm_chain_grows.py::TestLtmChainGrows::test_payload_is_snapshot_decoupled_from_live_buffer
+FAILED test/test_ltm_chain_grows.py::TestLtmChainGrows::test_processing_n_sentences_grows_chain_to_n
+FAILED test/test_ltm_chain_grows.py::TestLtmChainGrows::test_ragged_absolute_and_relative_depths_coexist
+FAILED test/test_ltm_chain_grows.py::TestLtmChainGrows::test_tetralemma_field_records_when_provided
+FAILED test/test_ltm_chain_grows.py::TestLtmBounded::test_chain_evicts_oldest_at_capacity
+FAILED test/test_ltm_chain_grows.py::TestLtmFailLoud::test_inf_payload_raises
+FAILED test/test_ltm_chain_grows.py::TestLtmFailLoud::test_nan_payload_raises
+FAILED test/test_ltm_chain_grows.py::TestLtmPerRow::test_out_of_range_row_returns_empty
+10 failed, 12 passed, 2 skipped, 1 warning in 4.19s

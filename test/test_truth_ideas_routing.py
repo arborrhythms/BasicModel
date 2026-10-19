@@ -116,8 +116,9 @@ class TestStmLtmTrust(unittest.TestCase):
         self.assertAlmostEqual(out[1], 0.5, places=6)
 
     def test_ltm_slot_persists_scalar_trust(self):
-        from Layers import BracketExpectation
-        disc = BracketExpectation(4, 3, 4, concept_dim=4, batch=1)
+        from Layers import SymbolExpectation
+        disc = SymbolExpectation(4, 3, 4, concept_dim=4, batch=1)
+        disc.set_symbol_bank(torch.eye(disc.concept_dim))
         payload = torch.randn(3, 4)
         disc.observe_stm_end_state([3], [payload], tetralemmas=[0.7])
         chain = disc.get_stm_chain(b=0)
@@ -127,8 +128,9 @@ class TestStmLtmTrust(unittest.TestCase):
         self.assertEqual(tet, 0.7, "the scalar trust persists in the LTM slot")
 
     def test_ltm_slot_none_when_no_trust(self):
-        from Layers import BracketExpectation
-        disc = BracketExpectation(4, 3, 4, concept_dim=4, batch=1)
+        from Layers import SymbolExpectation
+        disc = SymbolExpectation(4, 3, 4, concept_dim=4, batch=1)
+        disc.set_symbol_bank(torch.eye(disc.concept_dim))
         disc.observe_stm_end_state([1], [torch.randn(1, 4)], tetralemmas=None)
         _, _, tet = disc.get_stm_chain(b=0)[0]
         self.assertIsNone(tet, "no trust -> slot stays None (byte-identical)")

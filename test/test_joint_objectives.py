@@ -25,12 +25,13 @@ def test_shared_grammar_operators_belong_to_the_diagnostic_set():
 
 def test_packed_prediction_teardown_records_each_observation_once(monkeypatch):
     from Models import BasicModel
-    from Layers import BracketExpectation
+    from Layers import SymbolExpectation
     from reading_fixtures import commit_reading
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='structured')
+    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='symbols')
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     calls = []
     observe = discourse.observe_stm_end_state
     def record(*args, **kwargs):

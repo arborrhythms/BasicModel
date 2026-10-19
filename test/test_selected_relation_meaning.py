@@ -369,15 +369,16 @@ def test_selected_relation_preserves_declared_outer_polarity(
 @pytest.mark.parametrize("path", ["forward", "packed"])
 def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
         monkeypatch, path):
-    from Layers import BracketExpectation, TernaryTruthStore
+    from Layers import SymbolExpectation, TernaryTruthStore
     from reading_fixtures import commit_reading
 
     cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
         monkeypatch, interrogative=False)
     entry = program()
     calls = []
-    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='structured')
+    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='symbols')
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     predict = discourse.sentence_prediction_cost
     def capture(depths, payloads, mask, **kwargs):
         calls.append((depths, payloads, kwargs))

@@ -1,0 +1,85 @@
+{
+  "exit_code": 124,
+  "reason": "timeout",
+  "selected": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+  ],
+  "completed": [],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5/worker-000.json"
+      ],
+      "pid": 23728,
+      "exit_code": 124,
+      "reason": "timeout",
+      "peak_memory_bytes": 2579123464,
+      "elapsed_seconds": 181.0051004171837,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false,
+      "active_case": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 180.0,
+    "suite_seconds": 10800,
+    "batch_size": 1,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5",
+  "elapsed_seconds": 183.44243766693398,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2579123464,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5/collect.json"
+    ],
+    "pid": 23713,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180470600,
+    "elapsed_seconds": 1.8022797079756856,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/compiled-5/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+    "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-004.recycle.json"
+}

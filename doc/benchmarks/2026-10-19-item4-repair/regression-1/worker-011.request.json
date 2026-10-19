@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/regression-1/worker-011.recycle.json"
+}

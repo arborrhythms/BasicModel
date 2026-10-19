@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+    "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/native-final-1/worker-000.recycle.json"
+}

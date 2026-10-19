@@ -189,9 +189,10 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
 
 
 def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
-    from Layers import BracketExpectation
-    layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, batch=2, expectation_scope='structured')
+    from Layers import SymbolExpectation
+    layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
+        concept_dim=4, batch=2, expectation_scope='symbols')
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     layer.set_inter_loss_weight(1.)
     # This test uses real prediction equations; opposed row targets must not
     # disappear into a batch scalar before the winner comparison.
@@ -199,8 +200,8 @@ def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
     mask = torch.ones(2, dtype=torch.bool)
     layer.predict_and_observe_stm_end_state([3, 3], payloads, mask=mask)
     sizes = [len(row) for row in layer._inter_context]
-    cost, contrast, pending = layer.sentence_prediction_cost([3, 3], payloads, mask)
-    assert cost.shape == contrast.shape == (2,)
+    cost, pending = layer.sentence_prediction_cost([3, 3], payloads, mask)
+    assert cost.shape == (2,)
     assert cost.requires_grad
     assert [len(row) for row in layer._inter_context] == sizes
     assert all(value is None for value in layer._inter_last_meaning)
@@ -222,11 +223,11 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
     from Layers import Error
     disc = SimpleNamespace(_sentence_comparison_errors=Error(row_mask=torch.tensor([True])),
         sentence_prediction_cost=lambda *a, **k:
-        (predictor.square().reshape(1), predictor.square().reshape(1), None))
+        (predictor.square().reshape(1), None))
     observation = dict(observed_depths=[1], observed=[root],
         mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])
     model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
-        inter_contrastive_weight=0., symbolSpace=SimpleNamespace(expectation=disc),
+        expectation_gain=0., symbolSpace=SimpleNamespace(expectation=disc),
         _publish_sentence_scratch=lambda state: None,
         _trial_understanding=lambda *args: object(),
         _tensor_pushed_ideas=root[:, None],
@@ -244,17 +245,15 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
 
 
 
-def test_already_trained_observation_keeps_policy_and_skips_duplicate_loss():
-    from Layers import BracketExpectation
-    layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, batch=1, expectation_scope='structured')
+def test_already_trained_observation_preserves_context_and_skips_duplicate_loss():
+    from Layers import SymbolExpectation
+    layer = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
+        concept_dim=4, batch=1, expectation_scope='symbols')
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     layer.set_inter_loss_weight(1.)
     payloads = [torch.ones(3, 4)]
     layer.observe_stm_end_state([3], payloads)
-    layer.expect_next_meaning(0, refresh=True, policy=('prior-query',), policy_work=2)
+    layer.expect_next_meaning(0, refresh=True)
     layer.observe_stm_end_state([3], payloads, train_prediction=False)
     assert layer.consume_inter_loss() is None
-    outcomes = layer.consume_expectation_policy_outcomes()
-    assert len(outcomes) == 1 and outcomes[0][0] == ('prior-query',)
-    assert outcomes[0][2] == 2
     assert not layer._inter_context[0][-1][1].requires_grad

@@ -869,9 +869,17 @@ inverse learning, or read-back quality remaining poor despite decreasing cost.
 
 ## Expectation by inversion and the reconstruction audit (decided 2026-10-06, unscheduled)
 
-**Taken up as todo item 4.5 (Alec, 2026-10-08: "needs to go in sooner
-rather than later"; a spec of its own, written in a separate conversation).
-This section is the record until that spec exists.**
+**Reassigned to Item 3, October 19:** this invertible-path program is independent
+of [Item 4 expectation](specs/2026-10-08-expectation-at-every-level.md). Local
+expectation uses detached symbol activations and observed context; it does not
+invert a predicted sentence into operands. The text below records the earlier
+combined proposal, not an Item 4 dependency or implemented behavior.
+
+
+**History:** taken up as todo item 4.5 on 2026-10-08 (Alec: "needs to go
+in sooner rather than later"); the expectation spec was written and, on
+2026-10-19, detached from this program, which is now todo item 3's. This
+section is item 3's record.
 
 Decided in the operators update plan
 ([§10.3](plans/2026-10-05-operators-update.md#103-the-invertible-forward-path-reconstruction-as-an-audit),

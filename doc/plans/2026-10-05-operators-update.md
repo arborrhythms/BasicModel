@@ -822,6 +822,13 @@ coordinates any join of more than a few items is near the top.
 
 ### 12.2 Two complete derivations, subtracted layer by layer
 
+**October 19 revision:** expectation is detached from the invertible path.
+[Item 4 rev 5](../specs/2026-10-08-expectation-at-every-level.md) uses local
+activation residuals beside attenuated content. Inversion and the structural
+reconstruction audit belong to Item 3. The subtraction proposal below is
+historical and does not govern the current expectation implementation.
+
+
 Alec: compute the two derivations independently, subtract one from the other
 along the chain; expectation carries out a complete derivation and we learn
 on surprise throughout the chain, not only at the output.
@@ -903,6 +910,12 @@ expectations at every layer; no parameter perturbation. Carried into rounds
 3–4 as "expectation by inversion".
 
 ## 13. The scheme as confirmed (Alec, 2026-10-06)
+
+**October 19 revision:** the invertible-path program continues under Item 3;
+expectation has its own local, detached activation predictor under Item 4.
+The current paired trial keeps and credits on `R + A`; predictor error `E`
+trains only the predictor. This section preserves the October 6 record.
+
 
 Alec: "we are continuing with centroid for percepts/symbols, expectation and
 two hard derivations propagated across the model, and an output criteria

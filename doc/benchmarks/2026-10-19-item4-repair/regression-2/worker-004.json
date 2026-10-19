@@ -1,0 +1,280 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[False]",
+    "test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[True-True-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-True-False]",
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+    "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
+    "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs0]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+    "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+    "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+    "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+    "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
+    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata",
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_predictor_with_detached_context_and_target",
+    "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_never_retains_encoder_graph",
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+    "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+    "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_native_bank_shape_independent_of_observation_depth"
+  ],
+  "completed": [
+    "test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[False]",
+    "test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[True-True-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-True-False]",
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+    "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
+    "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs0]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+    "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+    "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+    "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+    "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
+    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata",
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_predictor_with_detached_context_and_target",
+    "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_never_retains_encoder_graph",
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+    "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+    "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_native_bank_shape_independent_of_observation_depth"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.042452708119526505,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 4, 'after': 2, 'target': 2, 'cutoff': 1.0, 'deleted_by_origin': {0: 2, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005649958970025182,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 4, 'after': 2, 'target': 2, 'cutoff': 1.0, 'deleted_by_origin': {0: 2, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[True-True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014302541967481375,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025609161239117384,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0017341668717563152,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.3848416660912335,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 11, 'after': 6, 'target': 6, 'cutoff': 2.0, 'deleted_by_origin': {0: 5, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6992/test_real_model_forgets_at_doc0/after-forgetting.ckpt\r\nbatch = 0 (\u0394=0.251s)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6992/test_real_model_forgets_at_doc0/after-forgetting.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020897500216960907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001051375176757574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012500002048909664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001129999291151762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010724994353950024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012120790779590607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012025004252791405,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005385583965107799,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 1.7487800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 1.7487800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026113749481737614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018375839572399855,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 5, 'after': 3, 'target': 3, 'cutoff': 2.0, 'deleted_by_origin': {0: 2, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012337509542703629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0032512499019503593,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 1, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_predictor_with_detached_context_and_target",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0012002908624708652,
+      "message": "test/test_inter_sentence_prediction_shape.py:22: in test_prediction_trains_predictor_with_detached_context_and_target\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_never_retains_encoder_graph",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0005117501132190228,
+      "message": "test/test_inter_sentence_prediction_shape.py:40: in test_consuming_prediction_loss_never_retains_encoder_graph\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0004016661550849676,
+      "message": "test/test_inter_sentence_prediction_shape.py:58: in test_prediction_context_is_row_local_and_reset_keeps_other_rows\n    layer = _make_layer(D=4, batch=2)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.00012216600589454174,
+      "message": "test/test_inter_sentence_prediction_shape.py:71: in test_consolidated_prediction_uses_observed_context_without_target_leak\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.00011633406393229961,
+      "message": "test/test_inter_sentence_prediction_shape.py:85: in test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_native_bank_shape_independent_of_observation_depth",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.07258095894940197,
+      "message": "test/test_inter_sentence_prediction_shape.py:122: in test_native_bank_shape_independent_of_observation_depth\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

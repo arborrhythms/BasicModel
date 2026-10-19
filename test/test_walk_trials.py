@@ -159,45 +159,29 @@ def test_expectation_is_global_and_does_not_open_an_anticipatory_episode():
     model,owner,meaning=_anticipating_model()
     model.train()
     before=tuple(model._what_memory().thought_history())
-    model._stage_expectation_queries(training=True)
+    model._stage_attention_meters(training=True)
     assert tuple(model._what_memory().thought_history())==before
-    assert model._expectation_policy_loss() is None
+    assert not hasattr(model, '_expectation_policy_loss')
     assert owner.expect_next_meaning(0,record=False) is not None
 
 
-def test_delayed_forecast_costs_both_held_estimates_and_keeps_strict_ties():
-    from dataclasses import replace
-    from Layers import MeaningExpectation, _PendingMeaningExpectation
-    from WalkTrials import ForecastWalk, select_forecast
-    a = _PendingMeaningExpectation(MeaningExpectation(torch.zeros(3, 4), torch.zeros(3)),
-        (), 'stream', 'document', versions=(1,), work=2)
-    b = replace(a, prediction=MeaningExpectation(torch.ones(3, 4), torch.zeros(3)))
-    a = replace(a, walk=ForecastWalk(b, (0, 1), (2, 1), 0, (('greedy',), ('explore',)), .01))
-    kept = select_forecast(a, torch.ones(3, 4), torch.ones(3, dtype=torch.bool), None)
-    assert kept.comparison['explore_kept']
-    assert kept.comparison['records'] == ('explore',)
-    assert kept.comparison['costs'][1] < kept.comparison['costs'][0]
-    tied = select_forecast(a, torch.full((3, 4), .5), torch.ones(3, dtype=torch.bool), None)
-    assert not tied.comparison['explore_kept']
-    assert tied.comparison['records'] == ('greedy',)
-    assert a.walk is not None and a.comparison is None  # scoring did not publish
 
 
 def test_forecast_previews_publish_only_the_committed_observation():
     from test_negative_expectation import _anticipating_model
     model, owner, meaning = _anticipating_model()
     model.train()
-    model._stage_expectation_queries(training=True)
+    model._stage_attention_meters(training=True)
     pending = owner._inter_last_meaning[0]
     mask = torch.ones(1, dtype=torch.bool)
     for _ in range(2):
-        _, _, held = owner.sentence_prediction_cost([3], [meaning.roles], mask,
+        _, held = owner.sentence_prediction_cost([3], [meaning.roles], mask,
             layout='infix', role_masks=[meaning.role_mask])
-        assert held[0][0].comparison is None
+        assert held[0][0].prediction is not None
         assert owner._inter_last_meaning[0] is pending
-        assert not owner.consume_expectation_walk_outcomes()
+        assert not hasattr(owner, 'consume_expectation_walk_outcomes')
     owner._inter_last_meaning = held[0]
     owner.observe_stm_end_state([3], [meaning.roles], mask=mask, layout='infix',
         role_masks=[meaning.role_mask], train_prediction=False)
     assert owner.last_expectation_comparison(0) is not None
-    assert not owner.consume_expectation_walk_outcomes()
+    assert not hasattr(owner, 'consume_expectation_walk_outcomes')

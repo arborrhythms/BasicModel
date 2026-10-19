@@ -1,0 +1,15 @@
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]
+test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances
+test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]
+test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]
+test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input
+
+13 tests collected in 2.00s

@@ -217,7 +217,7 @@ def asserted_dominance_loss(child, parent):
 
 
 
-from Layers import SortingLayer, TruthLayer, BracketExpectation, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 from workarounds import Workarounds
 

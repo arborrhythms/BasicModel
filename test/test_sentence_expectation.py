@@ -10,14 +10,16 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import BracketExpectation, TernaryTruthStore
+from Layers import SymbolExpectation, TernaryTruthStore
 
 
 def layer(batch=1, consolidated=False):
     torch.manual_seed(165)
-    result = BracketExpectation(
+    result = SymbolExpectation(
         n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
-        batch=batch, expectation_scope="structured")
+        batch=batch, expectation_scope='symbols')
+    result.set_symbol_bank(torch.eye(result.concept_dim))
+    result.set_symbol_bank(torch.eye(4))
     if consolidated:
         result._ltm_store = TernaryTruthStore(4, capacity=32)
     return result
@@ -41,7 +43,7 @@ def test_np1_fixed_other_roles_change_prediction(consolidated, role):
     observe(b, changed)
     pa, pb = a.expect_next_meaning(), b.expect_next_meaning()
     assert pa is not None and pb is not None
-    assert not torch.allclose(pa.roles, pb.roles)
+    assert not torch.allclose(pa.symbol_logits, pb.symbol_logits)
     assert not torch.allclose(pa.roles[0], pa.roles[1])
 
 
@@ -81,9 +83,10 @@ def test_document_change_is_cold_preserves_scored_loss_and_other_row():
     assert model.consume_inter_loss() is None
 
 
-def test_full_role_loss_trains_predictor_and_current_source_but_never_target():
-    model = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
-                               batch=1, expectation_scope='structured')
+def test_activation_loss_trains_predictor_but_never_source_or_target():
+    model = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
+                               batch=1, expectation_scope='symbols')
+    model.set_symbol_bank(torch.eye(model.concept_dim))
     encoder = torch.nn.Linear(4, 4, bias=False)
     source = encoder(torch.arange(12.).reshape(3, 4) / 12)
     target = torch.nn.Parameter(torch.ones(3, 4))
@@ -93,7 +96,7 @@ def test_full_role_loss_trains_predictor_and_current_source_but_never_target():
     assert loss is not None
     loss.backward()
     assert target.grad is None
-    assert encoder.weight.grad is not None and encoder.weight.grad.abs().sum() > 0
+    assert encoder.weight.grad is None
     assert any(p.grad is not None and p.grad.norm() > 0
                for p in model._inter_predictor.parameters())
     assert all(not p.requires_grad for _, p, _ in model.get_stm_chain())
@@ -111,8 +114,9 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
                 for entry in entries]
     torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
     assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
-    packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='structured')
+    packed = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='symbols')
+    packed.set_symbol_bank(torch.eye(packed.concept_dim))
     streaming = copy.deepcopy(packed)
     packed._ltm_store = f.store if consolidated else None
     from reading_fixtures import commit_reading
@@ -124,7 +128,8 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
     for t in range(2):
         streaming.predict_and_observe_stm_end_state([3], [meanings[t].roles],
             layout='infix', role_masks=[meanings[t].role_mask],
-            sentence_kinds=['idea'], documents=['a'])
+            sentence_kinds=['idea'], documents=['a'],
+            evidence=[finish_reading(f.language, entries[t], registry=f.registry).evidence])
     assert streaming._inter_loss_count == 1
     torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
     torch.testing.assert_close(packed.expect_next_meaning().roles,
@@ -134,11 +139,12 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
         # (not inside) the observed sequence. The predictor remains aligned
         # with the streaming path because its context contains observations
         # only; the durable owner retains the auditable pair separately.
-        assert len(packed._ltm_store) == 3
-        assert [packed._ltm_store.row(i)["kind"] for i in range(3)] == [
-            "observation", "estimate", "observation"]
-        assert (packed._ltm_store.expectation_pair(1)["source_occurrences"]
-                == (packed._ltm_store.row(0)["occurrence"],))
+        kinds = [packed._ltm_store.row(i)['kind'] for i in range(len(packed._ltm_store))]
+        assert kinds.count('observation') == 2
+        assert kinds.count('estimate') == 1
+        estimate_index = kinds.index('estimate')
+        assert kinds[estimate_index+1] == 'observation'
+        assert packed._ltm_store.expectation_pair(estimate_index)['source_occurrences'] == (packed._ltm_store.row(0)['occurrence'],)
         # The predictor sees the pre-fusion roles; the row keeps its point.
         torch.testing.assert_close(packed._ltm_store.meaning_of(0).roles[0], entries[0].end_state[0])
         assert packed._ltm_store.meaning_of(0).role_mask.tolist() == [True, False, False]
@@ -169,22 +175,23 @@ def test_source_document_addresses_follow_each_packed_sentence():
 def test_nonfinite_scored_role_error_is_rejected():
     model = layer()
     observe(model, torch.ones(3, 4))
-    with pytest.raises(FloatingPointError, match="prediction loss"):
-        observe(model, torch.full((3, 4), 1e30))
+    with pytest.raises(FloatingPointError, match="non-finite"):
+        observe(model, torch.full((3, 4), float("inf")))
 
 
-def test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration():
-    old = BracketExpectation(
-        n_symbols=4, max_depth=8, n_dim=4, concept_dim=4)
-    new = layer()
-    before = copy.deepcopy(new._inter_predictor.state_dict())
-    with pytest.warns(UserWarning, match="root.*structured"):
-        new.load_state_dict(old.state_dict(), strict=True)
-    for name, value in new._inter_predictor.state_dict().items():
+def test_retired_heads_have_explicit_fresh_activation_migration():
+    model = layer()
+    before = copy.deepcopy(model._inter_predictor.state_dict())
+    old = {'_inter_predictor.network.0.weight': torch.randn(32, 120),
+           'predictor.0.weight': torch.randn(16, 28),
+           'word_predictor.0.weight': torch.randn(16,28)}
+    with pytest.warns(UserWarning, match='fresh shared activation'):
+        model.load_state_dict(old, strict=True)
+    for name, value in model._inter_predictor.state_dict().items():
         torch.testing.assert_close(value, before[name])
-    for name, value in new.predictor.state_dict().items():
-        torch.testing.assert_close(value, old.predictor.state_dict()[name])
-    assert new.expect_next_meaning() is None
+    assert model.expect_next_meaning() is None
+
+
 
 
 def test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed():
@@ -227,7 +234,7 @@ def test_expectation_scope_is_a_checked_configuration_choice():
     scope = training.find("sentenceExpectationScope")
     if scope is None:
         scope = etree.SubElement(training, "sentenceExpectationScope")
-    for value in ("structured", "root"):
+    for value in ("symbols", "structured", "root"):
         scope.text = value
         assert schema.validate(tree), str(schema.error_log)
     scope.text = "flattened"
@@ -235,9 +242,9 @@ def test_expectation_scope_is_a_checked_configuration_choice():
 
 
 def test_unknown_expectation_scope_is_rejected_at_construction():
-    with pytest.raises(ValueError, match="expectation_scope"):
-        BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
-                           concept_dim=4, expectation_scope="flattened")
+    with pytest.raises(ValueError, match="expectation scope"):
+        SymbolExpectation(n_symbols=4, max_depth=8, n_dim=4,
+                           concept_dim=4, expectation_scope='flattened')
 
 
 def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch, eager_reading):
@@ -270,6 +277,7 @@ def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():
     disc.train()
     disc.ensure_batch(2)
     d = disc.concept_dim
+    disc.set_symbol_bank(torch.eye(d))
     for value in (0.2, 0.4):
         disc.predict_and_observe_stm_end_state(
             [1, 1], [torch.full((1, d), value), torch.full((1, d), -value)])

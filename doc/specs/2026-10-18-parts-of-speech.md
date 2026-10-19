@@ -66,7 +66,7 @@ order change):
 
 | Operators | Result's type | Words the result carries |
 |---|---|---|
-| `intersection`, `union`, `conjunction`, `disjunction` (symmetric, no head) | the inputs' type | all operands' words, each counted |
+| `intersection`, `union`, `conjunction`, `disjunction`, `product`, `sum` (symmetric, no head) | the inputs' type | all operands' words, each counted *(product and sum added 2026-10-18: a multiplicative or additive modification is symmetric and keeps its inputs' type)* |
 | `not`, `non` (unary modifiers) | the operand's type | the operand's words |
 | `adverb` (modifier + head), `preposition`, `surface`, `bind`, `compound` (declared head) | the head's type | the head's words (`adverb` must declare its head: it has none today) |
 | `lower`, `definite` and their unary faces (order −1), `verb` (clause form VP) | a new type | the head operand's words: the bare noun, or both words of an intersected description; the verb for a VP. An NP carries those words into `lift` |
@@ -82,11 +82,11 @@ Thus both `black` and `cat` flow through `lower(a, intersection(black, cat))`
 and into `lift`, after which neither is carried. Their chooser probabilities
 add, one contribution per carried occurrence. Operations outside this table
 with no declared head retain the existing empty carrier; this pass makes no
-new type claim for those operations. The 2026-10-18 catalogue amendment admits
-`product` to the NP menu without adding it to this flow table; its carrier
-therefore remains empty. Menu admission alone does not declare an output type.
-The flow rule for `product` is still open and needs a decision before another
-adjective lesson.
+new type claim for those operations. *Decided 2026-10-19:* `product` and
+`sum` are symmetric carriers like `intersection` and `union` (table above);
+their results keep the inputs' type and carry every operand's words. Menu
+admission alone does not declare an output type; the table row does. The
+code's flow mask must list them before another adjective lesson.
 
 *Linguistic note (Claude).* Coordination preserves the conjuncts' type
 (Williams 1981's Law of Coordination of Likes); the counterexamples ("Pat is
@@ -239,9 +239,24 @@ prior.
 ## 8. Open
 
 Resolved 2026-10-18: the categorizer is distributional (§2a) and results
-carry words by §2b. Deferred: output typing (§4); which earlier stage gives
-things and properties distinct meaning structure, so that a new noun can be
-recognized by resemblance before it has occupied an argument (§3's probe).
+carry words by §2b. Deferred: output typing (§4).
+
+**Grounding is textual, not perceptual** *(decided, Alec, 2026-10-19)*. The
+model sees percepts of words (letter parts and wholes) and forms
+word-concepts from them. A word-concept is a zeroth-order concept that
+references an object-concept of any order ("Bill" an individual, "water" a
+mass, "chair" a count kind); one concept may reference another through the
+LTM's reference structures (the definition rows and the meta references).
+Since the model experiences only text, it learns a word by minting a random
+object-concept, and learns about that object explicitly: a definition ("a
+table has a top and four legs") adds parts to the conceptual mereology, a
+kind statement ("tables are furniture") adds to the conceptual hierarchy.
+The difference between mereology and hierarchy is whether the item collects
+symbols, which makes it abstract. So there is no perceptual grounding stage:
+the §3 probe's empty intersections are the expected state of freshly minted
+object-concepts, and the resemblance a categorizer could bootstrap from
+arrives through hierarchy statements, not percepts. Lessons demand
+behaviors (§5a), never non-empty meanings.
 Superseded reading, kept for the record: that a word's class is read from
 the component families — individual columns for things, property columns
 for properties, change directions for changes, no content for markers — and

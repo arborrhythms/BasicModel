@@ -7,6 +7,7 @@ import torch
 
 def _attention_model(keys):
     from Language import OperationSelectionLayer
+    from Expectation import PerceptMoments
     batch, words, width = keys.shape
     starts = torch.arange(words) * 2
     spans = torch.stack((starts, starts + 1), -1).expand(batch, -1, -1)
@@ -21,6 +22,8 @@ def _attention_model(keys):
         perceptualSpace=SimpleNamespace(_forward_input={
             'word_texts': [[chr(ord('a') + w) for w in range(words)] for _ in range(batch)]}),
         conceptualSpace=SimpleNamespace(), attention_budget=8,
+        percept_expectation=PerceptMoments(width), percept_expectation_gain=0.,
+        training=False, symbolSpace=SimpleNamespace(expectation=None),
         _concept_owner=lambda: owner, _stm_reducer=lambda: chooser,
         languageSpace=SimpleNamespace(modules=lambda: []))
 
@@ -41,16 +44,13 @@ def test_attention_gist_is_invariant_to_other_batch_rows(monkeypatch):
 
 
 @pytest.mark.parametrize('rows', [None, [0]])
-@pytest.mark.parametrize('has_vectors', [False, True])
-def test_document_reset_clears_both_recall_histories(rows, has_vectors):
+def test_document_reset_clears_completed_field_recall(rows):
     from Models import BasicModel
     model = SimpleNamespace(
-        _what_recall_history={0: ['a'], 1: ['b']} if has_vectors else {},
         _what_recall_sentence_history={0: ['field-a'], 1: ['field-b']})
     BasicModel._clear_recall_history(model, rows)
     expected = {} if rows is None else {1: ['field-b']}
     assert model._what_recall_sentence_history == expected
-    assert 0 not in model._what_recall_history
 
 
 def test_word_reference_commit_does_not_keep_old_order_shape():
@@ -87,7 +87,7 @@ def test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch():
     assert tax._priming.shape == (1, 4)
 
 
-@pytest.mark.parametrize('reader', ['_recall_history', '_recall_sentence_history'])
+@pytest.mark.parametrize('reader', ['_recall_sentence_history'])
 @pytest.mark.parametrize('new_batch', [1, 3])
 def test_recall_read_rejects_batch_change_until_all_history_is_reset(reader, new_batch):
     from Models import BasicModel
@@ -180,18 +180,16 @@ def test_rejected_taxonomy_resize_does_not_partially_resize_its_owner():
     assert tax._priming.eq(1).all()
 
 
-def test_rejected_recall_write_does_not_first_mutate_discourse():
+def test_recall_batch_shape_cannot_change_before_reset():
     from Models import BasicModel
     model = BasicModel.__new__(BasicModel)
     torch.nn.Module.__init__(model)
-    model.inputSpace = SimpleNamespace(_word_active_mask=torch.ones(1, 1, dtype=torch.bool))
-    model._recall_history()[0] = ['old sentence']
-    observed = []
-    disc = SimpleNamespace(_pool_sentence_rep=lambda value: value,
-                           observe=observed.append)
+    model._recall_sentence_history(batch=1)[0] = ['old field']
     with pytest.raises(ValueError, match='recall.*batch'):
-        model._observe_discourse(disc, torch.zeros(2, 4))
-    assert observed == []
+        model._recall_sentence_history(batch=2)
+    assert model._recall_sentence_history(batch=1)[0] == ['old field']
+    model._clear_recall_history()
+    assert model._recall_sentence_history(batch=2) == {}
 
 
 def test_document_reset_clears_only_the_finished_rows_priming():

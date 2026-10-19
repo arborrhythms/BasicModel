@@ -1,0 +1,4 @@
+test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]
+test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]
+
+2 tests collected in 0.54s

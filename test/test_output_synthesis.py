@@ -239,12 +239,17 @@ def test_branch_gradient_diagnostics_read_without_update(synth_config):
 
 
 def _prime_discourse(m, batch, sentences=2):
-    # The discourse layer observes a sentence rep on TRAINING batches only,
-    # so prime the ARMA ring with a couple of training steps.
-    opt = m.getOptimizer(lr=1e-6)
-    for _ in range(sentences):
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch)
+    # Explicit external meanings for temporal API tests. These fixtures do
+    # not manufacture observations as a side effect of non-bracket forward.
+    memory = m.symbolSpace.expectation
+    memory.ensure_batch(2)
+    # This isolated non-bracket temporal fixture has no durable observations.
+    memory._ltm_store = None
+    memory.set_symbol_bank(torch.eye(memory.concept_dim))
+    for turn in range(sentences):
+        values = torch.eye(memory.concept_dim)[[turn % memory.concept_dim,
+                                                   (turn+1) % memory.concept_dim]]
+        memory.predict_and_observe_stm_end_state([1,1], [value[None] for value in values],layout='infix')
 
 
 def test_present_and_supervised_resolve_by_identity(synth_config):
@@ -267,7 +272,7 @@ def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
     m = _build(synth_discourse_config)
     batch = _batch(m)
     memory = m.symbolSpace.expectation
-    assert memory is not None and getattr(memory, "_s_history", None) is not None
+    assert memory is not None and getattr(memory, "_inter_context", None) is not None
     _prime_discourse(m, batch, sentences=2)
     with torch.no_grad():
         u = m.understand(batch[0])
@@ -296,16 +301,17 @@ def test_future_resolves_by_prediction_without_committing_memory(synth_discourse
     m = _build(synth_discourse_config)
     batch = _batch(m)
     memory = m.symbolSpace.expectation
-    assert memory is not None and getattr(memory, "predictor", None) is not None
+    assert memory is not None and getattr(memory, "_inter_predictor", None) is not None
     _prime_discourse(m, batch, sentences=2)
-    before = memory._s_history.clone()
+    before = [[frame[1].clone() for frame in row] for row in memory._inter_context]
     with torch.no_grad():
         u = m.understand(batch[0])
         d1 = m._resolve_answer(u, What.future(1, 1))
         d2 = m._resolve_answer(u, What.future(1, 2))
     assert d1.source == "prediction" and d1.resolved
-    assert torch.equal(memory._s_history, before)          # ring untouched
-    assert not torch.equal(d1.answer_symbol[:, 0], d2.answer_symbol[:, 0])
+    assert all(torch.equal(frame[1], old) for row, saved in zip(memory._inter_context, before)
+               for frame, old in zip(row, saved))
+    assert not d2.resolved  # future forecasts never become factual context
     with torch.no_grad():
         construction = m.reverseOutput(u, m.resolveAnswer(u, What.future(1, 1)))
     assert construction.trace[0]["operation"] == "resolve:prediction"
@@ -575,39 +581,22 @@ def test_batched_questions_resolve_per_row(synth_discourse_config):
 
 
 def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discourse_config):
-    # The ARMA ring's fill phase writes new rows at cap-count-1 (newest at the
-    # LOW end), so indexing the ring tail is wrong; recall uses its own
-    # chronological history instead.
     m = _build(synth_discourse_config)
     memory = m.symbolSpace.expectation
     batch = _batch(m)
-    seen = []
-    orig = m._observe_discourse
-
-    def spy(disc, sentence, mask=None, **kwargs):
-        # Give the chronology regression distinct observations. Repeating the
-        # same input need not change its code merely because Adam ran once.
-        sentence = sentence.detach().clone()
-        sentence[..., 0] = .25 * (len(seen) + 1)
-        seen.append(disc._pool_sentence_rep(sentence).detach().clone())
-        return orig(disc, sentence, mask=mask, **kwargs)
-
-    m._observe_discourse = spy
-    try:
-        _prime_discourse(m, batch, sentences=2)
-    finally:
-        m._observe_discourse = orig
-    assert len(seen) == 2 and int(memory._s_count[0]) == 2 < int(memory.p)
+    _prime_discourse(m,batch,sentences=2)
+    seen = m._recall_history()
+    assert len(seen[0]) == 2 < memory._inter_chain_window
     with torch.no_grad():
-        u = m.understand(batch[0])
-        if getattr(m, "question_conditioner", None) is not None:
+        u=m.understand(batch[0])
+        if getattr(m,'question_conditioner',None) is not None:
             m.question_conditioner.weight.zero_()
-        d = m._resolve_answer(u, What.past(3, -1))
-    width = min(u.symbolic_state.shape[-1], seen[-1].shape[-1])
-    assert torch.equal(d.answer_symbol[:, 0, :width], seen[-1][:, :width])   # newest
-    assert not torch.equal(d.answer_symbol[:, 0, :width], seen[0][:, :width])
-    # The ring tail still holds the FIRST observation during fill: the bug.
-    assert torch.equal(memory._s_history[:, -1, :width], seen[0][:, :width])
+        d=m._resolve_answer(u,What.past(3,-1))
+    width=min(u.symbolic_state.shape[-1],seen[0][-1].shape[-1])
+    expected=torch.stack([seen[b][-1][:width] for b in range(2)])
+    torch.testing.assert_close(d.answer_symbol[:,0,:width],expected,rtol=0,atol=0)
+    assert not torch.equal(seen[0][0],seen[0][-1])
+    assert not hasattr(memory,'_s_history')
 
 
 # -- the three items Alec asked to close (2026-09-09) --------------------------

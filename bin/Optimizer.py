@@ -702,14 +702,14 @@ class Optimizer:
         ``init_device`` keeps ``TheDevice`` and the default device in
         sync, so this restores exactly the spelling the process set.
         """
-        from util import TheDevice  # local: Optimizer imports before util elsewhere
-        torch.set_default_device("cpu")
+        from util import _set_torch_default_device  # local: imports before util elsewhere
+        torch.set_default_device(None)
         try:
             if closure is None:
                 return self._inner.step()
             return self._inner.step(closure=closure)
         finally:
-            torch.set_default_device(str(TheDevice.get()))
+            _set_torch_default_device()
 
     def step(self, closure=None):
         """Reject non-finite gradients before the wrapped optimizer mutates.

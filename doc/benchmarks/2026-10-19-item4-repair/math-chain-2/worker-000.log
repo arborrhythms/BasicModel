@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_ordinary_initial_binding_distribution_includes_every_retained_candidate _
+test/test_math_chain_section14.py:211: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+    assert min(ratios) >= .9 and max(ratios) <= 1.1, report
+E   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.8779656291007996, 1.1124873161315918], 'initialization_documents': 32, ...}
+E   assert (0.8779656291007996 >= 0.9)
+E    +  where 0.8779656291007996 = min([1.0000240802764893, 0.9999759197235107, 1.000348448753357, 0.9996514916419983, 1.0000239610671997, 0.9999761581420898, ...])
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=8.332s)
+batch = 16 (Δ=6.094s)
+batch = 24 (Δ=8.127s)
+batch = 32 (Δ=11.121s)
+batch = 40 (Δ=7.977s)
+batch = 48 (Δ=8.494s)
+batch = 56 (Δ=8.456s)
+batch = 64 (Δ=11.110s)
+batch = 72 (Δ=8.193s)
+batch = 80 (Δ=8.912s)
+batch = 88 (Δ=9.125s)
+batch = 96 (Δ=9.021s)
+batch = 104 (Δ=13.614s)
+batch = 0 (Δ=96.750s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+1 failed, 1 warning in 223.65s (0:03:43)

@@ -67,15 +67,17 @@ def test_ensure_microbatch_cascades_to_discourse():
     ``_prev_centroids`` contrastive buffers; the per-batch leading
     dim contract is unchanged.
     """
-    from Layers import BracketExpectation
-    layer = BracketExpectation(n_symbols=2, max_depth=2, n_dim=8, batch=1)
+    from Layers import SymbolExpectation
+    layer = SymbolExpectation(n_symbols=2, max_depth=2, n_dim=8, batch=1)
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     assert layer._batch == 1
     layer.ensure_batch(6)
     assert layer._batch == 6
-    assert layer._s_history.shape[0] == 6
-    assert layer._s_count.shape == (6,)
-    assert layer._e_history.shape[0] == 6
-    assert layer._e_count.shape == (6,)
+    assert len(layer._inter_context) == 6
+    assert len(layer._inter_context_lanes) == 6
+    assert len(layer._inter_last_meaning) == 6
+    assert all(not row for row in layer._inter_context)
+
 
 
 def test_ensure_microbatch_method_explicit_BK():

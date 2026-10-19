@@ -1,0 +1,283 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+    "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+    "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+    "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+    "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+    "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+    "test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch",
+    "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_cascades_to_discourse",
+    "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_method_explicit_BK",
+    "test/test_ensure_microbatch_cascade.py::test_sentence_completed_survives_K_change",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]"
+  ],
+  "completed": [
+    "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+    "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+    "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+    "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+    "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+    "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+    "test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch",
+    "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_cascades_to_discourse",
+    "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_method_explicit_BK",
+    "test/test_ensure_microbatch_cascade.py::test_sentence_completed_survives_K_change",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]"
+  ],
+  "slow_selected": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0116882910951972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021545891650021076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031633395701646805,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001630841288715601,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011891615577042103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011454196646809578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010491604916751385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002612089738249779,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00015279091894626617,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_expectation_boundary.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 9.704218246042728e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_expectation_boundary.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0255643748678267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0689778330270201,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06919645797461271,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.06885916693136096,
+      "message": "test/test_discourse_space.py:82: in test_one_shared_head_without_legacy_comprehension_cast\n    self.assertEqual(self.layer.predict(), (None, None))\n                     ^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'SymbolExpectation' object has no attribute 'predict'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.11625662515871227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.15092133381403983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.061332874931395054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_cascades_to_discourse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002556249964982271,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_method_explicit_BK",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02144858310930431,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ensure_microbatch_cascade.py::test_sentence_completed_survives_K_change",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022736416198313236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009794541168957949,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010656791971996427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009099999908357859,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011123375035822392,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

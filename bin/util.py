@@ -261,7 +261,18 @@ class _DeviceHolder:
 
 # The canonical device for this process.
 TheDevice = _DeviceHolder(auto_device())
-torch.set_default_device(str(TheDevice.get()))
+
+
+def _set_torch_default_device():
+    # CPU is already PyTorch's native allocation default. Installing its
+    # Python DeviceContext makes Dynamo inline that dispatcher for every
+    # tensor operation, including every branch of the bounded inverse walk.
+    # Removing that redundant mode keeps CPU allocation identical and leaves
+    # accelerator selection explicit when one is requested.
+    torch.set_default_device(None if TheDevice.type == 'cpu' else str(TheDevice.get()))
+
+
+_set_torch_default_device()
 
 
 def init_device(device=None):
@@ -271,7 +282,7 @@ def init_device(device=None):
     so subsequent tensor constructors land on the right backend.
     """
     TheDevice.set(auto_device() if device is None else DeviceHandle(str(device)))
-    torch.set_default_device(str(TheDevice.get()))
+    _set_torch_default_device()
 
 
 def buffer(*size, **kwargs):

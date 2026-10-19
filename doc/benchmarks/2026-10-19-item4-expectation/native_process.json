@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-expectation/native_experiment.py",
+    "--worker"
+  ],
+  "pid": 8231,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1290405952,
+  "elapsed_seconds": 158.02213479182683,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item4-native-curriculum-20261019/run.log"
+}

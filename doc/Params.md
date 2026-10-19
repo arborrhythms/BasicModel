@@ -186,28 +186,28 @@ Training loop and I/O.
 | `checkpointEveryBatches` | int | `0` | Save mid-training checkpoint every N optimizer steps. `0` disables periodic checkpoints. |
 | `profile` | bool | `false` | cProfile the training loop. |
 | `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
-| `wordExpectation` | bool | `true` | Word level of the shared bracket expectation owner; categorical next-word prediction over the native bank. |
-| `wordExpectationLossWeight` | nonnegative float | `0.1` | Cross-entropy weight at accepted word brackets. |
-| `wordExpectationArmaScale` | nonnegative float | `1` | Scale of the word expectation's negative image in its surprise column. |
-| `sentenceExpectationContrastiveWeight` | nonnegative float | `0` | Contrastive term at the sentence level. |
-| `byteExpectation`, `rowExpectation` | bool | `false` | Declared future levels; enabling them is rejected in 6.8-1. Their per-level loss/ARMA/contrastive knobs are reserved. |
-| `sentenceExpectation` | bool | `true` | Enables automatic structured expectation and observed residuals. Explicit `false` bypasses the cycle while understanding and the single What memory remain available. Replaces `sentencePrediction`. |
-| `sentenceExpectationScope` | string | `structured` | Predict distinct NP1/VP/NP2 vectors and occupancy from the bounded chronological observation context. `root` selects the historical single-vector benchmark. |
-| `sentenceExpectationArmaScale` | float | `0.0` | Loss weight for the ARMA sentence-prediction MSE. |
-| `expectationGain` | float in `[0,1]` | `1` | Closing-only per-role negative image gain. Zero conceives the raw observation while leaving prediction loss and gradients unchanged. |
-| `expectationPolicyWeight` | nonnegative float | `0` | Residual policy credit on the ordinary chooser before an incoming batch; requires `arma` in `<thought>` and owned LTM occurrences. Independent EMA baseline, detached trajectory replay. See [ExpectationRetention](ExpectationRetention.md). |
-| `expectationQueryBudget` | nonnegative integer | `64` | Local cap on optional prior thought, clipped to the same input's remaining `attentionBudget`. Both forecasts reserve the larger spend until their later comparison. Later packed slots use prediction without an optional query episode. |
+| `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |
+| `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
+| `byteExpectation`, `rowExpectation` | bool | `false` | Historical level switches, not separate predictors. Byte prediction is retired; document prediction uses the shared symbol owner. |
+| `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
+| `sentenceExpectationScope` | string | `symbols` | Two-lane activation forecast over the native bank. Only `symbols` is accepted. |
+| `perceptExpectationGain`, `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Independent P/S/R/D attenuation strengths. Zero passes admitted content whole; one permits zero content for a perfect prediction. R and D gains compose at closing. |
+| `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. |
+| `expectationEpsilon` | positive finite float | `1e-6` | Denominator floor for normalized percept and symbol residuals. |
+| `expectationSaturation` | enum | `clip` | `clip` uses `min(1, ratio)`; `smooth` uses `magnitude/(denominator+magnitude)`. The entire gain is detached. |
+| `explorationUniformFraction` | float in `(0,1]` | `0.5` | Uniform mass in the alternative proposal; every eligible non-greedy action has positive probability. |
+| `explorationTemperature` | positive finite float | `1` | Temperature of the policy component of the alternative proposal. Credit uses the actual mixture probability. |
 | `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](STM.md#6-intrasentencelayer). |
-| `sentenceExpectationLossWeight` | float | `0.1` | Weight on role MSE, role-presence binary cross entropy and clause-kind binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+| `sentenceExpectationLossWeight` | float | `0.1` | Weight on shared symbol/closing/document activation MSE. All source context and targets are detached. E trains the predictor independently of the paired R+A judge; zero disables this objective. See [ExpectationRetention](ExpectationRetention.md). |
 | `independenceWeight` | nonnegative float | `0.1` | Weight of the LTM-population sparse-coding objective, owned by expectation. Applies to grammars declaring individual references. |
 | `independencePriorScale` | positive float | `0.05` | Laplace activation prior and automatic-relevance pressure on unit direction columns; also scales column incoherence. |
 | `independenceMintThreshold` | positive float | `0.2` | Unexplained event-coordinate residual norm required for column admission after four distinct witnesses. Admission remains a kept-closing effect. |
 
 Item 6.5 keeps `k=4` for definedness `n/(n+4)` and recurrence. It introduces
-no live-source compatibility switch. The raw role predictor keeps its
-architecture; where identity columns exist its role error is evaluated in
-column coordinates, with a detached target and a freshly encoded current
-source. No independence term reads the geometric reference bands.
+no live-source compatibility switch. Item 4 supersedes its role-prediction
+contract with detached sources and local activation residuals. The independent
+identity-column objective remains separate; it reads no geometric reference
+bands.
 
 Gradient-balance defaults and validation are implemented in
 [Models.py](../bin/Models.py), with the numerical contract in
@@ -561,7 +561,6 @@ symbol (line anchors drift).
 | `branchDiagnosticsEvery` | `Models.py` (BaseModel init; `branch_gradient_diagnostics`) | `0` | Every N training batches, log state-branch norms plus weighted reconstruction/output/expectation norms and cosines per shared operator (codebooks excluded). Checkpoint the negative-cosine streak; unused samples preserve it. Diagnostic failures warn and never stop training. `0` = off; BasicModel uses `100`; the supplied-answer tied benchmark uses `1`. See [GradientFlow](GradientFlow.md). |
 | `leafDistillWeight` | `Models.py` (BaseModel init) | `0.0` | With `detachedReverse`, weight the reverse chooser's bounded exact-leaf surface term. Explicit legacy D3 mode uses the standalone root-to-leaf distillation head. Tied reconstruction suppresses that independent head regardless of this weight. |
 | `interContrastiveWeight` | `Models.py` (ModelLoss), `Language.py` (discourse layer) | `0.0` | InfoNCE next-idea contrastive term weight; `0` = MSE-only. |
-| `interContrastiveTemp` | same | `0.1` | InfoNCE temperature. |
 | `conceptualSimilarityScale` | `Models.py` (ModelLoss wiring) | `0.0` | Legacy autograd SBOW weight for non-serial experimental configurations. It cannot be combined with `conceptualContextLearningRate`. |
 | `conceptualContextLearningRate` | `Models.py` (BaseModel init) | `0.0` | Detached post-sentence update rate for the shared serial ConceptualSpace dictionary. Positive values convert `similarity_codebook.W` from its construction Parameter into a persistent non-grad buffer, then rotate reduced contextual evidence directly on its initial unit sphere. |
 | `conceptualContextNegatives` | `Models.py` (BaseModel init) | `4` | Deterministic negative rows per observed concept in the context-owned SBOW reducer. |
@@ -619,9 +618,6 @@ symbol (line anchors drift).
 
 | Knob | Where read | Default | Purpose |
 |------|-----------|---------|---------|
-| `armaP` | `Language.py` (InterSentenceLayer build) | `5` | ARMA AR order for inter-sentence prediction. |
-| `armaQ` | same | `2` | ARMA MA order. |
-| `armaHiddenDim` | same | unset (auto) | ARMA predictor hidden width. |
 | `language.useGrammar` | `Language.py` (grammar load) | — | DEPRECATED: still read, but only to warn loudly and force `default.grammar`. |
 | `language.start` | `Language.py` (grammar load) | `"S"` | Accepted completed-derivation shapes (start patterns); named starts tag `relative_truth` / `absolute_truth` sets. |
 

@@ -17,6 +17,18 @@ import util
 
 
 class TestCudaSanityChecks(unittest.TestCase):
+    def test_cpu_default_does_not_interpose_a_python_device_mode(self):
+        from torch.overrides import _get_current_function_mode_stack
+        from torch.utils._device import DeviceContext
+        previous = str(util.TheDevice.get())
+        try:
+            util.init_device('cpu')
+            self.assertEqual(util.torch.zeros(2).device.type, 'cpu')
+            self.assertFalse(any(isinstance(mode, DeviceContext)
+                                 for mode in _get_current_function_mode_stack()))
+        finally:
+            util.init_device(previous)
+
     def setUp(self):
         util._visible_nvidia_gpu_present.cache_clear()
         util._warn_if_cuda_unavailable_but_nvidia_visible.cache_clear()

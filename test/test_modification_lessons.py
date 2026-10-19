@@ -71,6 +71,38 @@ def test_np_gates_behaviors_and_reports_the_kept_operator():
     assert not summarize_stage([missing],'description')['passed']
 
 
+def test_np_section5a_keeps_behavior_thresholds_and_only_reports_empty_meanings():
+    from copy import deepcopy
+    from np_experiment import summarize_stage, GATES, REPORTS
+    assert GATES==dict(exact_brackets=.9,one_order1_occurrence=.95,
+                      duplicates=0,collisions=0,exact_answers=1.)
+    assert {'unexpected_occurrences','learned_operation','lowering_stamps',
+            'kept_operators','meaning_norms'} <= REPORTS.keys()
+    rows=[dict(id=str(i),family='np',brackets=i<18,
+        nps=[dict(one_occurrence=i<19,reduction=False)],duplicate_writes=0,
+        occurrence_collisions=0,unexpected_occurrences=1,unlowered_clean=None,
+        question_expected=True,answer_exact=True,observed=dict(program=['product'],
+            closed_meaning_norm=0.,steps=[dict(method='product',meaning_norms=[0.,0.,0.])],
+            lowerings=[dict(before=0,after=1)])) for i in range(20)]
+    result=summarize_stage(rows,'adjective')
+    assert result['passed']
+    assert result['gates']['brackets']['correct']==18
+    assert result['gates']['occurrences']['correct']==19
+    assert 'unexpected' not in result['gates']['occurrences']
+    assert result['reports']['unexpected_occurrences']==20
+    assert result['reports']['kept_operators']=={'product':20}
+    assert result['reports']['reductions']['correct']==0
+    assert result['reports']['meaning_norms'][0]['operations']==[
+        dict(method='product',meaning_norms=[0.,0.,0.])]
+    assert result['reports']['lowering_stamps'][0]['lowerings']==[dict(before=0,after=1)]
+    for field,value in [('brackets',False),('answer_exact',False),
+                        ('duplicate_writes',1),('occurrence_collisions',1)]:
+        failed=deepcopy(rows);failed[0][field]=value
+        assert not summarize_stage(failed,'adjective')['passed'],field
+    failed=deepcopy(rows);failed[0]['nps'][0]['one_occurrence']=False
+    assert not summarize_stage(failed,'adjective')['passed']
+
+
 def test_np_menu_admits_both_modification_operators_at_the_native_mask():
     from Language import OperationSelectionLayer
     from PartsOfSpeech import formal_arguments

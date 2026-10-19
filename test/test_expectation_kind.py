@@ -1,59 +1,30 @@
-"""Two-truths §7.15: grammatical kind is a supervised prediction target."""
+"""Item 4 retires the slot/kind head; grammatical kind remains observed metadata."""
 import copy
-
 import torch
-
-from Layers import BracketExpectation
-
-
-def layer():
-    return BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
-        concept_dim=4, expectation_scope='structured')
+from Layers import SymbolExpectation
 
 
-def observe(model, roles, kind):
-    model.predict_and_observe_stm_end_state([3], [roles], layout='infix',
-        documents=['document'], sentence_kinds=[kind])
-
-
-def test_kind_is_supervised_independently_of_role_vectors():
-    idea = layer()
+def test_grammatical_kind_does_not_train_a_second_expectation_head():
+    idea = SymbolExpectation(4, 8, 4, concept_dim=4)
+    idea.set_symbol_bank(torch.eye(4))
     relation = copy.deepcopy(idea)
-    source = torch.arange(12.).reshape(3, 4) / 12
-    target = torch.nn.Parameter(source + .2)
     for model in (idea, relation):
-        observe(model, source, 'idea')
-        assert model.expect_next_meaning().kind_logit.shape == ()
-    observe(idea, target, 'idea')
-    observe(relation, target, 'relation')
-    idea.consume_inter_loss().backward()
-    relation.consume_inter_loss().backward()
-    assert target.grad is None
-    assert idea._inter_predictor.kind_bias.grad > 0
-    assert relation._inter_predictor.kind_bias.grad < 0
-    assert idea.expectation_metrics()['kind_targets'] == 1
-    assert relation.expectation_metrics()['kind_targets'] == 1
+        model.predict_and_observe_stm_end_state([1], [torch.eye(4)[:1]], layout='infix')
+        assert not hasattr(model.expect_next_meaning(), 'kind_logit')
+    for model, kind in ((idea, 'idea'), (relation, 'relation')):
+        model.predict_and_observe_stm_end_state([1], [torch.eye(4)[1:2]], layout='infix', sentence_kinds=[kind])
+    torch.testing.assert_close(idea.consume_inter_loss(), relation.consume_inter_loss())
+    assert relation.last_expectation_comparison().sentence_kind == 'relation'
+    assert not any('kind' in name for name, _ in idea.named_parameters())
 
 
-def test_kind_preview_and_committed_comparison_agree():
-    model = layer()
+def test_activation_preview_and_committed_comparison_agree():
+    model = SymbolExpectation(4, 8, 4, concept_dim=4)
+    model.set_symbol_bank(torch.eye(4))
     source = torch.eye(4)[:3]
-    observe(model, source, 'idea')
-    cost, _, pending = model.sentence_prediction_cost([3], [source], [True],
-        documents=['document'], layout='infix', sentence_kinds=['relation'])
+    model.predict_and_observe_stm_end_state([3], [source], layout='infix')
+    cost, pending = model.sentence_prediction_cost([3], [source], [True], layout='infix')
     model._inter_last_meaning, model._inter_last_pred_root = pending
-    model.observe_stm_end_state([3], [source], layout='infix',
-        documents=['document'], sentence_kinds=['relation'])
+    model.observe_stm_end_state([3], [source], layout='infix', sentence_kinds=['relation'])
     torch.testing.assert_close(model.consume_inter_loss(), cost[0])
-    comparison = model.last_expectation_comparison()
-    assert comparison.sentence_kind == 'relation'
-    assert comparison.kind_residual > 0
-
-
-def test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind():
-    model = layer()
-    before = copy.deepcopy(model.state_dict())
-    old = {k: v for k, v in before.items() if 'kind_weight' not in k and 'kind_bias' not in k}
-    model.load_state_dict(old, strict=True)
-    for name, value in model.state_dict().items():
-        torch.testing.assert_close(value, before[name])
+    assert not hasattr(model.last_expectation_comparison(), 'kind_residual')

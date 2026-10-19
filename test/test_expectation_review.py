@@ -65,7 +65,9 @@ def test_one_interaction_owner_even_when_expectation_is_enabled(tmp_path):
 def test_expectation_names_and_production_defaults():
     import Layers
     import xml.etree.ElementTree as ET
-    assert hasattr(Layers, "SentenceExpectation")
+    assert hasattr(Layers, "SymbolExpectation")
+    assert not hasattr(Layers, "SentenceExpectation")
+    assert not hasattr(Layers, "BracketExpectation")
     assert hasattr(Layers, "MeaningExpectation")
     root = Path(__file__).resolve().parents[1]
     for name in ("model.xml", "BasicModel.xml"):
@@ -90,6 +92,7 @@ def test_provisioning_keeps_its_existing_hard_reset_of_what_episode():
 
 
 @pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")
@@ -107,14 +110,14 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
     monkeypatch.setattr(data, "has_supervised_outputs", False)
     optimizer = model.getOptimizer(lr=1e-5)
     disc = model.symbolSpace.expectation
-    observe_meanings = disc._observe_meanings
+    observe_meanings = disc.observe_stm_end_state
     pairs = []
     def capture(*args, **kwargs):
-        before = disc._inter_loss_count
+        before = disc.expectation_metrics()['predicted_targets']
         result = observe_meanings(*args, **kwargs)
-        pairs.append(disc._inter_loss_count - before)
+        pairs.append(disc.expectation_metrics()['predicted_targets'] - before)
         return result
-    monkeypatch.setattr(disc, "_observe_meanings", capture)
+    monkeypatch.setattr(disc, "observe_stm_end_state", capture)
     try:
         for rows in ([["1 plus 2", "3 plus 4"]], [["5 plus 6", "7 plus 8"]]):
             inputs = model.inputSpace.prepPackedInput(rows)

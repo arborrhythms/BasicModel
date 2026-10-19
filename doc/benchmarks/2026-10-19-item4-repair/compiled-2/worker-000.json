@@ -1,0 +1,29 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+  ],
+  "completed": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+  ],
+  "slow_selected": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 37.65598337515257,
+      "message": ".venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2038: in _compile\n    raise_unimplemented_cache_limit_exceeded()\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2022: in raise_unimplemented_cache_limit_exceeded\n    unimplemented(\n.venv/lib/python3.12/site-packages/torch/_dynamo/exc.py:775: in unimplemented\n    raise Unsupported(msg, gb_type, skip_frame)\nE   torch._dynamo.exc.Unsupported: Dynamo recompile limit exceeded\nE     Explanation: Dynamo attempted to recompile the code object too many times, exceeding the recompile_limit cache size limit (currently set to 8). Excessive recompilations can degrade performance due to the compilation overhead of each recompilation.\nE     Hint: To monitor recompilations, enable TORCH_LOGS=recompiles. If recompilations are expected, consider increasing torch._dynamo.config.recompile_limit to an appropriate value.\nE     Hint: See https://docs.pytorch.org/docs/main/user_guide/torch_compiler/compile/programming_model.recompilation.html for tips on dealing with recompilations.\nE   \nE     Developer debug context: Limit type: recompile_limit\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0039.html\n\nThe above exception was the direct cause of the following exception:\ntest/test_compiled_expectation_boundary.py:38: in test_unpacked_forward_observes_each_published_sentence_once\n    result = model._forward_with_compiled_sentence_state(raw)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7574: in _forward_with_compiled_sentence_state\n    return self._forward_per_stage(\nbin/Models.py:23814: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17090: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22366: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21918: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20877: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:142: in sentence_pair\n    exploit = compose(cache, None)\n              ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20780: in compose\n    word_step(index, masked_payload(payload, rows, closing=True), native, closing=True)\nbin/Models.py:20734: in word_step\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21751: in stage_cs_lang\n    proposal = choose_operation(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1261: in compile_wrapper\n    result = fn(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2649: in __call__\n    result = self._torchdynamo_orig_backend(\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:778: in __call__\n    result = _compile(\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2045: in _compile\n    raise FailOnRecompileLimitHit(\nE   torch._dynamo.exc.FailOnRecompileLimitHit: Hard failure due to fullgraph=True",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

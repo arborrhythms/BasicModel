@@ -802,7 +802,7 @@ def test_materialised_answer_uses_one_conditioning_application():
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
+def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path, monkeypatch):
     from What import What
     from test_meronomy_ladder import _build_ladder_variant
     m = _build_ladder_variant(tmp_path, "owned_recall", [
@@ -810,20 +810,20 @@ def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>")])
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
+    # This ownership check selects a past field explicitly. An untrained
+    # parse of the fixture must not replace it with an unrelated thought.
+    monkeypatch.setattr(m, '_run_selected_sentence_thoughts', lambda *a, **kw: ())
     try:
         with torch.no_grad():
             first = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
             disc = m.symbolSpace.expectation
             assert disc is not None
-            rep = first.answer_seed if torch.is_tensor(first.answer_seed) else first.symbolic_state
-            m._observe_discourse(disc, rep, understanding=first)
             current = _capture_program_probe(m, ["8 plus 2", "5 plus 9"])
             questions = (What.past(1), What.past(1))
             d = m.resolveAnswer(current, questions)
             assert d.row_sources == ("recall", "recall")
             before = m._materialize_answer_idea(current, d, questions)[0].clone()
-            rep = current.answer_seed if torch.is_tensor(current.answer_seed) else current.symbolic_state
-            m._observe_discourse(disc, rep, understanding=current)
+            _capture_program_probe(m, ["5 plus 9", "4 plus 1"])
             after = m._materialize_answer_idea(current, d, questions)[0]
             # A pooled AR prediction is not a conceptual answer program.
             future = m.resolveAnswer(current, (What.future(0), What.future(1)))
@@ -903,14 +903,8 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path, eager_readi
             assert u.sentence_fields[1][1] is None
             assert u.sentence_states[0] is u.sentence_fields[1][0]
             assert u.sentence_states[1] is u.sentence_fields[0][1]
-            roots = m._packed_sentence_roots.clone()
-            valid = m.inputSpace._packed_sentence_slot_mask.clone()
-            # The observation consumes u even after a different brick owns
-            # the live rows and ReconstructionStack.
-            _capture_program_probe(m, ["5 plus 9", "4 plus 1"])
-            for t in (0, 1):
-                m._observe_discourse(m.symbolSpace.expectation, roots[:, t],
-                                     mask=valid[:, t], slot=t, understanding=u)
+            # Native sentence commits own these fields before another
+            # brick can overwrite the live rows and reconstruction carrier.
             for b, slots in ((0, (0, 1)), (1, (0,))):
                 history = m._recall_sentence_history()[b]
                 assert len(history) == len(slots)

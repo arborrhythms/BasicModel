@@ -759,6 +759,25 @@ observation is set at the readout (2.6.7).
 
 ### 2.6 Expectation
 
+**Item 4 revision, October 19:** the governing contract is now [expectation at
+every level, rev 5](2026-10-08-expectation-at-every-level.md). The older
+negative-image design below is historical. Content is the observed whole
+multiplied by a scalar gain in `[0,1]`; it is never the signed residual.
+Perceptual running mean and variance supply per-coordinate salience and a
+pooled region gain. One shared symbol-bank activation predictor serves S, R
+and D, with both evidence lanes and detached sources and targets. Excess and
+omission train that predictor and set surprise. Awareness can read the raw
+observation, the prior and the attenuated content, including at gain 1.
+Expected activation primes selection; it does not manufacture input.
+Two amendments to the text below (rev 5 §4.1, §4.8): Alec's statement 1
+of 2026-09-20 — prediction as sign reversal, "for a perfect prediction we
+then conceive of nothing" — is withdrawn with the subtraction and amended
+to *nothing new*; and the consumer list ("thought reads `c`") is amended:
+thought and the answer path read the attenuated whole with a route to the
+estimate, while salience, retention priority, orienting and the
+predictor's own training read the residual lanes. Storage keeps `o`.
+
+
 The shared `BracketExpectation` owner is indexed by bracket level. Word and
 sentence levels are live in 6.8-1; byte and row levels are declared and off.
 The word level chooses a distribution over the native candidate bank, uses

@@ -1,26 +1,37 @@
-# Expectation at the closing
+# Expectation across the architecture
 
-Composition reads no expectation. The removed comprehension prior has no runtime
-flag or compatibility path: neither serial comprehension nor parallel binding
-accepts a predicted seed. `generate_sentence` understands any supplied seed text
-normally, then sends the positive predicted idea to the existing `<generate>`
-walk and full owned spelling inverse. Generated output is not an observation.
+Item 4 follows [the October 19 rev 5 specification](specs/2026-10-08-expectation-at-every-level.md).
+`SymbolExpectation` owns one activation predictor shared by the word, composed
+symbol, closing and document reads. It predicts independent for/against
+activations over native identity rows. It has no byte, ARMA, root-only or
+slot-structured prediction head. The existing three-role memory envelope is
+retains a representative identity; the full symbol bank is the forecast.
 
-The closing retains the pure observation `o` and its prior estimate `e`. Per role,
-the derived negative image is `n = -g * (1-m) * k * e`, and the conceived idea is
-`c = o + n`. `k` is sigmoid predicted presence; `m` is the active question's
-explicit grammatical open-role mask, not every unoccupied syntactic position.
-`expectationGain` is a fixed model setting in `[0,1]`, default 1. Zero gives
-beginner's mind while the predictor still runs and learns. Disabling
-`sentenceExpectation` disables prediction and comparison as well. A cold row has
-no image at any gain. Reading scope, priorities and order-zero fields never read
-this estimate.
+The content gain is `m * (1-g*κ + g*κ*s)`, where `s` is the saturated sum of
+absolute lane residuals divided by expected lane mass plus epsilon. The
+entire saturation is detached, including its denominator. Each symbol keeps
+one gain over both evidence lanes and retains its raw identity. Expected
+activation separately primes selection. It is never added to comprehension.
+Perceptual mean and variance supply per-coordinate salience and a scalar
+region gain; codebook lookup reads the original coordinates.
 
-The existing chooser receives `c` per role, presence, the object mask and a
-comparison-available bit in addition to its ordinary semantic and attended-memory
-context. All these features are detached. A declared `not.thought` can produce a
-serial inference through the shared `not` operator. An empty observed role's
-negative image does not itself execute negation or write an observation.
+A bank identity requires raw-key distance at most `1e-5`. An unknown composed
+value passes whole and contributes no target to its nearest bank key. The STM
+keeps the raw identity and original projection coefficient. Compose scores a
+separate gained activation view, including operators that read a coefficient
+from a norm; its selected candidate retains the raw identity. Order-zero
+poles receive P at perception and S once at their symbol consumer. Repeated
+reads cannot compound S. The sentence prime and S read are cleared before
+closing thoughts and before the next peer-word input.
+
+The local residual has excess and omission signs for each evidence lane.
+It trains only the predictor: both target and all source context are detached.
+The row and document gains compose multiplicatively when thought reads the
+closing. A cold document has no document attenuation. Open grammatical
+objects keep their expected prime and are spared attenuation. Only explicitly
+`non`-withheld dimensions lose the prime. The raw observation, prior and content remain available to
+awareness even when the content gain is zero. An omission can support an
+explicit checked `not` inference; it is never an external observation.
 
 ## One pair, one observation
 
@@ -31,117 +42,75 @@ the chronological predictor context. Provisioned truths and internal thoughts
 are not additional external observations. Estimate rows are never facts or their
 own corroboration, and ordinary LTM evidence readers exclude them.
 
-The estimate retains **all three vectors**, including roles with low predicted
-presence. Its carrier mask identifies stored coordinates; three separate logits
-carry learned occupancy. Thresholding occupancy must not erase a vector needed
-for the residual. The estimate's checked bindings and scope inherit only the
-preceding retained source occurrence; they do not copy the arriving target or
-claim learned generation of novel metadata. Provenance records preceding source
-occurrences, the external stream/document, and the intended observation. The
-observation retains its own bindings, scope and original `o`.
+The estimate retains the complete bank: native identity, order, raw key and
+two activation logits for every symbol. Checked bindings and scope come from
+preceding source occurrences. They never copy the incoming target. Provenance
+records those occurrences, the external stream/document and the intended
+observation. The observation retains its own raw carrier and metadata. When
+the durable row fuses several observed symbols, its
+`_observed_symbol_activations` metadata retains the original two-lane target,
+aligned by the prior's native IDs. Recomputing that target by quantizing the
+fused description would change the measured residual. Checkpoint replay uses
+the retained target, including negative evidence, rather than doing so.
 
-`expectation_pair(gain=..., object_mask=...)` derives `r`, `n` and `c` from those
-two rows. There is no third durable delta or conceived row. `c - n` recovers `o`
-up to floating-point roundoff; the retained observation remains exact. Capacity
-favors the observation when only one row fits. Pair reads resolve stable
-occurrences through the store's existing index, maintained on append, restore
-and compaction; they do not scan unrelated rows.
+`expectation_pair(gain=..., object_mask=...)` reconstructs the prior and derives
+content, gain, expected activation, excess and omission. There is no third
+durable delta or conceived row. Restoration reads the exact stored observation,
+so it also works at zero content gain. A new pair requires capacity for both rows and fails before publishing either
+when forgetting is required. Reads resolve stable occurrences through the store index,
+including after compaction; they do not scan unrelated rows.
 
-Surprise uses **every** role: `r = o - e`, including a zero target for an empty
-role. The differentiable prediction objective is mean squared residual plus
-mean presence BCE. For retention, the detached row scalar is `s / (1+s)`, with
-`w = observed_mask + (1 - observed_mask) * presence` per role and
-`s = sum(w * mean(r², coordinates)) / sum(w)`. No roles in play gives zero.
-This soft union counts occupied roles fully and empty roles by expected
-presence, so equally surprising idea and relation rows have the same score.
-It changes only retention normalization: predictor loss and the full residual
-still include every role. The score is independent of gain and object mask. Unknown
-surprise is `-1`, including older checkpoints, rather than a fabricated zero.
-Compaction and reset preserve this column's row alignment. The forgetting pass
-that uses it remains a separate item.
+For current pairs, surprise is the detached mean squared activation residual
+over the row's attended support, bounded by `s/(1+s)`, independent of bank size,
+content norm and gain. Local prediction
+training uses bounded activation MSE. Pre-Item-4 retained role estimates migrate once at load into an explicit
+symbol bank; their historical surprise is preserved. Unknown surprise remains
+`-1`. Item 5's forgetting formula, pending-source protection, stable links,
+compaction and conservative concept reclamation are unchanged.
 
 The existing semantic sidecar fingerprints links with scope and source text,
 checks both directions on restore, and participates in origin-compaction
 reachability. A tensor-only restore leaves rows with missing required sidecar
 metadata unavailable. No second memory owner is introduced.
 
-## Residual credit on the existing controller
+## Local prediction credit
 
-`expectationPolicyWeight` (default 0) enables optional anticipatory episodes;
-`expectationQueryBudget` (default 64) bounds actual work. The model's `<thought>`
-catalogue must provide `arma`, and `ltmConsolidation` must be enabled to own
-the prior occurrence. A positive policy weight rejects a missing owner. These are ordinary `run_selected_thought` episodes,
-using the same chooser, checked executors, interaction history and optimizer.
-They run before the incoming batch. Later packed slots have an empty optional
-query phase and still receive chronological prediction at their endings. No query
-runs in the packed drain after unseen input has changed staging.
+Prediction residuals train only the shared activation head. There is no
+anticipatory-query reward or separate expectation policy. Reading the object
+mask of a nested question follows its owned occurrence on the controller's
+ordinary work meter. The held prior remains immutable when its local loss is
+replayed against a newly arrived observation.
 
-Anticipation reads the row's prior observation chain and cued frames. It excludes
-current STM, the parallel knowing field and the last input program from its
-chooser view. Hard retrieved frames can fill older positions in the same bounded
-predictor context; the latest external observation stays last. Query effects
-cannot reinstate knowing on anticipation's behalf. Selected `arma` stages on the
-existing pending-prediction owner. No observed input is changed by a query.
-
-A completed residual supplies return `-(all-role MSE + presence BCE) - 0.01 *
-actual work`. This score-function estimator owns an EMA baseline, separate from
-supplied-answer credit and from ordinary prediction MSE. It stores detached
-candidate features, selected indices and behavior log probabilities. At credit
-time it replays the same chooser at its current parameters, with a detached
-importance ratio capped at 4. This is bounded, potentially biased off-policy
-credit when parameters have changed; it never backpropagates an old policy
-graph. A delayed predictor is likewise replayed from its prior inputs if its
-parameter version changed, while its original forecast remains the evidence.
-This replay also covers the optional contrastive predictor objective. Reading
-the object mask of a nested `what` follows its owned question occurrence,
-charging serial scans to the same controller meter and respecting exhaustion.
-No objective rewards a small conceived norm. Gain, object selection and reading
-attention receive no gradient from these detached features or scalar returns.
-The existing reading-attention handoff also detaches its scope before composition;
-its own next-word supervision remains separate from residual credit.
-
-Source encodings in the current prediction step retain the existing
-[objective-local gradient contract](GradientFlow.md); observed targets, thought
-effects and durable history are detached. Mechanism checks do not demonstrate
-useful querying or a benefit from subtraction. Learning measurements and the
-source-matched receipt belong in [Testing](Testing.md).
+Source encodings, observed targets, thought effects and durable history are
+detached. Only the shared predictor receives local E gradients. Both the
+paired-trial keep rule and chooser credit use `R + A`; E is independent.
+Mechanism checks and learning measurements have separate receipts in the
+[Item 4 record](plans/2026-10-19-item4-start.md). Carried Item 0 findings and
+5.5 learning gates are not cleared by these checks.
 
 ## Migration and regression dispositions
 
-`sentencePrimingScale` and `architecture.prediction` are rejected as retired
-settings. The old comprehension projection (`InterSentenceLayer.cast`/`prime`),
+`architecture.prediction` is rejected as a retired setting. The old comprehension projection (`InterSentenceLayer.cast`/`prime`),
 serial `_c_prior`, parallel seed slab, per-source residual fire flag and its
 arm/fire APIs are gone. Old `cast.*` checkpoint tensors are discarded at the
 owning discourse loader; there is no replacement input projection. Source-row
 batch sizing now has an explicit host integer; sentence completion and SVO
 reset retain their own existing owners.
 
-The previous full-context chooser receives zero columns for the new conceived
-features before its two action-kind columns. Existing logits are preserved;
-only the resized first weight starts without old optimizer moments. The older
-incomplete-context schema keeps its existing explicit reset migration. The
-residual return baseline is transient and a newly constructed model starts afresh;
-no pending trajectory or old autograd graph is restored.
+The previous attention context receives zero-initialized columns for the bank
+prime and normalized percept salience. Percept moments update only during
+training on external inputs and are checkpointed; an
+older checkpoint starts them cold. Old slot/ARMA head tensors migrate explicitly
+to a fresh shared activation predictor, while retained observations and their
+semantic sidecar survive. Transient pending graphs do
+not survive checkpoint restore.
 
-The removed tests asserted the retired behavior: four prior-broadcast cases in
-`test_c_prior_slotwise.py`, seven copied seed arithmetic cases in
-`test_inter_sentence_prediction_shape.py`, one slow intersentence-seed case in
-`test_conceptual_recurrence.py`, one cast/prime case in `test_discourse_space.py`,
-two residual API cases in `test_stm_residual_no_sync.py`, and two once-only
-residual cases in `test_subspace_context.py`. They are replaced by pure-forward,
-absent-interface, and native nonzero composition checks. Fire-flag row/batch
-cases now exercise the surviving sentence-completion lifecycle; no per-row
-reset or microbatch isolation requirement was dropped. Output/What fixtures
-remove the retired dispatch setting while retaining their prediction checks.
-The explicit routing-calibration test initializes its active feature columns
-independently of the ignored context width. Its training allowance and learned
-execution assertions are unchanged. Budget-drain coverage includes comparisons
-whose mask reads spend the final unit; history records that work before cutoff.
+The relevant regression contracts are causal predictions, detached ownership,
+identity preservation at zero gain, full-bank pair restoration, exactly-once
+external observations, document/row isolation, local E training, R+A selection,
+and the actual probability correction for the exploration mixture. Historical
+ARMA, vector-subtraction and slot-prediction assertions are superseded by these
+contracts; their retirement is not evidence that a learning gate passed.
 
-`test_negative_expectation.py` covers the signed identity, empty-role residual,
-zero gain, presence, scope and binding provenance, nested question masks,
-prior-view isolation, delayed credit, native unlabelled training alongside tied
-reconstruction, checkpoint migration, and positive generation seeding. The
-existing retention and sentence-stream suites retain packing, document, row,
-capacity and checkpoint coverage. Learning results are reported separately in
-[Testing](Testing.md).
+All four gain strengths default to zero in both canonical configurations. A
+nonzero operating point must first pass the native zero-gain parity gate.

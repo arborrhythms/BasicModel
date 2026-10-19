@@ -192,13 +192,16 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     # side; recomposition and the learned generate policy decide orientation.
     binary, unary = language._generate_binary_ops, language._generate_unary_ops
     lefts, rights, missing = [], [], []
-    for i in range(len(binary)):
+    for op in binary:
         if basis is None and require_symbols:
             left, right, unavailable = parent, parent, live
         else:
             left, right, unavailable = language.reverse_binary_step(
-                parent, torch.full_like(live, i, dtype=torch.long), live,
-                ops=binary, basis=basis if require_symbols else None,
+                parent, torch.zeros_like(live, dtype=torch.long), live,
+                # This menu entry already owns one operator. Passing the
+                # whole catalogue makes a compiled menu trace R dispatches
+                # for each of R entries, even though its index is fixed.
+                ops=(op,), basis=basis if require_symbols else None,
                 basis_valid=basis_valid if require_symbols else None,
                 basis_priming=priming, candidate_limit=limit,
                 free=require_symbols, return_status=True, case_bank=case_bank)

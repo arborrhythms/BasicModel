@@ -23,7 +23,7 @@ class FieldTraversal:
     def active(self):
         return self.remaining.any(-1) & ~self.stopped & (self.iterations < self.allowance)
 
-    def select(self, scores, *, alternative=None, greedy=None, scale=None, replay=None, taught=None):
+    def select(self, scores, *, alternative=None, greedy=None, scale=None, replay=None, taught=None, alternative_scores=None):
         """One hard candidate per live row; no derivative through the choice.
 
         The uniform alternative is credited by the existing proposal-corrected
@@ -46,8 +46,14 @@ class FieldTraversal:
             if alternative is not None:
                 options = eligible.scatter(1, greedy.clamp_max(W-1)[:, None], False)
                 count = options.sum(-1)
-                draw = (torch.rand(B, device=scores.device) * count).long()
-                picked = (options & (options.long().cumsum(-1) == draw[:, None] + 1)).long().argmax(-1)
+                from Expectation import alternative_probabilities
+                free = scores if alternative_scores is None else alternative_scores
+                proposal = alternative_probabilities(free.masked_fill(~options, -torch.inf),
+                    fraction=getattr(self, 'exploration_fraction', .5),
+                    temperature=getattr(self, 'exploration_temperature', 1.))
+                picked = (torch.rand(B, 1, device=scores.device) > proposal.cumsum(-1)).sum(-1).clamp_max(W-1)
+                q = proposal.gather(1, picked[:, None])[:, 0]
+
                 taken = alternative & active & (count > 0)
                 action = torch.where(taken, picked, action)
                 probability = probabilities.gather(1, action.clamp_max(W-1)[:, None]).squeeze(1)
@@ -55,7 +61,7 @@ class FieldTraversal:
                     prior = self.backup
                     self.backup = dict(rows=taken if prior is None else taken | prior['rows'],
                         probability=torch.where(taken, probability, 0. if prior is None else prior['probability']),
-                        scale=torch.where(taken, count.to(scores) * scale, 0. if prior is None else prior['scale']),
+                        scale=torch.where(taken, q.clamp_min(torch.finfo(q.dtype).tiny).reciprocal() * scale, 0. if prior is None else prior['scale']),
                         item=torch.where(taken, action, -1 if prior is None else prior['item']))
         lesson_cost = None
         if taught is not None:

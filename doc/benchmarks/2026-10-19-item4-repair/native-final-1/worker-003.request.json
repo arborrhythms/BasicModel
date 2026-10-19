@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/native-final-1/worker-003.recycle.json"
+}

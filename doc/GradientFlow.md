@@ -53,7 +53,7 @@ accompany the sentence comparison.
 | Parameter owner | Weights and permitted update |
 |---|---|
 | Reconstruction (R) | Perception (the sole writer of native PS/WS prototypes and 11b evidence), field dictionaries, compose operators and tied inverses, compose chooser, and the shared generate decoder (chooser and parameterized generate faces). Grammar lessons train only their chooser, never an operator. Momentum descent; codes have no EMA refresh or contextual rotation. |
-| Expectation (E) | Within-sentence, between-sentence, ARMA and contrastive predictors; the predictive reading-attention module where enabled; item 6.5's identity/change columns and relevance scales. The latest source is freshly encoded through live columns; older context, routing evidence and targets detach. |
+| Expectation (E) | Item 4's shared symbol activation predictor receives local residual gradients. Every source, including the latest one, and every target is detached; the entire gain saturation is detached. Percept moments update from external observations without gradients. Existing independent auxiliary objectives retain their own owners. ARMA and structured contrastive heads are retired. |
 | Answer (A) | Numeric head and affine root/end/echoic-bank reader, plus its independent comparison copy on the sentence path; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. Only the presented reader supplies outputs; the comparison copy supplies the chooser's answer cost. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
 
 [ObjectiveOwnership](../bin/ObjectiveOwnership.py) reads the trained named
@@ -62,7 +62,7 @@ A differentiable numerical operator can transmit a generation derivative to
 the conditioner while its own parameters receive no answer update. Regularizers
 are unnormalized and follow the parameters they use. The diagnostic operand
 term of a grammar lesson trains no operator. `expectationPolicyWeight` stays 0.
-The chooser's negative prediction image remains detached forward evidence.
+The chooser reads detached expected activations and attenuated content separately; excess and omission never substitute for content.
 
 Under 6.8 §14 and its addendum, two spaces share an index: a symbol's form
 lives in perceptual space and its concept's meaning in conceptual space.
@@ -715,21 +715,17 @@ corrected by round 2b in §16, round 2c in §18 and round 2d in §20.
   narrowing departure runs through the sentence; the percept-stage selection
   and the separate attention surrogate retire. The walk's poles are handed off
   with the scope, so a field departure can change a cost.
-- **The image at the closing (round 2).** Spec §2.6.1 on the concept face:
-  `n = −g·(1−m)⊙κ⊙ê`, `c = o + n`, `o = c − n`; thought reads `c`, storage keeps
-  `o`, the predictors' targets stay `o`, detached; identically zero where the
-  face has no width.
+- **The gain at the closing (Item 4, October 19).** `c = m*a*o`, with one
+  scalar per native identity. The raw observation remains stored. Independent
+  excess and omission lanes train the local predictor and set surprise. At
+  zero gain, restoration reads retained `o`, never divides by the gain.
 - **Identity by construction (round 3).** Pairs plus length as the parts; the
   content width for a sparse superposition; the narrowing-weighted ceiling
   and the centroid. Reconstruction of forms becomes exact by construction.
-- **Expectation across the model (rounds 3–4).** Once the path is invertible,
-  the row-level prediction inverted through the committed operations gives an
-  expected operand at every round; the actual against it is the layer's
-  surprise, and the maps take exact targets by inversion. Expectation's
-  sources then go live: the 2026-09-20 rule detaching them existed against
-  collapse, which an invertible path cannot do. Reconstruction retires to an
-  audit wherever the transformation is exactly invertible and stays a loss
-  where it is not.
+- **Expectation across the model (Item 4).** One shared activation predictor
+  is read at S, R and D, from detached observed activations and STM. P uses
+  running mean and variance. Prediction by inversion and the broader
+  invertible-path audit move to Item 3; they do not make E's sources live.
 - **Attention is a mask over `.where`** (Alec, 2026-10-07), not a relevance
   filter: the narrowing walk from the sentence's global scope to each word,
   every word visited. Its loss is what the mask leaves out of the target,

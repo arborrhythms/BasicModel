@@ -117,26 +117,29 @@ def test_attention_modules_retire_after_the_answer_reader_takes_their_contract()
     assert any(p.grad is not None for p in reader.scorer.parameters())
 
 
-def test_word_expectation_is_a_trained_distribution_with_one_negative_image():
-    from Layers import BracketExpectation
-    layer=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4,p=2,q=1)
+def test_word_expectation_is_a_trained_distribution_with_one_gain():
+    from Layers import SymbolExpectation
+    layer=SymbolExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     bank=torch.eye(4,requires_grad=True)[None]
     words=bank[:,[0,1,2]].detach().requires_grad_()
     targets=torch.tensor([[0,1,2]])
     out=layer.expect('word',words,bank,torch.ones(1,4,dtype=torch.bool),targets,teacher_forcing=True)
     assert out.probabilities.shape==(1,3,4)
     torch.testing.assert_close(out.probabilities.sum(-1),torch.ones(1,3))
-    torch.testing.assert_close(out.surprise,words.detach()+out.negative_image)
+    torch.testing.assert_close(out.content, words.detach()*out.gain[...,None])
+    torch.testing.assert_close(out.surprise, out.excess+out.omission)
     out.loss.sum().backward()
     assert words.grad is None
     assert any(p.grad is not None and p.grad.abs().sum()>0 for p in layer.word_predictor.parameters())
-    assert layer.levels == ('byte','word','sentence','row')
-    assert layer.enabled_levels == ('word','sentence')
+    assert layer.levels == ('word','sentence','row')
+    assert layer.enabled_levels == ('word','sentence','row')
 
 
 def test_word_expectation_teacher_forcing_only_reads_earlier_targets():
-    from Layers import BracketExpectation
-    layer=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4,p=2,q=1)
+    from Layers import SymbolExpectation
+    layer=SymbolExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     bank=torch.eye(4)[None];valid=torch.ones(1,4,dtype=torch.bool)
     a=layer.expect('word',bank[:,[0,1,2]],bank,valid,torch.tensor([[0,1,2]]),teacher_forcing=True)
     b=layer.expect('word',bank[:,[0,3,2]],bank,valid,torch.tensor([[0,3,2]]),teacher_forcing=True)
@@ -144,12 +147,14 @@ def test_word_expectation_teacher_forcing_only_reads_earlier_targets():
     assert not torch.equal(a.probabilities[:,2],b.probabilities[:,2])
     c=layer.expect('word',bank[:,[0,1,2]],bank,valid,torch.tensor([[0,1,2]]),teacher_forcing=False)
     d=layer.expect('word',bank[:,[0,3,2]],bank,valid,torch.tensor([[0,3,2]]),teacher_forcing=False)
-    torch.testing.assert_close(c.probabilities,d.probabilities)
+    torch.testing.assert_close(c.probabilities,a.probabilities)
+    torch.testing.assert_close(d.probabilities,b.probabilities)
 
 
 def test_word_forecast_conditions_on_observed_prefix_without_reading_future():
-    from Layers import BracketExpectation
-    layer=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4,p=2,q=1)
+    from Layers import SymbolExpectation
+    layer=SymbolExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    layer.set_symbol_bank(torch.eye(layer.concept_dim))
     bank=torch.eye(4)[None];valid=torch.ones(1,4,dtype=torch.bool)
     prefix=torch.tensor([[True,True,False]])
     def predict(sequence):
@@ -197,7 +202,7 @@ def test_normal_model_opens_narrows_and_scores_word_expectation():
     expected=model._word_expectation
     assert expected.probabilities.shape[:2] == model._attention_words.accepted.shape
     torch.testing.assert_close(expected.probabilities.sum(-1),torch.ones_like(expected.loss))
-    assert model._word_surprise is expected.surprise
+    torch.testing.assert_close(model._word_surprise, expected.surprise)
     expected.loss.sum().backward()
     assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
 
@@ -292,11 +297,13 @@ def test_small_grammar_model_has_the_same_fixed_word_whole():
 
 
 def test_old_sentence_expectation_checkpoint_keeps_sentence_weights():
-    from Layers import BracketExpectation
-    owner=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    from Layers import SymbolExpectation
+    owner=SymbolExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    owner.set_symbol_bank(torch.eye(owner.concept_dim))
     state={name:value.clone() for name,value in owner.state_dict().items()
            if not name.startswith('word_predictor.')}
-    restored=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    restored=SymbolExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+    restored.set_symbol_bank(torch.eye(restored.concept_dim))
     restored.load_state_dict(state,strict=True)
     for name,value in state.items():torch.testing.assert_close(restored.state_dict()[name],value,rtol=0,atol=0)
 
@@ -343,7 +350,7 @@ def test_prior_thought_reserves_the_input_allowance():
     from test_negative_expectation import _anticipating_model
     model, owner, meaning = _anticipating_model()
     model.train(); model.attention_budget = 4
-    model._stage_expectation_queries(training=True)
+    model._stage_attention_meters(training=True)
     # Global expectation opens no speculative thought before a closing.
     assert owner._inter_last_meaning[0] is None
     assert model._pending_attention_meters[0].spent == 0
@@ -436,8 +443,9 @@ def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
 
 
 def test_inference_reuses_constant_padding_forecast_without_changing_results():
-    from Layers import BracketExpectation
-    owner = BracketExpectation(n_symbols=4, max_depth=4, n_dim=4, concept_dim=4, p=2, q=1)
+    from Layers import SymbolExpectation
+    owner = SymbolExpectation(n_symbols=4, max_depth=4, n_dim=4, concept_dim=4,  )
+    owner.set_symbol_bank(torch.eye(owner.concept_dim))
     bank = torch.eye(4)[None].expand(2, -1, -1)
     words = torch.nn.functional.pad(bank[:, :2], (0, 0, 0, 30))
     active = torch.zeros(2, 32, dtype=torch.bool)
@@ -454,7 +462,7 @@ def test_inference_reuses_constant_padding_forecast_without_changing_results():
             actual = owner.expect(*args, teacher_forcing=False, active=active)
     finally:
         hook.remove()
-    for before, after in zip(reference, actual):
+    for before, after in zip(vars(reference).values(), vars(actual).values()):
         torch.testing.assert_close(after, before, rtol=0, atol=0)
     assert len(calls) == 3, 'inactive trailing columns recomputed an unchanged forecast'
 

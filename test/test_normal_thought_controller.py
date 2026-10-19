@@ -175,7 +175,7 @@ def test_typed_prediction_result_is_detached_before_history_or_checkpoint():
         semantic_id="arma", domain="discourse-prediction",
         result_kind="prediction", evidence_kind="estimate",
         request=request, evidence=MappingProxyType({
-            "value": MeaningExpectation(roles, logits),
+            "value": MeaningExpectation(roles, logits, symbol_keys=roles, symbol_logits=torch.stack((logits,torch.full_like(logits,-30.)),-1), symbol_ids=torch.arange(3), symbol_orders=torch.zeros(3,dtype=torch.long)),
             "incomplete": (),
         }))
 
@@ -554,7 +554,7 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
         result_kind="prediction", evidence_kind="estimate",
         request=request.detached(), evidence=MappingProxyType({
             "value": MeaningExpectation(
-                estimate_roles, torch.tensor([1.0, -1.0, 1.0])),
+                estimate_roles, torch.tensor([1.0, -1.0, 1.0]), symbol_keys=estimate_roles, symbol_logits=torch.stack((torch.tensor([1.0, -1.0, 1.0]),torch.full_like(torch.tensor([1.0, -1.0, 1.0]),-30.)),-1), symbol_ids=torch.arange(3), symbol_orders=torch.zeros(3,dtype=torch.long)),
             "incomplete": (),
         }))
     selected = SimpleNamespace(

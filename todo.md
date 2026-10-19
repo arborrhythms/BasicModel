@@ -17,19 +17,38 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 5 is accepted for landing after Claude's repair review
-([receipt](doc/plans/2026-10-19-item5-start.md)); the paired zero-cost
+**Current:** Item 5 is landed at BasicModel `9207f5e03` / WikiOracle `929e4a8`
+after Claude's repair review ([receipt](doc/plans/2026-10-19-item5-start.md)); the paired zero-cost
 counterexample is carried under item 0. Item 6 is Done as a mechanism landing, accepted in
 [plan §16](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing).
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns. Stage 4e (constituents),
 VP vectors by temporal difference and order-2 kinds are not yet built.
-The learning sequence carries alongside 5.5 below and into item 0's gates.
+The learning sequence's mechanism residue (stage 4e and what follows it)
+is collected with 5.5's remainder as item 3.5 below; the learning claims
+stay at item 0's gates.
 
 **Next mechanism (Alec, October 19):** item **4, expectation across the
 architecture**. Its draft spec and entry below retain the earlier 4.5 label.
-The October 16 sequence was:
-5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0.
+*Repair round, October 19:* the repaired candidate is on
+`codex/item4-repair`, with the [round receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)
+recording each §9 gate. Legacy paths are removed, seed 23's tied compose
+exposure is explained, exact identity and one S gain are preserved, and
+compiled boundary checks now complete. Defaults are zero; R+A keeps and
+credits; the open role retains its prime; `non` clears both lanes.
+**Item 4 remains open:** the copular-identity prerequisite is missing, the
+carried initial-binding distribution check fails, and global derivation
+optimality, per-level learning/collapse and all-level XOR are not established.
+The original failed learning run stays failed. The independent Item 5.5
+learning track and Item 0 findings are unchanged. Candidate commit and
+Claude review precede the one full landing sweep.
+The October 16 sequence was
+5.5 → 5 → 4.5 → 4 → 3 → 2 → 1 → 0; on October 19 Alec inserted **3.5**,
+the mechanism residue of items 6 and 5.5, to be completed after item 4.
+**Item 4 completes with a clean tree:** every modification in the
+BasicModel tree committed on a reviewed candidate (or reverted with a
+note), pushed, WikiOracle's submodule bumped and pushed, `git status`
+clean in both, and this file reconciled (Alec, 2026-10-19).
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -466,38 +485,49 @@ not by a passing identity lesson.
    and their inverses. Measure the spec's clock-independence,
    offset-independence, addressed-chain, interleaving, preposition and
    surface-inverse certificates. Tense/aspect on VP phases waits for the
-   carried identity sequence.
-- **4.5. Expectation across the architecture** (Alec, 2026-10-08: "needs to
-   go in sooner rather than later"; a spec of its own). **Spec (draft,
-   2026-10-08 rev 3; two questions open in §8):**
+   carried identity sequence. **Remainder collected as item 3.5 (Alec,
+   2026-10-19), after item 4.**
+- **4.5 → item 4. Expectation across the architecture** (Alec, 2026-10-08:
+   "needs to go in sooner rather than later"; a spec of its own; made the
+   next mechanism item on 2026-10-19). **Spec (draft, 2026-10-19 rev 5;
+   toys 2, 7, 8 before the hand-off):**
    [expectation at every level](doc/specs/2026-10-08-expectation-at-every-level.md)
-   — Alec, 2026-10-08: a predictor per conceptual level used as a negation
-   that reduces signal to surprise (percepts are attended, not expected);
-   exploit per level, exploration at least partly free of expectation; one
-   departure, read at the end of the sentence, judged by `R + A`; a graded
-   set in 4.5 (the Viterbi-like principle: verified in a toy, graded 0.96 vs
-   root-only 0.04) and the age-appropriate corpus in item 3. The scheme confirmed on
-   2026-10-06 ([operators plan §10.3, §12.2, §13](doc/plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06);
-   [GradientFlow's target scheme](doc/GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)),
-   never built: the row-level prediction inverted through the committed
-   operations gives an expected operand at every round; the actual against
-   it is the layer's surprise; the maps take exact targets by inversion
-   (target propagation — no gradient through the choice, no
-   straight-through, no mixed forward); the word-level expectation follows
-   from the row-level predictor by inversion rather than by its own
-   predictor; expectation's sources go live (the 2026-09-20 detachment
-   existed against collapse, which an invertible path cannot do);
-   reconstruction retires to an audit where the path is exactly invertible
-   and stays a loss where it is not. *Added 2026-10-15 (spec §4.6):* `non`
-   on a modifier withholds that dimension from the prior — a per-dimension
-   withheld mark beside the two lanes that the inverse re-emits and the
-   forward charge counts as retained; modifiers only, position learned by
-   exposure ([Philosophy](doc/Philosophy.md#the-two-negations-on-a-modifier-not-heavy-and-non-heavy-alec-2026-10-15)).
-   The record until the spec exists is
-   [FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled).
-   Placed after 5 because the model has run without it so far; the spec
-   says what the content width (item 3) must be for the audit to read zero,
-   and whether that derivation moves here. Exit: the spec's gates.
+   — *Rev 5 (Alec, 2026-10-19):* expectation is **per level with a local
+   error**, never derived across levels; attention and expectation are
+   **one gain field** over a purely attenuated signal, `c = m ⊙ a ⊙ o`,
+   never a subtraction and never negative (spec §4.1, §4.3), with the
+   residual as a second output in two lanes carrying omission, retention
+   and the predictor's training; percepts are attended, with a
+   **mean-and-variance** statistic only, whose normalized residual
+   `|o − μ|/σ` drives the mask per coordinate and attenuates a region's
+   content as one scalar (§3 row P, §4.5); concepts get a **top-down
+   prediction of activations over the symbol bank** from the symbolic
+   activation bank and STM, not of deep structure (§3; `word_distribution`
+   generalized, `SentenceExpectation`'s slots retire); **expectation vs
+   desire** — opposite aims, local vs outcome error, desire writes to
+   selection, not content, in comprehension (§4.7); the fully expected cat
+   is still seen through the store, the prime and amended consumers (§4.8).
+   The unfolding by inversion (rev 3 §3.1) is withdrawn and the
+   invertible-path program (inverted targets, live sources, reconstruction
+   as audit, the width) **moves to item 3**; sources stay detached. Kept
+   from revs 2–4: exploit per level, exploration at least partly free of
+   expectation; one departure, read at the end of the sentence, judged by
+   `R + A`; a graded set here (the Viterbi-like principle: verified in a
+   toy, graded 0.96 vs root-only 0.04) and the age-appropriate corpus in
+   item 3; `hetTolerance` τ on the lanes. *Added 2026-10-15 (spec §4.6):*
+   `non` on a modifier withholds that dimension from the prior — no prime
+   and no attenuation there; modifiers only, position learned by exposure
+   ([Philosophy](doc/Philosophy.md#the-two-negations-on-a-modifier-not-heavy-and-non-heavy-alec-2026-10-15)).
+   Docs to amend at the hand-off (spec §6): accessible-mind §2.6 (image →
+   gain), Philosophy's `not`/`non` classification of expectation, FutureWork's
+   [expectation by inversion](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)
+   re-pointed at item 3. Exit: the spec's gates (§9).
+   **Repair, October 19:** production changes on `codex/item4-repair` from the
+   landed Item 5 baseline are under review; Item 4 is not complete. The [execution record](doc/plans/2026-10-19-item4-start.md)
+   separates mechanism checks, the bounded native graded/shuffled measurement,
+   and the proposed §9 learning gates. Carried Item 0 findings and the independent
+   5.5 continuation remain open under their existing budgets.
+
 - **4. Run harness and resume test.** *Once pulled forward for the
    conference (Alec, 2026-09-27; no freeze since 2026-10-03, so it is built
    in 6.8-1 and evaluated here):* the word-level predictor as the NanoChat gate's
@@ -534,7 +564,131 @@ not by a passing identity lesson.
    relevance scales, the comparison reader's copy of the answer path (2e)
    and the pending relational rows (6.2). Exit:
    one command on a small config; the test in the suite.
-- **3. Corpus at target size.** Raise `maxDocs`, exercise multi-shard if needed,
+- **3.5. Mechanism residue of items 6 and 5.5** (Alec, 2026-10-19: "even
+   though we are on 4, 6 and 5.5 have incomplete work"; completed after
+   item 4, before 3). Mechanism work only; every learning *claim* stays at
+   item 0's gates (6.1, 6.2, 6.5, 9, 8; the carried c and paired `.0517`
+   counterexamples). Each line below lands with its receipt or is moved to
+   item 0 or FutureWork with the reason written here; when the list is
+   empty the 6 and 5.5 entries collapse to Done lines.
+
+   *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
+   [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
+   in the order §16.3 gives:
+   - **Stage 4e, constituents**, to a passing gate under
+     [parts-of-speech §5a](doc/specs/2026-10-18-parts-of-speech.md#5a-gates-are-behaviors-decided-alec-2026-10-18)
+     (behaviors, no operator named): the next pass from the stage-3
+     artifact with stage scoping of the menu and Alec's choice (a)/(b) on
+     the chooser's reference variants
+     ([5.5 plan, "Next pass"](doc/plans/2026-10-17-item5-5-start.md)); the
+     [2026-10-17 gate failure](doc/benchmarks/2026-10-17-stage4e/) and the
+     [§5a regrade of the archived description rows](doc/benchmarks/2026-10-19-np-continuation/)
+     are the record. Grounding is textual
+     ([§8](doc/specs/2026-10-18-parts-of-speech.md#8-open)); no perceptual
+     grounding stage. Then the NP continuation: adjective and
+     definite-adjective lessons, final evaluation, default sweep.
+   - **Identity lessons** (mint per singular NP, matching at the close,
+     revision); no native identity run before 4e passes. **`bind` as a
+     thought operation (Alec, 2026-10-19, decided):** one operation named
+     `bind` in the thought grammar, called once per referent, so the
+     primary thought process sees binding as a step it chooses; its
+     forward is the existing close-time resolver (`ReferenceClose`:
+     STM individuals or a new one, by signature, follow-up credit and
+     salience — the evidence still chooses whom), its reverse re-emits the
+     description or determiner; the vestigial binary `bind` layer in
+     `Language.py` (left operand returned, reverse raises; the retired
+     nearest-left rule of [catalogue §3.3](doc/specs/2026-09-29-operator-catalogue.md#33-bind))
+     is deleted. This supersedes the 5.5 plan's pending choice (a)/(b) on
+     the chooser's reference variants: the variants collapse to the
+     determiner mode on `lower`, and the individual is `bind`'s. One rule
+     called per referent ([minimality](doc/specs/2026-09-30-occurrence-tense-aspect.md#131-the-operators-minimal-alec-2026-10-19-the-operators-should-be-minimal--just-one-rule-called-twice)).
+     **With it, the one-slot row** ([two truths §1 amendment](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided),
+     Alec 2026-10-19): the three-slot relation row retires; an idea's slot
+     holds a concept vector that need not be a codebook entry, a
+     relation's slot holds a minted symbol whose DEF row carries `R` and
+     two defined `S` symbols; writing a relation over an idea mints it
+     (`bind`'s job); references are exact, no clean-up, no width.
+   - **VP vectors by temporal difference** — the deferred per-individual
+     teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
+     stays confined to verbs (plan §17), and it goes when the teacher lands.
+     *Formulation (Alec, 2026-10-19; [occurrence spec §14](doc/specs/2026-09-30-occurrence-tense-aspect.md#14-two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19-written-by-claude)):*
+     the **first difference** — the verb is a group element acting on
+     the identity's frame (object before ↦ object after; the diagonal the
+     verb defines, as `<verbSpectrum>` has it, not a subtraction);
+     identity element = the undefined verb = unknown; support = the
+     nonzero log-eigenvalues, zero by default; teacher = the coordinatewise
+     log-ratio of the after- and before-frames read from the stream's
+     occurrence rows; states are relations, not group elements (§14.1,
+     Claude's reading to confirm); and the **second difference** —
+     modals and counterfactuals extend the event into possibility space, a
+     whole of which the actual is a part, written as a part relation
+     between situations (§14.2 Alec's, §14.3 the minimal mechanism
+     the minimal mechanism decided, §14.4 defaults NP=everything /
+     VP=exists (read "occurs") / MP=all worlds, §14.5 open).
+   - **The second difference: the modal as the verb phrase's preposition
+     over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
+     after the tense pass: `position` called with a world as object,
+     test part-of; worlds minted as individuals like §12's document; the
+     *de re* reading writes `S REL S` (`[Alec] part-of [running things
+     PP(W)]`, a relative truth) and the *de dicto* reading writes `S`
+     (`[Alec runs] PP(W)`, the sentence's row located in the world, an
+     absolute truth) — Alec's two-truths syntax, 2026-10-19; the bracketing is learned by exposure; the teacher is the
+     extension itself. No `MP` rule. Needs the world individual and
+     nothing from item 3. Gate: generated corpora with a modal marker as
+     a free leaf and as a verb affix; both bracketings reachable; "did"
+     vs "could" questions answered from the right store.
+   - **Direct-operand word classes** — the distributional categorizer
+     ([parts-of-speech §3](doc/specs/2026-10-18-parts-of-speech.md#3-how-the-categorizer-is-learned-decided-membership-is-not-taught));
+     output typing deferred (§4).
+   - **Order-2 kinds** (§15 item 5).
+
+   *From item 5.5* (its entry above; [mechanism-round review and follow-ups](doc/plans/2026-10-17-item5-5-start.md#review-of-the-55-mechanism-round-claude-2026-10-17-evening--approve-to-sweep-and-land-with-four-disclosures-and-one-decision)):
+   - Retire the legacy clock `timestamp` column and `Clause.eternal`;
+     recency by the row's source-addressed chain, replacing `get_stm_chain`
+     across batch rows (two truths §21); decide the `timestamp` column's
+     fate with the recency use.
+   - The **four learned surface transformations and their inverses**
+     replacing the English analyzer, `surface` as one operator with four
+     suboperations trained by reconstruction under parsimony; removes the
+     old tense, aspect and morphology code and its table of English forms.
+   - **Tense and aspect on VP phases** (the catalogue's compound selecting
+     among the verb phrase's phases; the preposition as one operation with
+     two attachments), after the identity lessons above; the inert markers
+     if tense is built on the preposition face. **Across languages**
+     ([spec §13](doc/specs/2026-09-30-occurrence-tense-aspect.md#13-across-languages-the-operators-are-the-universality-decided-alec-2026-10-19-written-by-claude),
+     Alec, 2026-10-19: "operators replace the table; if we don't have the
+     operators to do that, our grammar is not universal"; "the operators
+     should be minimal … just one rule called twice"): §13.1 is three
+     rules — `position` (one rule, called once per selection, with or
+     without a leaf; not called = whole = unknown), one marker-leaf kind
+     (its reading = how `position` is called; nested wholes made at
+     admission, not by a rule) and `surface` (absorb either side,
+     transpose; nothing else) — and the claim that they reach every
+     placement by exposure; **no language is named or special-cased anywhere in
+     code, config, fixtures or tests** (§13.0; the two "English" docstrings
+     in `Models.py` go with this landing); gate (§13.2) = one grammar, one
+     configuration, six generator variants of where the marker is
+     written, no change to the mechanism; does not wait for the developed
+     corpus.
+   - The **nested-admission criterion** and its performance: the landed
+     shared-run criterion carves 7 of the 17 4e words at shared letter
+     pairs (plan, "Before the 4e pass"); scoped to one named marker today.
+   - **Documents as situation codes** in content; learned before/after.
+   - The spec's certificates, measured: clock-independence,
+     offset-independence, addressed-chain, interleaving, preposition and
+     surface-inverse ([spec §8](doc/specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).
+
+   Not here: dimensional `lift`/`lower` (FutureWork); the 6.5, 6.2 and 6.1
+   learning gates and 9's and 8's empirical evidence (item 0). Exit: the
+   list above empty, each line with a receipt hash or a written move.
+- **3. Corpus at target size.** *Takes from item 4 (Alec, 2026-10-19,
+   [spec §3.1](doc/specs/2026-10-08-expectation-at-every-level.md#31-withdrawn-the-unfolding-by-inversion-rev-3--moved-to-item-3)):*
+   the invertible-path program — exact inverted targets for the maps,
+   sources going live, reconstruction retiring to an audit where the
+   inverse is exact, the width `D ≈ c·k·log N` for the audit to read zero
+   ([FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
+   Expectation no longer depends on it; item 0's condition reads it from
+   here. Raise `maxDocs`, exercise multi-shard if needed,
    measure sentence-list/address-table memory and loader time, confirm
    `resume_skip` with the run's stream count. Revisit item 5's retention cost
    and long-run capacity at this scale; its learning measurements remain at
@@ -638,7 +792,10 @@ not by a passing identity lesson.
    The comparison reader of round 2e is a `functional_call` copy of the
    whole answer path (plan §23, observation 1); share its structure when
    the answer path grows.
-   Exit: sentences/s and peak memory at the run's batch and brick size against
+   *Completion (Alec, 2026-10-19):* item 4 ends with the tree checked in
+   and up to date — no uncommitted modification in BasicModel, the
+   expectation landing and this file's reconciliation included, pushed,
+   WikiOracle bumped and pushed. Exit: sentences/s and peak memory at the run's batch and brick size against
    the July baseline, re-taken on `99207a3` since the tower fold ladders are
    gone. New eager hot spots from 11–11c to measure and vectorise: the
    per-row loop in `cs_read_memberships`, the per-row composition in
@@ -664,7 +821,9 @@ not by a passing identity lesson.
    sources live and reconstruction retired to an audit, only where item 3's
    audit reads zero at the run's width; where it does not, the run keeps
    reconstruction as a loss for that part. Expectation across the
-   architecture itself is item 4.5. At the trained checkpoint, resume the
+   architecture itself is item 4 (the 4.5 entry); the invertible path,
+   the width and the audit this condition reads are item 3's since
+   2026-10-19 (spec §3.1). At the trained checkpoint, resume the
    deferred **MM_math_chain learning measurement** under all four corrections:
    one-step problems first; worked steps scored as intermediate answers;
    an episode that binds a found candidate; and budget in steps, with each

@@ -1,8 +1,8 @@
 """Task 7 (plan §8): LTM as a chain of STM end-states on the
-BracketExpectation.
+SymbolExpectation.
 
 The long-term-memory (LTM) chain is the AR sequence the inter-sentence
-predictor consumes. It lives on the existing ``BracketExpectation`` as a
+predictor consumes. It lives on the existing ``SymbolExpectation`` as a
 bounded per-row ``collections.deque`` of time-ordered tuples
 ``(depth:int, payload:[depth,D] tensor, tetralemma:tuple|None)``.
 
@@ -54,9 +54,9 @@ class TestLtmChainGrows(_LtmTestBase):
     def setUp(self):
         self.D = 3
         # B=1 / row 0 (the plan's stated test shape).
-        self.layer = Layers.BracketExpectation(
+        self.layer = Layers.SymbolExpectation(
             n_symbols=4, max_depth=8, n_dim=self.D,
-            p=5, q=2, batch=1,
+            batch=1,
         )
 
     def _absolute_end_state(self, B=1):
@@ -141,9 +141,9 @@ class TestLtmBounded(_LtmTestBase):
     """The chain is bounded at ``ltm_capacity`` (deque maxlen)."""
 
     def test_chain_evicts_oldest_at_capacity(self):
-        layer = Layers.BracketExpectation(
+        layer = Layers.SymbolExpectation(
             n_symbols=4, max_depth=8, n_dim=2,
-            p=5, q=2, batch=1, ltm_capacity=3,
+            batch=1, ltm_capacity=3,
         )
         self.layer = layer
         for i in range(6):
@@ -160,8 +160,8 @@ class TestLtmFailLoud(_LtmTestBase):
     (user memory: fail loud on numerical divergence)."""
 
     def setUp(self):
-        self.layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=8, n_dim=3, p=5, q=2, batch=1,
+        self.layer = Layers.SymbolExpectation(
+            n_symbols=4, max_depth=8, n_dim=3, batch=1,
         )
 
     def test_nan_payload_raises(self):
@@ -183,8 +183,8 @@ class TestLtmPerRow(_LtmTestBase):
     """Per-row (parallel document streams) chains stay independent."""
 
     def setUp(self):
-        self.layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=8, n_dim=2, p=5, q=2, batch=2,
+        self.layer = Layers.SymbolExpectation(
+            n_symbols=4, max_depth=8, n_dim=2, batch=2,
         )
 
     def test_rows_are_independent(self):
@@ -207,13 +207,12 @@ class TestLtmPerRow(_LtmTestBase):
         self.assertEqual(self.layer.get_stm_chain(b=5), [])
 
 
-class TestLtmResetAndArmaUntouched(_LtmTestBase):
-    """Reset clears the LTM chain; the ARMA rings/observe path are not
-    perturbed by the LTM additions."""
+class TestLtmContextReset(_LtmTestBase):
+    """Reset clears each factual context and its stored chain together."""
 
     def setUp(self):
-        self.layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=8, n_dim=3, p=5, q=2, batch=2,
+        self.layer = Layers.SymbolExpectation(
+            n_symbols=4, max_depth=8, n_dim=3, batch=2,
         )
 
     def test_reset_all_rows_clears_chain(self):
@@ -233,22 +232,14 @@ class TestLtmResetAndArmaUntouched(_LtmTestBase):
         self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)
         self.assertEqual(len(self.layer.get_stm_chain(b=1)), 1)
 
-    def test_arma_observe_path_unbroken_alongside_ltm(self):
-        """The ARMA ``observe`` + ``predict_next`` path still works with
-        the LTM additions present (they are orthogonal)."""
-        s = torch.randn(2, 4, 3)
-        loss0 = self.layer.observe(s)             # cold-start prime
-        self.assertIsNotNone(loss0)
-        loss1 = self.layer.observe(torch.randn(2, 4, 3))
-        self.assertIsNotNone(loss1)
-        self.assertTrue(torch.isfinite(loss1).all())
-        pred = self.layer.predict_next()
-        self.assertEqual(tuple(pred.shape), (2, 3))
-        # The ARMA rings are unaffected by LTM observes.
-        self.layer.observe_stm_end_state([1, 1],
-                                         [torch.randn(1, 3),
-                                          torch.randn(1, 3)])
-        self.assertEqual(self.layer._s_count.tolist(), [2, 2])
+    def test_shared_prediction_uses_the_same_observed_chain(self):
+        self.layer.set_symbol_bank(torch.eye(self.layer.concept_dim))
+        for _ in range(2):
+            self.layer.predict_and_observe_stm_end_state([1,1], [torch.ones(1,3), torch.ones(1,3)*2])
+        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 2)
+        self.assertIsNotNone(self.layer.consume_inter_loss())
+        self.assertIsNotNone(self.layer.expect_next_meaning())
+        self.assertFalse(hasattr(self.layer, '_s_history'))
 
     def test_ensure_batch_resizes_chain(self):
         self.layer.observe_stm_end_state([1, 1],
@@ -256,8 +247,7 @@ class TestLtmResetAndArmaUntouched(_LtmTestBase):
                                           torch.randn(1, 3)])
         self.layer.ensure_batch(4)
         self.assertEqual(len(self.layer._stm_end_states), 4)
-        # Fresh per-row chains after a batch reshape (mirrors the ARMA
-        # rings zeroing).
+        # A batch reshape starts fresh row-owned contexts.
         self.assertEqual(len(self.layer.get_stm_chain(b=0)), 0)
 
 
@@ -265,17 +255,16 @@ class TestLtmCapacityKnob(_LtmTestBase):
     """``ltmCapacity`` knob: default + explicit pass-through."""
 
     def test_default_capacity_is_1024(self):
-        layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=8, n_dim=3, p=5, q=2, batch=1,
+        layer = Layers.SymbolExpectation(
+            n_symbols=4, max_depth=8, n_dim=3, batch=1,
         )
         self.layer = layer
         self.assertEqual(layer.ltm_capacity, 1024)
         self.assertEqual(layer._stm_end_states[0].maxlen, 1024)
 
     def test_explicit_capacity_is_honored(self):
-        layer = Layers.BracketExpectation(
-            n_symbols=4, max_depth=8, n_dim=3, p=5, q=2,
-            batch=1, ltm_capacity=42,
+        layer = Layers.SymbolExpectation(
+            n_symbols=4, max_depth=8, n_dim=3,             batch=1, ltm_capacity=42,
         )
         self.layer = layer
         self.assertEqual(layer.ltm_capacity, 42)

@@ -18,8 +18,7 @@ def test_evaluation_reports_residual_without_training_or_weight_changes():
     assert metrics["observations"] == 2
     assert metrics["cold_starts"] == 1
     assert metrics["predicted_targets"] == 1
-    assert metrics["feature_mse"] > 0
-    assert metrics["presence_bce"] > 0
+    assert metrics["activation_mse"] > 0
     assert model.consume_inter_loss() is None
     for name, value in model.state_dict().items():
         torch.testing.assert_close(value, before[name])
@@ -27,16 +26,16 @@ def test_evaluation_reports_residual_without_training_or_weight_changes():
     assert not comparison.estimate.roles.requires_grad
     assert not comparison.observed.requires_grad
     torch.testing.assert_close(comparison.residual,
-                               comparison.observed - comparison.estimate.roles)
+                               comparison.activation - comparison.estimate.symbol_logits.sigmoid())
 
 
 def test_fixed_prior_changing_target_changes_residual_not_estimate():
     a, b = layer(), layer()
     for model in (a, b):
         model.eval()
-        observe(model, torch.ones(3, 4))
-    observe(a, torch.zeros(3, 4))
-    observe(b, torch.full((3, 4), 3.))
+        observe(model, torch.eye(4)[:1])
+    observe(a, torch.eye(4)[1:2])
+    observe(b, torch.eye(4)[2:3])
     ca, cb = a.last_expectation_comparison(0), b.last_expectation_comparison(0)
     torch.testing.assert_close(ca.estimate.roles, cb.estimate.roles)
     assert not torch.allclose(ca.residual, cb.residual)
@@ -79,17 +78,16 @@ def test_omitted_enabled_and_disabled_model_settings(tmp_path, setting, enabled)
     model = _build_ladder_variant(tmp_path, "expectation_default", [
         (re.search(r"<sentenceExpectation>.*?</sentenceExpectation>", source).group(), replacement),
         (re.search(r"<sentenceExpectationLossWeight>.*?</sentenceExpectationLossWeight>", source).group(), ""),
-        (re.search(r"<sentenceExpectationArmaScale>.*?</sentenceExpectationArmaScale>", source).group(), ""),
     ])
     try:
         assert model.symbolSpace.expectation is not None  # word level stays live
         assert model.symbolSpace.expectation.expectation_enabled == enabled
         assert ('sentence' in model.symbolSpace.expectation.enabled_levels) == enabled
         assert model.inter_loss_weight == 0.1
-        assert model.arma_scale == 0
-        assert model.inter_contrastive_weight == 0
+        assert not hasattr(model, 'arma_scale')
+        assert not hasattr(model, 'inter_contrastive_weight')
         if enabled:
-            assert model.symbolSpace.expectation.expectation_scope == "structured"
+            assert model.symbolSpace.expectation.expectation_scope == "symbols"
     finally:
         model.End()
         torch._dynamo.reset()
@@ -101,8 +99,8 @@ def test_canonical_configuration_enables_only_the_selected_prediction_objective(
     training = config.getroot().find(".//architecture/training")
     assert training.findtext("sentenceExpectation") == "true"
     assert float(training.findtext("sentenceExpectationLossWeight")) == .1
-    assert float(training.findtext("sentenceExpectationArmaScale")) == 0
-    assert float(training.findtext("sentenceExpectationContrastiveWeight")) == 0
+    assert training.find("sentenceExpectationArmaScale") is None
+    assert training.find("sentenceExpectationContrastiveWeight") is None
 
 
 def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path, monkeypatch, eager_reading):
@@ -131,7 +129,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         metrics = discourse.expectation_metrics()
         assert metrics["observations"] == 2
         assert metrics["predicted_targets"] == 1
-        assert metrics["feature_mse"] >= 0
+        assert metrics["activation_mse"] >= 0
         assert all(not value.requires_grad for chain in discourse._inter_context
                    for _, value, _ in chain)
         for parameter, value in zip(discourse.parameters(), before):
@@ -270,13 +268,14 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
 
 def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch):
     from types import SimpleNamespace
-    from Layers import BracketExpectation
+    from Layers import SymbolExpectation
     from Models import BasicModel
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     entry = f.program('cat')
-    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='structured')
+    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='symbols')
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     from reading_fixtures import commit_reading
     store = f.store
     discourse._ltm_store = store

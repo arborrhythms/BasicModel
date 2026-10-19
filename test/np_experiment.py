@@ -29,6 +29,13 @@ MENU = ('STOP', 'lower', 'definite', 'intersection', 'product')
 # Learn modification on two familiar words before asking the reader to
 # schedule it inside a larger NP. Nesting is then the next unknown.
 STAGES = ('lower', 'definite', 'description', 'adjective', 'definite_adjective')
+GATES = dict(exact_brackets=.9, one_order1_occurrence=.95, duplicates=0,
+             collisions=0, exact_answers=1.)
+REPORTS = dict(unexpected_occurrences='Counted, without an absence requirement',
+    learned_operation='Observed through kept programs and operator counts; no required operator',
+    lowering_stamps='Input and output orders, without a required description stamp',
+    kept_operators='Counts from admitted programs',
+    meaning_norms='Textual grounding: empty intersections and products are expected, never gated')
 
 
 def first_lesson(row):
@@ -71,11 +78,13 @@ def tables(model, forms):
         noun_rows.append(dict(word=form, identity=word, concepts=concepts,
                               individual_columns=individuals, noun_prior=bool(individuals)))
     head_pairs,flow_pairs=set(),set()
+    masks={}
     for rule in TheGrammar.rules_upward:
         name=operation_name(rule)
         if not name:
             continue
         mask=flow_mask(rule)
+        masks[name]=mask
         roles=(2,1) if len(rule.lhs.split(','))==2 else ((1 if mask==1 else 2 if mask==2 else 0),)
         if len(roles)==1:
             flow_pairs.update(frozenset((f'{name}_argin{i+1}',f'{name}_argout1'))
@@ -95,8 +104,8 @@ def tables(model, forms):
                   for word in set(occupants[slots[0]])|set(occupants[slots[1]])}
         modification_flow[name]=dict(occupants=occupants,combined_inputs=combined,
             output_equals_combined_inputs=occupants[slots[2]]==combined,
-            observed=bool(combined),by_construction=name=='intersection',
-            declared_flow='all operands' if name=='intersection' else 'empty')
+            observed=bool(combined),by_construction=masks.get(name)==3,
+            declared_flow='all operands' if masks.get(name)==3 else 'empty')
     return dict(words=word_rows, collapse=collapse, noun_prior=noun_rows,
         intersection_flow=modification_flow['intersection'],product_flow=modification_flow['product'])
 
@@ -116,7 +125,12 @@ def summarize_stage(results,stage):
         passed=bool(results) and correct/len(results)>=.9)
     determiner=[row for row in results if row['nps']]
     if determiner:
-        gates['occurrences']=summarize(determiner)['gates']['occurrences']
+        occurrence=summarize(determiner)['gates']['occurrences']
+        occurrence.pop('unexpected')
+        occurrence['passed']=bool(occurrence['total']
+            and occurrence['correct']/occurrence['total']>=occurrence['threshold']
+            and occurrence['duplicate_writes']==occurrence['collisions']==0)
+        gates['occurrences']=occurrence
     else:
         gates.pop('occurrences')
     questions=[row for row in results if row.get('question_expected', 'answer_exact' in row)]
@@ -125,6 +139,16 @@ def summarize_stage(results,stage):
         gates['answers']=dict(correct=correct,total=len(questions),threshold=1.,passed=correct==len(questions))
     from collections import Counter
     reports['kept_programs']=dict(Counter(' → '.join(row.get('observed',{}).get('program',[])) for row in results))
+    reports['kept_operators']=dict(Counter(method for row in results
+        for method in row.get('observed',{}).get('program',[])))
+    reports['unexpected_occurrences']=sum(row['unexpected_occurrences'] for row in results)
+    reports['lowering_stamps']=[dict(id=row.get('id'),
+        lowerings=row.get('observed',{}).get('lowerings',[])) for row in results]
+    reports['meaning_norms']=[dict(id=row.get('id'),
+        closed_meaning_norm=row.get('observed',{}).get('closed_meaning_norm'),
+        operations=[dict(method=step['method'],meaning_norms=step['meaning_norms'])
+            for step in row.get('observed',{}).get('steps',[]) if 'meaning_norms' in step])
+        for row in results]
     summary.update(reports=reports,passed=all(gate['passed'] for gate in gates.values()))
     return summary
 
@@ -135,6 +159,11 @@ def run(args):
     from AttentionLesson import prompt_need
     from bounded_tests import source_snapshot
     restore = BaseModel.load_weights
+    root=Path(__file__).resolve().parents[1]
+    if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],
+                               cwd=root,text=True).strip():
+        raise ValueError('NP lessons require committed source and a clean working tree')
+    source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
     args.out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(1)
     random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
@@ -167,7 +196,7 @@ def run(args):
         selected_training=[row['id'] for row in train],selected_heldout=[row['id'] for row in evaluation],
         restored_artifact=str(args.warmup),restored_sha256=digest(args.warmup),
         produced_artifact=str(args.warmup if final else args.out/'trained.ckpt'),
-        source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+        source_commit=source_commit,
         menu=MENU,modification_targets=('intersection','product'),family_order=[args.stage],sequence=STAGES,
         curriculum='one unknown at a time; passed predecessor required; successful path 84 presentations / 44 paired updates, plus the discarded branch 24 / 12; final whole-quarter gate follows the last lesson',
         within_family='seeded permutation; partial batch of three for each bare-NP lesson',
@@ -177,15 +206,14 @@ def run(args):
         heldout='adjective distance 3 modulo 4; bare (noun+determiner) modulo 4 equals 3',
         score='sum of each carried word occurrence probability on the formal input arguments, coefficient 1; no phrase renormalization',
         unseen='uniform over all formal inputs and outputs; observed words use normalized counts without smoothing',
-        word_flow='spec section 2b: the listed symmetric operations carry all operand words; product has an empty carrier; not/non preserve; headed operations carry the head operand words; clauses carry none; no first-word selector',
+        word_flow='spec section 2b: symmetric operations, including product and sum, carry all operand words; not/non preserve; headed operations carry the head operand words; clauses carry none; no first-word selector',
         category_evidence='kept readings only, every input and output; no annotation operands',
         questions='none for bare NPs; what is <adjective> ? otherwise, supplied answer only during training',
         heldout_labels='grader only; no model call receives a held-out tree, span, answer or occurrence label',
         noun_prior='table only; not read by chooser',
         reference_variants='unchanged',nested_marker_pattern=None,
         compose_step_cost='WHAT_STEP_COST for every binary, unary or transpose step',
-        gates=dict(exact_brackets=.9,one_order1_occurrence=.95,duplicates=0,collisions=0,
-                   unexpected_occurrences=0,exact_answers=1.),
+        gates=dict(GATES),reports=dict(REPORTS),
         measurement='final stage: all 14 held-out brackets, 10 determiner NPs, 4 bare controls; otherwise the current lesson only; lowering stamps, kept operators and bare-description occurrences reported; absent families have no gate',
         deferred='the full NP→VP fixture requires all five lessons; stop the sequence at the first failure',
         budget='paired updates only; batch-end update disabled; stop at a failed gate',

@@ -1,0 +1,4 @@
+Timeout (0:01:00)!
+Thread 0x00000001f2deff80 (most recent call first):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py", line 0 in create_node
+  File .

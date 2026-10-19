@@ -1,0 +1,102 @@
+{
+  "status": "incomplete",
+  "runs": [
+    {
+      "run": "output/item4-final-regression-20261019",
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 150,
+      "completed": 150,
+      "outcomes": {
+        "passed": 146,
+        "skipped": 4
+      },
+      "elapsed_seconds": 46.21753066708334,
+      "unfinished": [],
+      "failed": []
+    },
+    {
+      "run": "output/item4-final-boundaries-20261019",
+      "exit_code": 124,
+      "reason": "timeout",
+      "selected": 86,
+      "completed": 85,
+      "outcomes": {
+        "passed": 85
+      },
+      "elapsed_seconds": 193.94085570890456,
+      "unfinished": [
+        "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream"
+      ],
+      "failed": []
+    },
+    {
+      "run": "output/item4-final-native-20261019",
+      "exit_code": 124,
+      "reason": "timeout",
+      "selected": 134,
+      "completed": 125,
+      "outcomes": {
+        "passed": 120,
+        "skipped": 1,
+        "failed": 4
+      },
+      "elapsed_seconds": 186.833978791954,
+      "unfinished": [
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+        "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+        "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+        "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+      ],
+      "failed": [
+        {
+          "nodeid": "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+          "message": "test/test_output_synthesis.py:611: in test_recall_returns_the_most_recent_sentence_during_ring_fill\n    assert torch.equal(memory._s_history[:, -1, :width], seen[0][:, :width])\n                       ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'SymbolExpectation' object has no attribute '_s_history'"
+        },
+        {
+          "nodeid": "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream",
+          "message": "test/test_expectation_review.py:110: in test_real_packed_bricks_share_one_document_stream\n    observe_meanings = disc._observe_meanings\n                       ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'SymbolExpectation' object has no attribute '_observe_meanings'"
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+          "message": "test/test_sentence_expectation.py:131: in test_streaming_and_packed_boundary_use_same_full_roles\n    torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())\nE   AssertionError: Scalars are not close!\nE   \nE   Expected 0.31671038269996643 but got 0.23004011809825897.\nE   Absolute difference: 0.08667026460170746 (up to 1e-05 allowed)\nE   Relative difference: 0.27365779379520366 (up to 1.3e-06 allowed)"
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+          "message": "test/test_sentence_expectation.py:131: in test_streaming_and_packed_boundary_use_same_full_roles\n    torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())\nE   AssertionError: Scalars are not close!\nE   \nE   Expected 0.2632023096084595 but got 0.29684144258499146.\nE   Absolute difference: 0.03363913297653198 (up to 1e-05 allowed)\nE   Relative difference: 0.12780713446843858 (up to 1.3e-06 allowed)"
+        }
+      ]
+    },
+    {
+      "run": "output/item4-packed-boundary-diagnostic-20261019",
+      "exit_code": 124,
+      "reason": "timeout",
+      "selected": 1,
+      "completed": 0,
+      "outcomes": {},
+      "elapsed_seconds": 245.36060145893134,
+      "unfinished": [
+        "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream"
+      ],
+      "failed": []
+    },
+    {
+      "run": "output/item4-eager-boundaries-20261019",
+      "exit_code": 0,
+      "reason": "passed",
+      "selected": 16,
+      "completed": 16,
+      "outcomes": {
+        "passed": 16
+      },
+      "elapsed_seconds": 37.90629450022243,
+      "unfinished": [],
+      "failed": []
+    }
+  ]
+}

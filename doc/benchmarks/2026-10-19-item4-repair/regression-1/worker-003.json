@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates"
+  ],
+  "completed": [
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011724540963768959,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010384160559624434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003296959213912487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004825666081160307,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

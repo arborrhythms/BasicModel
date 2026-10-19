@@ -1,0 +1,282 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+    "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_maskedPrediction",
+    "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_reconstruct_output",
+    "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reconstruction_scale_parses_cleanly",
+    "test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d",
+    "test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts",
+    "test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error",
+    "test/test_ir_only_refactor.py::TestGenerateSentenceSmoke::test_generate_sentence_runs",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_close_input_does_not_insert",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_cold_codebook_seeds_first_rows",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_eps_zero_is_noop",
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+    "test/test_item55_mechanisms.py::test_absences",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface"
+  ],
+  "completed": [
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+    "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+    "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_maskedPrediction",
+    "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_reconstruct_output",
+    "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reconstruction_scale_parses_cleanly",
+    "test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d",
+    "test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts",
+    "test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error",
+    "test/test_ir_only_refactor.py::TestGenerateSentenceSmoke::test_generate_sentence_runs",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_close_input_does_not_insert",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_cold_codebook_seeds_first_rows",
+    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_eps_zero_is_noop",
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+    "test/test_item55_mechanisms.py::test_absences",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact": "stage3"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_nonfinite_prediction_fails_loudly",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.07653674995526671,
+      "message": "test/test_inter_sentence_prediction_shape.py:139: in test_nonfinite_prediction_fails_loudly\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.06344487518072128,
+      "message": "test/test_inter_sentence_prediction_shape.py:134: in test_predictor_parameters_are_registered_once_and_word_shared\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.06739958398975432,
+      "message": "test/test_inter_sentence_prediction_shape.py:147: in test_retired_contrastive_objective_is_rejected\n    layer = _make_layer(D=4)\n            ^^^^^^^^^^^^^^^^\ntest/test_inter_sentence_prediction_shape.py:105: in _make_layer\n    return Layers.SymbolExpectation(\nE   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_maskedPrediction",
+      "phase": "call",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00023799994960427284,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_ir_only_refactor.py', 135, 'Skipped: lxml not installed -- soft XSD validation skipped')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_reconstruct_output",
+      "phase": "call",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00020350003615021706,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_ir_only_refactor.py', 143, 'Skipped: lxml not installed -- soft XSD validation skipped')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reconstruction_scale_parses_cleanly",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014387208968400955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06925991689786315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.41945787495933473,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016871669795364141,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestGenerateSentenceSmoke::test_generate_sentence_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05388508294709027,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_close_input_does_not_insert",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003508748486638069,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_cold_codebook_seeds_first_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022533279843628407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_eps_zero_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020954199135303497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_clock_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.922412500018254,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.143s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.138s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.141s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.139s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.136s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.136s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.137s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.139s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.139s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_offset_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.6720852919388562,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.142s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.148s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_stream_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.4037755420431495,
+      "message": "",
+      "stdout": "[BasicModel] Activated aligned codebook prefix 16 -> 32 rows (physical capacity 32; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.391s)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_interleaving",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.8158820001408458,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=0.891s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_preposition_idempotence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012634083162993193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_surface_inverses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.1863162079825997,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015314708929508924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": "stage3",
+      "duration": 5.198122917208821,
+      "message": "",
+      "stdout": "Grammar checkpoint: 41 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt\n  Keys in model but missing from file: 18 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_absences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.038748292019590735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018248291919007897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007030832814052701,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

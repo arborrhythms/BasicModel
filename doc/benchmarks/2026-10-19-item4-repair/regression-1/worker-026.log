@@ -1,0 +1,18 @@
+..F.                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_past_resolves_by_recall_from_discourse_memory ______________
+test/test_output_synthesis.py:283: in test_past_resolves_by_recall_from_discourse_memory
+    assert d.source == "recall" and d.resolved
+E   AssertionError: assert ('identity:cold-memory' == 'recall'
+E     
+E     - recall
+E     + identity:cold-memory)
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_past_resolves_by_recall_from_discourse_memory
+1 failed, 3 passed, 1 warning in 3.24s

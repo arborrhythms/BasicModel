@@ -29,23 +29,16 @@ def forecast(model, meaning, row):
     """Hold the existing predictor's prior with this conclusion as context."""
     discourse = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
     if (discourse is None or not discourse.expectation_enabled
-            or discourse.expectation_scope != 'structured'
+            or discourse.expectation_scope != 'symbols'
             or discourse._inter_predictor is None):
         return None
-    from Layers import MeaningExpectation
-    predictor = discourse._inter_predictor
-    parameter = next(predictor.parameters())
     chain = list(discourse._inter_context[row])
     from ThoughtReferences import open_slots
     if not open_slots(meaning):
         chain.append((int(meaning.role_mask.sum()), meaning.roles.detach(), meaning.role_mask))
-    chain = chain[-discourse._inter_chain_window:]
-    pad = discourse._inter_chain_window-len(chain)
-    roles = [parameter.new_zeros(3, discourse.concept_dim)]*pad + [r.to(parameter) for _, r, _ in chain]
-    masks = [torch.zeros(3, device=parameter.device, dtype=torch.bool)]*pad + [m.to(parameter.device) for _, _, m in chain]
-    values, presence, kind = predictor(*discourse._prediction_inputs(
-        (torch.stack(roles)[None], torch.stack(masks)[None])))
-    return MeaningExpectation(values[0], presence[0], kind_logit=kind[0]).detached()
+    prediction = discourse.forecast_chain(chain[-discourse._inter_chain_window:])
+    return None if prediction is None else prediction.detached()
+
 
 
 def complete(model, greedy, explore, trace, other, departure, costs, row, **_unused):

@@ -8824,7 +8824,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         if kind == "estimate":
             expected = {"kind", "source_occurrences", "stream", "document",
                         "intended_occurrence", "presence_logits"}
-            if (set(value) - {'kind_logit'} != expected
+            if (set(value) != expected
                     or not isinstance(value["source_occurrences"], tuple)):
                 raise ValueError("invalid estimate provenance")
             sources = tuple(cls._validated_expectation_reference(source, namespace)
@@ -8836,10 +8836,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                     or any(not isinstance(item, (int, float))
                            or not math.isfinite(float(item)) for item in logits)):
                 raise ValueError("estimate provenance requires three finite presence logits")
-            kind_logit = value.get('kind_logit')
-            if kind_logit is not None and (not isinstance(kind_logit, (int, float))
-                                           or not math.isfinite(float(kind_logit))):
-                raise ValueError('estimate kind logit must be finite')
             return {
                 "kind": "estimate",
                 "source_occurrences": sources,
@@ -8847,7 +8843,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 "document": cls._freeze_expectation_value(value["document"]),
                 "intended_occurrence": intended,
                 "presence_logits": tuple(float(item) for item in logits),
-                **({'kind_logit': kind_logit} if 'kind_logit' in value else {}),
             }
         if kind == "observation":
             if set(value) - {'previous_estimates'} != {"kind", "estimate_occurrence"}:
@@ -9133,13 +9128,51 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                             "expectation": self.expectation_of(i),
                             **({"definition": self._definition_rows[identifier]}
                                if identifier in self._definition_rows else {})})
-        return {"version": 5,
+        return {"version": 6,
                 "namespace": self.address_domain,
                 "records": records}
 
+    def _migrate_estimate_rows(self, contexts, expectations, rows):
+        """Convert pre-Item-4 role estimates once, after authenticating their sidecar.
+
+        Preserve the historical raw observations and retention scores. The old
+        role confidences become positive-lane activation priors on exact keys;
+        the linked observation's distinct keys complete the archived bank. No
+        current reader interprets a role-vector estimate.
+        """
+        changed = []
+        for identifier, provenance in expectations.items():
+            if provenance['kind'] != 'estimate':
+                continue
+            changed.append(identifier)  # also authenticates removed kind metadata
+            context = contexts[identifier]
+            bindings = dict(context['bindings'])
+            if '_expected_symbols' in bindings:
+                continue
+            row = rows[identifier]
+            mask = self.role_mask[row]
+            predicted = self.slots[row][mask]
+            keys = list(predicted.unbind(0))
+            target = provenance['intended_occurrence']
+            if target is not None:
+                actual = rows[target[2]]
+                keys.extend(self.slots[actual][self.role_mask[actual]].unbind(0))
+            if not keys:
+                raise ValueError('historical estimate has no identity keys')
+            keys = torch.unique(torch.stack(keys), dim=0)
+            logits = keys.new_full((len(keys), 2), -30.)
+            if len(predicted):
+                distances = torch.cdist(predicted, keys, compute_mode='donot_use_mm_for_euclid_dist')
+                confidence = keys.new_tensor(provenance['presence_logits'])[mask]
+                logits[:, 0].scatter_reduce_(0, distances.argmin(-1), confidence, reduce='amax')
+            bindings['_expected_symbols'] = tuple((i, 0, tuple(key), tuple(logit))
+                for i, (key, logit) in enumerate(zip(keys.cpu().tolist(), logits.cpu().tolist())))
+            contexts[identifier] = dict(context, bindings=tuple(bindings.items()))
+        return changed
+
     def load_semantic_extras(self, extras):
         """Restore metadata only onto the matching durable occurrences."""
-        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3, 4, 5):
+        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3, 4, 5, 6):
             raise ValueError("unsupported truth semantic checkpoint version")
         extras = self._migrate_address_extras(extras)
         version = extras["version"]
@@ -9213,8 +9246,14 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             else:
                 if "expectation" not in record:
                     raise ValueError("truth semantic checkpoint omits expectation provenance")
-                expectation = self._normalise_expectation_provenance(
-                    record["expectation"], namespace)
+                source_expectation = record["expectation"]
+                if version < 6 and source_expectation is not None:
+                    source_expectation = dict(source_expectation)
+                    retired_kind = source_expectation.pop('kind_logit', None)
+                    if retired_kind is not None and (not isinstance(retired_kind, (int, float))
+                            or not math.isfinite(float(retired_kind))):
+                        raise ValueError('invalid historical estimate kind')
+                expectation = self._normalise_expectation_provenance(source_expectation, namespace)
             if expectation is not None:
                 expectation_rows[identifier] = expectation
             if (meaning.has_context or text is not None or expectation is not None) and not bool(self.metadata_required[i]):
@@ -9226,7 +9265,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                         or set(definition) - {"forms", "parts", "wholes", "identity_key"}):
                     raise ValueError("invalid definition row metadata")
                 definitions[identifier] = definition
-            fingerprint_values = self._context_fingerprint(incoming[identifier], text, expectation, definition)
+            fingerprint_values = self._context_fingerprint(incoming[identifier], text,
+                record.get('expectation') if version < 6 else expectation, definition)
             fingerprint = self.semantic_fingerprint.new_tensor(fingerprint_values)
             if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
                 raise ValueError("truth semantic content differs from its checkpoint fingerprint")
@@ -9236,10 +9276,16 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # to the owner.  A corrupt sidecar cannot leave a partly-restored graph.
         self._validate_constituent_graph(incoming, namespace)
         self._validate_expectation_links(expectation_rows)
+        migrated = self._migrate_estimate_rows(incoming, expectation_rows, rows) if version < 6 else ()
+        for identifier, provenance in expectation_rows.items():
+            if provenance['kind'] == 'estimate' and '_expected_symbols' not in dict(incoming[identifier]['bindings']):
+                raise ValueError('estimate checkpoint lacks its symbol-bank prior')
         self._semantic_rows = incoming
         self._texts = texts
         self._expectation_rows = expectation_rows
         self._definition_rows = definitions
+        for identifier in migrated:
+            self._update_semantic_fingerprint(rows[identifier])
         self.definitions.rebuild()
         if getattr(self, "_leaf_index_missing", False):
             for row in range(len(self)):
@@ -9525,7 +9571,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     @torch.no_grad()
     def append_estimate(self, meaning, *, presence_logits, source_occurrences=(),
-                        stream=None, document=None, trust=0.0, kind_logit=None):
+                        stream=None, document=None, trust=0.0):
         """Append one explicit prediction without granting fact authority.
 
         The estimate's complete role vectors and predicted occupancy live in
@@ -9536,6 +9582,9 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         """
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("append_estimate requires a ConceptualMeaning")
+        from Meaning import retained_symbol_prediction
+        if retained_symbol_prediction(meaning) is None:
+            raise ValueError('new estimates require a complete symbol-bank prior')
         logits = torch.as_tensor(presence_logits).detach().reshape(-1)
         if logits.numel() != 3 or not bool(torch.isfinite(logits).all()):
             raise ValueError("estimate requires three finite presence logits")
@@ -9547,7 +9596,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             "document": document,
             "intended_occurrence": None,
             "presence_logits": tuple(float(value) for value in logits.to("cpu").tolist()),
-            **({'kind_logit': float(kind_logit)} if kind_logit is not None else {}),
         }, namespace)
         identifiers = set(int(identifier)
                           for identifier in self.address_keys[:len(self)].tolist())
@@ -9615,9 +9663,16 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         """Retain or re-witness both addresses; insufficient capacity raises."""
         if observation_kind not in ("observation", "question"):
             raise ValueError("expectation pair requires an observed input kind")
-        from Meaning import expectation_surprise
-        surprise = expectation_surprise(observation.roles, estimate.roles,
-            observation.role_mask, torch.as_tensor(presence_logits).sigmoid())
+        from Meaning import retained_symbol_prediction, retained_symbol_activation, ClosingImage, withheld_symbols
+        from Expectation import retention_surprise
+        prediction = retained_symbol_prediction(estimate)
+        if prediction is None:
+            raise ValueError('new estimates require a complete symbol-bank prior')
+        view = ClosingImage.form(observation.roles, estimate.roles,
+            torch.as_tensor(presence_logits).sigmoid(), prediction=prediction,
+            occupied=observation.role_mask, withheld=withheld_symbols(observation, prediction),
+            activation=retained_symbol_activation(observation, prediction))
+        surprise = retention_surprise(view.excess-view.omission, view.expected)
         old = self._address_for_write(observation, kind=observation_kind)[-1]
         old_estimate = self._address_for_write(estimate, kind='estimate',
             **self._estimate_write_address(estimate, document=document, stream=stream))[-1]
@@ -9687,11 +9742,16 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         logits = estimate.roles.new_tensor(estimate_provenance["presence_logits"])
         observed_mask = observation.role_mask.to(device=estimate.roles.device)
         observed_roles = observation.roles.to(estimate.roles)
-        residual = observed_roles - estimate.roles
-        from Meaning import negative_image
-        conceived, image = negative_image(observed_roles, estimate.roles, logits.sigmoid(),
-                                          gain=gain, object_mask=object_mask,
-                                          form_width=getattr(self,"image_form_width",0))
+        from Meaning import ClosingImage, retained_symbol_prediction, retained_symbol_activation, withheld_symbols
+        prediction = retained_symbol_prediction(estimate)
+        if prediction is None:
+            raise ValueError('retained estimate lacks its symbol-bank prior')
+        view = ClosingImage.form(observed_roles, estimate.roles, logits.sigmoid(),
+            gain=gain, object_mask=object_mask, prediction=prediction, occupied=observed_mask,
+            activation=retained_symbol_activation(observation, prediction),
+            withheld=None if prediction is None else withheld_symbols(observation, prediction))
+        residual = view.excess-view.omission
+        conceived, image = view.conceived, view.image
         return {
             "estimate": estimate,
             "observation": observation,
@@ -9704,9 +9764,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             "presence_logits": logits,
             "residual": residual,
             "conceived": conceived,
-            "negative_image": image,
+            "gain": view.gain, "expected_activation": view.expected,
+            "excess": view.excess, "omission": view.omission, "identities": view.identities,
+            "content": conceived,
             "surprise": float(self.surprise[observation_index]),
-            "presence_residual": observed_mask.to(logits.dtype) - logits.sigmoid(),
         }
 
     def __len__(self):
@@ -10348,27 +10409,54 @@ class WhatInteractionMemory(LevelledThoughtHistory):
 
 @dataclass(frozen=True)
 class MeaningExpectation:
-    """A prior estimate in canonical NP1/VP/NP2 order, never an observation."""
+    """A symbol-bank prior with a unary memory envelope, never an observation."""
 
     roles: torch.Tensor
     presence_logits: torch.Tensor
     bindings: object = ()
     scope: object = ()
-    kind_logit: object = None
+    symbol_keys: object = None
+    symbol_logits: object = None
+    symbol_ids: object = None
+    symbol_orders: object = None
 
     def __post_init__(self):
         from Meaning import _freeze_metadata
         if self.roles.ndim != 2 or self.roles.shape[0] != 3 or self.presence_logits.shape != (3,):
             raise ValueError("expectation requires three roles and presence logits")
-        if self.kind_logit is not None and self.kind_logit.shape != ():
-            raise ValueError("expectation kind requires one idea/relation logit")
         object.__setattr__(self, "bindings", _freeze_metadata(self.bindings))
         object.__setattr__(self, "scope", _freeze_metadata(self.scope))
+        if any(value is None for value in (self.symbol_keys, self.symbol_logits,
+                                            self.symbol_ids, self.symbol_orders)):
+            raise ValueError('expectation requires a complete native symbol-bank prior')
+        n = len(self.symbol_keys)
+        if (not n or self.symbol_keys.shape != (n, self.roles.shape[-1])
+                or self.symbol_logits.shape != (n, 2)
+                or self.symbol_ids.shape != (n,) or self.symbol_orders.shape != (n,)):
+            raise ValueError('expected symbol bank must retain identities, orders and both lanes')
 
     def detached(self):
-        return type(self)(self.roles.detach().clone(), self.presence_logits.detach().clone(),
-                          self.bindings, self.scope, None if self.kind_logit is None else
-                          self.kind_logit.detach().clone())
+        from dataclasses import replace
+        return replace(self, **{name: None if getattr(self, name) is None else
+            getattr(self, name).detach().clone() for name in ('roles', 'presence_logits',
+                'symbol_keys', 'symbol_logits', 'symbol_ids', 'symbol_orders')})
+
+    @property
+    def expected_activation(self):
+        from Meaning import withheld_symbols
+        expected = self.symbol_logits.sigmoid()
+        withheld = withheld_symbols(self, self)
+        return expected if withheld is None else expected * (1.-withheld[:, None])
+
+    def retained_bindings(self):
+        """Keep the complete prior with its estimate occurrence, not just its top key."""
+        data = dict(self.bindings)
+        if self.symbol_keys is not None:
+            data['_expected_symbols'] = tuple((int(identity), int(order), tuple(key), tuple(logit))
+                for identity, order, key, logit in zip(self.symbol_ids.cpu().tolist(),
+                    self.symbol_orders.cpu().tolist(), self.symbol_keys.detach().cpu().tolist(),
+                    self.symbol_logits.detach().cpu().tolist()))
+        return data
 
 
 @dataclass(frozen=True)
@@ -10379,12 +10467,16 @@ class ExpectationComparison:
     observed: torch.Tensor
     occupied: torch.Tensor
     residual: torch.Tensor
-    presence_residual: torch.Tensor
     document: object
     source_occurrences: tuple = ()
     stream: object = None
     sentence_kind: object = None
-    kind_residual: object = None
+    activation: object = None
+
+    @property
+    def surprise(self):
+        from Expectation import retention_surprise
+        return retention_surprise(self.residual, self.estimate.expected_activation)
 
 
 @dataclass(frozen=True)
@@ -10397,588 +10489,102 @@ class _PendingMeaningExpectation:
     document: object
     inputs: object = None
     versions: tuple = ()
-    policy: tuple = ()
-    work: int = 0
     frames: tuple = ()
-    walk: object = None
-    comparison: object = None
 
     def detached(self):
         from dataclasses import replace
         return replace(self, prediction=self.prediction.detached(),
             inputs=None if self.inputs is None else tuple(x.detach() for x in self.inputs),
-            frames=tuple(frame.detached() for frame in self.frames),
-            walk=None if self.walk is None else self.walk.detached())
+            frames=tuple(frame.detached() for frame in self.frames))
 
 
-class SentenceExpectation(Layer):
-    """Order-sensitive prediction over complete, masked local meanings.
+class SymbolExpectation(Layer):
+    """One activation predictor for symbols, closing and document continuation.
 
-    Positions identify grammatical roles and chronological lags, not concept
-    addresses. Each output role has its own coordinates; padding is excluded
-    before the network sees it. Compound references are handled by the owner
-    of the meaning, rather than by treating their integer IDs as features.
+    The three-role envelope is only the existing memory/awareness interface:
+    it holds one native representative, never a predicted syntactic structure.
+    The authoritative estimate is the full bank in ``symbol_keys/logits``.
+    All sources and targets are detached. No forecast feeds the next forecast.
     """
+    name = 'Discourse'
 
-    def __init__(self, concept_dim, context_window):
-        width = 3 * (int(concept_dim) + 1)
-        super().__init__(int(context_window) * width, width)
-        self.concept_dim = int(concept_dim)
-        self.context_window = int(context_window)
-        hidden = min(1024, max(32, 2 * width))
-        self.network = nn.Sequential(
-            nn.Linear(self.nInput, hidden), nn.Tanh(),
-            nn.Linear(hidden, width))
-        # New checkpoints start neutral. This consumes no random draws and
-        # leaves the reviewed role-head initialization reproducible.
-        self.kind_weight = nn.Parameter(torch.zeros(hidden))
-        self.kind_bias = nn.Parameter(torch.zeros(()))
-
-    def forward(self, roles, masks):
-        # The boundary owner detaches retained observations and re-encodes
-        # only the current source. Detaching here would erase that credit.
-        masks = masks.detach()
-        features = torch.cat((
-            torch.where(masks.unsqueeze(-1), roles, torch.zeros_like(roles)),
-            masks.to(roles.dtype).unsqueeze(-1)), dim=-1)
-        hidden = self.network[:2](features.flatten(start_dim=1))
-        out = self.network[2](hidden).reshape(
-            roles.shape[0], 3, self.concept_dim + 1)
-        kind = F.linear(hidden, self.kind_weight[None], self.kind_bias[None]).squeeze(-1)
-        return out[..., :self.concept_dim], out[..., -1], kind
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        for name in ('kind_weight', 'kind_bias'):
-            state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
-        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
-                                     missing_keys, unexpected_keys, error_msgs)
-
-
-class BracketExpectation(Layer):
-    """Sentence expectation with structured production and legacy predictors.
-
-    The model selects ``expectation_scope="structured"``: every occupied
-    NP1/VP/NP2 role and its mask enter an order-sensitive bounded predictor.
-    ``begin_document`` isolates external streams without deleting durable
-    evidence or an already-scored loss. Root-only direct construction remains
-    a benchmark and compatibility API. The ARMA description below concerns
-    the separately weighted legacy objective.
-
-    **What it is.** Sentence-level autoregression lives here, not in
-    the within-sentence body (which is now IR-only / masked-LM).  Each
-    sentence is summarised into a flat ``[B, sentence_dim]`` rep
-    ``s_t`` (the body's S-space_role root slot pooled per row); the
-    predictor consumes the last ``p`` sentence reps plus the last
-    ``q`` prediction errors and produces ``s_hat_{t+1}``.
-
-    **Loss.** ``MSE(predictor(s_{t-1..t-p}, e_{t-1..t-q}), s_t)``.
-    The residual ``e_t = s_t - s_hat_t`` is pushed into the MA ring
-    so the next prediction can correct for systematic bias in the AR
-    extrapolation.
-
-    **Buffers (per row).**
-
-    - ``_s_history``: ``[B, p, sentence_dim]`` ring of last ``p``
-      sentence reps (most recent at index ``-1``).
-    - ``_e_history``: ``[B, q, sentence_dim]`` ring of last ``q``
-      residuals.
-    - ``_s_count`` / ``_e_count``: ``[B]`` long, current fill levels.
-
-    All buffers are non-persistent (transient state, not checkpoint
-    material) and follow ``.to(device)`` through ``register_buffer``.
-
-    **Reset.** ``Reset()`` clears both rings.  ARMA lags carry across
-    document boundaries by default — discourse continuity is
-    information the predictor wants to use; callers that need a hard
-    boundary call ``Reset()`` explicitly.
-
-    **Subclass.** ``Layer`` rather than ``Space``: no SubSpace, no
-    forward/reverse tensor-map contract.  Lives inside
-    ``SymbolSpace.layers`` so the Layer ergodic walk reaches the MLP
-    predictor's parameters via ``SymbolSpace.params``.
-
-    Replaces the pre-2026-05-14 contrastive cosine machinery
-    (``context_window`` recent buffer, ``centroid_history`` repulsive
-    ring, ``lam`` cosine push) and the QKVAttentionLayer-based
-    predictive head.  See ``doc/Architecture.md`` §"Sentence-level
-    AR (BracketExpectation)" for the design rationale.
-    """
-
-    name = "Discourse"
-
-    def __init__(self, n_symbols, max_depth, n_dim,
-                 p=5, q=2, hidden_dim=None,
-                 concept_dim=None, batch=1, ltm_capacity=1024,
-                 # Legacy-named kwargs accepted for back-compat; ignored.
-                 context_window=None, centroid_history=None, lam=None,
-                 expectation_scope="root"):
-        """Initialize the ARMA(p, q) predictor.
-
-        ``n_symbols``, ``max_depth``, ``n_dim`` describe the legacy
-        ``[S | W]`` snapshot layout the caller used to hand in; under
-        ARMA we only need the flat ``sentence_dim`` (defaults to
-        ``n_symbols * n_dim``) but keep the constructor signature for
-        smooth migration of the SymbolSpace instantiation site.
-
-        ``p`` = AR lag count (number of past sentence reps consumed
-        by the predictor); ``q`` = MA lag count (past residuals).
-        ``hidden_dim`` defaults to ``2 * sentence_dim``.
-        ``concept_dim`` is the full width of each predicted grammatical role.
-        No prediction is cast into a comprehension input.
-
-        ``ltm_capacity`` bounds the long-term-memory (LTM) chain of
-        per-sentence STM end-states (the AR sequence used for
-        inter-sentence prediction; see ``observe_stm_end_state`` /
-        ``get_stm_chain``).  Default 1024 — separate from TruthLayer's
-        ``truthMaxEntries`` and from the ARMA orders ``p`` / ``q``.
-
-        ``context_window`` / ``centroid_history`` / ``lam`` are
-        accepted for signature back-compat with the retired
-        contrastive constructor and ignored.
-        """
-        del context_window, centroid_history, lam  # retired knobs
-        n_symbols = int(n_symbols)
-        n_dim = int(n_dim)
-        # Sentence-rep pooling: the per-sentence rep ``s_t`` is the
-        # **root S-space_role slot** (row 0 of the body's final-stage S-space_role
-        # event), not the full ``[n_symbols, n_dim]`` flatten.  The
-        # root is what the start-symbol reduction wrote -- it carries
-        # the sentence-level signal; the other slots are intermediate
-        # composition state.  This keeps the predictor's input width
-        # bounded at ``(p + q) * n_dim`` instead of
-        # ``(p + q) * n_symbols * n_dim`` (which OOMs the allocator on
-        # configs where ``n_symbols * n_dim`` is in the hundreds of
-        # thousands -- the legacy contrastive snapshot avoided this
-        # by never feeding the snapshot through a Linear).
-        sentence_dim = n_dim
-        super().__init__(sentence_dim, sentence_dim)
-
-        self.n_symbols = n_symbols
-        self.max_depth = int(max_depth)
-        self.n_dim = n_dim
-        self.sentence_dim = sentence_dim
-        self.p = int(p)
-        self.q = int(q)
-        # Cap hidden_dim so the predictor's Linear stays under the
-        # allocator's per-tensor budget on every config we ship --
-        # 1024 is comfortably bigger than ``sentence_dim`` for every
-        # MM_* training config (sentence_dim == n_dim, typically 2-100)
-        # and small enough that the MLP fits in a few MB.
-        _hidden_cap = 1024
-        self.hidden_dim = int(hidden_dim if hidden_dim is not None
-                              else min(_hidden_cap, 2 * sentence_dim))
-        self.concept_dim = (int(concept_dim)
-                            if concept_dim is not None else None)
-
-        self._batch = int(batch)
-        if expectation_scope not in ("root", "structured"):
-            raise ValueError("expectation_scope must be root or structured")
-        # Root is the legacy direct-construction API / benchmark. The model
-        # explicitly selects structured prediction in SymbolSpace.
-        self.expectation_scope = expectation_scope
-        self._expectation_documents = [None] * self._batch
-        self._inter_last_meaning = [None] * self._batch
-        self._external_observations_suspended = False
-        self.expectation_enabled = True
-        self._last_expectation_comparisons = [None] * self._batch
-        self.reset_expectation_metrics()
-        # Phase-3-style staging slot: when the compiled step is active,
-        # ``stage_prediction()`` runs the (``@torch.compiler.disable``'d)
-        # ARMA predictor EAGERLY before the traced forward and parks the
-        # ``(pred, conf)`` tuple here.  ``predict()`` then returns the
-        # staged tuple without touching ``predict_next`` (the disabled
-        # function that forced a graph break) or the ``_s_count.item()``
-        # host sync.  ``None`` == not staged (eager path, compute live).
-        self._staged_prediction = None
-        self.register_buffer(
-            "_s_history",
-            torch.zeros(self._batch, self.p, self.sentence_dim),
-            persistent=False)
-        self.register_buffer(
-            "_s_count",
-            torch.zeros(self._batch, dtype=torch.long),
-            persistent=False)
-        self.register_buffer(
-            "_e_history",
-            torch.zeros(self._batch, max(1, self.q), self.sentence_dim),
-            persistent=False)
-        self.register_buffer(
-            "_e_count",
-            torch.zeros(self._batch, dtype=torch.long),
-            persistent=False)
-
-        # -- LTM: chain of per-sentence STM end-states (Task 7, plan §8).
-        # The AR sequence used for INTER-sentence prediction. Unlike the
-        # ARMA ``_s_history`` ring (fixed-shape ``[B, p, D]`` tensor), an
-        # end-state is VARIABLE depth (1 for an absolute sentence, 3 for
-        # a relative ``[predicate, idea1, idea2]`` end-state), so a fixed
-        # ``register_buffer`` tensor does not fit. Use one bounded
-        # ``collections.deque(maxlen=ltm_capacity)`` PER ROW (parallel
-        # document streams — mirror how ``_s_history`` is per-row), each
-        # holding time-ordered ``(depth:int, payload:[depth,D] tensor,
-        # tetralemma:tuple|None)`` tuples. This is TRANSIENT host-side
-        # state (NOT checkpoint material — mirror the ARMA rings'
-        # ``persistent=False``); it is NOT a registered buffer / not in
-        # ``state_dict`` and the boundary-only ``observe_stm_end_state``
-        # writer is ``@torch.compiler.disable``'d like ``observe``.
+    def __init__(self, n_symbols, max_depth, n_dim, *, concept_dim=None, batch=1,
+                 ltm_capacity=1024, hidden_dim=None, expectation_scope='symbols'):
+        from Expectation import ActivationPredictor
+        if expectation_scope != 'symbols':
+            raise ValueError('expectation scope must be symbols')
+        self.concept_dim = int(concept_dim or n_dim)
+        super().__init__(self.concept_dim, self.concept_dim)
+        self.n_symbols, self.max_depth, self.n_dim = int(n_symbols), int(max_depth), int(n_dim)
+        self.sentence_dim = self.word_dim = self.concept_dim
+        self.expectation_scope = 'symbols'
+        self._inter_predictor = ActivationPredictor(self.concept_dim, hidden_dim or 64)
+        self.layers = []  # nn.Module registration owns the shared predictor.
         self.ltm_capacity = int(ltm_capacity)
-        self._stm_end_states = [
-            collections.deque(maxlen=self.ltm_capacity)
-            for _ in range(self._batch)]
-        # ``self.layers`` (parent Layer's ergodic-walk list) only holds
-        # objects that implement ``set_sigma`` / ``observe_sigma`` etc.
-        # The ARMA MLP predictor is an ``nn.Sequential`` (no ergodic
-        # interface), so it's NOT added here -- its parameters still
-        # register with the host module via plain attribute
-        # assignment, so the optimizer sees them.  ``LinearLayer`` is
-        # ergodic-compatible and gets added.
-        self.layers = []
-        in_dim = (self.p + self.q) * self.sentence_dim
-        if in_dim > 0 and self.sentence_dim > 0:
-            self.predictor = nn.Sequential(
-                nn.Linear(in_dim, self.hidden_dim),
-                nn.Tanh(),
-                nn.Linear(self.hidden_dim, self.sentence_dim),
-            )
-        else:
-            self.predictor = None
-
-        # -- Inter-level next-end-state predictor (Task 8, plan §9). -----
-        # The SAME predictor class as the intra-sentence in-STM predictor
-        # (``IntraSentenceLayer``), instantiated HERE at the inter-sentence
-        # level. It reads the last ``K`` STM end-states (the LTM chain) and
-        # predicts the ROOT of the next end-state. ``predict_next_end_state``
-        # wraps it into a ``(depth_hat, payload_hat[depth_hat, D])`` shape.
-        #
-        # ``stm_capacity`` here is the CHAIN WINDOW ``K`` (the number of
-        # most-recent end-states fed to the predictor), NOT the intra-level
-        # STM slot count. The plan suggests ``truthMaxEntries``; that knob
-        # (default 1024) is the TruthLayer WS-codebook cap and is NOT
-        # plumbed to this constructor, and a 1024-wide predictor input would
-        # be wasteful for a short AR context. So we use a small bounded
-        # window ``K = min(ltm_capacity, 8)`` (documented deviation): the AR
-        # signal that predicts the next end-state lives in the last handful
-        # of sentences, and the IntraSentenceLayer's ``stm_capacity`` only
-        # feeds its serial-``reverse`` fan-out default (unused on our
-        # forward-only path), so ``K`` is the meaningful quantity.
-        self._inter_chain_window = max(1, min(int(self.ltm_capacity), 8))
-        # Bounded, row-local prediction view of external observations. This
-        # is transient context, not an additional durable/evidence store.
-        # Current-step values retain their encoder graph; consumption/step
-        # boundaries detach the view, while LTM remains a stable snapshot.
-        self._inter_context = [
-            collections.deque(maxlen=self._inter_chain_window)
-            for _ in range(self._batch)]
-        # Stable LTM occurrences align one-for-one with the bounded predictor
-        # view.  The row is bound only after the host appends the external
-        # observation, so anticipation cannot learn its target's identity.
-        self._inter_context_occurrences = [
-            collections.deque(maxlen=self._inter_chain_window)
-            for _ in range(self._batch)]
-        self._inter_predictor = None
-        if self.concept_dim is not None and self.concept_dim > 0:
-            if self.expectation_scope == "structured":
-                self._inter_predictor = SentenceExpectation(
-                    self.concept_dim, self._inter_chain_window)
-            else:
-                self._inter_predictor = IntraSentenceLayer(
-                    concept_dim=self.concept_dim,
-                    stm_capacity=self._inter_chain_window,
-                    routing_dim=self.concept_dim)
-            self.layers.append(self._inter_predictor)
-
-        # L_inter accumulation (live grad tensor) + the per-row last
-        # predicted root, mirroring ConceptualSpace's intra-loss accumulator
-        # (Spaces.py ``_accumulate_intra_loss`` / ``consume_intra_loss``).
-        # ``_inter_loss_accum`` is a live (grad-carrying) running SUM of
-        # per-sentence ``MSE(payload_hat_root, actual_root)``; ``None`` until
-        # the first scored sentence. ``_inter_loss_count`` is the mean
-        # denominator. ``_inter_last_pred_root`` holds the most-recent
-        # predicted root PER ROW (``[D]`` tensor or ``None``) so the next
-        # ``observe_stm_end_state`` can score the prediction it made against
-        # the end-state that actually arrived. ``_inter_loss_weight`` gates
-        # accumulation off when the knob is non-positive (set by the host at
-        # construction; defaults to 0.1 so the layer is self-contained).
-        self._inter_loss_accum = None
-        self._inter_errors = Error()
-        self._inter_contrastive_errors = Error()
-        self._inter_loss_count = 0
-        self._inter_last_pred_root = [None] * self._batch
-        self._inter_loss_weight = 0.1
-        self._expectation_policy_outcomes = []
-        self._expectation_walk_outcomes = []
-        # Second accumulator: the InfoNCE next-idea CONTRASTIVE term -- ranks the
-        # actual next root above the chain's past roots under cosine(pred, .).
-        # Off (weight 0) -> the layer carries only the legacy MSE L_inter
-        # (byte-identical). Set by the host from <sentenceExpectationContrastiveWeight>.
-        self._inter_contrastive_accum = None
-        self._inter_contrastive_count = 0
-        self._inter_contrastive_weight = 0.0
-        self._inter_contrastive_temp = 0.1
-
-        # Consolidated durable history is stored once in TernaryTruthStore.
-        # get_stm_chain reads durable stream history; the predictor uses its
-        # bounded per-row _inter_context
-        # observation view so unrelated batch rows and provisioned facts
-        # cannot become a sentence's predecessor. The host appends durable
-        # observations to the store; this layer skips its duplicate deque.
+        self._inter_chain_window = max(1, min(self.ltm_capacity, 8))
+        self.levels = ('word', 'sentence', 'row')
+        self.enabled_levels = ('word', 'sentence', 'row')
+        self.expectation_enabled = True
+        self._external_observations_suspended = False
         self._ltm_store = None
         self._ltm_consolidation = False
+        self._inter_loss_weight = .1
+        self._inter_loss_accum = None
+        self._inter_loss_count = 0
+        self._inter_errors = Error()
+        self.register_buffer('_bank_keys', torch.empty(0, self.concept_dim), persistent=False)
+        self.register_buffer('_bank_ids', torch.empty(0, dtype=torch.long), persistent=False)
+        self.register_buffer('_bank_orders', torch.empty(0, dtype=torch.long), persistent=False)
+        self._batch = 0
+        self.ensure_batch(batch)
+        self.reset_expectation_metrics()
 
-        self.levels = ('byte','word','sentence','row')
-        self.enabled_levels = ('word','sentence')
-        self.word_dim = int(self.concept_dim or self.n_dim)
-        # Register with nn.Module, as the sentence head above does. Preserve
-        # the construction stream of the already accepted components.
-        with torch.random.fork_rng(devices=[]):
-            self.word_predictor = nn.Sequential(
-                nn.Linear((self.p+self.q)*self.word_dim,self.hidden_dim),nn.Tanh(),
-                nn.Linear(self.hidden_dim,self.word_dim))
+    @property
+    def word_predictor(self):
+        return self._inter_predictor
 
-    def expect(self,level,*args,**kwargs):
-        """Expectation is indexed by its bracket level, with one owner."""
-        if level not in self.levels:raise ValueError('unknown expectation level')
-        if level not in self.enabled_levels:raise ValueError(f'{level} expectation is declared but disabled')
+    def set_symbol_bank(self, keys, *, identities=None, orders=None):
+        if keys.ndim != 2 or keys.shape[-1] != self.concept_dim:
+            raise ValueError('symbol bank requires native full-width identity rows')
+        self._bank_keys = keys.detach().clone()
+        self._bank_ids = (torch.arange(len(keys), device=keys.device) if identities is None else identities.detach().clone())
+        self._bank_orders = (torch.zeros(len(keys), device=keys.device, dtype=torch.long) if orders is None else orders.detach().clone())
+        if self._bank_ids.shape != (len(keys),) or self._bank_orders.shape != (len(keys),):
+            raise ValueError('symbol identities and orders must align with the bank')
+
+    def expect(self, level, *args, **kwargs):
+        if level not in self.levels or level not in self.enabled_levels:
+            raise ValueError('unknown or disabled expectation level')
         if level == 'word':
             from WordExpectation import word_distribution
-            return word_distribution(self,*args,**kwargs)
-        if level == 'sentence':return self.predict_and_observe_stm_end_state(*args,**kwargs)
-        raise ValueError(f'{level} expectation awaits its scheduled landing')
+            return word_distribution(self, *args, **kwargs)
+        return self.predict_and_observe_stm_end_state(*args, **kwargs)
 
-    # -- per-batch resize ---------------------------------------------
     def ensure_batch(self, batch):
-        """Resize per-row substrate to a new batch size.  Cascaded
-        from ``SymbolSpace.ensure_batch`` so the body's per-B state is
-        sized correctly.  Zeroes the rings.
-        """
         batch = int(batch)
         if batch == self._batch:
             return
-        device = self._s_history.device
-        dtype = self._s_history.dtype
         self._batch = batch
-        self._s_history = torch.zeros(
-            batch, self.p, self.sentence_dim,
-            dtype=dtype, device=device)
-        self._s_count = torch.zeros(
-            batch, dtype=torch.long, device=device)
-        self._e_history = torch.zeros(
-            batch, max(1, self.q), self.sentence_dim,
-            dtype=dtype, device=device)
-        self._e_count = torch.zeros(
-            batch, dtype=torch.long, device=device)
-        # Resize the per-row LTM chains to match. Reallocate fresh
-        # deques: the ARMA rings above zero on resize, so the LTM chain
-        # follows the same "new batch -> clean per-row state" semantic
-        # (cascaded from ``SymbolSpace.ensure_batch`` at the start of a
-        # microbatch; the old document's chain does not survive a batch
-        # reshape any more than ``_s_history`` does).
-        self._stm_end_states = [
-            collections.deque(maxlen=self.ltm_capacity)
-            for _ in range(batch)]
-        # Per-row last-predicted-root parks reset on a batch reshape too
-        # (the prior document's pending prediction does not survive, same
-        # as the LTM chain / ARMA rings above).
-        self._inter_last_pred_root = [None] * batch
+        self._stm_end_states = [collections.deque(maxlen=self.ltm_capacity) for _ in range(batch)]
+        self._inter_context = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
+        self._inter_context_lanes = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
+        self._inter_context_occurrences = [collections.deque(maxlen=self._inter_chain_window) for _ in range(batch)]
         self._inter_last_meaning = [None] * batch
+        self._inter_last_pred_root = [None] * batch
         self._expectation_documents = [None] * batch
         self._last_expectation_comparisons = [None] * batch
-        self._inter_context = [
-            collections.deque(maxlen=self._inter_chain_window)
-            for _ in range(batch)]
-        self._inter_context_occurrences = [
-            collections.deque(maxlen=self._inter_chain_window)
-            for _ in range(batch)]
 
-    # -- sentence-rep pooling -----------------------------------------
-    def _pool_sentence_rep(self, s_tensor):
-        """Pool an S-space_role event into a per-row ``[B, sentence_dim]``
-        sentence rep.
-
-        Accepts:
-          * ``[B, N, D]`` (microbatch S-space_role event) -- take row 0
-            (the root slot the start-symbol reduction wrote into).
-          * ``[N, D]`` (B=1 legacy) -- same: take row 0.
-          * ``[B, D]`` (already-pooled).
-        Right-pads / truncates to ``sentence_dim`` so dim mismatches
-        between training configs and the layer's stored width stay
-        well-defined.
-        """
-        if s_tensor is None:
-            return None
-        x = s_tensor
-        if x.ndim == 2:
-            if x.shape[-1] == self.sentence_dim:
-                return x
-            x = x.unsqueeze(0)                # [N, D] -> [1, N, D]
-        if x.ndim != 3:
-            return None
-        # Take the root S-space_role slot (row 0) per batch row.
-        rooted = x[:, 0, :]                   # [B, D]
-        cur = rooted.shape[-1]
-        if cur == self.sentence_dim:
-            return rooted
-        if cur > self.sentence_dim:
-            return rooted[:, :self.sentence_dim]
-        return F.pad(rooted, (0, self.sentence_dim - cur))
-
-    # -- prediction ---------------------------------------------------
-    def _predictor_input(self):
-        """Concatenate ``[s_history | e_history]`` per row.
-
-        Returns ``[B, (p + q) * sentence_dim]``.  Empty slots in
-        either ring are already zero-padded by ``ensure_batch`` /
-        ``Reset``, so the predictor always sees a stable shape on
-        cold-start.
-        """
-        s_flat = self._s_history.reshape(self._batch, -1)  # [B, p*D]
-        if self.q > 0:
-            e_flat = self._e_history.reshape(self._batch, -1)  # [B, q*D]
-            return torch.cat([s_flat, e_flat], dim=-1)
-        return s_flat
-
-    @torch.compiler.disable
-    def predict_next(self, b=None):
-        """Predict the next sentence rep without committing to history.
-
-        Returns ``[sentence_dim]`` for B=1 or with explicit ``b``;
-        otherwise returns ``[B, sentence_dim]`` stacked across rows.
-        Rows whose history is empty still get a (zero-input)
-        prediction, so the call always produces a tensor of stable
-        shape — callers gate on ``_s_count`` if they need to
-        distinguish cold-start from a real prediction.
-        """
-        if not self.expectation_enabled or self.predictor is None:
-            return None
-        x = self._predictor_input().detach()
-        out = self.predictor(x)                          # [B, sentence_dim]
-        if b is not None:
-            return out[int(b)]
-        if self._batch == 1:
-            return out[0]
-        return out
-
-    # -- observe (push + compute loss) --------------------------------
-    @torch.compiler.disable
-    def observe(self, s_tensor, mask=None):
-        """Capture sentence rep ``s_t``, compute the ARMA MSE loss,
-        and update the AR/MA rings.
-
-        Returns the per-batch mean MSE between ``s_hat_t`` (predicted
-        from history) and ``s_t``.  Returns ``None`` when no row has
-        a primed predictor (all-empty ``_s_count``) — the first
-        sentence per row has no AR signal to score against, but its
-        rep still goes into ``_s_history`` so subsequent observes
-        can predict.
-
-        ``mask`` is an optional ``[B] bool`` selecting which rows
-        ended a sentence this step (defaults to all True).
-        """
-        if not self.expectation_enabled:
-            return None
-        pooled = self._pool_sentence_rep(s_tensor)
-        if pooled is None:
-            return None
-        B = pooled.shape[0]
-        if B != self._batch:
-            self.ensure_batch(B)
-        s_hat = self.predict_next()
-        if s_hat is None:
-            return None
-        if s_hat.ndim == 1:
-            s_hat = s_hat.unsqueeze(0).expand(B, -1)
-        # Only score rows whose history was primed. Fully masked: no
-        # ``bool(primed.any())`` host gate and no boolean-mask indexing
-        # ``s_hat[primed]`` (both force a cudaMemcpyDtoH). Zero the
-        # non-primed rows, divide by the primed count. Equivalent to
-        # the old ``diff[primed].pow(2).mean()`` when >=1 row is primed;
-        # on an all-cold-start batch this returns a 0.0 tensor instead
-        # of ``None`` -- training-neutral (the diff is exactly zero so
-        # the term carries no gradient), it just logs ``arma=0`` rather
-        # than skipping the log. Contract change recorded in the
-        # discourse tests.
-        primed = self._s_count > 0                        # [B] bool
-        if mask is not None:
-            primed = primed & mask.to(primed.device)
-        pm = primed.to(s_hat.dtype).unsqueeze(-1)         # [B, 1]
-        diff = (s_hat - pooled.detach()) * pm             # [B, D]
-        n_primed = primed.sum().clamp(min=1).to(diff.dtype)
-        loss = diff.pow(2).sum() / (n_primed * s_hat.shape[-1])
-        registry = getattr(self, '_arma_errors', None)
-        if registry is None:
-            registry = self._arma_errors = Error()
-        registry.squared('arma', s_hat, pooled.detach(), mask=primed, category='expectation')
-        # Update rings -- VECTORIZED. The prior per-row Python loop +
-        # ``_push_row`` issued ``_s_count[b].item()`` /
-        # ``bool(active[b])`` per row: B host syncs per call, the
-        # dominant ``cudaMemcpyDtoH`` source (attribution probe on
-        # metalbaby: 192/224 recorded syncs). This is numerically
-        # identical -- same fill-then-shift layout, same per-row
-        # gating -- expressed as masked tensor ops so no GPU->host
-        # round-trip occurs. (Loss block above is untouched.)
-        residual = (pooled - s_hat).detach()
-        active = (mask if mask is not None
-                  else torch.ones(B, dtype=torch.bool, device=pooled.device))
-        s_all = pooled.detach()                              # [B, D]
-        Bv, D = s_all.shape
-
-        def _ring_push(hist, count, cap, new_rows):
-            # hist [B, cap, D]; count [B] long (pre-push); cap int;
-            # new_rows [B, D]. Mirrors ``_push_row``: rows in the
-            # fill phase (count < cap) scatter the new row into slot
-            # ``cap-count-1`` and increment; rows at capacity roll
-            # left (newest at the tail); inactive rows untouched.
-            cnt = count
-            fill = active & (cnt < cap)                      # [B] bool
-            shift = active & (cnt >= cap)                    # [B] bool
-            rolled = torch.roll(hist, shifts=-1, dims=1).clone()
-            rolled[:, -1, :] = new_rows
-            idx = (cap - cnt - 1).clamp(0, cap - 1)          # [B] long
-            scattered = hist.clone()
-            scattered.scatter_(
-                1, idx.view(Bv, 1, 1).expand(Bv, 1, D),
-                new_rows.unsqueeze(1))
-            new_hist = torch.where(
-                shift.view(Bv, 1, 1), rolled,
-                torch.where(fill.view(Bv, 1, 1), scattered, hist))
-            new_count = cnt + fill.to(cnt.dtype)
-            return new_hist, new_count
-
-        self._s_history, self._s_count = _ring_push(
-            self._s_history, self._s_count, self.p, s_all)
-        if self.q > 0:
-            self._e_history, self._e_count = _ring_push(
-                self._e_history, self._e_count, self.q, residual)
-        return loss
-
-    # -- LTM: long-term memory chain of STM end-states (Task 7) --------
     @contextmanager
     def suspend_external_observations(self):
-        """Provision memory without observing it as a corpus continuation.
-
-        Provisioning may temporarily reshape the batch while parsing truths.
-        Keep every external row's context, pending credit and scored loss;
-        durable store writes still run through their existing owner.
-        """
-        names = (
-            "_batch", "_s_history", "_s_count", "_e_history", "_e_count",
-            "_staged_prediction", "_stm_end_states", "_inter_context",
-            "_inter_context_occurrences", "_expectation_policy_outcomes", "_expectation_walk_outcomes",
-            "_inter_last_pred_root", "_inter_last_meaning",
-            "_last_expectation_comparisons",
-            "_expectation_documents", "_inter_loss_accum", "_inter_loss_count",
-            "_inter_contrastive_accum", "_inter_contrastive_count",
-            "_external_observations_suspended")
+        names = ('_batch', '_stm_end_states', '_inter_context', '_inter_context_lanes', '_inter_context_occurrences',
+                 '_inter_last_meaning', '_inter_last_pred_root', '_expectation_documents',
+                 '_last_expectation_comparisons', '_inter_loss_accum', '_inter_loss_count',
+                 '_inter_errors', '_external_observations_suspended')
         saved = {name: getattr(self, name) for name in names}
         self._external_observations_suspended = True
-        self._expectation_policy_outcomes = []
-        self._expectation_walk_outcomes = []
         self._batch = 0
-        self.ensure_batch(saved["_batch"])
-        self._staged_prediction = None
-        self._inter_loss_accum = self._inter_contrastive_accum = None
-        self._inter_loss_count = self._inter_contrastive_count = 0
+        self.ensure_batch(saved['_batch'])
+        self._inter_loss_accum, self._inter_loss_count, self._inter_errors = None, 0, Error()
         try:
             yield
         finally:
@@ -10986,26 +10592,280 @@ class BracketExpectation(Layer):
                 setattr(self, name, value)
 
     def begin_document(self, b, document):
-        """Switch one prediction stream; retain durable memory and scored loss.
-
-        A document address is an equality key only. It never enters the
-        predictor as a numerical feature. Unrelated rows are untouched.
-        """
         b = int(b)
         if self._expectation_documents[b] == document:
             return
         self._expectation_documents[b] = document
         if self.expectation_enabled:
-            self._expectation_stats["document_starts"] += 1
+            self._expectation_stats['document_starts'] += 1
         self._last_expectation_comparisons[b] = None
         self._inter_context[b].clear()
+        self._inter_context_lanes[b].clear()
         self._inter_context_occurrences[b].clear()
-        self._inter_last_pred_root[b] = None
-        self._inter_last_meaning[b] = None
-        self._s_history[b].zero_()
-        self._e_history[b].zero_()
-        self._s_count[b] = 0
-        self._e_count[b] = 0
+        self._inter_last_meaning[b] = self._inter_last_pred_root[b] = None
+
+    def _prediction_inputs(self, inputs, *, replay=False):
+        return tuple(value.detach() for value in inputs)
+
+    def _bank_inputs(self, chain, lanes=None):
+        from Expectation import ActivationPredictor, symbol_activations
+        parameter = next(self._inter_predictor.parameters())
+        values = torch.stack([roles.to(parameter) for _, roles, _ in chain])[None]
+        occupied = torch.stack([mask.to(parameter.device) for _, _, mask in chain])[None]
+        context = ActivationPredictor.context_from(values, occupied)
+        keys, ids, orders = self._bank_keys.to(parameter), self._bank_ids, self._bank_orders
+        lane_values = (None if lanes is None else torch.stack([
+            roles.new_tensor((1., 0.) if pair is None else pair).expand(3, 2)
+            for (_, roles, _), pair in zip(chain, lanes)]).to(parameter)[None].flatten(1, 2))
+        activation = symbol_activations(keys[None], values.flatten(1, 2), occupied.flatten(1), lane_values)
+        return (keys[None], context, activation), ids, orders
+
+    def _prediction(self, inputs, ids, orders, *, bindings=(), scope=()):
+        logits = self._inter_predictor(*self._prediction_inputs(inputs))[0]
+        keys = inputs[0][0].detach()
+        if not bool(torch.isfinite(logits).all()):
+            raise FloatingPointError('non-finite symbol activation prediction')
+        # One native key makes the pre-existing awareness interface readable.
+        # It is not mixed into an observation or supervised as a slot target.
+        index = logits.sigmoid().amax(-1).argmax()
+        roles = torch.cat((keys[index:index+1], keys.new_zeros(2, self.concept_dim)), 0)
+        presence = torch.cat((logits[index].amax().reshape(1), logits.new_full((2,), -30.)))
+        return MeaningExpectation(roles, presence, bindings, scope,
+                                  keys, logits, ids, orders)
+
+    def forecast_chain(self, chain):
+        if not chain or not len(self._bank_keys):
+            return None
+        inputs, ids, orders = self._bank_inputs(chain)
+        return self._prediction(inputs, ids, orders)
+
+    @torch.compiler.disable
+    def expect_next_meaning(self, b=0, *, record=True, work=None, frames=(),
+                            frame_occurrences=(),
+                            refresh=False, reference_frames=()):
+        if self._external_observations_suspended or not self.expectation_enabled:
+            return None
+        b = int(b)
+        pending = self._inter_last_meaning[b]
+        if not refresh and pending is not None:
+            return pending.prediction
+        chain = list(self._inter_context[b])
+        lanes = list(self._inter_context_lanes[b])
+        occurrences = list(self._inter_context_occurrences[b])
+        if len(chain) != len(occurrences):
+            raise RuntimeError('expectation context occurrence view is out of sync')
+        if work is not None:
+            work.require('record', len(chain))
+        if not chain or not len(self._bank_keys):
+            return None
+        retrieved = [(int(m.role_mask.sum()), m.roles.detach(), m.role_mask) for m in frames]
+        if retrieved:
+            chain = (chain[:-1] + retrieved + chain[-1:])[-self._inter_chain_window:]
+            # Retrieved frames carry their own evidence when supplied. Missing
+            # evidence uses the ordinary positive observation convention.
+            lanes = (lanes[:-1] + [getattr(m, 'evidence', None) for m in frames]
+                     + lanes[-1:])[-self._inter_chain_window:]
+        inputs, ids, orders = self._bank_inputs(chain, lanes)
+        bindings, scope = (), ()
+        if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
+            index = self._ltm_store._index_occurrences.get(occurrences[-1])
+            source = None if index is None else self._ltm_store.meaning_of(index)
+            if source is not None:
+                bindings, scope = source.bindings, source.scope
+        prediction = self._prediction(inputs, ids, orders, bindings=bindings, scope=scope)
+        if record:
+            document = self._expectation_documents[b]
+            self._inter_last_meaning[b] = _PendingMeaningExpectation(prediction,
+                tuple(dict.fromkeys(x for x in (*occurrences, *frame_occurrences) if x is not None)),
+                ('external', document), document, inputs, self._prediction_versions(),
+                tuple(reference_frames))
+        return prediction
+
+    def _activation_target(self, prediction, roles, occupied, lanes=None):
+        from Expectation import symbol_activations
+        return symbol_activations(prediction.symbol_keys[None], roles.detach()[None],
+                                  occupied[None], None if lanes is None else lanes[None])[0]
+
+    def _score(self, pending, roles, occupied, errors, *, row=None, evidence=None):
+        prediction = pending.prediction
+        lanes = None if evidence is None else roles.new_tensor(evidence).expand(3, 2)
+        target = self._activation_target(prediction, roles, occupied, lanes)
+        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs, replay=True))[0]
+        from Meaning import withheld_symbols
+        withheld = withheld_symbols(prediction, prediction)
+        residual = (logits.sigmoid() - target) * (1.-withheld[:, None])
+        errors.error('activation', residual.square(), torch.ones_like(target),
+                     row=row, category='expectation')
+        return residual.square().mean()
+
+    @torch.compiler.disable
+    def observe_stm_end_state(self, depths, payloads, tetralemmas=None, mask=None, *,
+                              documents=None, layout='stm', role_masks=None,
+                              train_prediction=True, sentence_kinds=None, evidence=None):
+        if self._external_observations_suspended or payloads is None:
+            return
+        self._prepare_expectation_documents(documents, mask, len(payloads))
+        for b, payload in enumerate(payloads):
+            if payload is None or int(depths[b]) == 0 or (mask is not None and not bool(mask[b])):
+                continue
+            roles, occupied = self._canonical_meaning(payload, depths[b], layout,
+                None if role_masks is None else role_masks[b])
+            if not bool(occupied.any()):
+                continue
+            pending = self._inter_last_meaning[b]
+            self._last_expectation_comparisons[b] = None
+            if self.expectation_enabled:
+                stats = self._expectation_stats
+                stats['observations'] += 1
+                stats['cold_starts'] += int(pending is None)
+                if pending is not None:
+                    prediction = pending.prediction.detached()
+                    pair = None if evidence is None else evidence[b]
+                    lanes = None if pair is None else roles.new_tensor(pair).expand(3, 2)
+                    target = self._activation_target(prediction, roles, occupied, lanes)
+                    residual = target - prediction.expected_activation
+                    self._last_expectation_comparisons[b] = ExpectationComparison(
+                        prediction, roles.detach().clone(), occupied.detach().clone(),
+                        residual, self._expectation_documents[b],
+                        pending.source_occurrences, pending.stream,
+                        None if sentence_kinds is None else sentence_kinds[b], target)
+                    stats['predicted_targets'] += 1
+                    stats['feature_sum'] += float(residual.square().mean())
+                    for order in prediction.symbol_orders.unique().tolist():
+                        selected = prediction.symbol_orders == order
+                        total, count = self._order_errors.get(int(order), (0., 0))
+                        self._order_errors[int(order)] = (total + float(residual[selected].square().sum()),
+                                                         count + int(selected.sum()) * 2)
+                    if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
+                        step = self._score(pending, roles, occupied, self._inter_errors, evidence=pair)
+                        self._inter_loss_accum = step if self._inter_loss_accum is None else self._inter_loss_accum + step
+                        self._inter_loss_count += 1
+                self._inter_context[b].append((int(occupied.sum()), roles.detach().clone(), occupied.detach().clone()))
+                pair = None if evidence is None else evidence[b]
+                self._inter_context_lanes[b].append(None if pair is None else tuple(float(x) for x in pair))
+                self._inter_context_occurrences[b].append(None)
+            self._inter_last_meaning[b] = self._inter_last_pred_root[b] = None
+            if self._ltm_store is None:
+                depth = int(occupied.nonzero()[-1]) + 1
+                self._stm_end_states[b].append((depth, roles[:depth].detach().clone(),
+                    None if tetralemmas is None else tetralemmas[b]))
+
+    @torch.compiler.disable
+    def predict_and_observe_stm_end_state(self, depths, payloads, tetralemmas=None, mask=None, **kwargs):
+        if self._external_observations_suspended or payloads is None:
+            return
+        self._prepare_expectation_documents(kwargs.get('documents'), mask, len(payloads))
+        for b in range(len(payloads)):
+            if mask is None or bool(mask[b]):
+                self.expect_next_meaning(b)
+        self.observe_stm_end_state(depths, payloads, tetralemmas, mask, **kwargs)
+
+    def predict_next_end_state(self, b=0):
+        prediction = self.expect_next_meaning(b)
+        return None if prediction is None else (1, prediction.roles[:1])
+
+    def sentence_prediction_cost(self, depths, payloads, mask, *, documents=None,
+                                 layout='stm', role_masks=None, sentence_kinds=None, gain=1., evidence=None):
+        self._prepare_expectation_documents(documents, mask, len(payloads))
+        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+        errors = Error(row_mask=mask)
+        self._sentence_prediction_errors = errors
+        self._sentence_comparison_errors = errors
+        like = next(self._inter_predictor.parameters())
+        costs = []
+        try:
+            for b, payload in enumerate(payloads):
+                cost = like.new_zeros(())
+                if payload is not None and bool(mask[b]) and int(depths[b]) > 0:
+                    prediction = self.expect_next_meaning(b)
+                    if prediction is not None:
+                        roles, occupied = self._canonical_meaning(payload, depths[b], layout,
+                            None if role_masks is None else role_masks[b])
+                        cost = self._score(self._inter_last_meaning[b], roles, occupied, errors, row=b,
+                            evidence=None if evidence is None else evidence[b])
+                costs.append(cost)
+            pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+            return torch.stack(costs), pending
+        finally:
+            self._inter_last_meaning, self._inter_last_pred_root = before
+
+    def migrate_expectation_checkpoint(self, state_dict, prefix=''):
+        head = prefix + '_inter_predictor.'
+        old = [key for key in state_dict if key.startswith(prefix + 'predictor.')
+               or key.startswith(prefix + 'word_predictor.')
+               or key.startswith(prefix + 'cast.')
+               or (key.startswith(head) and not key.startswith((head+'context.', head+'local.')))]
+        if not old:
+            return False
+        for key in old:
+            del state_dict[key]
+        for name, value in self._inter_predictor.state_dict().items():
+            state_dict.setdefault(head+name, value.detach().clone())
+        warnings.warn('retired sentence/ARMA heads migrated to a fresh shared activation predictor', UserWarning)
+        return True
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        self.Reset()
+        self.migrate_expectation_checkpoint(state_dict, prefix)
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+    def reset_expectation_metrics(self):
+        self._expectation_stats = dict(observations=0, cold_starts=0, predicted_targets=0,
+                                      document_starts=0, feature_sum=0.)
+        self._order_errors = {}
+
+    def expectation_metrics(self):
+        stats = self._expectation_stats
+        return {**stats, 'enabled': self.expectation_enabled, 'scope': 'symbols',
+                'activation_mse': stats['feature_sum']/stats['predicted_targets'] if stats['predicted_targets'] else None,
+                'per_order_mse': {order: total/count for order, (total, count) in self._order_errors.items()},
+                'document_boundary_fraction': stats['document_starts']/max(1, stats['observations'])}
+
+    def last_expectation_comparison(self, b=0):
+        from dataclasses import replace
+        value = self._last_expectation_comparisons[int(b)]
+        if value is None:
+            return None
+        return replace(value, estimate=value.estimate.detached(), observed=value.observed.clone(),
+                       occupied=value.occupied.clone(), residual=value.residual.clone(),
+                       activation=None if value.activation is None else value.activation.clone())
+
+    def set_expectation_enabled(self, enabled):
+        enabled = bool(enabled)
+        if enabled != self.expectation_enabled:
+            self.Reset()
+        self.expectation_enabled = enabled
+        self.enabled_levels = tuple(level for level in self.levels
+                                    if enabled or level == 'word')
+
+
+
+    def Reset(self, batch=None, hard=True):
+        if not hard:
+            return
+        for b in range(self._batch) if batch is None else (int(batch),):
+            self._stm_end_states[b].clear()
+            self._inter_context[b].clear()
+            self._inter_context_lanes[b].clear()
+            self._inter_context_occurrences[b].clear()
+            self._inter_last_meaning[b] = self._inter_last_pred_root[b] = None
+            self._last_expectation_comparisons[b] = None
+            self._expectation_documents[b] = None
+        if batch is None:
+            self._inter_loss_accum, self._inter_loss_count, self._inter_errors = None, 0, Error()
+    reset = Reset
+
+    def __len__(self):
+        return max((len(chain) for chain in self._inter_context), default=0)
+
+    def latest(self, b=0):
+        chain = self._inter_context[int(b)]
+        return None if not chain else chain[-1][1]
+
+
+
 
     def _prepare_expectation_documents(self, documents, mask, batch):
         self.ensure_batch(batch)
@@ -11017,210 +10877,16 @@ class BracketExpectation(Layer):
             if mask is None or bool(mask[b]):
                 self.begin_document(b, document)
 
+
     def _canonical_meaning(self, payload, depth, layout, role_mask=None):
         """Adapt an explicit STM or infix layout; no inferred role permutation."""
         return canonical_role_payload(payload, depth, layout, role_mask,
                                       concept_dim=self.concept_dim)
 
-    def _prediction_inputs(self, inputs, *, replay=False):
-        """Detach older context and replay sources; keep ordinary current credit."""
-        roles, occupied = inputs
-        latest = roles[:, -1].detach() if replay else roles[:, -1]
-        return torch.cat((roles[:, :-1].detach(), latest[:, None]), 1), occupied.detach()
 
     def _prediction_versions(self):
         return tuple(p._version for p in self._inter_predictor.parameters())
 
-    def _prediction_coordinates(self, predicted, target):
-        return predicted, target.detach()
-
-    @torch.compiler.disable
-    def expect_next_meaning(self, b=0, *, record=True, work=None,
-                            frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False,
-                            reference_frames=()):
-        """Return the complete prior estimate, or None at a cold boundary.
-
-        Reading an already staged estimate does not replace it. ``refresh``
-        is reserved for the explicit prior-only query phase, before input.
-        Source occurrences and optional retrieved frames are its only context.
-        """
-        if self._external_observations_suspended or not self.expectation_enabled:
-            return None
-        if self.expectation_scope != "structured":
-            raise RuntimeError("complete meanings require structured prediction")
-        b = int(b)
-        pending = self._inter_last_meaning[b]
-        if not refresh and isinstance(pending, _PendingMeaningExpectation):
-            return pending.prediction
-        if work is not None:
-            work.require("record", len(self._inter_context[b]))
-        chain = list(self._inter_context[b])
-        occurrences = list(self._inter_context_occurrences[b])
-        if len(occurrences) != len(chain):
-            raise RuntimeError("expectation context occurrence view is out of sync")
-        if not chain or self._inter_predictor is None:
-            if record:
-                self._inter_last_meaning[b] = None
-            return None
-        parameter = next(self._inter_predictor.parameters())
-        zero = parameter.new_zeros(3, self.concept_dim)
-        empty = torch.zeros(3, dtype=torch.bool, device=parameter.device)
-        # Queried frames are detached extra prior context, never observations.
-        # Preserve the latest actual meaning; retrieved frames occupy older
-        # context positions on the same bounded predictor, with no new head.
-        query_context = [(int(m.role_mask.sum()), m.roles.detach(), m.role_mask)
-                         for m in tuple(frames)[:self._inter_chain_window - 1]]
-        if query_context:
-            chain = (chain[:-1] + query_context + chain[-1:])[-self._inter_chain_window:]
-        pad = self._inter_chain_window - len(chain)
-        roles = [zero] * pad + [p.to(parameter) for _, p, _ in chain]
-        masks = [empty] * pad + [m.to(parameter.device) for _, _, m in chain]
-        inputs = (torch.stack(roles)[None], torch.stack(masks)[None])
-        values, logits, kind_logits = self._inter_predictor(*self._prediction_inputs(inputs))
-        if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()
-                    and torch.isfinite(kind_logits).all()):
-            raise FloatingPointError("non-finite structured sentence prediction")
-        # Metadata comes only from an already retained source occurrence.
-        # The arriving target's bindings/scope are not an input to this call.
-        bindings, scope = (), ()
-        if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
-            reference = occurrences[-1]
-            index = self._ltm_store._index_occurrences.get(reference)
-            source = None if index is None else self._ltm_store.meaning_of(index)
-            if source is not None:
-                bindings, scope = source.bindings, source.scope
-        prediction = MeaningExpectation(values[0], logits[0], bindings, scope, kind_logits[0])
-        if record:
-            document = self._expectation_documents[b]
-            self._inter_last_meaning[b] = _PendingMeaningExpectation(
-                prediction,
-                tuple(dict.fromkeys(reference for reference in (*occurrences, *frame_occurrences)
-                                    if reference is not None)),
-                ("external", document), document, inputs,
-                self._prediction_versions(),
-                tuple(policy), int(policy_work), tuple(reference_frames))
-        return prediction
-
-    def _observe_meanings(self, depths, payloads, tetralemmas, mask,
-                          layout, role_masks, train_prediction=True, sentence_kinds=None):
-        for b, payload in enumerate(payloads):
-            if mask is not None and not bool(mask[b]):
-                continue
-            if payload is None or int(depths[b]) == 0:
-                continue
-            roles, occupied = self._canonical_meaning(
-                payload, depths[b], layout,
-                None if role_masks is None else role_masks[b])
-            if not bool(occupied.any()):
-                continue
-            if not self.expectation_enabled:
-                if self._ltm_store is None:
-                    trust = None if tetralemmas is None else tetralemmas[b]
-                    self._stm_end_states[b].append(
-                        (int(occupied.sum()), roles.detach().clone(), trust))
-                continue
-            pending = self._inter_last_meaning[b]
-            if isinstance(pending, _PendingMeaningExpectation) and pending.walk is not None:
-                from WalkTrials import select_forecast
-                pending = select_forecast(pending, roles, occupied,
-                    None if sentence_kinds is None else sentence_kinds[b])
-            if isinstance(pending, _PendingMeaningExpectation) and pending.comparison is not None:
-                self._expectation_walk_outcomes.append((b, pending.comparison))
-            prediction = (pending.prediction
-                          if isinstance(pending, _PendingMeaningExpectation)
-                          else pending)
-            self._expectation_stats["observations"] += 1
-            if prediction is None:
-                self._expectation_stats["cold_starts"] += 1
-            if prediction is not None:
-                target = roles.detach().to(prediction.roles)
-                target_mask = occupied.to(prediction.roles.device)
-                squared = (prediction.roles - target).square()
-                mse = squared.mean()
-                presence = F.binary_cross_entropy_with_logits(
-                    prediction.presence_logits, target_mask.to(prediction.roles.dtype))
-                kind = None if sentence_kinds is None else sentence_kinds[b]
-                kind_loss = self._kind_loss(prediction.kind_logit, kind, mse)
-                if not bool(torch.isfinite(mse) and torch.isfinite(presence)
-                            and torch.isfinite(kind_loss)):
-                    raise FloatingPointError("non-finite structured prediction loss")
-                self._expectation_stats["predicted_targets"] += 1
-                self._expectation_stats["feature_sum"] += float(mse.detach())
-                self._expectation_stats["presence_sum"] += float(presence.detach())
-                if kind is not None:
-                    self._expectation_stats['kind_targets'] += 1
-                    self._expectation_stats['kind_sum'] += float(kind_loss.detach())
-                estimate = prediction.detached()
-                actual = target.detach().clone()
-                self._last_expectation_comparisons[b] = ExpectationComparison(
-                    estimate, actual, target_mask.detach().clone(),
-                    actual - estimate.roles,
-                    target_mask.to(actual.dtype) - estimate.presence_logits.sigmoid(),
-                    self._expectation_documents[b],
-                    (pending.source_occurrences
-                     if isinstance(pending, _PendingMeaningExpectation) else ()),
-                    (pending.stream
-                     if isinstance(pending, _PendingMeaningExpectation) else None), kind,
-                    None if kind is None or estimate.kind_logit is None else
-                    (float(kind == 'relation') - estimate.kind_logit.sigmoid()))
-                train_roles, train_logits = prediction.roles, prediction.presence_logits
-                train_kind = prediction.kind_logit
-                if (train_prediction and self.training and torch.is_grad_enabled()
-                        and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
-                    if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
-                            and (not prediction.roles.requires_grad or pending.versions != self._prediction_versions())):
-                        # A delayed estimate remains unchanged as evidence.
-                        # Both residual and contrastive objectives train the
-                        # current predictor from the frozen prior, never an
-                        # old parameter version's graph.
-                        replay, logits, kinds = self._inter_predictor(
-                            *self._prediction_inputs(pending.inputs, replay=True))
-                        train_roles, train_logits = replay[0], logits[0]
-                        train_kind = kinds[0]
-                if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
-                    predicted_coordinates, target_coordinates = self._prediction_coordinates(train_roles, target)
-                    step = (predicted_coordinates - target_coordinates).square().mean() + F.binary_cross_entropy_with_logits(
-                        train_logits, target_mask.to(train_logits))
-                    step = step + self._kind_loss(train_kind, kind, step)
-                    self._inter_loss_accum = (step if self._inter_loss_accum is None
-                                              else self._inter_loss_accum + step)
-                    self._inter_loss_count += 1
-                    errors = self._inter_error_registry()
-                    errors.squared('roles', predicted_coordinates, target_coordinates, category='expectation')
-                    errors.binary('presence', train_logits, target_mask.to(train_logits), category='expectation')
-                    if kind is not None:
-                        errors.binary('kind', train_kind, train_kind.new_tensor(float(kind == 'relation')),
-                                      category='expectation')
-                if (isinstance(pending, _PendingMeaningExpectation) and pending.policy
-                        and self.training and torch.is_grad_enabled()):
-                    self._expectation_policy_outcomes.append((
-                        pending.policy, -float((mse + presence + kind_loss).detach()), pending.work))
-                if train_prediction and self._inter_contrastive_weight > 0:
-                    self._accumulate_inter_contrastive(
-                        train_roles.flatten(), target.flatten(),
-                        [p.detach().to(target).flatten() for _, p, _ in self._inter_context[b]])
-            context = roles.clone()
-            if (not train_prediction or not self.training or not torch.is_grad_enabled()
-                    or (self._inter_loss_weight <= 0 and self._inter_contrastive_weight <= 0)):
-                context = context.detach()
-            depth = int(occupied.sum())
-            self._inter_context[b].append((depth, context, occupied.detach().clone()))
-            self._inter_context_occurrences[b].append(None)
-            self._inter_last_meaning[b] = None
-            self._inter_last_pred_root[b] = None
-            if self._ltm_store is None:
-                trust = None if tetralemmas is None else tetralemmas[b]
-                self._stm_end_states[b].append((depth, roles.detach().clone(), trust))
-
-    @staticmethod
-    def _kind_loss(logit, kind, like):
-        if kind not in (None, 'idea', 'relation'):
-            raise ValueError('sentence kind must come from the selected grammar')
-        if kind is None:
-            return like.new_zeros(())
-        if logit is None:
-            raise ValueError('grammatical kind requires a prediction logit')
-        return F.binary_cross_entropy_with_logits(logit, logit.new_tensor(float(kind == 'relation')))
 
     @torch.compiler.disable
     def bind_observation_occurrence(self, b, occurrence):
@@ -11258,6 +10924,7 @@ class BracketExpectation(Layer):
                                          where=store.where[index].detach().clone(),
                                          when=store.when[index].detach().clone())
 
+
     def situation_references(self, b=0):
         """Only the bounded frames the predictor already holds; no LTM read."""
         from ReferenceContext import SituationFrame
@@ -11267,285 +10934,6 @@ class BracketExpectation(Layer):
                   if isinstance(value, SituationFrame)]
         return tuple(frames[-self._inter_chain_window:])
 
-    def migrate_expectation_checkpoint(self, state_dict, prefix=""):
-        """Declare root-to-structured migration without guessing shared weights.
-
-        The root predictor has different input/target semantics and parameter
-        shapes. Retain the newly constructed structured head, discard only the
-        retired head's keys, and leave every other weight intact. The model's
-        optimizer name manifest likewise starts the new head without old moments.
-        """
-        word=prefix+'word_predictor.'
-        if (prefix+'predictor.0.weight' in state_dict
-                and not any(name.startswith(word) for name in state_dict)):
-            for name,value in self.word_predictor.state_dict().items():
-                state_dict[word+name]=value.detach().clone()
-        head = prefix + "_inter_predictor."
-        if (self.expectation_scope != "structured"
-                or not any(k.startswith(head + "pi.") for k in state_dict)):
-            return False
-        for key in [k for k in state_dict if k.startswith(head)]:
-            del state_dict[key]
-        for name, value in self._inter_predictor.state_dict().items():
-            state_dict[head + name] = value.detach().clone()
-        warnings.warn("root sentence predictor migrated to a fresh structured head", UserWarning)
-        return True
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        # Retired comprehension projection: no replacement parameter or owner.
-        for key in tuple(state_dict):
-            if key.startswith(prefix + "cast."):
-                del state_dict[key]
-        # Model restoration is a new external-observation stream. Durable
-        # records are owned separately; neither those nor provisioned facts
-        # are eligible predecessors for this transient prediction context.
-        for chain in self._inter_context:
-            chain.clear()
-        for chain in self._inter_context_occurrences:
-            chain.clear()
-        self._expectation_documents = [None] * self._batch
-        self._last_expectation_comparisons = [None] * self._batch
-        self.reset_expectation_metrics()
-        self._inter_last_meaning = [None] * self._batch
-        self._inter_last_pred_root = [None] * self._batch
-        self._expectation_policy_outcomes = []
-        self._expectation_walk_outcomes = []
-        self._inter_loss_accum = self._inter_contrastive_accum = None
-        self._inter_loss_count = self._inter_contrastive_count = 0
-        self._s_history.zero_()
-        self._e_history.zero_()
-        self._s_count.zero_()
-        self._e_count.zero_()
-        self.migrate_expectation_checkpoint(state_dict, prefix)
-        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
-                                     missing_keys, unexpected_keys, error_msgs)
-
-    @torch.compiler.disable
-    def observe_stm_end_state(
-            self, depths, payloads, tetralemmas=None, mask=None, *,
-            documents=None, layout="stm", role_masks=None, train_prediction=True,
-            sentence_kinds=None):
-        """Append one STM end-state PER ROW to the LTM chain.
-
-        Called from the sentence-boundary hook AFTER the reduce /
-        relative-preserve step has decided each row's end-state. EVERY
-        sentence's end state supplies the inter-sentence predictor. External
-        provenance supplies trust; grammar supplies the field's structure.
-
-        Args:
-          depths: ``[B]`` ints/long tensor (or python sequence) — the
-            end-state depth for each row (1 for an absolute sentence, 3
-            for a relative ``[predicate, idea1, idea2]`` end-state).
-          payloads: ragged list of length ``B``; ``payloads[b]`` is the
-            ``[depth_b, D]`` tensor of the end-state slots for row ``b``
-            (since depths differ per row a ragged list is natural, not a
-            single padded tensor).
-          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The per-row
-            scalar trust to store with the end-state; ``None`` (the default)
-            parks ``None`` in every row's trust slot.
-
-        Stored per row as a time-ordered tuple
-        ``(depth:int, payload:[depth,D] tensor, trust:float|None)``.
-        Bounded at ``ltm_capacity`` (deque ``maxlen``): the oldest
-        end-state is evicted once the chain is full.
-
-        Fail-loud: a non-finite (NaN/Inf) payload RAISES — a corrupt
-        end-state must never be silently stored (user memory:
-        "fail loud on numerical divergence").
-        """
-        if self._external_observations_suspended or depths is None or payloads is None:
-            return
-        self._prepare_expectation_documents(documents, mask, len(payloads))
-        if self.expectation_scope == "structured":
-            return self._observe_meanings(
-                depths, payloads, tetralemmas, mask, layout, role_masks, train_prediction,
-                sentence_kinds)
-        # Normalise ``depths`` to a python list of ints without forcing
-        # a per-row host sync inside any captured region (this method is
-        # ``@torch.compiler.disable``'d and boundary-only, so a single
-        # ``.tolist()`` host hop here is fine).
-        if isinstance(depths, torch.Tensor):
-            depth_list = [int(d) for d in depths.detach().reshape(-1).tolist()]
-        else:
-            depth_list = [int(d) for d in depths]
-        B = len(payloads)
-        if mask is None:
-            active_rows = [True] * B
-        elif isinstance(mask, torch.Tensor):
-            active_rows = [
-                bool(value)
-                for value in mask.detach().reshape(-1).to("cpu").tolist()]
-        else:
-            active_rows = [bool(value) for value in mask]
-        if len(self._stm_end_states) != B:
-            # The chain list lags an un-cascaded batch reshape; grow /
-            # shrink to match this boundary's row count. (ensure_batch
-            # normally keeps these in lockstep; this is defensive.)
-            self.ensure_batch(B)
-        for b in range(B):
-            if b >= len(active_rows) or not active_rows[b]:
-                continue
-            payload = payloads[b]
-            depth = depth_list[b] if b < len(depth_list) else (
-                int(payload.shape[0]) if payload is not None else 0)
-            if payload is not None:
-                if not torch.isfinite(payload).all():
-                    raise FloatingPointError(
-                        "BracketExpectation.observe_stm_end_state: row "
-                        f"{b} STM end-state payload contains NaN/Inf "
-                        "(depth={}, shape={}). Refusing to store a "
-                        "corrupt end-state in the LTM chain."
-                        .format(depth, tuple(payload.shape)))
-                # L_inter (Task 8, plan §9): if a prediction was made for
-                # THIS row's end-state (``predict_next_end_state`` stashed a
-                # live predicted root on ``_inter_last_pred_root[b]``), score
-                # it against the end-state that actually arrived. Compare the
-                # predicted ROOT against the actual end-state's ROOT (the
-                # OLDEST slot under newest-at-slot-0, via
-                # ``_reduce_end_state_to_root``; reduced to the predictor
-                # width) — this is robust to a depth mismatch between
-                # prediction and reality (the plan's "when depths differ,
-                # compare roots"). The actual root is DETACHED
-                # so this comparison cannot move its observed target. Live
-                # preceding context may train its encoder. Score before the
-                # payload's slot-0 is available; the target is detached
-                # regardless.
-                if (train_prediction and self._inter_predictor is not None
-                        and b < len(self._inter_last_pred_root)
-                        and self._inter_last_pred_root[b] is not None):
-                    pd = payload.detach()
-                    if (self._ltm_store is not None and pd.dim() == 2
-                            and pd.shape[0] >= 2):
-                        # Consolidated: the incoming payload is STM-order
-                        # [idea2, idea1, predicate] (newest-at-slot-0); the AR
-                        # root is idea1 (slot depth-2). Wrap as [1, D] so
-                        # _reduce (consolidated -> slot 0) returns it, matching
-                        # the infix slot-0 root in _inter_context (so source
-                        # and actual roots agree).
-                        actual_root = self._reduce_end_state_to_root(
-                            pd[pd.shape[0] - 2].unsqueeze(0))
-                    else:
-                        actual_root = self._reduce_end_state_to_root(pd)
-                    pred_root = self._inter_last_pred_root[b]
-                    if actual_root is not None:
-                        actual_root = actual_root.to(
-                            device=pred_root.device, dtype=pred_root.dtype)
-                        self._accumulate_inter_loss(pred_root, actual_root)
-                        # InfoNCE: rank the actual next root above the chain's
-                        # PAST roots (negatives) under cosine(pred, .). Best-
-                        # effort -- a short/odd chain just yields fewer
-                        # negatives (the accumulator no-ops with none; the MSE
-                        # term above still runs). Gated by the contrastive weight.
-                        if float(getattr(self, "_inter_contrastive_weight",
-                                         0.0)) > 0.0:
-                            negs = []
-                            try:
-                                for (_d, _pl, _t) in self._inter_context[b]:
-                                    _rt = self._reduce_end_state_to_root(_pl)
-                                    if _rt is not None and torch.is_tensor(_rt):
-                                        negs.append(_rt.detach().to(
-                                            device=pred_root.device,
-                                            dtype=pred_root.dtype))
-                            except Exception:
-                                negs = []
-                            self._accumulate_inter_contrastive(
-                                pred_root, actual_root.detach(), negs)
-                context = payload.clone()
-                if self._ltm_store is not None and context.dim() == 2 and depth >= 3:
-                    context = torch.stack(
-                        (context[depth - 2], context[depth - 1], context[0]))
-                if (not train_prediction or not self.training or not torch.is_grad_enabled()
-                        or (self._inter_loss_weight <= 0
-                            and self._inter_contrastive_weight <= 0)):
-                    context = context.detach()
-                self._inter_context[b].append((int(depth), context, None))
-                self._inter_context_occurrences[b].append(None)
-                # Detach + clone so the stored end-state is a stable
-                # snapshot decoupled from the live STM buffer (which the
-                # next sentence overwrites in place) and carries no
-                # autograd history into the host-side ring.
-                payload = payload.detach().clone()
-            # The pending prediction for this row has now been scored (or
-            # there was none); clear it so a row that observes WITHOUT a
-            # fresh predict_next_end_state isn't double-counted next time.
-            if b < len(self._inter_last_pred_root):
-                self._inter_last_pred_root[b] = None
-            tet = None
-            if tetralemmas is not None and b < len(tetralemmas):
-                tet = tetralemmas[b]
-            # The host appends consolidated durable observations once to
-            # ltm_store. Skip the duplicate durable deque; the prediction
-            # cycle above uses its scoped, transient observation view.
-            if self._ltm_store is None:
-                self._stm_end_states[b].append((int(depth), payload, tet))
-
-    @torch.compiler.disable
-    def predict_and_observe_stm_end_state(
-            self, depths, payloads, tetralemmas=None, mask=None, *,
-            documents=None, layout="stm", role_masks=None, sentence_kinds=None):
-        """Stage the next-end-state prediction THEN observe the arriving
-        end-state, in one call — the foolproof AR ordering for the TRAINING
-        sentence-boundary hook.
-
-        The two-call staging protocol (``predict_next_end_state`` then
-        ``observe_stm_end_state``) is correct but easy to get wrong: the
-        training boundary hook historically called only ``observe`` and so
-        never staged a prediction, leaving ``L_inter`` permanently empty (the
-        inter-predictor never trained). This method makes the order
-        impossible to get wrong by composing the two existing pieces.
-
-        AR order (the WHOLE point): for EVERY batch row, run
-        ``predict_next_end_state(b)`` FIRST — predicting from the chain state
-        BEFORE this boundary's end-state is appended, so the prediction is
-        genuinely "the next end-state from history". THEN call
-        ``observe_stm_end_state`` once for the whole batch — which scores each
-        row's just-staged prediction against the end-state that actually
-        arrived (accumulating ``L_inter``) and only then appends it to the
-        chain. No double-append, no double-score: prediction reads the old
-        chain, observation supervises against the new end-state and grows the
-        chain by exactly one per row.
-
-        Args / semantics are identical to ``observe_stm_end_state`` (see its
-        docstring) — this is purely the correct ordering wrapper. Cold-start
-        safety is inherited unchanged: the first sentence predicts from an
-        empty chain (degenerate zeros root, ``_inter_last_pred_root[b]``
-        cleared to ``None``), so ``observe`` finds nothing pending to score
-        and just appends — exactly as the staged path degenerates today. When
-        there is no inter-predictor (``sentenceExpectation`` off / absolute-
-        only configs) ``predict_next_end_state`` returns ``None`` and stages
-        nothing, so this degenerates to a bare ``observe`` — byte-identical
-        to the pre-change boundary behaviour.
-        """
-        if self._external_observations_suspended or depths is None or payloads is None:
-            return
-        self._prepare_expectation_documents(documents, mask, len(payloads))
-        # Stage the next-end-state prediction for EVERY row from the chain
-        # state BEFORE the new end-states are appended (``observe`` below does
-        # the appends). ``predict_next_end_state`` records the live predicted
-        # root on ``_inter_last_pred_root[b]`` (or clears it on cold start /
-        # no predictor), which ``observe_stm_end_state`` then scores.
-        if self._inter_predictor is not None:
-            B = len(payloads)
-            if mask is None:
-                active_rows = [True] * B
-            elif isinstance(mask, torch.Tensor):
-                active_rows = [
-                    bool(value)
-                    for value in mask.detach().reshape(-1).to("cpu").tolist()]
-            else:
-                active_rows = [bool(value) for value in mask]
-            for b in range(B):
-                if b < len(active_rows) and active_rows[b]:
-                    self.predict_next_end_state(b)
-        # Score each staged prediction against the arriving end-state
-        # (accumulating ``L_inter``) and append to the chain. Reusing the
-        # existing method keeps the fail-loud / detach / ragged-payload /
-        # tetralemma handling identical and avoids any duplication.
-        self.observe_stm_end_state(
-            depths, payloads, tetralemmas=tetralemmas, mask=mask,
-            documents=documents, layout=layout, role_masks=role_masks,
-            sentence_kinds=sentence_kinds)
 
     def get_stm_chain(self, n=None, b=0):
         """A stream's durable rows in store order, oldest first.
@@ -11583,254 +10971,6 @@ class BracketExpectation(Layer):
         # Last ``n``, preserving time order.
         return list(chain)[-n:]
 
-    # -- inter-sentence next-end-state prediction (Task 8, plan §9) -----
-    def _reduce_end_state_to_root(self, payload):
-        """Reduce one (ragged-depth) end-state payload ``[depth, D]`` to a
-        single representative ``[D]`` vector: its ROOT.
-
-        The chain's payloads are ragged (depth 1 for an absolute end-state,
-        depth 3 for a relative ``[predicate, idea1, idea2]`` end-state). To
-        feed a FIXED-width ``[1, K, D]`` context into the predictor we
-        collapse each end-state to ONE vector.
-
-        Newest-at-slot-0 convention: the STM end-state is stored
-        newest-first, so the root/predicate lives at the OLDEST slot
-        (index ``depth-1``), NOT slot 0. We take that last slot — for an
-        absolute end-state (depth 1) it is slot 0 (the collapsed idea), and
-        for a relative end-state (depth 3) it is slot 2, the predicate (the
-        head the relative structure hangs off). This recovers the SAME root
-        vector the old oldest-first ``x[0]`` read returned. (Documented
-        reduction; mean-over-depth is the obvious alternative but the root
-        carries the sentence-level signal.)
-
-        Right-pads / left-truncates to ``concept_dim`` so a chain payload
-        whose D differs from the predictor's width stays well-defined.
-        """
-        if payload is None:
-            return None
-        x = payload
-        if x.dim() == 1:
-            root = x
-        elif x.dim() == 2 and x.shape[0] >= 1:
-            if self._ltm_store is not None:
-                # Consolidated / INFIX payloads [idea1, predicate, idea2]: the
-                # AR root is idea1 (slot 0) -- the subject/topic, present even
-                # when there is no predicate (Alec 2026-06-18, infix order).
-                root = x[0]
-            else:
-                root = x[x.shape[0] - 1]             # legacy newest-at-slot-0: oldest slot
-        else:
-            return None
-        D = int(self._inter_predictor.concept_dim)
-        cur = int(root.shape[-1])
-        if cur == D:
-            return root
-        if cur > D:
-            return root[:D]
-        return F.pad(root, (0, D - cur))
-
-    @torch.compiler.disable
-    def predict_next_end_state(self, b=0):
-        """Predict the SHAPE of the next STM end-state from the LTM chain.
-
-        Returns ``(depth_hat:int, payload_hat:[depth_hat, D] tensor)`` where
-        ``depth_hat`` is the predicted depth of the next end-state and
-        ``payload_hat`` is the predicted end-state slots. Runs the
-        inter-level ``IntraSentenceLayer`` (``self._inter_predictor``) over
-        the chain's last-``K`` end-state ROOTS (``K`` = ``_inter_chain_window``)
-        to produce the predicted ROOT, then broadcasts that root across
-        ``depth_hat`` slots.
-
-        Mechanism:
-          * **Chain reduction** (ragged -> fixed): reduce each of the last
-            ``K`` end-states to its root (``_reduce_end_state_to_root`` —
-            the OLDEST slot under newest-at-slot-0)
-            to form a ``[1, K, D]`` context, LEFT-padding with zeros when the
-            chain is shorter than ``K`` (so the most-recent end-state is
-            always at the tail, mirroring the ARMA ring's newest-at-``-1``).
-          * **Root prediction**: ``self._inter_predictor.forward(context,
-            routing=None, parallel=False)`` -> ``[1, D]``, the predicted root
-            of the next end-state.
-          * **depth_hat**: a simple AR prior — the depth of the MOST RECENT
-            end-state in the chain (a relative sentence tends to be followed
-            by structure of the same shape; an absolute by an absolute). The
-            test only requires ``depth in {1, 3}`` + finite payload; this AR
-            prior delivers exactly that without a separate learned head.
-            (Documented: a tiny ``concept_dim -> 2`` argmax head is the
-            richer alternative; the AR prior is the agreed scaffold.)
-          * **payload_hat**: the predicted root broadcast across
-            ``depth_hat`` slots -> ``[depth_hat, D]``.
-
-        Cold start (empty chain): returns ``(1, zeros[1, D])`` — a
-        well-defined degenerate shape the caller can stage or ignore.
-
-        Records the predicted root on ``_inter_last_pred_root[b]`` so the
-        next ``observe_stm_end_state`` can score it (``L_inter``).
-
-        Fail-loud: a non-finite predicted root RAISES (user memory: fail
-        loud on numerical divergence).
-        """
-        if (self._external_observations_suspended or not self.expectation_enabled
-                or self._inter_predictor is None):
-            return None
-        if self.expectation_scope == "structured":
-            prediction = self.expect_next_meaning(b)
-            if prediction is None:
-                parameter = next(self._inter_predictor.parameters())
-                return 1, parameter.new_zeros(1, self.concept_dim)
-            # Legacy seed API expects contiguous STM slots. The full
-            # estimate and its learned occupancy remain in MeaningExpectation.
-            occupied = prediction.presence_logits >= 0
-            depth = max(1, int(torch.nonzero(occupied).max()) + 1) if bool(occupied.any()) else 1
-            roles = prediction.roles[:depth]
-            payload = roles[[2, 0, 1]] if depth == 3 else roles.flip(0)
-            return depth, payload
-        bi = int(b)
-        D = int(self._inter_predictor.concept_dim)
-        device = next(self._inter_predictor.parameters()).device
-        dtype = next(self._inter_predictor.parameters()).dtype
-        K = int(self._inter_chain_window)
-        chain = list(self._inter_context[bi])[-K:]
-        if not chain:
-            # Cold start: no AR signal yet. Degenerate (1, zeros[1, D]).
-            self._inter_last_pred_root[bi] = None
-            zero_root = torch.zeros(D, device=device, dtype=dtype)
-            return 1, zero_root.unsqueeze(0)
-        # Reduce each end-state to its root and LEFT-pad to K so the
-        # most-recent sits at the tail (newest-at--1, like the ARMA ring).
-        roots = []
-        for (_depth, payload, _tet) in chain:
-            r = self._reduce_end_state_to_root(payload)
-            if r is None:
-                r = torch.zeros(D, device=device, dtype=dtype)
-            roots.append(r.to(device=device, dtype=dtype))
-        if len(roots) < K:
-            pad = [torch.zeros(D, device=device, dtype=dtype)
-                   for _ in range(K - len(roots))]
-            roots = pad + roots
-        context = torch.stack(roots, dim=0).unsqueeze(0)   # [1, K, D]
-        payload_root_hat = self._inter_predictor.forward(
-            context, routing=None, parallel=False)         # [1, D]
-        if not torch.isfinite(payload_root_hat).all():
-            raise FloatingPointError(
-                "BracketExpectation.predict_next_end_state: predicted "
-                "end-state root contains NaN/Inf. Refusing to emit a "
-                "corrupt prediction.")
-        root_vec = payload_root_hat.reshape(-1)[:D]         # [D]
-        # depth_hat: AR prior = depth of the most-recent end-state.
-        depth_hat = int(chain[-1][0])
-        if depth_hat <= 0:
-            depth_hat = 1
-        # Record the predicted root so the NEXT ``observe_stm_end_state``
-        # can score it (``L_inter``). When grad is enabled we keep the LIVE
-        # (grad-carrying) root tensor so the deferred MSE backprops into
-        # ``_inter_predictor``'s params; under no-grad (eval / generation)
-        # ``forward`` already produced a detached value, so this is just the
-        # prediction's value with no graph attached.
-        self._inter_last_pred_root[bi] = root_vec
-        payload_hat = root_vec.unsqueeze(0).expand(depth_hat, -1)
-        return depth_hat, payload_hat
-
-    def sentence_prediction_cost(self, depths, payloads, mask, *,
-                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None, gain=1.):
-        """Preview one sentence per row without observing either candidate.
-
-        Only the pending predictions are scratch. Context, occurrences, LTM,
-        counters and policy outcomes are written once, when the winner arrives.
-        The returned pending records retain the estimate belonging to that trial.
-        """
-        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
-        like = next((p for p in payloads if p is not None), self._s_history)
-        errors, contrast_errors = Error(row_mask=mask), Error(row_mask=mask)
-        self._sentence_prediction_errors = (errors, contrast_errors)
-        self._sentence_comparison_errors = Error(row_mask=mask)
-        if self._external_observations_suspended or not self.expectation_enabled:
-            zero = like.new_zeros(len(payloads))
-            return zero, zero.clone(), before
-        self._prepare_expectation_documents(documents, mask, len(payloads))
-        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
-        costs, contrastive = [], []
-        try:
-            for b, payload in enumerate(payloads):
-                cost, contrast = like.new_zeros(()), like.new_zeros(())
-                if payload is not None and bool(mask[b]) and self._inter_predictor is not None:
-                    self.predict_next_end_state(b)
-                    negatives = []
-                    pred = target = None
-                    if self.expectation_scope == "structured":
-                        roles, occupied = self._canonical_meaning(
-                            payload, depths[b], layout,
-                            None if role_masks is None else role_masks[b])
-                        pending = self._inter_last_meaning[b]
-                        if isinstance(pending, _PendingMeaningExpectation) and pending.walk is not None:
-                            from WalkTrials import select_forecast
-                            pending = select_forecast(pending, roles, occupied,
-                                None if sentence_kinds is None else sentence_kinds[b])
-                            self._inter_last_meaning[b] = pending
-                        prediction = (pending.prediction if isinstance(
-                            pending, _PendingMeaningExpectation) else pending)
-                        if prediction is not None:
-                            pred, logits = prediction.roles, prediction.presence_logits
-                            kind_logit = prediction.kind_logit
-                            if (isinstance(pending, _PendingMeaningExpectation)
-                                    and pending.inputs is not None):
-                                # Equal-parameter trials still need separate
-                                # prediction graphs: the first backward frees
-                                # its graph before the second trial trains.
-                                # Replay only the stored prior inputs, keeping
-                                # the pending record and its estimate intact.
-                                replay, presence, kinds = self._inter_predictor(
-                                    *self._prediction_inputs(pending.inputs, replay=True))
-                                pred, logits = replay[0], presence[0]
-                                kind_logit = kinds[0]
-                            target = roles.detach().to(pred)
-                            predicted_coordinates, target_coordinates = self._prediction_coordinates(pred, target)
-                            cost = (predicted_coordinates - target_coordinates).square().mean() + F.binary_cross_entropy_with_logits(
-                                logits, occupied.to(logits))
-                            cost = cost + self._kind_loss(kind_logit,
-                                None if sentence_kinds is None else sentence_kinds[b], cost)
-                            errors.squared('roles', predicted_coordinates, target_coordinates, row=b, category='expectation')
-                            errors.binary('presence', logits, occupied.to(logits), row=b, category='expectation')
-                            kind = None if sentence_kinds is None else sentence_kinds[b]
-                            if kind is not None:
-                                errors.binary('kind', kind_logit, kind_logit.new_tensor(float(kind == 'relation')),
-                                              row=b, category='expectation')
-                            from SentenceCredit import expectation_terms
-                            expectation_terms(self._sentence_comparison_errors,
-                                pred, logits, kind_logit, target, occupied, kind, row=b, gain=gain)
-                            negatives = [p.detach().to(target).flatten()
-                                         for _, p, _ in self._inter_context[b]]
-                    else:
-                        pred = self._inter_last_pred_root[b]
-                        pd = payload.detach()
-                        if self._ltm_store is not None and pd.dim() == 2 and pd.shape[0] >= 2:
-                            pd = pd[pd.shape[0] - 2].unsqueeze(0)
-                        target = self._reduce_end_state_to_root(pd)
-                        if pred is not None and target is not None:
-                            target = target.to(pred)
-                            cost = F.mse_loss(pred, target)
-                            errors.squared('root', pred, target, row=b, category='expectation')
-                            negatives = [root.detach().to(pred) for _, p, _ in self._inter_context[b]
-                                         if (root := self._reduce_end_state_to_root(p)) is not None]
-                    if (self._inter_contrastive_weight > 0 and pred is not None
-                            and target is not None and negatives):
-                        q = F.normalize(pred.reshape(-1), dim=0)
-                        candidates = torch.stack([target.flatten()] + [n.flatten() for n in negatives])
-                        logits = (F.normalize(candidates, dim=-1) @ q) / self._inter_contrastive_temp
-                        contrast = F.cross_entropy(logits[None], logits.new_zeros(1, dtype=torch.long))
-                        contrast_errors.categorical('contrast', logits[None], logits.new_zeros(1, dtype=torch.long),
-                                                    row=b, category='expectation')
-                if not bool(torch.isfinite(cost) and torch.isfinite(contrast)):
-                    raise FloatingPointError('non-finite sentence prediction cost')
-                costs.append(cost)
-                contrastive.append(contrast)
-            pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
-            relative = errors.total()
-            relative_contrast = contrast_errors.total()
-            return (torch.stack(costs) if relative is None else relative,
-                    torch.stack(contrastive) if relative_contrast is None else relative_contrast, pending)
-        finally:
-            self._inter_last_meaning, self._inter_last_pred_root = before
 
     def _inter_error_registry(self):
         registry = getattr(self, '_inter_errors', None)
@@ -11839,35 +10979,6 @@ class BracketExpectation(Layer):
             self._inter_errors = registry
         return registry
 
-    def _accumulate_inter_loss(self, pred_root, actual_root):
-        """Accumulate one sentence of ``L_inter = MSE(pred_root,
-        actual_root)`` into the live running sum, gated on grad-enabled +
-        positive weight (mirrors ``ConceptualSpace._accumulate_intra_loss``).
-
-        ``pred_root`` / ``actual_root``: ``[D]`` (or broadcastable) live
-        tensors. No-op when grad is disabled (eval) or the inter-loss weight
-        is non-positive — avoids eval-time graph growth and a wasted MSE
-        when the term is off.
-
-        Fail-loud: a non-finite step loss RAISES.
-        """
-        if not self.training or not torch.is_grad_enabled():
-            return
-        if float(self._inter_loss_weight) <= 0.0:
-            return
-        if pred_root is None or actual_root is None:
-            return
-        step_loss = F.mse_loss(pred_root, actual_root)
-        self._inter_error_registry().squared('root', pred_root, actual_root, category='expectation')
-        if not torch.isfinite(step_loss).all():
-            raise FloatingPointError(
-                "BracketExpectation._accumulate_inter_loss: L_inter step "
-                "is NaN/Inf. Refusing to accumulate a corrupt loss term.")
-        if self._inter_loss_accum is None:
-            self._inter_loss_accum = step_loss
-        else:
-            self._inter_loss_accum = self._inter_loss_accum + step_loss
-        self._inter_loss_count += 1
 
     def consume_inter_loss(self):
         """Return the per-sentence MEAN of the accumulated inter-sentence
@@ -11892,6 +11003,7 @@ class BracketExpectation(Layer):
         self._inter_loss_count = 0
         return self._consumed_inter_errors.total()
 
+
     def detach_prediction_context(self):
         """End the current encoder graph without erasing observed context.
 
@@ -11910,275 +11022,19 @@ class BracketExpectation(Layer):
             None if value is None else value.detached()
             for value in self._inter_last_meaning]
 
-    def consume_expectation_walk_outcomes(self):
-        outcomes, self._expectation_walk_outcomes = self._expectation_walk_outcomes, []
-        return outcomes
 
-    def consume_expectation_policy_outcomes(self):
-        outcomes, self._expectation_policy_outcomes = self._expectation_policy_outcomes, []
-        return outcomes
+
+
+
 
     def set_inter_loss_weight(self, weight):
         """Set the inter-loss accumulation gate (read from the
         ``sentenceExpectationLossWeight`` knob by the host at construction)."""
         self._inter_loss_weight = float(weight)
 
-    def reset_expectation_metrics(self):
-        """Start a reporting interval without changing memory or training loss."""
-        self._expectation_stats = dict(
-            observations=0, cold_starts=0, predicted_targets=0,
-            document_starts=0, feature_sum=0., presence_sum=0., kind_targets=0, kind_sum=0.)
 
-    def expectation_metrics(self):
-        """Report detached local-role metrics in training and evaluation."""
-        stats = self._expectation_stats
-        pairs = stats["predicted_targets"]
-        return {
-            **{name: stats[name] for name in (
-                "observations", "cold_starts", "predicted_targets", "document_starts")},
-            "enabled": self.expectation_enabled, "scope": self.expectation_scope,
-            "feature_mse": stats["feature_sum"] / pairs if pairs else None,
-            "presence_bce": stats["presence_sum"] / pairs if pairs else None,
-            "kind_targets": stats['kind_targets'],
-            "kind_bce": stats['kind_sum'] / stats['kind_targets'] if stats['kind_targets'] else None,
-            "document_boundary_fraction": stats["document_starts"] / max(1, stats["observations"]),
-        }
 
-    def last_expectation_comparison(self, b=0):
-        """Read an owned copy so inspection cannot rewrite the original estimate."""
-        value = self._last_expectation_comparisons[int(b)]
-        if value is None:
-            return None
-        return ExpectationComparison(
-            value.estimate.detached(),
-            value.observed.clone(), value.occupied.clone(), value.residual.clone(),
-            value.presence_residual.clone(), value.document,
-            tuple(value.source_occurrences), value.stream, value.sentence_kind,
-            None if value.kind_residual is None else value.kind_residual.clone())
 
-    def set_expectation_enabled(self, enabled):
-        """Toggle expectation; retain durable observations and start fresh on enable."""
-        enabled = bool(enabled)
-        self.enabled_levels = tuple(level for level in ('word', 'sentence')
-            if (enabled if level == 'sentence' else level in self.enabled_levels))
-        if enabled == self.expectation_enabled:
-            return
-        self.expectation_enabled = enabled
-        self.detach_prediction_context()
-        self._inter_last_meaning = [None] * self._batch
-        self._expectation_policy_outcomes = []
-        self._expectation_walk_outcomes = []
-        for chain in self._inter_context:
-            chain.clear()
-        for chain in self._inter_context_occurrences:
-            chain.clear()
-        self._expectation_documents = [None] * self._batch
-        self._last_expectation_comparisons = [None] * self._batch
-        self._s_history.zero_()
-        self._e_history.zero_()
-        self._s_count.zero_()
-        self._e_count.zero_()
-        self._staged_prediction = None
-        self._inter_loss_accum = self._inter_contrastive_accum = None
-        self._inter_loss_count = self._inter_contrastive_count = 0
-
-    def set_inter_contrastive(self, weight, temp=0.1):
-        """Set the InfoNCE next-idea contrastive gate + softmax temperature
-        (read from ``sentenceExpectationContrastiveWeight`` / ``interContrastiveTemp``)."""
-        self._inter_contrastive_weight = float(weight)
-        self._inter_contrastive_temp = max(1e-4, float(temp))
-
-    def _accumulate_inter_contrastive(self, pred_root, pos_root, neg_roots):
-        """Accumulate one InfoNCE step: rank ``pos_root`` (the actual next root)
-        above ``neg_roots`` (the chain's past roots) under
-        ``cosine(pred_root, .)/temp``. ``pred_root`` ``[D]`` is grad-bearing (the
-        staged prediction into ``_inter_predictor``); ``pos_root`` + ``neg_roots``
-        are DETACHED, so the gradient trains the predictor, never the targets.
-        No-op under no-grad / weight<=0 / no negatives (the caller's MSE term
-        still runs). Fail-loud on NaN."""
-        if not self.training or not torch.is_grad_enabled():
-            return
-        if float(self._inter_contrastive_weight) <= 0.0:
-            return
-        if pred_root is None or pos_root is None or not neg_roots:
-            return
-        q = pred_root.reshape(-1)
-        q = q / q.norm().clamp_min(1e-12)
-        cand = torch.stack([pos_root.reshape(-1)]
-                           + [n.reshape(-1) for n in neg_roots], dim=0)  # [1+N,D]
-        cn = cand / cand.norm(dim=-1, keepdim=True).clamp_min(1e-12)
-        logits = (cn @ q) / float(self._inter_contrastive_temp)          # [1+N]
-        step = F.cross_entropy(
-            logits.unsqueeze(0),
-            torch.zeros(1, dtype=torch.long, device=logits.device))
-        errors = getattr(self, '_inter_contrastive_errors', None)
-        if errors is None:
-            errors = self._inter_contrastive_errors = Error()
-        errors.categorical('contrast', logits[None],
-                           torch.zeros(1, dtype=torch.long, device=logits.device), category='expectation')
-        if not torch.isfinite(step).all():
-            raise FloatingPointError(
-                "BracketExpectation._accumulate_inter_contrastive: InfoNCE "
-                "step is NaN/Inf. Refusing to accumulate a corrupt loss term.")
-        if self._inter_contrastive_accum is None:
-            self._inter_contrastive_accum = step
-        else:
-            self._inter_contrastive_accum = self._inter_contrastive_accum + step
-        self._inter_contrastive_count += 1
-
-    def consume_inter_contrastive_loss(self):
-        """Per-sentence MEAN of the accumulated InfoNCE next-idea loss; resets.
-        ``None`` when nothing accumulated (eval / weight off / no warm chain).
-        Mirrors :meth:`consume_inter_loss`; ``runBatch`` consumes it once,
-        post-body / pre-backward."""
-        self._consumed_contrastive_errors = getattr(self, '_inter_contrastive_errors', Error())
-        self._inter_contrastive_errors = Error()
-        if self._inter_contrastive_accum is None:
-            self._inter_contrastive_count = 0
-            return None
-        mean = self._inter_contrastive_accum / max(1, self._inter_contrastive_count)
-        self._inter_contrastive_accum = None
-        self._inter_contrastive_count = 0
-        return self._consumed_contrastive_errors.total()
-
-    # -- lifecycle ----------------------------------------------------
-    def Reset(self, batch=None, hard=True):
-        """Clear AR/MA rings on hard discourse boundary.
-
-        ``batch`` selects a specific per-row index to clear; ``None``
-        clears all rows. Soft sentence/brick resets retain the external
-        expectation stream. A hard reset clears transient context; the
-        consolidated durable store has its own lifecycle.
-        """
-        if not hard:
-            return
-        if batch is None:
-            self._last_expectation_comparisons = [None] * self._batch
-            self._expectation_policy_outcomes = []
-            self._expectation_walk_outcomes = []
-        else:
-            self._last_expectation_comparisons[int(batch)] = None
-        if batch is None:
-            self._s_history.zero_()
-            self._s_count.zero_()
-            self._e_history.zero_()
-            self._e_count.zero_()
-            # Clear the LTM chain on a hard discourse boundary. The plan
-            # (§8) defines LTM as the AR sequence for INTER-sentence
-            # prediction, so a document-boundary reset clears it the same
-            # way ``_s_history`` zeros — the next document starts cold.
-            for dq in self._stm_end_states:
-                dq.clear()
-            for dq in self._inter_context:
-                dq.clear()
-            for dq in self._inter_context_occurrences:
-                dq.clear()
-            # Drop any pending inter-sentence prediction + the live loss
-            # accumulator (Task 8): the next document predicts cold, and a
-            # boundary must not leak a half-formed grad term across the
-            # reset (mirrors the chain/ring clear above).
-            self._inter_last_pred_root = [None] * self._batch
-            self._inter_last_meaning = [None] * self._batch
-            self._expectation_documents = [None] * self._batch
-            self._inter_loss_accum = None
-            self._inter_errors = Error()
-            self._inter_contrastive_errors = Error()
-            self._inter_loss_count = 0
-            self._inter_contrastive_accum = None
-            self._inter_contrastive_count = 0
-        else:
-            bi = int(batch)
-            self._s_history[bi].zero_()
-            self._s_count[bi] = 0
-            self._e_history[bi].zero_()
-            self._e_count[bi] = 0
-            if 0 <= bi < len(self._stm_end_states):
-                self._stm_end_states[bi].clear()
-                self._inter_context[bi].clear()
-                self._inter_context_occurrences[bi].clear()
-            if 0 <= bi < len(self._inter_last_pred_root):
-                self._inter_last_pred_root[bi] = None
-                self._inter_last_meaning[bi] = None
-                self._expectation_documents[bi] = None
-    reset = Reset
-
-    def __len__(self):
-        """Max ring fill level across rows."""
-        if self._batch == 1:
-            return int(self._s_count[0].item())
-        return int(self._s_count.max().item())
-
-    def latest(self, b=None):
-        """Return the most recent sentence rep for row ``b`` (or row 0
-        for B=1), or ``None`` if the row is empty.
-        """
-        if b is None:
-            b = 0
-        n = int(self._s_count[b].item())
-        if n == 0:
-            return None
-        return self._s_history[b, -1]
-
-    # Current convenience API over explicit prediction/observation state.
-    # The retired priming and snapshot shims have been removed.
-
-    def predict(self, b=None):
-        """Legacy alias for ``predict_next``.
-
-        Returns ``(prediction, confidence)`` where confidence is a
-        scalar / per-row tensor fixed at 1.0 — the legacy attention-
-        entropy confidence had no analog in the MLP predictor, but
-        downstream callers (``SymbolSpace.stm_residual_microbatch``)
-        gate the priming bias on ``conf is None`` so we emit a
-        placeholder rather than break that wiring.  Real cold-start
-        gating happens via ``_s_count``: rows whose ring is empty
-        return ``(None, None)``.
-
-        Compiled path: ``predict()`` is called from two traced sites
-        (``BasicModel._forward_per_stage`` and
-        ``SymbolSpace.stm_residual_microbatch``), always with ``b is
-        None``.  When ``stage_prediction()`` has parked a tuple, return
-        it directly — the live body calls ``predict_next`` (which is
-        ``@torch.compiler.disable``'d → graph break) and reads
-        ``_s_count.item()`` (host sync), both fatal for fullgraph
-        capture.  Staged tuple == pure tensor read, no break, no sync.
-        """
-        if b is None:
-            staged = self._staged_prediction
-            if staged is not None:
-                return staged
-        return self._predict_live(b=b)
-
-    def _predict_live(self, b=None):
-        """Uncached ARMA prediction (the pre-staging ``predict()``
-        body).  Used on the eager path and to populate the staging
-        slot in ``stage_prediction()``.
-        """
-        if not self.expectation_enabled or self.predictor is None:
-            return None, None
-        if (self._batch == 1
-                and int(self._s_count[0].item()) == 0):
-            return None, None
-        pred = self.predict_next(b=b)
-        if pred.ndim == 1:
-            conf = pred.new_ones(())
-        else:
-            conf = pred.new_ones(pred.shape[0])
-        return pred, conf
-
-    def stage_prediction(self):
-        """Eagerly compute and park ``(pred, conf)`` for the upcoming
-        compiled forward.  Called from ``runBatch`` (eager region,
-        before the traced step) alongside the Phase-3 lex+embed stem
-        staging.  No-op-safe to call repeatedly; ``predict()`` returns
-        the parked tuple until ``clear_staged_prediction()`` runs.
-        """
-        self._staged_prediction = self._predict_live(b=None)
-
-    def clear_staged_prediction(self):
-        """Drop the staged tuple so the eager path computes live
-        again.  Called once after the compiled forward returns."""
-        self._staged_prediction = None
 
 
 
@@ -12422,7 +11278,7 @@ class IntraSentenceLayer(Layer):
         is a structural no-op beyond honoring an optional batch resize
         hint. The PI / Sigma sublayers carry no per-call state to clear.
         Present so the Space's Start/Reset cascade reaches the layer
-        without error (mirrors ``BracketExpectation.Reset``).
+        without error (mirrors ``SymbolExpectation.Reset``).
         """
         if batch is not None:
             self._batch = int(batch)

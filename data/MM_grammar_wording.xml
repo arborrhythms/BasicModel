@@ -52,11 +52,8 @@
       <outputPolicyWeight>1.0</outputPolicyWeight>
       <leafDistillWeight>0.0</leafDistillWeight>
       <sentenceExpectation>true</sentenceExpectation>
-      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
       <intraLossWeight>0.0</intraLossWeight>
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
-      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
-      <interContrastiveTemp>0.1</interContrastiveTemp>
       <autoload>false</autoload>
       <autosave>true</autosave>
       <checkpointEveryBatches>100</checkpointEveryBatches>

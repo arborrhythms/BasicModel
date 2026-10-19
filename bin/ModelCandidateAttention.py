@@ -17,6 +17,12 @@ def install(model):
     model.het_tolerance = float(TheXMLConfig.get('architecture.hetTolerance', default=1.))
     validate_floor(model.attention_floor)
     tolerate_heterogeneity(torch.zeros(1, 2), model.het_tolerance)
+    from Expectation import PerceptMoments
+    width = int(model.perceptualSpace.subspace.muxedSize)
+    model.percept_expectation = PerceptMoments(width,
+        rate=float(TheXMLConfig.training('perceptExpectationRate', .05)),
+        epsilon=model.expectation_epsilon, saturation=model.expectation_saturation).to(
+            device=model.conceptualSpace.stm._buffer.device)
     if not getattr(model, 'attention_budget', 0):
         model.candidate_attention = None
         return
@@ -28,7 +34,7 @@ def install(model):
                   for name in ('parts', 'wholes', 'symbols'))
     geometry = tuple((int(space.outputShape[0]), int(space.subspace.muxedSize))
                      for space in (model.perceptualSpace, model.wholeSpace))
-    width = 5 * sum(sizes) + sum(n * d for n, d in geometry)
+    width = 7 * sum(sizes) + sum(n * d for n, d in geometry) + geometry[0][0]*geometry[0][1]
     width += int(cs.stm.capacity) * (int(cs.stm.concept_dim) + 16)
     # One open slot, the complete three-role prediction, and one gist.
     width += 5 * int(cs.stm.concept_dim)
@@ -38,6 +44,7 @@ def install(model):
         model.candidate_attention = CandidateAttention(width, int(cs.stm.concept_dim) + 8).to(
             device=cs.stm._buffer.device, dtype=cs.stm._buffer.dtype)
     model._candidate_geometry = (sizes, geometry)
+    model.candidate_attention._expectation_insert = (5*sum(sizes), 2*sum(sizes)+geometry[0][0]*geometry[0][1])
 
 
 def _fit(value, batch, count, width, like):
@@ -96,7 +103,7 @@ def _needs(model, batch, width, like, opened=None):
 
 
 def context(model, values, addresses, valid, *, when=None, parts=None, wholes=None,
-            stm=None, need=None, placements=None):
+            stm=None, need=None, placements=None, expectation_free=False):
     """Read a located activation slab [B,I,2], independent of its item count.
 
     Addresses are native codebook indices in the shared .where ladder, not
@@ -171,6 +178,25 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
         placements['when'] / float(model.when_encoding.maxVal), placements['lanes']), -1))
     conceptual = torch.cat((contents, spatial, temporal,
                             occupied[..., None].to(values), salience[..., None], stamps), -1)
-    inputs = torch.cat((spread.flatten(1), heat, time.flatten(1), *keys, conceptual.flatten(1),
-                        _needs(model, B, D, values, need)), -1).detach()
+    prime = values.new_zeros(B, count, 2)
+    discourse = getattr(model.symbolSpace, 'expectation', None)
+    if not expectation_free and discourse is not None:
+        for b, pending in enumerate(discourse._inter_last_meaning[:B]):
+            prediction = None if pending is None else pending.prediction
+            if prediction is not None and prediction.symbol_ids is not None:
+                native_ids = prediction.symbol_ids.to(values.device)
+                matches = native_ids[:, None] == discourse._bank_ids.to(values.device)[None]
+                addresses = getattr(discourse, '_bank_addresses', discourse._bank_ids).to(values.device)
+                ids = addresses[matches.long().argmax(-1)] + sum(sizes[:2])
+                present = (ids >= sum(sizes[:2])) & (ids < count)
+                present &= matches.any(-1)
+                prime[b].index_copy_(0, ids[present], prediction.expected_activation.detach()[present].to(values))
+    native = _fit(parts, B, *geometry[0], values)
+    prior = getattr(model, '_percept_prior', None)
+    z = model.percept_expectation.residual(native, prior=prior)
+    needs = _needs(model, B, D, values, need)
+    if expectation_free:
+        needs = torch.cat((needs[:, :D], torch.zeros_like(needs[:, D:4*D]), needs[:, 4*D:]), -1)
+    inputs = torch.cat((spread.flatten(1), heat, time.flatten(1), prime.flatten(1), z.flatten(1), *keys, conceptual.flatten(1),
+                        needs), -1).detach()
     return inputs

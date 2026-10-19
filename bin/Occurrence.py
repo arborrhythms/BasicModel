@@ -388,7 +388,7 @@ class OccurrenceRows:
         state.update({prefix + name: value for name, value in buffers.items()})
 
     def _migrate_address_extras(self, extras):
-        if extras['version'] == 5:
+        if extras['version'] >= 5:
             return extras
         if extras.get('namespace') != getattr(self, '_legacy_namespace', None):
             raise ValueError('legacy semantic checkpoint occurrence namespace differs')

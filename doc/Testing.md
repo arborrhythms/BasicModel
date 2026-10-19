@@ -1,5 +1,15 @@
 # Bounded development tests
 
+Item 4's October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
+records scoped checks and each §9 gate. Compiled boundaries now complete;
+exact identity, gain, prime lifetime and retained-checkpoint regressions pass.
+**Item 4 remains incomplete:** the copular artifact is missing, the carried
+initial-binding distribution assertion fails, and the full learning gates
+are not established. The original failed native learning run is preserved.
+Claude review must precede the one full landing sweep. Item 0 and independent
+5.5 prerequisites remain unchanged. Historical negative-image sections below
+describe their original sources and do not certify the gain path.
+
 Item 6 **part 1** lands the [reviewed repair pass](benchmarks/2026-10-10-item6/part1/README.md):
 shared bounded inversion, support charges in the keep cost, captured-input
 isolation, candidates of every family on either side, and residual-surprise

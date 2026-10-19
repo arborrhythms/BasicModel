@@ -32,7 +32,7 @@ def flow_mask(rule):
     results retain every lexical occurrence; clauses retain none.
     """
     name = rule.method_name
-    if name in ('intersection', 'union', 'conjunction', 'disjunction'):
+    if name in ('intersection', 'union', 'conjunction', 'disjunction', 'product', 'sum'):
         return 3
     if name in ('not', 'non'):
         return 1

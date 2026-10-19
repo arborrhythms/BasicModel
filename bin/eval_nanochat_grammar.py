@@ -351,7 +351,7 @@ def word_candidate_scores(model, *, choices):
 
     Every completion of an item uses the same discrete candidate bank. The
     candidate itself is never fed into its forecasting context; padding is
-    absent from the ARMA history, and the model's normal word head is used.
+    absent from observed context, and the shared activation head is used.
     """
     import torch
     staged=getattr(model,'_word_expectation_input',None)
@@ -376,7 +376,8 @@ def word_candidate_scores(model, *, choices):
     prefix=(positions<last[:,None])&accepted
     expected=owner.expect('word',words,bank,valid,targets,
         teacher_forcing=False,observed_prefix=prefix,active=accepted)
-    return (expected.loss[rows,last].detach().cpu(),candidate.cpu(),
+    score = -expected.probabilities[rows,last,rows%choices].clamp_min(1e-12).log()
+    return (score.detach().cpu(),candidate.cpu(),
             expected.prediction[rows,last].detach().cpu(),accepted.sum(-1).cpu())
 
 

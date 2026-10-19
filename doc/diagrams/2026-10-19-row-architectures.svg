@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="860" viewBox="0 0 1320 860" font-family="Helvetica, Arial, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#555"/>
+    </marker>
+    <style>
+      .title { font-size: 22px; font-weight: 600; fill: #222; }
+      .panel { font-size: 17px; font-weight: 600; fill: #222; }
+      .verdict { font-size: 13px; font-weight: 600; }
+      .label { fill: #333; }
+      .small { font-size: 12px; fill: #555; }
+      .mono { font-family: Menlo, Consolas, monospace; font-size: 12.5px; fill: #222; }
+      .slot { fill: #fff; stroke: #777; stroke-width: 1.2; }
+      .slot-empty { fill: #f3f3f3; stroke: #bbb; stroke-width: 1.2; stroke-dasharray: 4 3; }
+      .slot-vec { fill: #e8f1fb; stroke: #4a79b8; stroke-width: 1.4; }
+      .slot-sym { fill: #fdf1dc; stroke: #c98a1a; stroke-width: 1.4; }
+      .slot-ref { fill: #eef7e9; stroke: #5a9a4a; stroke-width: 1.4; }
+      .slot-fused { fill: #f8e3e3; stroke: #b84a4a; stroke-width: 1.4; }
+      .rowlabel { font-size: 12px; fill: #444; }
+      .box { fill: none; stroke: #ccc; stroke-width: 1; }
+      .def { fill: #fffaf0; stroke: #c98a1a; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1320" height="860" fill="#fcfcfc"/>
+  <text x="40" y="40" class="title">Storing the two truths: three row architectures (2026-10-19)</text>
+  <text x="40" y="64" class="small">Absolute truth S (an idea; e.g. de dicto "[Alec runs] PP(W)") and relative truth S REL S (a relation; e.g. de re "[Alec] part-of [running things PP(W)]"). Each panel shows the LTM/STM row for each truth.</text>
+
+  <!-- ===================== Panel 1: three slots (today) ===================== -->
+  <g transform="translate(40,90)">
+    <rect x="0" y="0" width="400" height="640" rx="8" class="box"/>
+    <text x="16" y="30" class="panel">1. Three slots per row (today)</text>
+    <text x="16" y="50" class="verdict" fill="#8a6d00">in use; retires with item 3.5</text>
+
+    <text x="16" y="88" class="rowlabel">absolute S: one slot used, two empty</text>
+    <rect x="16" y="98" width="110" height="44" class="slot-vec"/>
+    <text x="71" y="124" text-anchor="middle" class="mono">[Alec runs]</text>
+    <rect x="136" y="98" width="110" height="44" class="slot-empty"/>
+    <text x="191" y="124" text-anchor="middle" class="small">empty</text>
+    <rect x="256" y="98" width="110" height="44" class="slot-empty"/>
+    <text x="311" y="124" text-anchor="middle" class="small">empty</text>
+    <text x="16" y="160" class="small">fused point, evaluated by coverage</text>
+
+    <text x="16" y="208" class="rowlabel">relative S REL S: three slots used</text>
+    <rect x="16" y="218" width="110" height="44" class="slot-ref"/>
+    <text x="71" y="244" text-anchor="middle" class="mono">→ row [Alec]</text>
+    <rect x="136" y="218" width="110" height="44" class="slot-sym"/>
+    <text x="191" y="244" text-anchor="middle" class="mono">part-of</text>
+    <rect x="256" y="218" width="110" height="44" class="slot-ref"/>
+    <text x="311" y="244" text-anchor="middle" class="mono">→ row [running…]</text>
+    <text x="16" y="280" class="small">exact references; evaluated by traversal</text>
+
+    <line x1="16" y1="310" x2="384" y2="310" stroke="#ddd"/>
+    <text x="16" y="340" class="label">Properties</text>
+    <text x="16" y="364" class="small">+ references exact, no clean-up</text>
+    <text x="16" y="384" class="small">+ idea and relation told apart by slot count</text>
+    <text x="16" y="404" class="small">− most rows are ideas: 2 of 3 slots empty</text>
+    <text x="16" y="424" class="small">− row width ×3 for every row</text>
+    <text x="16" y="444" class="small">− reduce sweep holds a relation at depth 3</text>
+    <text x="16" y="464" class="small">   by a per-row depth floor</text>
+  </g>
+
+  <!-- ===================== Panel 2: fused point (rejected) ===================== -->
+  <g transform="translate(460,90)">
+    <rect x="0" y="0" width="400" height="640" rx="8" class="box"/>
+    <text x="16" y="30" class="panel">2. One fused point (reading A)</text>
+    <text x="16" y="50" class="verdict" fill="#b84a4a">rejected</text>
+
+    <text x="16" y="88" class="rowlabel">absolute S: one slot</text>
+    <rect x="16" y="98" width="200" height="44" class="slot-vec"/>
+    <text x="116" y="124" text-anchor="middle" class="mono">[Alec runs]</text>
+    <text x="16" y="160" class="small">fused point, evaluated by coverage</text>
+
+    <text x="16" y="208" class="rowlabel">relative S REL S: one slot, fused</text>
+    <rect x="16" y="218" width="350" height="44" class="slot-fused"/>
+    <text x="191" y="244" text-anchor="middle" class="mono">fuse( →[Alec], part-of, →[running…] )</text>
+    <text x="16" y="280" class="small">row references folded into coordinates</text>
+
+    <line x1="16" y1="310" x2="384" y2="310" stroke="#ddd"/>
+    <text x="16" y="340" class="label">Properties</text>
+    <text x="16" y="364" class="small">+ no empty slots, uniform rows</text>
+    <text x="16" y="384" class="small">− references are arbitrary row codes: the point</text>
+    <text x="16" y="404" class="small">   differs from neighbours by nothing coverage</text>
+    <text x="16" y="424" class="small">   can measure (two truths §1)</text>
+    <text x="16" y="444" class="small">− recovering the two references needs clean-up</text>
+    <text x="16" y="464" class="small">   against the bank: width D ≈ c·k·log N (item 3)</text>
+    <text x="16" y="484" class="small">− inference over the relation waits on that width</text>
+  </g>
+
+  <!-- ===================== Panel 3: one slot + definition (adopted) ===================== -->
+  <g transform="translate(880,90)">
+    <rect x="0" y="0" width="400" height="640" rx="8" class="box"/>
+    <text x="16" y="30" class="panel">3. One slot + definition (reading B)</text>
+    <text x="16" y="50" class="verdict" fill="#2e7d32">adopted (Alec, 2026-10-19)</text>
+
+    <text x="16" y="88" class="rowlabel">absolute S: one slot, a concept vector</text>
+    <rect x="16" y="98" width="200" height="44" class="slot-vec"/>
+    <text x="116" y="124" text-anchor="middle" class="mono">[Alec runs] PP(W)</text>
+    <text x="16" y="160" class="small">need not be a codebook entry; coverage</text>
+
+    <text x="16" y="208" class="rowlabel">relative S REL S: one slot, a minted symbol</text>
+    <rect x="16" y="218" width="200" height="44" class="slot-sym"/>
+    <text x="116" y="244" text-anchor="middle" class="mono">σ₁ (relation symbol)</text>
+    <line x1="216" y1="240" x2="262" y2="240" stroke="#555" marker-end="url(#arrow)"/>
+    <text x="238" y="232" text-anchor="middle" class="small">DEF</text>
+
+    <!-- definition table -->
+    <rect x="266" y="200" width="118" height="84" rx="4" class="def"/>
+    <text x="325" y="218" text-anchor="middle" class="small">definition row of σ₁</text>
+    <rect x="274" y="226" width="102" height="16" class="slot-sym"/>
+    <text x="325" y="238" text-anchor="middle" class="mono">part-of</text>
+    <rect x="274" y="246" width="102" height="16" class="slot-ref"/>
+    <text x="325" y="258" text-anchor="middle" class="mono">σ[Alec]</text>
+    <rect x="274" y="266" width="102" height="16" class="slot-ref"/>
+    <text x="325" y="278" text-anchor="middle" class="mono">σ[running… PP(W)]</text>
+
+    <text x="16" y="300" class="small">operands are symbols (codebook entries),</text>
+    <text x="16" y="316" class="small">reached by the two-way lookup table</text>
+
+    <line x1="16" y1="334" x2="384" y2="334" stroke="#ddd"/>
+    <text x="16" y="362" class="label">Properties</text>
+    <text x="16" y="386" class="small">+ no empty slots; row width ÷ 3; uniform rows</text>
+    <text x="16" y="406" class="small">+ references exact by lookup: no clean-up, no width</text>
+    <text x="16" y="426" class="small">+ idea stays subsymbolic until referred to;</text>
+    <text x="16" y="446" class="small">   writing a relation over it mints it (bind)</text>
+    <text x="16" y="466" class="small">+ truth kind read from the symbol's definition,</text>
+    <text x="16" y="486" class="small">   relativity propagates through the DEF table</text>
+    <text x="16" y="506" class="small">− one extra write per relation (row + DEF entry)</text>
+    <text x="16" y="526" class="small">− the two S must be minted before the relation</text>
+    <text x="16" y="546" class="small">   (the intended prerequisite)</text>
+  </g>
+
+  <!-- ===================== Legend ===================== -->
+  <g transform="translate(40,750)">
+    <rect x="0" y="0" width="22" height="16" class="slot-vec"/><text x="30" y="13" class="small">concept vector (fused point; coverage)</text>
+    <rect x="290" y="0" width="22" height="16" class="slot-sym"/><text x="320" y="13" class="small">minted symbol / relation operator (codebook entry)</text>
+    <rect x="660" y="0" width="22" height="16" class="slot-ref"/><text x="690" y="13" class="small">exact reference to a row or symbol</text>
+    <rect x="930" y="0" width="22" height="16" class="slot-fused"/><text x="960" y="13" class="small">fused over references (needs clean-up)</text>
+    <rect x="0" y="28" width="22" height="16" class="slot-empty"/><text x="30" y="41" class="small">empty slot</text>
+    <text x="290" y="41" class="small">Sources: two truths §1 (2026-09-16, amended 2026-10-19); occurrence spec §14.3; the de re / de dicto readings of "Alec might run".</text>
+  </g>
+</svg>

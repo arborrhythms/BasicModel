@@ -120,7 +120,7 @@ def test_offset_independence(tmp_path):
 
 @pytest.mark.usefixtures('eager_reading')
 def test_stream_chain(tmp_path,monkeypatch):
-    from Layers import TernaryTruthStore, BracketExpectation
+    from Layers import TernaryTruthStore, SymbolExpectation
     from Meaning import ConceptualMeaning
     from Occurrence import sentence_key
     store = TernaryTruthStore(4,capacity=8)
@@ -133,7 +133,7 @@ def test_stream_chain(tmp_path,monkeypatch):
                 rows[stream,index] = store.append_meaning(ConceptualMeaning.from_description(
                     torch.full((4,),float(10*stream+index))),kind='observation',stream=stream)
     for stream in (0,1):
-        chain = BracketExpectation.get_stm_chain(history,b=stream)
+        chain = SymbolExpectation.get_stm_chain(history,b=stream)
         assert [int(item[1][0,0]) for item in chain] == [10*stream+1,10*stream+2]
         assert store.stream_rows(stream).tolist() == [rows[stream,1],rows[stream,2]]
     before = store.when.clone()

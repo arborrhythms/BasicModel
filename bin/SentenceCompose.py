@@ -66,7 +66,7 @@ def compile_word_brick(function):
     if backend == 'none':
         return function
     backend = util._COMPILE_BACKENDS[0] if backend == 'auto' else backend
-    return torch.compile(function, backend=backend, fullgraph=True)
+    return torch.compile(function, backend=backend, fullgraph=True, dynamic=False)
 
 
 def fork_perception(cache):

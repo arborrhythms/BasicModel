@@ -553,25 +553,6 @@ class Probe:
         caller=inspect.currentframe().f_back.f_back.f_code.co_name
         self.current_bands.append(dict(caller=caller,parts=parts,trial=getattr(self.model,'_sentence_trial',None)))
 
-    def expectation_parts(self, layer, local):
-        if not self.in_batch:
-            return
-        b=local['b']
-        kind=None if local['sentence_kinds'] is None else local['sentence_kinds'][b]
-        logit=local['kind_logit']
-        with torch.no_grad():
-            raw=dict(content_mse=float((local['pred'].detach()-local['target'].detach()).square().mean()),
-                presence_bce=float(torch.nn.functional.binary_cross_entropy_with_logits(
-                    local['logits'].detach(),local['occupied'].to(local['logits']))),
-                kind_bce=float(layer._kind_loss(logit.detach() if torch.is_tensor(logit) else logit,
-                                               kind,local['cost'].detach())))
-        weight=float(self.model.inter_loss_weight)
-        self.log('expectation_terms',train=bool(self.model._sentence_training),
-            trial=self.model._sentence_trial,pair=self.pair_number,row=b,
-            raw=raw,component_weights={key:1. for key in raw},outer_weight=weight,
-            weighted={key:value*weight for key,value in raw.items()},
-            accounting_residual=float(local['cost'].detach())-sum(raw.values()))
-
     def auxiliary(self, model, local):
         self.current_aux=[dict(name=n,raw=float(v.detach()),weight=float(w),category=c,
                                enabled=c not in local['pipeline_errors']._disabled)

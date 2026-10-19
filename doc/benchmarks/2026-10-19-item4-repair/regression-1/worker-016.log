@@ -1,0 +1,20 @@
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+_______ test_packed_ltm_ignores_masked_slots_even_with_retained_storage ________
+test/test_expectation_defaults.py:283: in test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+    commit_reading(f.language, f.registry, entry, store, discourse=discourse,
+test/reading_fixtures.py:274: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20366: in _commit_sentence
+    history = self._recall_sentence_history(batch=len(fields))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_recall_sentence_history'
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+1 failed, 3 passed, 1 warning in 3.11s

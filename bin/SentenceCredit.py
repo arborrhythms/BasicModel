@@ -42,25 +42,6 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
     return torch.stack(costs)
 
 
-def expectation_terms(registry, pred, logits, kind_logit, target, occupied,
-                      kind, *, row, gain=1.):
-    """Gate each role's error, retaining the Error registry's baseline.
-
-    Gating the denominator too would cancel confidence. Prediction training
-    uses its separate, unchanged registry and detached observation targets.
-    """
-    import math
-    from torch.nn import functional as F
-    target = target.detach().to(pred)
-    gate = torch.as_tensor(gain, device=pred.device, dtype=pred.dtype) * logits.detach().sigmoid()
-    registry.error('roles', (pred-target).square()*gate[:,None], target.square(),
-                   row=row, category='expectation')
-    registry.error('presence', F.binary_cross_entropy_with_logits(logits,
-        occupied.to(logits), reduction='none')*gate, math.log(2), row=row, category='expectation')
-    if kind is not None:
-        error = F.binary_cross_entropy_with_logits(kind_logit,
-            kind_logit.new_tensor(float(kind == 'relation')), reduction='none')
-        registry.error('kind', error*gate.mean(), math.log(2), row=row, category='expectation')
 
 
 def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
@@ -110,10 +91,10 @@ def components(registry, expectation, like, *, answer=None, reference=None):
 
 
 def comparison(parts, active):
-    """Reconstruction keeps the derivation; R + A credits its departure."""
+    """R + A both keeps the completed derivation and credits its departure."""
     costs = (parts[..., 0] + parts[..., 2]).detach()
     delta = parts[:, 1] - parts[:, 0]
-    keep_costs = parts[:, :, 0].detach()
+    keep_costs = costs
     wins = active & (keep_costs[:, 1] < keep_costs[:, 0])
     direction = torch.sign(costs[:, 1]-costs[:, 0])
     supports = delta * direction[:, None] > 0
@@ -123,7 +104,7 @@ def comparison(parts, active):
                  if sign else 'tie:greedy') for row, sign in
                 zip(supports.tolist(), direction.tolist())]
     keep_decision = [('explore' if d < 0 else 'greedy' if d > 0 else 'tie:greedy')
-                     for d in delta[:, 0].tolist()]
+                     for d in (costs[:, 1]-costs[:, 0]).tolist()]
     # Negative advantage rewards explore. A positive advantage rewards greedy.
     against_keep = active & direction.ne(0) & ((direction < 0) != wins)
     without_answer = torch.sign(delta[:, 0])
@@ -139,6 +120,8 @@ def score_function(probabilities, scale, mask, costs):
     advantage = (costs[:, 1]-costs[:, 0]).detach()
     scale = scale.detach().to(probabilities)
     trained = mask & advantage.ne(0)[:, None]
+    torch._assert_async((~trained | (torch.isfinite(scale) & (scale > 0))).all(),
+                        'credited departures require a positive finite proposal correction')
     result = (torch.where(trained, probabilities * scale * advantage[:, None], 0.).sum(-1)
               if bool(trained.any()) else probabilities.new_zeros(len(costs)))
     return result, dict(costs=costs.detach(), advantage=advantage, mask=mask.detach(),
@@ -147,7 +130,7 @@ def score_function(probabilities, scale, mask, costs):
 
 def reader_weights(parts, active, draw):
     """Comparison exposure with a draw; presented kept-only exposure without one."""
-    wins = active & (parts[:, 1, 0] < parts[:, 0, 0])
+    wins = active & ((parts[:, 1, 0]+parts[:, 1, 2]) < (parts[:, 0, 0]+parts[:, 0, 2]))
     compose = (torch.zeros_like(active) if draw is None else
                active & (draw['compose_round'] >= 0))
     explore = torch.where(compose, .5, wins.to(parts.dtype)) * active

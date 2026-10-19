@@ -67,7 +67,7 @@
     },
     {
       "file": "bin/Layers.py",
-      "function": "BracketExpectation.bind_observation_occurrence",
+      "function": "SymbolExpectation.bind_observation_occurrence",
       "previous_absolute_time": false,
       "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature.",
       "attributes": [

@@ -518,7 +518,9 @@ conflicts with §0–§7, this amendment governs.
   no pattern named, no word is carved; with a pattern named, only words whose
   remainder is a witnessed stem carve into stem plus that marker, and
   irregulars stay whole.
-- **A marker belongs to its operator.** A marker-headed operator absorbs the
+- **A marker belongs to its operator** — to one or more of its selections,
+  and a selection may need several markers; the map is many-to-many
+  (§13.1, 2026-10-19). A marker-headed operator absorbs the
   marker leaf when it is present and supplies its own learned marker when it
   is absent (a unary face of the same implementation whose reverse emits no
   leaf). Insertion cannot occur in an arbitrary context with an arbitrary
@@ -536,6 +538,411 @@ conflicts with §0–§7, this amendment governs.
   stream, order by occurrence. Test 7 is withdrawn with the situation
   wholes. Test 10 covers absorb, transpose and the unary face's reverse.
 
+## 13. Across languages: the operators are the universality *(decided, Alec, 2026-10-19; written by Claude)*
+
+Alec, 2026-10-19: "In English tense and aspect modify the verb, and
+prepositional modification takes care of modifying the verb with positional
+information. But is this true for all languages?" It is not. "We cannot
+mention any languages in the code, or even special case them. A UG needs
+to parse any human language." And: "There need be no table; I am
+proposing that operators replace the table. If we don't have the
+operators to do that, then our grammar is not universal."
+
+So this section is the operators and their capabilities, and the claim
+that they suffice. There is no inventory of placements, no language, and
+nothing in the mechanism that knows which arrangement it is reading. If a
+human language turns out to write a selection in a way these operators
+cannot reach by exposure, that is a finding that the grammar is not
+universal, recorded against the catalogue — never a case added.
+
+### 13.0 The rule
+
+No identifier, branch, parameter, configuration, fixture label or test
+name names a language or a language-specific form. §7's removal of the
+table of English forms stands and no table for any language replaces it.
+Verified 2026-10-19 at `9207f5e`: no language name in `bin/`,
+`data/*.xml`, `data/model.xsd` or test identifiers; "English" survives in
+two docstrings in `Models.py`, in fixture sentences, and in test comments
+that disclaim a parsing claim. The docstrings go with the 3.5 landing.
+
+### 13.1 The operators, minimal *(Alec, 2026-10-19: "the operators should be minimal … just one rule called twice")*
+
+Minimality rule: a capability that can be had by calling an existing
+rule again is not a rule. So there is no set-valued selection, no
+double-location rule, no spatial and temporal pair, no affix face — each
+of those is one of the following called once more.
+
+1. **`position`** — the one rule of §4–5: unfold the head to its cases,
+   select among them by the object, fold what is left. It reads its two
+   operands and nothing else: the head's cases are whatever the head has
+   (things, phases, the phases of a role held over time), and the test is
+   whatever the object's content supports (location, order). **Called once
+   per selection.** Two selections — a place for the after-state and the
+   whole event; a path with two landmarks; past, then perfect, then
+   progressive — are the rule called twice or three times, in the
+   surface's order, each call idempotent (§4). A leaf that a language uses
+   for two selections is the rule called twice on one leaf: the first call
+   absorbs it, the second runs without one. **Called with or without a
+   leaf**: the same rule, whose reverse emits a leaf exactly when one was
+   read (§12's unary face). **Not called** keeps every case, which the
+   answer reader reads as *unknown*, never *now* — every sentence's state
+   before its marker is read, and how a sentence with no marker is read.
+2. **The marker leaf** — one kind of leaf, minted on recurrence at a
+   marker position (§6, §12). Its reading is how many times, and with what
+   object, `position` is called when it is absorbed; that is learned by
+   exposure and never declared. It is read at its position, independently
+   of any other reading the same form has elsewhere. A free word and a
+   nested whole inside a form are the same leaf: the nested whole is made
+   at admission by the type criterion (§12), on a stem of any class, and
+   is not a grammar rule.
+3. **`surface`** — absorb, on either side of the head, and transpose, on
+   any two newest constituents. Nothing else: `split` and `insert` left
+   the grammar in §12, and no face is added here.
+4. **The leaf's own content** — not a rule. A verb whose meaning already
+   places its after-state is a verb; `position` finds the phase located
+   in the content and is not called.
+
+**The claim.** Any way a human language writes a selection of time or
+place — on the form of the head or of the object, as a free leaf on either
+side, as nothing, inside the leaf's own meaning, as one leaf for several
+selections or several leaves for one — is these three, each called as
+many times as the sentence needs, reached by exposure under one
+configuration. That is the universality of this part of the grammar, and
+it is measured (§13.2), not configured. A language that needed a fourth
+is a finding against the catalogue, recorded, never a case added.
+
+### 13.2 The gate (for the tense and aspect pass of item 3.5)
+
+**One grammar, one configuration, nothing named**, reads a generated
+corpus in several variants and passes §8's test 10 (the surface reverse
+exact) and the phase questions of §4 under each. The variants are the
+*generator's* choices about where it writes the marker, named by what the
+generator did and never by a language:
+
+- the temporal marker written as part of the verb's form;
+- the temporal marker written as a separate leaf, the verb's form
+  unchanged;
+- the spatial marker written as part of the noun's form;
+- one leaf written for two selections (`position` called twice on one
+  leaf);
+- two leaves for two selections on one head (`position` called twice);
+- no temporal marker written at all, where the phase questions answer
+  *unknown*.
+
+The generator (`test/constituent_corpus.py`) is the only place these
+choices exist, and it is test tooling, not the model. The gate passes when
+every variant is learned by the same mechanism with no change to it. No
+natural-language corpus is needed for this gate, so it does not wait for
+the developed corpus that the learning claims wait for. Tense and aspect
+also need the phases populated, which is the VP temporal-difference
+teacher of item 3.5.
+
+### 13.3 Literature
+
+The requirement is real: tense and aspect are written on an auxiliary, as
+free particles, or not at all (Comrie 1976, 1985; Dahl 1985; Li & Thompson
+1981); tense is written on nouns (Nordlinger & Sadler 2004; Evans 1995);
+path is inside the verb in verb-framed languages and on a satellite in
+satellite-framed ones (Talmy 2000); one preverb may encode direction and
+perfectivity at once; the same selections move between word, affix and
+zero over time (Bybee, Perkins & Pagliuca 1994; Haspelmath 1997). The
+localist tradition (Anderson 1971) holds that time and place are one kind
+of relation, which is what §5 decided.
+
+## 14. Two differences: the verb across time, the modal across possibility *(Alec, 2026-10-19; written by Claude)*
+
+> **Modals and counterfactuals are a second difference. They extend the
+> space of events into possibility space.** (Alec, 2026-10-19: "a big part
+> of my work in cognitive set theory and the whole part.")
+
+This section records the two differences side by side, because the
+second is as large a part of the design as the first and had been
+mis-stated in discussion as "modals do not teach". They do. They are the
+difference that opens the event into the possibilities it is one of, and
+the operation that makes a whole of which the actual event is a part.
+Alec's books, *Cognitive Set Theory* and *The Whole Part*, are the
+source, cited as the books attached to his ORCID record,
+[0000-0002-6570-7571](https://orcid.org/0000-0002-6570-7571) (Alec,
+2026-10-19: "just reference them as books attached to my ORCID"); this section gives the mechanism's reading of them and
+marks what is his and what is Claude's to be confirmed.
+
+### 14.1 The first difference: the verb is a group element acting on the identity *(Alec's direction, 2026-10-19, corrected the same day; Claude's reading, to confirm)*
+
+Alec: "Verbs restrict the all-ones temporal dimensions (whichever those
+turn out to be) to alter the temporal possibility space that the noun
+phrase otherwise has … If 'Alec runs', then the identity that covers Alec
+undergoes a change, since that entity may be tired after the completion of
+the sentence." Then, correcting the picture: "I am trying to understand the
+vector space we are creating in mereological and Boolean terms, and that
+may be overly constrictive. I am probably just asking for an **identity
+element in an abelian or some other kind of group as defined by the
+operation of the VP** (which may be defined by object before and object
+after, but a strict subtraction would probably not be sufficient; we had a
+matrix operation previously where the verb defined the diagonal, and that
+seems like a much more likely transformation than an actual difference)."
+
+The reading:
+
+- **The verb is an element of a group acting on the identity's frame.**
+  A verb phrase is a map `v: before ↦ after` on the identity's occurrence
+  frame (the shared index: the perceptual chart at order 0, the two
+  evidence lanes per symbol above it; item 6.5's frame before, verb
+  column, frame after). The verbs form a group `G` under composition: an
+  identity element `e` (the verb that changes nothing), an inverse for
+  each verb (the change undone), and composition for verbs in sequence.
+  "All-ones" named `e`, not the top of a Boolean lattice. **An undefined
+  verb is `e`**: meaningless, read as *unknown*, never as false.
+- **The form the code already has.** `<verbSpectrum>` (`Language.py`,
+  confirmed 2026-06-20) applies the verb as a diagonal in the chart:
+  `VP(NP) = chart⁻¹(e^{w_v} ⊙ chart(NP))`, with `w_v` the verb's sparse
+  log-eigenvalues from its code, zero-initialized and soft-thresholded,
+  and `unapply` applying `e^{−w_v}`. That is the group of positive
+  diagonals under multiplication: abelian, `e` the unit diagonal (`w = 0`),
+  inverse the reciprocal, composition the sum of logs. The verb defines
+  the diagonal, as Alec recalls; the first difference is **not a
+  subtraction but a quotient**, `w = chart(after) − chart(before)`
+  coordinatewise — a difference of logs, which is what "the verb defines
+  the diagonal" means as a teacher. The follow-on already noted in the
+  code, an NP-conditional basis `Q` so the verb acts as `Q·diag(e^w)·Qᵀ`,
+  is what a non-abelian sequence ("sat, then stood" against "stood, then
+  sat") would need; until then order between verbs is carried by the rows
+  (§3.3, §12), not by the group. **A verb with several participants is
+  not a larger tensor**: "give" is `VP → VP NP` applied twice (Alec,
+  2026-10-19), the catalogue's one rule called again (§13.1's minimality),
+  each application its own diagonal on its own participant.
+- **Recognizability is the verb's support over the noun phrase's
+  extent** (Alec, 2026-10-19). "Break" makes the object unrecognizable
+  because the verb's support covers most of the object's extent: the
+  after-frame no longer matches the identity that the before-frame was an
+  occurrence of. The map is still invertible — `unapply` returns the
+  before-frame exactly — but inversion is informational, what it was, and
+  does not make the after-object recognizable *as* the original. "Alec
+  runs" leaves Alec recognizable because the support is small against his
+  extent. So the fraction of the identity's extent that the verb's support
+  covers is a measure the close reads: below it the after-frame
+  re-witnesses the same individual, above it a new individual is minted
+  (the pieces) and bound to the old by the row (item 6 §15 items 2–3:
+  mint, then match).
+- **Support, zero by default.** The verb's support is the set of
+  coordinates where `w_v ≠ 0`. A fresh verb is `e` everywhere — support
+  empty, undefined. A coordinate enters the support when the log-ratio
+  recurs across occurrences (the type criterion of §12), and the sparsity
+  threshold is the admission. Outside the support there is no expectation
+  (κ = 0). A correlate that recurs for one identity and not for others
+  (tiredness after running: Alec, not a car) never enters the verb and
+  stays an expectation on the identity (item 4).
+- **Where the quotient is undefined, nothing is learned.** A coordinate
+  that is zero in the before-frame has no log-ratio; that occurrence
+  teaches nothing there. The frame's coordinates are presences and lanes,
+  never signed, so a positive diagonal keeps them in the chart; adding a
+  property ("reddens") is the against lane of red driven toward zero and
+  the for lane scaled up where it was present at all.
+- **Two algebras, not one.** The Boolean and mereological picture is the
+  right one for *selections*: `position` (§4–5, §13) is an idempotent meet
+  with no inverse — on the mat twice is on the mat; past twice is past. The
+  verb proper is the other algebra: a group element, with an inverse and
+  not idempotent — ran twice is more than ran once. Tense, aspect and the
+  preposition select among a change's phases; the change itself is the
+  group element. The dimensional `lift`/`lower` stays in FutureWork.
+- **States are not group elements.** A synchronic statement ("Alec is
+  tired", "the box contains apples", "cats breathe") is a relation and a
+  relative truth (Alec, 2026-10-19; two truths §1); it is a selection
+  (part of a region) located in a situation, and its start and end come
+  from the rows (§3.3, a complement ends it). An idea with a verb proper
+  is a change: an element other than `e`. (The earlier draft's "a state
+  restricts every phase alike" is withdrawn.)
+- **The teacher** (item 3.5's verb line, formerly "VP vectors by temporal
+  difference"): per occurrence, the identity's frames before and after the
+  sentence are read from the stream's history (its occurrence rows; item
+  6's occurrences, nothing new); `w` is their coordinatewise log-ratio;
+  across occurrences the recurring coordinates pass the threshold into the
+  support. The participant the quotient is taken on is the verb's content
+  ("broke the glass" changes the glass); an impersonal ("it rained") acts
+  on the situation, §12's document individual. `<verbSpectrum>` already
+  has the sparse log-eigenvalues and the exact `unapply`; what is missing
+  is this teacher.
+
+### 14.2 The second difference: the modal extends the event into possibility space *(Alec, 2026-10-19, decided in principle)*
+
+The first difference is taken between phases of one actual history. The
+second is taken between the actual event and the events it could have
+been — across possibility at a time, not across time in one possibility.
+A modal or a counterfactual does not fail to assert a change; it asserts
+a **set of events of which the actual is a member**: it makes a whole of
+which the actual event is a part, and the second difference is that whole
+minus that part — the merely possible. In §14.1's terms, the first
+difference picks an element `v` of the group; the second extends `v` to a
+set of elements of which `v` is one, and a counterfactual names a member
+of that set differing from `v` at one coordinate.
+
+| | first difference | second difference |
+|---|---|---|
+| taken between | the phases of one event (before, after) | the actual event and the set it is extended into |
+| algebra | the group: an element, an inverse, not idempotent | a selection over worlds: idempotent (might-might is might), no inverse (§14.4) |
+| direction | from the default `e`: a change | from the default *all possible worlds* (§14.4): the indicative narrows to the actual; a modal narrows less, so relative to the indicative it extends |
+| what is written | the identity's occurrence rows (ideas, ultimate) | a part relation: the actual event a part of the possible set (a relation, relative) |
+| the default | `e`, "exists": no change | all possible worlds; the indicative is the selection of the actual |
+| examples | "Alec ran", "the box contains apples" | "Alec might run", "Alec could have run", "if Alec had run, he would be tired", "Alec must run" |
+
+Readings of the forms, in the set-theoretic terms:
+
+- **Possibility** ("might", "can", "could"): the event's restriction is
+  re-opened on the named coordinates; the actual is one member of the
+  extended set. The against lane is not asserted; the for lane is asserted
+  *of the set*, not of the actual.
+- **Necessity** ("must", "has to"): the extended set is narrowed back to
+  the event on every member — the whole is restricted as the part is.
+  Necessity is possibility with the complement withheld, which is why the
+  two are duals.
+- **Counterfactual** ("if Alec had run, he would be tired"): a member of
+  the extended set that differs from the actual in exactly the
+  antecedent's restriction, with the consequent asserted of that member.
+  It is the second difference taken at one coordinate, then the first
+  difference run forward inside it.
+- **Future and prospective** (§4) sit between the two: a prospective is
+  the first difference's before-phase; "will" with no evidence yet is the
+  second difference's extension of now.
+
+### 14.3 The minimal mechanism: the modal is the verb phrase's preposition over worlds *(Alec and Claude, 2026-10-19; decided)*
+
+Alec proposed `S → NP VP MP`, "similar to the VP except that it is a
+difference over VPs instead of NPs", and asked for a binary replacement.
+There is one, and it adds no rule: the modal phrase is `position` (§13.1)
+with a **world** as its object, exactly as tense is `position` with a time
+and a locative is `position` with a place:
+
+    S  → NP VP
+    VP → VP PP          position, called once more
+    PP → P  W           a marker leaf, possibly absent, and a world
+
+The test the object supports is **part-of**: the actual world is a part of
+the worlds the modal keeps. The default "in all possible worlds" (§14.4)
+is the call with no selection — every world kept. "Might", "could",
+"must", "would", the conditional and the subjunctive are marker leaves
+read by exposure like "yesterday" and "into"; a language that writes mood
+on the verb's form is the nested-admission case of §12. No `MP` rule
+exists, and the ternary rule is not needed: it flattened two bracketings
+that the binary grammar keeps apart.
+
+**The two bracketings are the two truths** (Alec, 2026-10-19), written
+in the two-truths syntax Alec fixed the same day — an absolute truth is
+`S`; a relation between two truths is `S REL S`:
+
+| reading | derivation | written as | truth |
+|---|---|---|---|
+| *de re*: of Alec, running is possible | the modal's `position` on the verb phrase, before it acts on the noun phrase | `S REL S`: `[Alec] part-of [running things PP(W)]` — the Alec region part of the predicate's region, the predicate nominalized and located in the worlds the modal keeps | relative (two truths §1, as "cats breathe") |
+| *de dicto*: that Alec runs is possible | the modal's `position` on the sentence | `S`: `[Alec runs] PP(W)` — the sentence's own occurrence row, located in the worlds the modal keeps | absolute, in those worlds |
+
+The syntax is the store's own shape (Alec, 2026-10-19: "that corresponds
+exactly to the use of LTM and STM slots"), under the one-slot amendment of
+[two truths §1](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)
+(Alec, 2026-10-19): every row has **one slot**. An absolute truth `S`
+holds a concept vector — the idea fused to one point, which need not be a
+codebook entry. A relative truth `S REL S` holds a minted symbol whose
+definition row carries `R` and the two referenced `S` symbols, which must
+be codebook entries; writing the relation is what mints them. So *de re*
+writes a relation symbol defined over `[Alec]` and `[running things
+PP(W)]`, and *de dicto* writes the fused point of `[Alec runs] PP(W)`. No
+new row kind is needed for the modal.
+Each `S` has its noun phrase, verb phrase and world, defaulting to
+everything, occurs and all possible worlds (§14.4); `[Alec]` and
+`[running things]` are such sentences with their defaults, and the modal
+sits in the second one's `PP(W)`. "Alec might run" has both readings in
+English and languages mark the difference; under the minimal operators the
+chooser picks the derivation by exposure, as it picks any attachment, and
+the scope ambiguity is the attachment ambiguity. In §14.1's terms the *de
+re* reading extends the group element `v` and the *de dicto* reading
+extends the resulting state.
+
+What is written, then:
+
+- **A world is an individual**, minted as §12's document individual is and
+  bound by continuity; the actual world is the default, and a possible
+  world differs from it in the restrictions the modal names. The part
+  relation between worlds is the world individual's own row, as a
+  document's is.
+- ***De re*** writes `S REL S`: the part relation between the two truths,
+  the second located in the world — a relative truth. Nothing enters
+  Alec's history as having happened.
+- ***De dicto*** writes `S`: the sentence's occurrence row located in the
+  world — an absolute truth, true there. The actual stream's rows are
+  untouched unless the world is the actual one (the indicative).
+- **The teacher** for the modal is the extension itself: the kept worlds'
+  frame is the actual frame with the named restriction re-opened
+  (possibility) or imposed (a counterfactual antecedent). That is a
+  target, so modals train; what they train is the world's relation and
+  its minting, never the identity's occurrences. "Modals do not teach" is
+  withdrawn.
+- **Reading back:** "did Alec run?" reads the actual stream and finds
+  nothing (*unknown*, or *no* if the complement was asserted); "could
+  Alec have run?" reads the relation or the located row. Whole and part
+  are both there.
+
+This supersedes rev 1 of this section (situations as the object and a
+part relation between situations as the only row); situation and world
+are the same individual kind, and the row written depends on the
+bracketing.
+
+### 14.4 Defaults: the empty sentence is wide-open attention *(Alec, 2026-10-19)*
+
+Alec: "We can assume some NP for every sentence, by default everything.
+Default VP is 'exists'. Default MP is 'in all possible worlds'. Taken
+together, these mean that the empty sentence is an assertion that
+everything exists everywhere, which is a wide-open attention." (MP is the
+modal phrase; Alec's gloss "model".)
+
+Every sentence has the three, and each default is the top of its algebra:
+
+| phrase | default | the top of | a word narrows it by |
+|---|---|---|---|
+| NP | everything | the part lattice: the whole field, the all-ones attention mask | restriction (words as restrictors, 2026-09-28) |
+| VP | exists | the change group: the identity element `e`, asserted | a change: an element other than `e` |
+| MP | in all possible worlds | the possibility lattice: every world | selection: the indicative keeps the actual world; "might" keeps a set containing it; "must" keeps every accessible world |
+
+So the empty sentence asserts that everything exists in all possible
+worlds — the field before any word, attention wide open — and a sentence
+is read as a narrowing from there in each of the three. This resolves two
+things above:
+
+- **"Exists" is `e` asserted.** The default VP is the identity element
+  with evidence in the for lane; an *undefined* verb is `e` with no lane
+  filled. "Remain" and "stay" are "exists" said of a span. The two lanes
+  keep the three apart, which is the only place the "undefined is the
+  identity" rule needed them (§14.1).
+- **Whether "exists" is the right word** *(Alec, later the same day: "I
+  wonder if exists makes a narrowing assertion, since ideas do not exist?
+  Perhaps there is no English word for it.")* The default verb phrase must
+  be the identity element asserted and nothing more, and "exists" asserts
+  more: existence, which an idea does not have (ideas are conceived;
+  existence is a matter of evidence, [ExistenceEvidence](../ExistenceEvidence.md)).
+  Claude's proposal: the project's own word is **occurs** — every sentence
+  writes an occurrence row, and "the noun phrase occurs" claims presence
+  to the mind in a situation and no more; it holds of an idea, a percept
+  and a relation alike, and it narrows nothing. English offers "obtains",
+  "there is", "appears" and the bare copula, each carrying a connotation
+  "occurs" does not. The spec reads "exists" above as "occurs" until Alec
+  decides; existence proper is a further relation asserted by evidence.
+- **The modal is a selection, not a group element.** It belongs to the
+  same algebra as tense, aspect and the preposition — idempotent, with no
+  inverse — but over worlds rather than phases or places; §14.2's table
+  is corrected accordingly. The second difference is still the whole minus
+  the part: the worlds the modal keeps, less the actual. Under §13.1's
+  minimality this makes the modal `position` called with a world as its
+  object, which is what §14.3 proposed with "situation" for "world".
+
+### 14.5 Open for Alec
+
+- Whether the first difference's group is left abelian (the diagonal in a
+  fixed chart, as `<verbSpectrum>` has it) for item 3.5, with the
+  NP-conditional basis `Q` as the later step.
+- Whether the possible situation is a minted individual (§14.3) or a
+  lane beside the two evidence lanes; the individual keeps the lanes at
+  two and reuses §12's situation, which is why it is proposed.
+- Whether necessity is to be written as the dual (possibility with the
+  complement withheld) or as its own marker reading.
+- Whether this section moves to its own spec when item 3.5 reaches the
+  verb line; the first difference is that line's teacher.
+
 ## 11. References
 
 Bybee, J., Perkins, R., & Pagliuca, W. (1994). *The Evolution of Grammar.*
@@ -552,3 +959,19 @@ Moens, M., & Steedman, M. (1988). Temporal ontology and temporal
 reference. *Computational Linguistics* 14(2), 15–28. Pinker, S. (1999).
 *Words and Rules.* Basic Books. Reichenbach, H. (1947). *Elements of
 Symbolic Logic.* Macmillan.
+
+Added 2026-10-19 (§13): Anderson, J. M. (1971). *The Grammar of Case:
+Towards a Localistic Theory.* Cambridge University Press. Comrie, B.
+(1976). *Aspect.* Cambridge University Press. Comrie, B. (1985). *Tense.*
+Cambridge University Press. Dahl, Ö. (1985). *Tense and Aspect Systems.*
+Blackwell. Evans, N. (1995). *A Grammar of Kayardild.* Mouton de Gruyter.
+Li, C. N., & Thompson, S. A. (1981). *Mandarin Chinese: A Functional
+Reference Grammar.* University of California Press. Nordlinger, R., &
+Sadler, L. (2004). Nominal tense in crosslinguistic perspective.
+*Language* 80(4), 776–806. Talmy, L. (2000). *Toward a Cognitive
+Semantics*, vol. 2. MIT Press.
+
+Added 2026-10-19 (§14): Rogers, A. *Cognitive Set Theory*; Rogers, A.
+*The Whole Part* ([thewholepart.com](https://thewholepart.com)) — the books
+attached to the author's ORCID record,
+[0000-0002-6570-7571](https://orcid.org/0000-0002-6570-7571).

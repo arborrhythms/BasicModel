@@ -1,0 +1,73 @@
+Fss.........FF..........                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_resolved_recall_keeps_its_program_after_memory_advances _________
+test/test_output_walk.py:821: in test_resolved_recall_keeps_its_program_after_memory_advances
+    assert d.row_sources == ("recall", "recall")
+E   AssertionError: assert ('thought-set', 'thought-set') == ('recall', 'recall')
+E     
+E     At index 0 diff: 'thought-set' != 'recall'
+E     Use -v to get more diff
+_ test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite] _
+test/test_parts_of_speech.py:347: in test_artifact_restoration_retains_weights_and_occupation_state_exactly
+    restore_warmup(model,path,restore)
+test/identity_experiment.py:209: in restore_warmup
+    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5139: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4451: in _restore_structural_extras
+    store.load_semantic_extras(saved)
+bin/Layers.py:9272: in load_semantic_extras
+    raise ValueError("truth semantic content differs from its checkpoint fingerprint")
+E   ValueError: truth semantic content differs from its checkpoint fingerprint
+----------------------------- Captured stdout call -----------------------------
+Grammar checkpoint: 9 declared migrations
+[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt
+  Keys in model but missing from file: 15 (initialized fresh)
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6998/test_artifact_restoration_reta0/occupation.ckpt
+_ test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description] _
+test/test_parts_of_speech.py:347: in test_artifact_restoration_retains_weights_and_occupation_state_exactly
+    restore_warmup(model,path,restore)
+test/identity_experiment.py:209: in restore_warmup
+    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5139: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4451: in _restore_structural_extras
+    store.load_semantic_extras(saved)
+bin/Layers.py:9272: in load_semantic_extras
+    raise ValueError("truth semantic content differs from its checkpoint fingerprint")
+E   ValueError: truth semantic content differs from its checkpoint fingerprint
+----------------------------- Captured stdout call -----------------------------
+Grammar checkpoint: 9 declared migrations
+[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt
+  Keys in model but missing from file: 15 (initialized fresh)
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-6998/test_artifact_restoration_reta1/occupation.ckpt
+=============================== warnings summary ===============================
+test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:10804: UserWarning: retired sentence/ARMA heads migrated to a fresh shared activation predictor
+    warnings.warn('retired sentence/ARMA heads migrated to a fresh shared activation predictor', UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances
+FAILED test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]
+FAILED test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]
+3 failed, 19 passed, 2 skipped, 7 warnings in 16.90s

@@ -20,9 +20,15 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     op_index = torch.tensor([operation], device=parent.device)
     live = torch.ones(1, dtype=torch.bool, device=parent.device)
     if kind == 2:
-        child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
         wrapped = language._tree_layer(1).unary_ops[operation]
         op = getattr(wrapped, 'gl', wrapped)
+        if getattr(op, 'retains_operand', False):
+            # A withholding operation explicitly retains its operand in the
+            # committed journal. This is an occurrence witness, not a free
+            # inverse of exclusion or a prediction of a missing operand.
+            witness = frame[:1].detach()
+            return ((witness, torch.isfinite(witness)),)
+        child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
         if getattr(op, 'inverse_kind', None) == 'unary' and not hasattr(op, 'marker_base'):
             coordinates = op.reverse(coordinates.to(parent)).bool()
         return ((child, coordinates & ~bad[:, None]),)

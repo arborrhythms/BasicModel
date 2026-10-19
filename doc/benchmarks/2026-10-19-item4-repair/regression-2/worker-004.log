@@ -1,0 +1,58 @@
+..................FFFFFF                                                 [100%]
+=================================== FAILURES ===================================
+______ test_prediction_trains_predictor_with_detached_context_and_target _______
+test/test_inter_sentence_prediction_shape.py:22: in test_prediction_trains_predictor_with_detached_context_and_target
+    layer = _make_layer(D=4)
+            ^^^^^^^^^^^^^^^^
+test/test_inter_sentence_prediction_shape.py:105: in _make_layer
+    return Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+__________ test_consuming_prediction_loss_never_retains_encoder_graph __________
+test/test_inter_sentence_prediction_shape.py:40: in test_consuming_prediction_loss_never_retains_encoder_graph
+    layer = _make_layer(D=4)
+            ^^^^^^^^^^^^^^^^
+test/test_inter_sentence_prediction_shape.py:105: in _make_layer
+    return Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+_______ test_prediction_context_is_row_local_and_reset_keeps_other_rows ________
+test/test_inter_sentence_prediction_shape.py:58: in test_prediction_context_is_row_local_and_reset_keeps_other_rows
+    layer = _make_layer(D=4, batch=2)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_inter_sentence_prediction_shape.py:105: in _make_layer
+    return Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+____ test_consolidated_prediction_uses_observed_context_without_target_leak ____
+test/test_inter_sentence_prediction_shape.py:71: in test_consolidated_prediction_uses_observed_context_without_target_leak
+    layer = _make_layer(D=4)
+            ^^^^^^^^^^^^^^^^
+test/test_inter_sentence_prediction_shape.py:105: in _make_layer
+    return Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+__ test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled ___
+test/test_inter_sentence_prediction_shape.py:85: in test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled
+    layer = _make_layer(D=4)
+            ^^^^^^^^^^^^^^^^
+test/test_inter_sentence_prediction_shape.py:105: in _make_layer
+    return Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+_ TestActivationShape.test_native_bank_shape_independent_of_observation_depth __
+test/test_inter_sentence_prediction_shape.py:122: in test_native_bank_shape_independent_of_observation_depth
+    layer = _make_layer(D=4)
+            ^^^^^^^^^^^^^^^^
+test/test_inter_sentence_prediction_shape.py:105: in _make_layer
+    return Layers.SymbolExpectation(
+E   TypeError: SymbolExpectation.__init__() got an unexpected keyword argument 'p'
+=============================== warnings summary ===============================
+test/test_forgetting.py::test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_inter_sentence_prediction_shape.py::test_prediction_trains_predictor_with_detached_context_and_target
+FAILED test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_never_retains_encoder_graph
+FAILED test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows
+FAILED test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak
+FAILED test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled
+FAILED test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_native_bank_shape_independent_of_observation_depth
+6 failed, 18 passed, 1 warning in 4.13s

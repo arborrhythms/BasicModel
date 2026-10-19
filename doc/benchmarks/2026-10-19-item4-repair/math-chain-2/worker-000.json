@@ -1,0 +1,29 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 221.25033050007187,
+      "message": "test/test_math_chain_section14.py:211: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate\n    assert min(ratios) >= .9 and max(ratios) <= 1.1, report\nE   AssertionError: {'forced': False, 'conditional_band': [0.9, 1.1], 'alternatives_relative_to_uniform': [0.8779656291007996, 1.1124873161315918], 'initialization_documents': 32, ...}\nE   assert (0.8779656291007996 >= 0.9)\nE    +  where 0.8779656291007996 = min([1.0000240802764893, 0.9999759197235107, 1.000348448753357, 0.9996514916419983, 1.0000239610671997, 0.9999761581420898, ...])",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=8.332s)\r\nbatch = 16 (\u0394=6.094s)\r\nbatch = 24 (\u0394=8.127s)\r\nbatch = 32 (\u0394=11.121s)\r\nbatch = 40 (\u0394=7.977s)\r\nbatch = 48 (\u0394=8.494s)\r\nbatch = 56 (\u0394=8.456s)\r\nbatch = 64 (\u0394=11.110s)\r\nbatch = 72 (\u0394=8.193s)\r\nbatch = 80 (\u0394=8.912s)\r\nbatch = 88 (\u0394=9.125s)\r\nbatch = 96 (\u0394=9.021s)\r\nbatch = 104 (\u0394=13.614s)\r\nbatch = 0 (\u0394=96.750s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

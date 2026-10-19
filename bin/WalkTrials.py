@@ -125,75 +125,10 @@ class ThoughtTrialState:
                 elif name in vars(owner):delattr(owner,name)
 
 
-@dataclass(frozen=True)
-class ForecastWalk:
-    """Two prior-only forecasts awaiting one external observation.
-
-    The records belong to the forecast, not the interaction history. Restoring
-    a speculative history after the observation would erase newer evidence.
-    """
-    other: object
-    greedy: tuple
-    explore: tuple
-    departure: int
-    records: tuple
-    step_cost: float
-
-    def detached(self):
-        return replace(self, other=self.other.detached())
 
 
-def forecast_pair(model, meaning, *, row, run):
-    """Hold both forecasts at one parameter version, with no published effects."""
-    base = ThoughtTrialState(model)
-    old = getattr(model, '_thought_walk', None)
-    def trial(exploit=None, departure=-1):
-        trace = dict(actions=[], eligible=[], exploit=exploit, departure=departure)
-        model._thought_walk = trace
-        model._anticipatory_choices = []
-        result, pending = run()
-        return pending, trace, tuple(result.records)
-    try:
-        greedy, trace, records = trial()
-        base.restore()
-        eligible = torch.tensor([trace['eligible']], dtype=torch.bool, device=meaning.roles.device)
-        departure = int(departure_at(eligible)[0]) if eligible.numel() else -1
-        explore, other, other_records = trial(tuple(trace['actions']), departure)
-        if greedy.versions != explore.versions:
-            raise RuntimeError('anticipation trials crossed a predictor update')
-        walk = ForecastWalk(explore.detached(), tuple(trace['actions']),
-            tuple(other['actions']), departure, (records, other_records), model.WHAT_STEP_COST)
-        return replace(greedy.detached(), walk=walk)
-    finally:
-        base.restore()
-        model._thought_walk = old
 
 
-def select_forecast(pending, roles, occupied, kind):
-    """Loss-side comparison of held estimates; the target never enters a walk."""
-    walk = pending.walk
-    if walk is None or pending.comparison is not None:
-        return pending
-    from torch.nn import functional as F
-    def cost(value):
-        prediction = value.prediction
-        error = (prediction.roles - roles.detach().to(prediction.roles)).square().mean()
-        error = error + F.binary_cross_entropy_with_logits(
-            prediction.presence_logits, occupied.to(prediction.presence_logits))
-        if kind is not None:
-            error = error + F.binary_cross_entropy_with_logits(
-                prediction.kind_logit, prediction.kind_logit.new_tensor(float(kind == 'relation')))
-        return float(error.detach()) + walk.step_cost * value.work
-    costs = (cost(pending), cost(walk.other))
-    if not all(torch.isfinite(torch.tensor(costs))):
-        raise FloatingPointError('non-finite anticipation comparison')
-    wins = walk.departure >= 0 and costs[1] < costs[0]
-    width = max(len(walk.greedy), len(walk.explore))
-    audit = dict(costs=costs, explore_kept=wins, departure=walk.departure,
-        greedy=walk.greedy + (-1,) * (width-len(walk.greedy)),
-        explore=walk.explore + (-1,) * (width-len(walk.explore)),
-        records=walk.records[int(wins)])
-    return replace(walk.other if wins else pending, walk=None, comparison=audit)
 
 
 def thought_pair(model,meaning,*,row,work_budget,registry,work,score):

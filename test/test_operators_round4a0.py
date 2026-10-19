@@ -67,10 +67,12 @@ def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
 
 def test_full_store_can_rewitness_both_existing_prediction_pair_addresses():
     store = TernaryTruthStore(4, 2)
+    from meaning_fixtures import symbol_prediction, estimate_meaning
+    predicted = estimate_meaning(symbol_prediction(torch.ones(1,4), torch.full((1,2),.5)))
     arguments = dict(presence_logits=torch.zeros(3), document='turn')
-    first = store.append_expectation_pair(meaning(.5), meaning(1.), **arguments)
+    first = store.append_expectation_pair(predicted, meaning(1.), **arguments)
     assert first == (0, 1) and len(store) == store.capacity
-    assert store.append_expectation_pair(meaning(.5), meaning(1.), **arguments) == first
+    assert store.append_expectation_pair(predicted, meaning(1.), **arguments) == first
     assert store.witness_count.tolist() == [2, 2]
 
 

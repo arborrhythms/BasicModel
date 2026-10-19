@@ -10,7 +10,7 @@ import pytest
 import torch
 from Attention import BracketKeys, narrow_words
 from Language import OperationSelectionLayer
-from Layers import BracketExpectation
+from Layers import SymbolExpectation
 
 
 def _contiguous_spans(B,K,w):
@@ -36,7 +36,8 @@ def _reading(spans,percept,prior=None):
 def _distribution(percept,spans,*,training=True):
     keys=BracketKeys._span_keys(percept,spans)
     B,W,D=keys.shape
-    owner=BracketExpectation(n_symbols=W,max_depth=W,n_dim=D,concept_dim=D)
+    owner=SymbolExpectation(n_symbols=W,max_depth=W,n_dim=D,concept_dim=D)
+    owner.set_symbol_bank(torch.eye(owner.concept_dim))
     targets=torch.arange(W)[None].expand(B,-1)
     valid=spans[...,1]>spans[...,0]
     def read():
@@ -112,11 +113,12 @@ def test_no_codebook_falls_back_to_content_choice():
     assert _reading(spans,percept).accepted.all()
 
 
-def test_next_word_ce_matches_neg_log_alpha():
+def test_next_word_activation_error_matches_both_native_lanes():
     spans,percept,*_=_module_inputs();owner,read=_distribution(percept,spans)
-    out=read();targets=torch.arange(spans.shape[1])[None,:,None].expand(len(spans),-1,-1)
-    expect=-torch.log(out.probabilities.gather(-1,targets)[...,0].clamp_min(1e-12))
-    torch.testing.assert_close(out.loss,expect,atol=1e-4,rtol=0.)
+    out=read();B,W=spans.shape[:2]
+    target=torch.zeros(B,W,W,2)
+    target[:,:, :,0]=torch.eye(W)[None]
+    torch.testing.assert_close(out.loss,(target-out.activation).square().mean((-1,-2)))
 
 
 def test_eval_does_not_build_a_training_graph():

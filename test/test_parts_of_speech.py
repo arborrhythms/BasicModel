@@ -162,7 +162,7 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     from PartsOfSpeech import operation_name
     grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
     rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
-    expected=dict(intersection=3,union=3,conjunction=3,disjunction=3,
+    expected=dict(intersection=3,union=3,conjunction=3,disjunction=3,product=3,sum=3,
         **{'not':1,'non':1},adverb=1,preposition=2,surface=2,bind=2,compound=2,
         lower=2,definite=2,lower_unary=1,definite_unary=1,
         preposition_unary=1,surface_unary=1,verb=1,
@@ -222,6 +222,24 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     cosines={(row['left'],row['right']):row['cosine'] for row in parts.collapse()}
     assert cosines['intersection_argin1','intersection_argout1']==pytest.approx(2**-.5)
     assert cosines['intersection_argin2','intersection_argout1']==pytest.approx(2**-.5)
+
+
+def test_kept_product_carries_both_operands_words_into_the_enclosing_np():
+    from Language import Grammar
+    from PartsOfSpeech import operation_name
+    grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
+    rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
+    binary=[rules['product'],rules['lower']]
+    parts=PartsOfSpeech(formal_arguments(binary))
+    # lower(a, product(black, cat)): both words survive into lower's head.
+    program=NS(word_ids=torch.tensor([101,102,103]),actions=torch.tensor([
+        [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0]]))
+    parts.observe_kept(program,binary,())
+    assert flow_mask(binary[0])==3
+    assert parts.counts[101]==Counter(lower_argin1=1)
+    for role,word in enumerate((102,103),1):
+        assert parts.counts[word]==Counter({f'product_argin{role}':1,
+            'product_argout1':1,'lower_argin2':1,'lower_argout1':1})
 
 
 def test_chooser_adds_input_probabilities_directly_and_carries_words(chooser):
@@ -293,11 +311,19 @@ def test_stage_menu_masks_every_undeclared_operation(chooser):
     for row in controls[:2]:row['brackets']=False
     assert not summarize_stage(results,'final')['gates']['brackets']['passed']
     results[0]['unexpected_occurrences']=1
-    assert not summarize_stage(results,'final')['gates']['occurrences']['passed']
+    # The shared stage-4e contract still rejects unexpected occurrences.
+    from constituent_measurement import summarize
+    assert not summarize(results)['gates']['occurrences']['passed']
+    # NP §5a reports extras, while keeping duplicate and collision gates.
+    final=summarize_stage(results,'final')
+    assert final['gates']['occurrences']['passed']
+    assert final['reports']['unexpected_occurrences']==1
 
 
-@pytest.mark.phase("np_definite")
-def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_path, monkeypatch, restore_phase):
+@pytest.mark.parametrize('phase',[
+    pytest.param('np_definite',marks=pytest.mark.phase('np_definite')),
+    pytest.param('np_description',marks=pytest.mark.phase('np_description'))])
+def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_path, monkeypatch, phase, restore_phase):
     from Models import BaseModel
     from identity_experiment import make_model,restore_warmup
     from IndependentComponents import _unpack_state

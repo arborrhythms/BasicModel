@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/seed23_diagnostic.py",
+    "--worker",
+    "--reviewed-gains"
+  ],
+  "pid": 19502,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1171031864,
+  "elapsed_seconds": 28.23402783414349,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/seed23-reviewed/run.log"
+}

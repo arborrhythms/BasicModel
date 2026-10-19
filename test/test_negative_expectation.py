@@ -13,77 +13,26 @@ from meaning_fixtures import record_observation
 from test_sentence_expectation import layer, observe
 
 
-def test_empty_role_has_residual_and_trains_the_predictor():
+def test_omitted_symbol_has_a_residual_and_trains_only_the_predictor():
     model = layer()
-    observe(model, torch.ones(3, 4))
+    observe(model, torch.eye(4)[:3])
     prediction = model.expect_next_meaning()
-    prediction.roles.retain_grad()
     mask = torch.tensor([True, True, False])
-    target = torch.nn.Parameter(torch.ones(3, 4))
-    model.observe_stm_end_state([3], [target], layout="infix", role_masks=[mask])
+    target = torch.nn.Parameter(torch.eye(4)[:3])
+    model.observe_stm_end_state([3], [target], layout='infix', role_masks=[mask])
     comparison = model.last_expectation_comparison()
-    torch.testing.assert_close(comparison.residual[2], -prediction.roles[2])
+    torch.testing.assert_close(comparison.residual[2], -prediction.symbol_logits[2].sigmoid())
     model.consume_inter_loss().backward()
-    assert prediction.roles.grad[2].norm() > 0
+    assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in model._inter_predictor.parameters())
     assert target.grad is None
 
 
-@pytest.mark.parametrize("gain", [0., .5, 1.])
-def test_negative_image_identity_presence_and_object_mask(gain):
-    from Meaning import negative_image
-    observed = torch.eye(3)
-    estimate = observed.clone()
-    presence = torch.tensor([1., 1., 0.])
-    mask = torch.tensor([0., 1., 0.])
-    conceived, image = negative_image(observed, estimate, presence,
-                                      gain=gain, object_mask=mask)
-    torch.testing.assert_close(conceived - image, observed)
-    torch.testing.assert_close(conceived[0], (1 - gain) * observed[0])
-    torch.testing.assert_close(conceived[1:], observed[1:])
 
 
-def test_conceived_absence_and_no_credit_to_gain_mask_or_reading():
-    from Meaning import negative_image
-    observed = torch.eye(3, requires_grad=True)
-    estimate = torch.ones(3, 3, requires_grad=True)
-    gain = torch.tensor(1., requires_grad=True)
-    mask = torch.zeros(3, requires_grad=True)
-    conceived, image = negative_image(observed * 0, estimate, torch.ones(3),
-                                      gain=gain, object_mask=mask)
-    torch.testing.assert_close(conceived, -estimate)
-    assert not conceived.requires_grad and not image.requires_grad
-    cold, image = negative_image(observed, None, None, gain=gain)
-    torch.testing.assert_close(cold, observed)
-    assert not image.any()
 
 
-def test_retained_pair_keeps_full_estimate_and_normalized_surprise():
-    from Meaning import expectation_surprise, negative_image
-    store = TernaryTruthStore(4, capacity=8)
-    source = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
-    first = store.append_meaning(source, kind="observation", sentence_index=len(store))
-    prediction = MeaningExpectation(torch.full((3, 4), .5), torch.tensor([9., -9., 9.]))
-    mask = torch.tensor([True, True, False])
-    actual = ConceptualMeaning(torch.ones(3, 4), mask)
-    comparison = ExpectationComparison(
-        prediction, actual.roles, mask, actual.roles - prediction.roles,
-        mask.float() - prediction.presence_logits.sigmoid(), "doc",
-        (store.occurrence_of(first),), ("external", "doc"))
-    row = record_observation(store, actual.roles, 3,
-                                   meaning=actual, expectation=comparison)
-    assert len(store) == 3
-    pair = store.expectation_pair(row, gain=.5, object_mask=torch.tensor([0., 1., 0.]))
-    torch.testing.assert_close(pair["estimate"].roles, prediction.roles)
-    torch.testing.assert_close(pair["observation"].roles, actual.roles)
-    torch.testing.assert_close(pair["residual"], comparison.residual)
-    torch.testing.assert_close(pair["conceived"] - pair["negative_image"], actual.roles)
-    expected = expectation_surprise(actual.roles, prediction.roles,
-        actual.role_mask, prediction.presence_logits.sigmoid())
-    assert store.row(row)["surprise"] == pytest.approx(float(expected))
-    restored = TernaryTruthStore(4, capacity=8)
-    restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
-    assert restored.row(row)["surprise"] == store.row(row)["surprise"]
+
+
 
 
 def test_old_checkpoint_unknown_surprise_is_not_zero():
@@ -96,20 +45,6 @@ def test_old_checkpoint_unknown_surprise_is_not_zero():
     assert restored.row(0)["surprise"] == -1
 
 
-def test_predictor_loss_and_gradients_are_identical_at_every_gain():
-    from Meaning import negative_image
-    results = []
-    for gain in (0., 1.):
-        model = layer()
-        observe(model, torch.eye(3, 4))
-        observe(model, torch.ones(3, 4), mask=torch.tensor([True, False, True]))
-        comparison = model.last_expectation_comparison()
-        negative_image(comparison.observed, comparison.estimate.roles,
-                       comparison.estimate.presence_logits.sigmoid(), gain=gain)
-        loss = model.consume_inter_loss()
-        loss.backward()
-        results.append((loss.detach(), [p.grad for p in model._inter_predictor.parameters()]))
-    torch.testing.assert_close(results[0], results[1], rtol=0, atol=0)
 
 
 def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch):
@@ -133,19 +68,18 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
 
 
 def _anticipating_model():
-    from Layers import BracketExpectation
+    from Layers import SymbolExpectation
     from test_normal_thought_controller import _catalog_world
     model, registry, memory, part, whole = _catalog_world()
     meaning = registry.form("part", part, whole)
     width = meaning.roles.shape[-1]
     store = TernaryTruthStore(width, capacity=64)
-    discourse = BracketExpectation(4, 8, width, concept_dim=width,
-                                   expectation_scope="structured")
+    discourse = SymbolExpectation(4, 8, width, concept_dim=width,
+                                   expectation_scope='symbols')
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     discourse._ltm_store = store
     model.symbolSpace.ltm_store = store
     model.symbolSpace.expectation = discourse
-    model.expectation_policy_weight = .2
-    model.expectation_query_budget = 64
     observe(discourse, meaning.roles)
     index = record_observation(store, meaning.roles, 3, meaning=meaning)
     discourse.bind_observation_occurrence(0, store.occurrence_of(index))
@@ -172,7 +106,8 @@ def test_metadata_comes_from_the_preceding_occurrence_not_the_target():
     comparison = discourse.last_expectation_comparison()
     row = record_observation(store, target.roles, 3, meaning=target, expectation=comparison)
     pair = store.expectation_pair(row)
-    assert pair["estimate"].bindings == prior.bindings != target.bindings
+    assert dict(pair["estimate"].bindings)["variable"] == "prior"
+    assert prior.bindings != target.bindings
     assert pair["estimate"].scope == prior.scope != target.scope
     assert estimate.bindings == comparison.estimate.bindings
 
@@ -182,8 +117,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
     from test_reverse_traversal import _select_completed_binary_path
     torch.manual_seed(946)
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1, input_width=16,
-        training_overrides={"expectationPolicyWeight": .2, "expectationQueryBudget": 64,
-                            "expectationGain": 0., "reconstructInLoop": True,
+        training_overrides={"rowExpectationGain": 0., "reconstructInLoop": True,
                             "reconstructionPlacement": "eager", "intraLossWeight": 0.},
         architecture_overrides={"ltmConsolidation": True})
     model._tensor_peer_while_eager = True
@@ -206,43 +140,11 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
     chooser = model.symbolSpace.languageLayer.operation_layer
     assert chooser.chooser.mlp[-1].weight.norm() > 0
     assert not model.__dict__.get("_selected_thought_policy_records")
-    assert model._expectation_policy_loss() is None
+    assert not hasattr(model, '_expectation_policy_loss')
 
 
-def test_surprise_normalizes_observed_or_expected_roles_without_stance():
-    from Meaning import expectation_surprise
-    observed = torch.zeros(3, 4, requires_grad=True)
-    estimate = torch.tensor([[1.] * 4, [2.] * 4, [9.] * 4], requires_grad=True)
-    mask = torch.tensor([True, False, False])
-    presence = torch.tensor([0., .5, 0.], requires_grad=True)
-    # Observed roles have unit weight; otherwise use expected presence.
-    # The half-expected empty role counts; unused padding does not dilute it.
-    score = expectation_surprise(observed, estimate, mask, presence)
-    error = (1. + .5 * 4.) / 1.5
-    assert float(score) == pytest.approx(error / (1 + error))
-    assert not score.requires_grad
-    assert expectation_surprise(observed, observed, mask, presence) == 0
-    assert expectation_surprise(observed, estimate, torch.zeros(3, dtype=torch.bool),
-                                torch.zeros(3)) == 0
 
 
-@pytest.mark.parametrize("capacity,sources", [(8, True), (2, True), (8, False)])
-def test_idea_and_relation_rows_have_equal_surprise_per_role(capacity, sources):
-    scores = []
-    for depth in (1, 3):
-        store = TernaryTruthStore(4, capacity=capacity)
-        mask = torch.arange(3) < depth
-        actual = ConceptualMeaning(torch.ones(3, 4), mask)
-        source = store.append_meaning(actual, kind="observation", sentence_index=len(store))
-        prediction = MeaningExpectation(torch.zeros(3, 4),
-                                        torch.where(mask, 100., -100.))
-        comparison = ExpectationComparison(prediction, actual.roles, mask,
-            actual.roles - prediction.roles, mask.float() - prediction.presence_logits.sigmoid(),
-            "doc", (store.occurrence_of(source),) if sources else (), ("external", "doc"))
-        row = record_observation(store, actual.roles, depth,
-                                       meaning=actual, expectation=comparison)
-        scores.append(store.row(row)["surprise"])
-    assert scores == pytest.approx([.5, .5])
 
 
 @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
@@ -253,7 +155,9 @@ def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch
         row = store.append_idea(torch.ones(4), sentence_index=len(store))
         store.set_origin(row, store.ORIGIN_USER)
     source = store.append_meaning(meaning, kind="observation", sentence_index=len(store))
-    e, o = store.append_expectation_pair(meaning, meaning, presence_logits=torch.ones(3),
+    from meaning_fixtures import symbol_prediction, estimate_meaning
+    prior = symbol_prediction(torch.ones(1, 4), torch.tensor([[1., 0.]]))
+    e, o = store.append_expectation_pair(estimate_meaning(prior), meaning, presence_logits=torch.ones(3),
         source_occurrences=(store.occurrence_of(source),))
     eref, oref = store.occurrence_of(e), store.occurrence_of(o)
     if state == "restored":
@@ -273,7 +177,7 @@ def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch
         pair = store.expectation_pair(row)
         assert pair["estimate_occurrence"] == eref
         assert pair["observation_occurrence"] == oref
-        assert not pair["residual"].any()
+        assert pair["residual"].abs().max() < 1e-6
 
 
 def test_detached_pending_prediction_replays_without_an_optimizer_step():
@@ -288,21 +192,8 @@ def test_detached_pending_prediction_replays_without_an_optimizer_step():
     assert any(p.grad is not None and p.grad.norm() > 0 for p in model._inter_predictor.parameters())
 
 
-def test_delayed_contrastive_credit_replays_the_current_predictor():
-    model = layer()
-    model.set_inter_loss_weight(0.)
-    model.set_inter_contrastive(1.)
-    observe(model, torch.eye(3, 4))
-    original = model.expect_next_meaning().roles.detach().clone()
-    model.detach_prediction_context()
-    with torch.no_grad():
-        next(model._inter_predictor.parameters()).add_(.001)
-    observe(model, -torch.eye(3, 4))
-    torch.testing.assert_close(model.last_expectation_comparison().estimate.roles, original)
-    loss = model.consume_inter_contrastive_loss()
-    assert loss is not None and loss.requires_grad
-    loss.backward()
-    assert any(p.grad is not None and p.grad.norm() > 0 for p in model._inter_predictor.parameters())
+
+
 
 
 def test_disabling_expectation_erases_pending_credit_and_starts_cold():
@@ -312,7 +203,7 @@ def test_disabling_expectation_erases_pending_credit_and_starts_cold():
     assert discourse._inter_last_meaning[0] is not None
     discourse.set_expectation_enabled(False)
     assert discourse._inter_last_meaning == [None]
-    assert discourse.consume_expectation_policy_outcomes() == []
+    assert not hasattr(discourse, 'consume_expectation_policy_outcomes')
     discourse.set_expectation_enabled(True)
     assert discourse.expect_next_meaning() is None
 
@@ -422,7 +313,7 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
     for enabled, staged, gain in ((True, False, 1.), (True, True, 0.), (True, True, 1.), (False, False, 1.)):
         torch.manual_seed(948)
         model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
-            training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "expectationGain": gain},
+            training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "rowExpectationGain": gain},
             architecture_overrides={"attentionBudget": 32})
         model.eval()
         model._tensor_peer_while_eager = True
@@ -463,3 +354,79 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
         assert captured[-1].abs().sum() > 0
     for snapshot in snapshots[1:]:
         torch.testing.assert_close(snapshot, snapshots[0], rtol=0, atol=0)
+
+
+@pytest.mark.parametrize('gain', [0., .5, 1.])
+def test_gain_preserves_evidence_identity_and_exempts_the_open_role(gain):
+    from Expectation import gain_field
+    observed = torch.tensor([[1., 0.], [.3, .7], [0., 1.]])
+    exempt = torch.tensor([0., 1., 0.])
+    result = gain_field(observed, observed, strength=gain, exempt=exempt)
+    torch.testing.assert_close(result.content[0], (1.-gain)*observed[0])
+    torch.testing.assert_close(result.content[1], observed[1])
+    torch.testing.assert_close(result.expected, observed)
+    assert not result.omission.any()
+
+
+def test_omission_is_residual_only_and_content_has_no_predictor_credit():
+    from Expectation import gain_field
+    observed = torch.zeros(3, 2)
+    expected = torch.ones(3, 2, requires_grad=True)
+    result = gain_field(observed, expected, strength=1.)
+    assert not result.content.any() and not result.content.requires_grad
+    torch.testing.assert_close(result.omission, expected)
+
+
+def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
+    from meaning_fixtures import symbol_prediction, estimate_meaning
+    from Expectation import retention_surprise
+    store = TernaryTruthStore(4, capacity=8)
+    actual = ConceptualMeaning(torch.eye(4)[:3], torch.tensor([True,True,False]))
+    source = store.append_meaning(actual, kind='observation')
+    prediction = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
+    _, row = store.append_expectation_pair(estimate_meaning(prediction), actual,
+        presence_logits=prediction.presence_logits, source_occurrences=(store.occurrence_of(source),))
+    pair = store.expectation_pair(row, gain=.5)
+    torch.testing.assert_close(pair['observation'].roles, actual.roles)
+    torch.testing.assert_close(pair['expected_activation'], prediction.expected_activation)
+    assert pair['surprise'] == pytest.approx(float(retention_surprise(pair['residual'], pair['expected_activation'])))
+    restored = TernaryTruthStore(4, capacity=8)
+    restored.load_state_dict(copy.deepcopy(store.state_dict()))
+    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+    torch.testing.assert_close(restored.expectation_pair(row)['residual'], pair['residual'])
+    assert restored.row(row)['surprise'] == store.row(row)['surprise']
+
+
+def test_predictor_loss_and_gradients_are_identical_at_every_gain():
+    from Meaning import ClosingImage
+    base = layer()
+    results = []
+    for gain in (0., .5, 1.):
+        model = copy.deepcopy(base)
+        observe(model, torch.eye(4)[:3])
+        observe(model, torch.eye(4)[1:4])
+        comparison = model.last_expectation_comparison()
+        ClosingImage.form(comparison.observed, comparison.estimate.roles,
+            comparison.estimate.presence_logits.sigmoid(), gain=gain,
+            prediction=comparison.estimate, occupied=comparison.occupied)
+        loss = model.consume_inter_loss()
+        loss.backward()
+        results.append((loss.detach(), [p.grad for p in model._inter_predictor.parameters()]))
+    for result in results[1:]:
+        torch.testing.assert_close(result, results[0], rtol=0, atol=0)
+
+
+def test_retired_expectation_surfaces_are_absent():
+    import Meaning, Layers
+    for name in ('negative_image', 'closing_gain', 'expectation_surprise'):
+        assert not hasattr(Meaning, name)
+    for name in ('BracketExpectation', 'SentenceExpectation'):
+        assert not hasattr(Layers, name)
+    model = layer()
+    for name in ('set_inter_contrastive', 'consume_inter_contrastive_loss', 'stage_prediction',
+                 'clear_staged_prediction', 'consume_expectation_policy_outcomes'):
+        assert not hasattr(model, name)
+    with pytest.raises(TypeError):
+        Layers.SymbolExpectation(4, 4, 4, p=1)
+    with pytest.raises(ValueError):
+        Layers.SymbolExpectation(4, 4, 4, expectation_scope='root')

@@ -79,8 +79,8 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
     if len(data.validation_input) < sentences:
         raise ValueError('held-out corpus is shorter than the declared evaluation')
     discourse = model.symbolSpace.expectation
-    if discourse is None or discourse.expectation_scope != 'structured':
-        raise ValueError('learning evaluation requires structured sentence expectation')
+    if discourse is None or discourse.expectation_scope != 'symbols':
+        raise ValueError('learning evaluation requires symbol activation expectation')
     if gain is not None:
         model.expectation_gain = gain
     groups, trials = {}, []
@@ -124,6 +124,6 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
         for control in ('ordered', 'shuffled', 'context_free'):
             x, mask = _controlled_inputs(views[0], views[1], control, seed)
             scores[seed][control] = _score_head(discourse._inter_predictor,
-                x, mask, views[2], target_masks=views[4])
+                x, mask, views[2], bank=discourse._bank_keys, target_masks=views[4])
     return dict(source_manifest=data.source_manifest, sentences=sentences,
                 predicted_targets=len(views[2]), controls=scores, thought=trials)

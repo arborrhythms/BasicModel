@@ -12,86 +12,84 @@ import torch
 from torch.nn import functional as F
 
 
-@torch.no_grad()
-def negative_image(observed, estimate, presence, *, gain=1., object_mask=None,
-                   form_width=0, content_width=None):
-    """Closing-time subtraction, detached from all reading and policy choices.
 
-    These are derived serial values, never writes to a presence field or a
-    third memory record. The predictor is trained separately against the
-    complete observation, including empty roles, irrespective of this gain.
-    """
-    if observed.ndim != 2 or observed.shape[0] != 3:
-        raise ValueError("negative image requires three canonical roles")
-    gain = torch.as_tensor(gain, device=observed.device, dtype=observed.dtype).detach()
-    mask = (torch.zeros(3, device=observed.device, dtype=observed.dtype)
-            if object_mask is None else torch.as_tensor(
-                object_mask, device=observed.device, dtype=observed.dtype).detach())
-    if gain.numel() != 1 or mask.shape != (3,):
-        raise ValueError("expectation gain is scalar and object mask has three roles")
-    if not bool(torch.isfinite(gain).all() and ((gain >= 0) & (gain <= 1)).all()
-                and torch.isfinite(mask).all() and ((mask >= 0) & (mask <= 1)).all()):
-        raise ValueError("expectation gain and object mask must be in [0, 1]")
-    if estimate is None:
-        return observed.detach().clone(), torch.zeros_like(observed)
-    presence = torch.as_tensor(presence, device=observed.device, dtype=observed.dtype).detach()
-    if estimate.shape != observed.shape or presence.shape != (3,):
-        raise ValueError("estimate and presence must align with the three roles")
-    if not bool(torch.isfinite(estimate).all() and torch.isfinite(presence).all()
-                and ((presence >= 0) & (presence <= 1)).all()):
-        raise ValueError("estimate must be finite and presence in [0, 1]")
-    content_width = observed.shape[-1] if content_width is None else int(content_width)
-    if not 0 <= form_width <= content_width <= observed.shape[-1]:
-        raise ValueError('image requires form, complement, then address coordinates')
-    coordinate = torch.arange(observed.shape[-1],device=observed.device)
-    concept_face = (coordinate >= form_width) & (coordinate < content_width)
-    image = -gain * ((1 - mask) * presence)[:, None] * estimate.detach().to(observed)
-    image = torch.where(concept_face, image, 0.)
-    return observed.detach() + image, image
+
 
 
 @dataclass(frozen=True)
 class ClosingImage:
-    """One detached change of origin; storage and prediction targets keep o."""
+    """An attenuated view beside raw identity, prior and two residual signs."""
     observed: torch.Tensor
     conceived: torch.Tensor
     image: torch.Tensor
     concept_width: int
+    gain: object = None
+    expected: object = None
+    excess: object = None
+    omission: object = None
+    identities: object = None
+    row_expected: object = None
 
     @classmethod
-    def form(cls, observed, estimate, presence, *, form_width, content_width=None, **kwargs):
-        end = observed.shape[-1] if content_width is None else content_width
-        conceived, image = negative_image(observed, estimate, presence,
-            form_width=form_width, content_width=end, **kwargs)
-        return cls(observed.detach().clone(), conceived, image, end-form_width)
+    def form(cls, observed, estimate, presence, *, form_width=0, content_width=None,
+             prediction=None, occupied=None, withheld=None, lanes=None, activation=None, epsilon=1e-6,
+             saturation='clip', gain=0., object_mask=None):
+        from Expectation import gain_field, symbol_activations, match_symbols
+        raw = observed.detach().clone()
+        if prediction is None:
+            if estimate is not None:
+                raise ValueError('closing estimates require an explicit symbol-bank prediction')
+            return cls(raw, raw.clone(), torch.zeros_like(raw), raw.shape[-1],
+                       raw.new_ones(raw.shape[0]))
+        keys = prediction.symbol_keys.to(raw)
+        occupied = raw.abs().sum(-1)>0 if occupied is None else occupied
+        activation = (symbol_activations(keys[None], raw[None], occupied[None],
+                                       None if lanes is None else lanes[None])[0]
+                      if activation is None else activation.detach().to(raw))
+        if activation.shape != (len(keys), 2):
+            raise ValueError('retained activation target must align with its prior bank')
+        expected = prediction.symbol_logits.detach().to(raw).sigmoid()
+        prior_withheld = withheld_symbols(prediction, prediction)
+        if prior_withheld is not None:
+            expected = expected * (1.-prior_withheld[:, None])
+        indices, matched = match_symbols(keys[None], raw[None])
+        indices, matched = indices[0], matched[0]
+        exempt = (torch.zeros(len(keys), device=raw.device, dtype=raw.dtype)
+                  if prior_withheld is None else prior_withheld.to(raw).clone())
+        role_exempt = object_mask
+        if role_exempt is not None:
+            exempt.scatter_reduce_(0, indices, role_exempt.to(raw)*matched, reduce='amax')
+        if withheld is not None:
+            exempt = torch.maximum(exempt, withheld.to(exempt))
+        suppressed = exempt.new_zeros(exempt.shape) if prior_withheld is None else prior_withheld.to(exempt)
+        if withheld is not None:
+            suppressed = torch.maximum(suppressed, withheld.to(suppressed))
+        confidence = expected.new_ones(len(keys))
+        role_confidence = torch.as_tensor(presence, device=raw.device, dtype=raw.dtype)
+        if role_confidence.shape != (len(raw),):
+            raise ValueError('closing confidence must align with role carriers')
+        # Unmatched/empty roles cannot change another identity's confidence.
+        confidence.scatter_reduce_(0, indices, torch.where(matched & occupied,
+            role_confidence, -torch.inf), reduce='amax', include_self=False)
+        confidence = torch.where(torch.isfinite(confidence), confidence, 1.)
+        field = gain_field(activation, expected, strength=gain, confidence=confidence,
+            exempt=exempt, withheld=suppressed, epsilon=epsilon, saturation=saturation)
+        applied = torch.where(matched & occupied, field.gain[indices], 1.)
+        content = raw*applied[:, None]
+        return cls(raw, content, content-raw, raw.shape[-1], applied,
+                   field.expected, field.excess, field.omission, prediction.symbol_ids)
 
     def restore(self):
-        return self.conceived-self.image
+        # At gain 1 a confirmed identity may have zero content. Its retained
+        # observation, never division by gain, makes restoration lossless.
+        return self.observed.clone()
+
+    def awareness(self):
+        return dict(observation=self.observed, content=self.conceived,
+                    expectation=self.expected, row_expectation=self.row_expected,
+                    identities=self.identities)
 
 
-@torch.no_grad()
-def expectation_surprise(observed, estimate, observed_mask, presence):
-    """Bound the role-normalized retention residual by s/(1+s).
-
-    The soft union of observed occupancy and expected presence weights each
-    role once: occupied roles count fully, empty roles by their expectation.
-    Dividing by that union's mass makes equal per-role errors comparable for
-    idea and relation rows. No roles in play gives zero. This detached retention
-    statistic does not change the predictor's all-role MSE or raw residual;
-    neither gain nor the active question enters it. Unknown remains -1.
-    """
-    if observed.ndim != 2 or observed.shape[0] != 3 or estimate.shape != observed.shape:
-        raise ValueError("surprise requires matching three-role meanings")
-    mask = torch.as_tensor(observed_mask, device=estimate.device, dtype=torch.bool)
-    presence = torch.as_tensor(presence, device=estimate.device, dtype=estimate.dtype)
-    if mask.shape != (3,) or presence.shape != (3,):
-        raise ValueError("surprise occupancy and presence require three roles")
-    if not bool(torch.isfinite(presence).all() and ((presence >= 0) & (presence <= 1)).all()):
-        raise ValueError("surprise presence must be finite and in [0, 1]")
-    weights = torch.where(mask, torch.ones_like(presence), presence)
-    role_error = (observed.to(estimate) - estimate).square().mean(dim=-1)
-    error = (weights * role_error).sum() / weights.sum().clamp_min(torch.finfo(weights.dtype).tiny)
-    return error / (1 + error)
 
 
 def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_dim=None):
@@ -226,3 +224,40 @@ class ConceptualMeaning:
     def detached(self):
         return type(self)(self.roles.detach(), self.role_mask, **self.metadata(),
                           constituents=tuple(child.detached() for child in self.constituents))
+
+
+def retained_symbol_prediction(meaning):
+    """Rehydrate a complete activation prior from an estimate occurrence."""
+    from types import SimpleNamespace
+    entries = dict(meaning.bindings).get('_expected_symbols')
+    if not entries:
+        return None
+    ids, orders, keys, logits = zip(*entries)
+    like = meaning.roles
+    return SimpleNamespace(symbol_keys=like.new_tensor(keys), symbol_logits=like.new_tensor(logits),
+        symbol_ids=torch.tensor(ids, device=like.device, dtype=torch.long),
+        symbol_orders=torch.tensor(orders, device=like.device, dtype=torch.long), bindings=meaning.bindings)
+
+
+def retained_symbol_activation(meaning, prediction):
+    """Read the original local target after the stored row has been fused."""
+    entries = dict(meaning.bindings).get('_observed_symbol_activations')
+    if entries is None or prediction is None:
+        return None
+    values = {int(identity): pair for identity, pair in entries}
+    return prediction.symbol_keys.new_tensor([
+        values.get(int(identity), (0., 0.)) for identity in prediction.symbol_ids.tolist()])
+
+
+def withheld_symbols(meaning, prediction):
+    """A non modifier's explicit retained identity has no prior at this level."""
+    marks = dict(meaning.bindings).get('_withheld_symbols', ())
+    keys = prediction.symbol_keys
+    if keys is None:
+        return None
+    mask = torch.zeros(len(keys), device=keys.device, dtype=keys.dtype)
+    if marks:
+        values = keys.new_tensor([point for _identity, point in marks])
+        distances = torch.cdist(keys, values)
+        mask = (distances <= 1e-5).any(-1).to(keys)
+    return mask

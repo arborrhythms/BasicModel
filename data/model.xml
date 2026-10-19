@@ -298,18 +298,11 @@
       <!-- Per-neuron certainty tracking in ergodic layers. -->
       <certainty>false</certainty>
 
-      <!-- Expect the next external sentence from preceding meaning in the
-           same stream. Enabled by default. The older ARMA loss is a
-           separate objective whose weight remains zero. -->
+      <!-- One shared native activation predictor, with local detached E. -->
       <sentenceExpectation>true</sentenceExpectation>
-      <!-- Complete occupied local roles; root selects the old benchmark. -->
-      <sentenceExpectationScope>structured</sentenceExpectationScope>
-      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
-      <!-- Per-role negative image at the closing; zero is beginner's mind. -->
-      <expectationGain>1</expectationGain>
+      <sentenceExpectationScope>symbols</sentenceExpectationScope>
+      <!-- The legacy gain spelling remains a config migration fallback. -->
       <!-- Residual credit for prior-only queries through the ordinary chooser. -->
-      <expectationPolicyWeight>0</expectationPolicyWeight>
-      <expectationQueryBudget>64</expectationQueryBudget>
 
       <!-- In-STM autoregressive prediction (IntraSentenceLayer, STM
            serial/parallel modes plan).  Loss weight on the per-word
@@ -325,8 +318,6 @@
            targets and durable history are detached, current-step source
            representations may learn under the reconstruction budget. -->
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
-      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
-      <interContrastiveTemp>0.1</interContrastiveTemp>
       <!-- Hard normal grammatical-thought choices use their own explicit
            REINFORCE credit; zero preserves the deterministic safe baseline. -->
     </training>

@@ -116,37 +116,12 @@ def test_reconstruction_stack_roundtrip():
 # Task 5.3 -- discourse predictor input width narrowed to S only
 # ---------------------------------------------------------------------------
 
-def test_sentence_prediction_uses_root_slot_only():
-    """Discourse predictor consumes the root S-space_role slot, not the full
-    [S | W] snapshot.
-
-    Pre-2026-05-14 the contrastive layer flattened ``n_symbols * n_dim``
-    into the QKVAttentionLayer predictor's input; the bin would blow past
-    the allocator on MM_5M_bivector-scale configs (V_S * D > 100k).
-    The ARMA(p, q) layer pools sentence rep to the **root cell** (the
-    start-symbol reduction's slot) -- a single ``[n_dim]`` vector --
-    and the MLP predictor's input is ``(p + q) * n_dim``, bounded
-    regardless of ``n_symbols``.
-    """
-    import Layers
-    n_symbols = 4
-    max_depth = 6
-    n_dim = 8
-    concept_dim = 12
-    p, q = 5, 2
-
-    discourse = Layers.BracketExpectation(
-        n_symbols=n_symbols,
-        max_depth=max_depth,
-        n_dim=n_dim,
-        p=p, q=q,
-        concept_dim=concept_dim,
-    )
-    assert discourse.predictor is not None
-    assert discourse.sentence_dim == n_dim, (
-        "Sentence rep is the root S-space_role slot of width n_dim, not the "
-        "full n_symbols * n_dim flatten.")
-    in_dim = discourse.predictor[0].in_features
-    assert in_dim == (p + q) * n_dim, (
-        f"predictor input width should be (p+q)*n_dim = {(p+q)*n_dim}, "
-        f"got {in_dim}")
+def test_activation_predictor_parameter_width_does_not_scale_with_bank():
+    from Layers import SymbolExpectation
+    small=SymbolExpectation(4,6,8,concept_dim=12)
+    small.set_symbol_bank(torch.eye(small.concept_dim))
+    large=SymbolExpectation(100000,6,8,concept_dim=12)
+    large.set_symbol_bank(torch.eye(large.concept_dim))
+    assert [p.shape for p in small.parameters()]==[p.shape for p in large.parameters()]
+    assert small._inter_predictor.context[0].in_features==4*12
+    assert small.word_predictor is small._inter_predictor

@@ -17,31 +17,14 @@ def test_reconstruction_keeps_total_credits_and_supplied_answer_only():
     greedy=trial([1.,1.,1.],[0.,0.,0.],[1.,1.,1.])
     explore=trial([1.,2.,.5],[0.,0.,0.],[0.,0.,3.])
     audit=comparison(torch.stack((greedy,explore),1),active)
-    assert audit['wins'].tolist()==[False,False,True]
-    assert audit['keep_decision']==['tie:greedy','greedy','explore']
+    assert audit['wins'].tolist()==[True,False,False]
+    assert audit['keep_decision']==['explore','tie:greedy','greedy']
     assert audit['advantage_sign'].tolist()==[-1.,0.,1.]
-    assert audit['policy_against_keep'].tolist()==[True,False,True]
-    assert audit['answer_against_keep'].tolist()==[True,False,True]
+    assert audit['policy_against_keep'].tolist()==[False,False,False]
+    assert audit['answer_against_keep'].tolist()==[False,False,False]
     assert trial([1.,1.,1.],[0.,0.,0.])[:,2].eq(0).all()
 
 
-def test_expectation_gate_does_not_cancel_against_its_baseline():
-    from Layers import Error
-    from SentenceCredit import expectation_terms
-    pred=torch.ones(3,2,requires_grad=True)
-    logits=torch.tensor([0.,0.,0.],requires_grad=True)
-    target=torch.full((3,2),2.,requires_grad=True)
-    values=[]
-    for gain in (0.,.5,1.):
-        registry=Error(row_mask=torch.tensor([True]))
-        expectation_terms(registry,pred,logits,torch.tensor(0.,requires_grad=True),
-            target,torch.ones(3),'idea',row=0,gain=gain)
-        values.append(registry.total())
-    assert values[0].item()==0
-    torch.testing.assert_close(values[1],values[2]/2)
-    values[2].sum().backward()
-    assert target.grad is None
-    assert pred.grad is not None and logits.grad is not None
 
 
 @pytest.mark.parametrize('walk',['narrowing','compose'])
@@ -123,44 +106,47 @@ def test_field_scope_resolves_witnesses_acquired_by_later_descent(op,pair):
     torch.testing.assert_close(reading.poles,torch.tensor([[pair,pair]]))
 
 
-@pytest.mark.parametrize('observed,estimate,presence,mask,expected',[
-    (2.,2.,1.,0.,0.),(3.,2.,1.,0.,1.),(2.,2.,0.,0.,2.),
-    (0.,2.,1.,0.,-2.),(0.,2.,0.,0.,0.),(2.,2.,1.,1.,2.)])
-def test_closing_image_six_rows_and_exact_restoration(observed,estimate,presence,mask,expected):
+@pytest.mark.parametrize('gain',[0.,.5,1.])
+@pytest.mark.parametrize('presence,mask',[(1.,0.),(0.,0.),(1.,1.)])
+def test_closing_gain_whole_identity_and_exact_restoration(gain,presence,mask):
     from Meaning import ClosingImage
-    o=torch.tensor([[8.,observed,4.]]).expand(3,-1).clone().requires_grad_()
-    e=torch.tensor([[16.,estimate,8.]]).expand(3,-1).clone().requires_grad_()
-    image=ClosingImage.form(o,e,torch.full((3,),presence),object_mask=torch.full((3,),mask),
-        form_width=1,content_width=2)
-    torch.testing.assert_close(image.conceived[:,1],torch.full((3,),expected))
-    torch.testing.assert_close(image.conceived[:,[0,2]],o[:,[0,2]],rtol=0,atol=0)
-    torch.testing.assert_close(image.restore(),o,rtol=0,atol=0)
-    assert not image.conceived.requires_grad and not image.image.requires_grad
+    raw=torch.tensor([[8.,2.,4.]]).expand(3,-1).clone().requires_grad_()
+    from meaning_fixtures import symbol_prediction
+    prior=symbol_prediction(raw.detach()[:1],torch.tensor([[1.,0.]]))
+    image=ClosingImage.form(raw,raw,torch.full((3,),presence), prediction=prior,
+        object_mask=torch.full((3,),mask),gain=gain,form_width=1,content_width=2)
+    expected=1-gain*presence*(1-mask)
+    torch.testing.assert_close(image.conceived,raw.detach()*expected)
+    torch.testing.assert_close(image.restore(),raw,rtol=0,atol=0)
+    assert not image.conceived.requires_grad
 
 
-def test_zero_complement_is_identically_zero_at_every_gain():
+def test_gain_has_no_coordinatewise_complement_exception():
     from Meaning import ClosingImage
-    o=torch.arange(18.).reshape(3,6)
+    raw=torch.arange(18.).reshape(3,6)
     for gain in (0.,.5,1.):
-        image=ClosingImage.form(o,o+1,torch.ones(3),form_width=4,content_width=4,gain=gain)
-        assert image.concept_width==0 and image.image.eq(0).all()
-        torch.testing.assert_close(image.conceived,o,rtol=0,atol=0)
+        from meaning_fixtures import symbol_prediction
+        prior=symbol_prediction(raw,torch.tensor([[1.,0.]]).expand(3,2))
+        image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,form_width=4,content_width=4,gain=gain)
+        assert image.concept_width==6
+        torch.testing.assert_close(image.conceived,raw*(1-gain))
+        torch.testing.assert_close(image.restore(),raw)
 
 
 @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
-def test_gate_grammars_image_is_confined_to_bipolar_complement(config):
+def test_gate_grammars_retain_native_identity_at_zero_content(config):
     from test_mm_xor import _fresh_model
     from Meaning import ClosingImage
     model,_,_=_fresh_model('data/'+config+'.xml')
     try:
         derived=model._concept_owner().similarity_codebook.mereology
-        assert derived.percept_width==96 and derived.code_width==232
-        assert derived.context_width==128
-        observed=torch.ones(3,derived.code_width)
-        image=ClosingImage.form(observed,observed,torch.ones(3),
-            form_width=model._image_form_width)
-        assert image.concept_width==128 and image.image[:,:104].eq(0).all()
-        assert image.image[:,104:].eq(-1).all()
+        raw=torch.ones(3,derived.code_width)
+        from meaning_fixtures import symbol_prediction
+        prior=symbol_prediction(raw[:1],torch.tensor([[1.,0.]]))
+        image=ClosingImage.form(raw,raw,torch.ones(3),prediction=prior,gain=1.,form_width=model._image_form_width)
+        assert image.concept_width==derived.code_width
+        assert not image.conceived.any()
+        torch.testing.assert_close(image.restore(),raw)
     finally:
         model.End();model.symbolSpace.soft_reset()
 

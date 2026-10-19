@@ -174,27 +174,28 @@ def test_nested_ask_returns_the_binding_and_shares_budget(monkeypatch):
     assert bindings(result.meaning)['_thought_witnesses']
 
 
-def test_negative_image_concludes_absence_with_confidence(monkeypatch):
+def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     from ThoughtClosing import absence
     from Layers import MeaningExpectation
     model,registry,store,(a,b,c)=world()
     predicted=registry.form('part',a,b,mode='assertive')
-    roles=torch.ones_like(predicted.roles)
-    prior=MeaningExpectation(roles, torch.zeros(3))
-    observed=replace(predicted,roles=torch.zeros_like(roles))
-    model.expectation_gain=.6
-    image=ClosingImage.form(observed.roles,roles,
-        torch.full((3,),.5),gain=.6,form_width=0)
+    keys=predicted.roles.clone()
+    logits=torch.full((3,2),-60.);logits[0,0]=60.
+    prior=MeaningExpectation(keys,torch.tensor([60.,-60.,-60.]),
+        symbol_keys=keys,symbol_logits=logits,symbol_ids=torch.arange(3),symbol_orders=torch.zeros(3,dtype=torch.long))
+    observed=replace(predicted,roles=torch.zeros_like(keys))
+    image=ClosingImage.form(observed.roles,keys,prior.presence_logits.sigmoid(),
+        prediction=prior,occupied=torch.zeros(3,dtype=torch.bool),gain=1.)
+    assert not image.conceived.any()
     source=store.append_meaning(predicted,kind='observation',evidence=(1.,0.))
     witness=store.occurrence_of(source)
     model.symbolSpace.expectation=SimpleNamespace(last_expectation_comparison=lambda row:SimpleNamespace(estimate=prior,source_occurrences=(witness,)))
     index=absence(model,0,observed,image)
     assert index==1 and store.row(index)['kind']=='inference'
-    assert store.row(index)['evidence']==pytest.approx((0.,.3))
+    assert store.row(index)['evidence']==pytest.approx((0.,1.))
     assert bindings(store.meaning_of(index))['_thought_witnesses']==(witness,)
-    image=ClosingImage.form(roles,roles,
-        torch.full((3,),.5),gain=.6,form_width=0)
-    assert absence(model,0,predicted,image) is None
+    complete=ClosingImage.form(keys,keys,prior.presence_logits.sigmoid(),prediction=prior,gain=1.)
+    assert absence(model,0,predicted,complete) is None
 
 
 def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
@@ -289,12 +290,13 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
 
 
 def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch):
-    from Layers import BracketExpectation
+    from Layers import SymbolExpectation
     from test_sentence_expectation import observe as expose
     model,registry,store,goal,menu=credit_chain_world(monkeypatch)
     # Isolate expectation's ownership from the episode's own work credit.
     monkeypatch.setattr(model, 'WHAT_STEP_COST', 0.)
-    discourse=BracketExpectation(4,8,8,concept_dim=8,expectation_scope='structured')
+    discourse=SymbolExpectation(4,8,8,concept_dim=8,expectation_scope='symbols')
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     model.symbolSpace.expectation=discourse
     expose(discourse,goal.roles*.25)
     before=model.shared_grammar.thought_logits(goal,menu).detach().clone()

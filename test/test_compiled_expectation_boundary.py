@@ -13,8 +13,7 @@ def test_unpacked_forward_observes_each_published_sentence_once(
 
     _ensure_grad_anchors(torch.device("cpu"))
     model = _tiny_canonical_model(tmp_path, monkeypatch,
-        input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1,
-        architecture_overrides={'symbolicOrder': 1})
+        input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1)
     model.set_sentence_expectation(True)
     import util
     monkeypatch.setattr(util, "TheCompileBackend", "eager" if compiled else "none")
@@ -70,12 +69,13 @@ def test_unpacked_forward_observes_each_published_sentence_once(
 
 
 def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
-    from Layers import BracketExpectation
+    from Layers import SymbolExpectation
     from reading_fixtures import commit_reading, finish_reading
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8, expectation_scope='structured')
+    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
+        concept_dim=8, expectation_scope='symbols')
+    discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     entry = fixture.program(('lift', 'cat', ('verb', 'chases', 'mouse')))
     for active in (True, False):
         commit_reading(fixture.language, fixture.registry, entry, None,

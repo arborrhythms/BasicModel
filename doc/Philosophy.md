@@ -171,9 +171,12 @@ The architecture realizes this distinction structurally:
   sigma ladder when decoded.
 
 **Expectation belongs to the overlay and cannot reach the first moment**
-(2026-09-20). The expected next idea is held as a sign-reversed *negative
-image* and added to the ended idea, so what is conceived is what was not
-predicted. Perceptual space carries no negation, so the first moment is met
+(2026-09-20; *the subtraction is superseded 2026-10-19*: expectation is now
+a gain that attenuates what was predicted and never subtracts,
+[spec §4.1](specs/2026-10-08-expectation-at-every-level.md); the point
+about the first moment stands). The expected next idea was held as a
+sign-reversed *negative image* and added to the ended idea, so what is
+conceived is what was not predicted. Perceptual space carries no negation, so the first moment is met
 in full whatever is expected; attention, which excludes without predicting,
 is the faculty that can reach it. See
 [Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
@@ -361,11 +364,19 @@ produces **epistemic openness** rather than contradiction. Valid cognitions
 deepen stable conceptual attractors; false cognitions weaken them, producing
 a truth-weighted energy landscape similar to a Hopfield memory.
 
-The two negations are also two faculties (2026-09-20). `not` needs a signed
-carrier and is how **expectation** enters: the predicted idea, sign-reversed,
-is added to what was composed. `non` needs no sign and is how **attention**
-works: the non-object is removed and nothing is put in its place, so
-attention needs no prediction. See
+The two negations are also two faculties (2026-09-20) — **amended
+2026-10-19**: expectation's effect on the signal is now a gain, a
+non-affirming exclusion of the same kind as attention's (`non`), and `not`
+lives only in the against lane and in thought
+([spec §4.1](specs/2026-10-08-expectation-at-every-level.md)). As first
+written: `not` needs a signed carrier and was how **expectation** entered,
+the predicted idea sign-reversed and added to what was composed. `non`
+needs no sign and is how **attention** works: the non-object is removed and
+nothing is put in its place, so attention needs no prediction. Alec's
+2026-09-20 statement 1 (prediction as sign reversal; "for a perfect
+prediction we then conceive of nothing") is withdrawn with the subtraction
+and amended to *nothing new*: the expected cat was conceived in
+anticipation ([spec §4.8](specs/2026-10-08-expectation-at-every-level.md)). See
 [Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
 
 ### The two negations on a modifier: not-heavy and non-heavy (Alec, 2026-10-15)
@@ -457,6 +468,16 @@ contemplative luminosities coincide in magnitude and differ only in the
 sign-weighting.
 
 ## Expectation as a Negative Image; Attention as Exclusion (2026-09-20)
+
+**Superseded mechanism, October 19:** [Item 4 rev 5](specs/2026-10-08-expectation-at-every-level.md)
+replaces subtraction with attenuation. Expectation's content action belongs
+with `non`: withholding signal without asserting its contrary. Its separate
+omission lane can support a checked `not` inference, but an omission is not
+an observed negative fact. A withheld modifier retains its identity and
+reconstruction obligation while receiving neither attenuation nor a prime.
+Desire remains a desired/hated selection signal with outcome supervision.
+The historical discussion below explains the earlier subtraction proposal.
+
 
 Four statements of Alec's (2026-09-20) fix how expectation and attention
 enter the mind. The mechanism is specified in the
@@ -1217,9 +1238,10 @@ covers memory, the two truths, expectation, testimony and feeling.
   (Pickering & Garrod 2013). The concept-to-concept expectation of the next
   sentence, scored by discrepancy, and generation as the dual of
   comprehension, are both of a piece with this. Since 2026-09-20 the
-  estimate enters comprehension with *negative* sign, after composition,
-  so that what is conceived is the discrepancy itself and the input is
-  never bent toward the prediction
+  estimate enters comprehension against the arrival, after composition
+  (as a subtraction then; since 2026-10-19 as an attenuating gain with the
+  residual kept beside the content), so that what is conceived is not
+  bent toward the prediction
   ([above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)); in production the same estimate is what is said.
 
 - **Reasoning by simulation and by rule are both real.** Relative truths
@@ -1299,11 +1321,12 @@ are not discrepancies on inspection.
 
 5. **Level of prediction (closed).** Human comprehension predicts at the
    word level too, with reading times tracking surprisal (Hale 2001; Levy
-   2008). The model expects the next sentence's concepts, and the grammar
-   unfolds an expected idea into words through the reverse chain, so
-   word-level expectation is derived from concept-level expectation rather
-   than computed separately. Not a discrepancy; surprisal is a readout of
-   the unfolding.
+   2008). The model expects the next sentence's concepts; the unfolding of an
+   expected idea into words through the reverse chain was withdrawn on
+   2026-10-19 — each level now has its own predictor with a local error,
+   the word level being the order-0 case of one activation predictor over
+   the symbol bank ([spec §3](specs/2026-10-08-expectation-at-every-level.md)).
+   Not a discrepancy; surprisal is the level's own residual.
 
 6. **One word, one object (amended September 29).** People have polysemy
    and synonymy as the norm, resolved by context. The two-truths spec §17
@@ -1338,8 +1361,11 @@ are not discrepancies on inspection.
     reduces the response to what was predicted and sharpens its
     representation (Kok, Jehee & de Lange 2012), and cortical gain control
     is largely divisive rather than subtractive (Carandini & Heeger 2012).
-    The model has the subtractive silencing and leaves facilitation to
-    attention; it has no sharpening. References and the rest of the
+    Since 2026-10-19 the model has divisive silencing (a gain, §4.1 of the
+    expectation spec) and the sharpening too: the expected activation
+    primes selection (the prime in the field, spec §4.8), which is the
+    Press, Kok and Yon pairing of dampening and sharpening. Closed in that
+    form. References and the rest of the
     comparison are [above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
 
 **References.** Baddeley & Hitch (1974), *Working memory*, in Bower (ed.),
@@ -1641,6 +1667,44 @@ located meronomy supplies those bundles. These are the four separate scopes
 in the [specification](specs/2026-09-26-independent-components.md#26-scope-which-binding-problems-this-solves).
 The implementation is proposed for review; the learned claims await their
 exposure-qualified measurements.
+
+## Two Differences: the Verb Across Time, the Modal Across Possibility (Alec, 2026-10-19)
+
+Alec, 2026-10-19: "Modals and counterfactuals are a second difference; they
+extend the space of events into possibility space." This is a large part of
+his work in *Cognitive Set Theory* and *The Whole Part*, the books
+attached to his ORCID record
+([0000-0002-6570-7571](https://orcid.org/0000-0002-6570-7571)), and it is
+written into the
+occurrence spec as
+[§14](specs/2026-09-30-occurrence-tense-aspect.md#14-two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19-written-by-claude).
+
+The first difference is the verb's: a verb is an element of a group
+acting on the identity's frame, mapping the object before to the object
+after — in the code, a diagonal the verb defines, not a subtraction — and
+an undefined verb is the group's identity element (what "all-ones" named),
+meaningless, read as unknown. Selections (tense, aspect, the preposition)
+are the other algebra, the idempotent meet of the Boolean and mereological
+picture; the change itself is the group element. The second difference is the
+modal's: it extends the actual event into the set of events it is one of,
+making a whole of which the actual is a part, and the merely possible is
+that whole minus that part. The first is taken between phases of one
+history; the second between the actual and its possibilities at a time.
+Synchronic generics are relations, relative truths; situated events and
+states are ideas, ultimate truths. In Alec's syntax an absolute truth is
+`S` and a relation between two truths is `S REL S`, which is the row's own
+shape: one slot, holding for an absolute truth a concept vector that need
+not be a codebook entry, and for a relation a minted symbol whose
+definition carries `R` and two defined `S` symbols (2026-10-19). A modal sentence read
+*de re* writes `S REL S` (`[Alec] part-of [running things] in the kept
+worlds`) and read *de dicto* writes `S` located in those worlds, and
+either way the identity's history is untouched. Every sentence has a noun phrase, a verb phrase and a modal phrase, each
+defaulting to the top of its algebra — everything, exists, in all possible
+worlds — so that the empty sentence asserts that everything exists
+everywhere, which is attention wide open, and every word narrows one of
+the three (Alec, 2026-10-19). The two
+differences are the project's reading of modality and are not to be
+reduced to "modals do not train" or to a probability over outcomes.
 
 ## Summary
 

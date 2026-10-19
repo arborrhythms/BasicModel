@@ -18,6 +18,24 @@ class CandidateAttention(Layer):
         nn.init.zeros_(self.readout.weight)
         nn.init.zeros_(self.readout.bias)
 
+    def migrate_expectation_checkpoint(self, state_dict, prefix=''):
+        spec = getattr(self, '_expectation_insert', None)
+        key = prefix+'hidden.0.weight'
+        old = state_dict.get(key)
+        if spec is None or old is None or old.shape == self.hidden[0].weight.shape:
+            return False
+        at, count = spec
+        if old.shape != (self.hidden[0].weight.shape[0], self.hidden[0].weight.shape[1]-count):
+            return False
+        state_dict[key] = torch.cat((old[:, :at], old.new_zeros(len(old), count), old[:, at:]), -1)
+        return True
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        self.migrate_expectation_checkpoint(state_dict, prefix)
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
     def forward(self, context, candidates):
         if (context.ndim != 2 or candidates.ndim != 3
                 or context.shape != (candidates.shape[0], self.context_width)

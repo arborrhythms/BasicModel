@@ -1,0 +1,26 @@
+V1019 12:48:58.232000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles] Recompiling function stage_cs_sub in /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:21351
+V1019 12:48:58.232000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V1019 12:48:58.232000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [0/1] [__recompiles]     - 0/0: tensor 'current_cs_sub[0]' requires_grad mismatch. expected requires_grad=0
+V1019 12:48:58.893000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [1/1] [__recompiles] Recompiling function stage_cs_sym in /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:21418
+V1019 12:48:58.893000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [1/1] [__recompiles]     triggered by the following guard failure(s):
+V1019 12:48:58.893000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [1/1] [__recompiles]     - 1/0: tensor 'current_cs_sym[0]' requires_grad mismatch. expected requires_grad=0
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles] Recompiling function choose_operation in /Users/arogers/github/WikiOracle/basicmodel/bin/Language.py:12390
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     triggered by the following guard failure(s):
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     - 2/0: slots == 2                                               # return func(*args, **kwargs)  # utils/_device.py:122 in __torch_function__
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     - User stack trace:
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 12409, in choose_operation
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     -     limit = torch.as_tensor(slots, device=buffer.device)
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     -   File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+V1019 12:49:03.656000 23282 .venv/lib/python3.12/site-packages/torch/_dynamo/guards.py:5621] [2/1] [__recompiles]     -     return func(*args, **kwargs)
+Timeout (0:01:00)!
+Thread 0x0000000171073000 (most recent call first):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 359 in wait
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 655 in wait
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/tqdm/_monitor.py", line 69 in run
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00000001f2deff80 (most recent call first):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1098 in push
+  File /opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

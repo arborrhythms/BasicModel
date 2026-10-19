@@ -9,10 +9,13 @@ from test_clause_storage import clause_store, idea_clause, part_clause
 
 
 def comparison(store, source):
-    return SimpleNamespace(estimate=MeaningExpectation(torch.ones(3, 4) * .2,
-        torch.zeros(3), kind_logit=torch.tensor(.3)),
-        source_occurrences=(store.occurrence_of(source),),
-        stream=('external', 'a'), document='a')
+    from meaning_fixtures import symbol_prediction
+    from Layers import ExpectationComparison
+    prior = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
+    actual = torch.zeros(4,2); actual[0,0] = 1.
+    return ExpectationComparison(prior, prior.roles, torch.tensor([True,False,False]),
+        actual-prior.expected_activation, 'a', (store.occurrence_of(source),),
+        ('external','a'), activation=actual)
 
 
 def test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner():
@@ -24,7 +27,7 @@ def test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner():
     pair = store.expectation_pair(target)
     assert pair['source_occurrences'] == (store.occurrence_of(first),)
     assert pair['surprise'] >= 0
-    assert store.expectation_of(1)['kind_logit'] == float(torch.tensor(.3))
+    assert 'kind_logit' not in store.expectation_of(1)
     assert tuple(store.leaf_terms(target, role) for role in range(3)) == ((11, 12, 13), (), ())
 
 
@@ -64,7 +67,7 @@ def test_invalid_prediction_does_not_publish_embedded_clauses():
     store, _ = clause_store()
     source = store.write_clause(idea_clause())
     pending = comparison(store, source)
-    pending.estimate.kind_logit.fill_(float('nan'))
+    pending.estimate.presence_logits.fill_(float('nan'))
     with pytest.raises(ValueError):
         store.write_clause(idea_clause(children=(idea_clause(),)), expectation=pending)
     assert len(store) == 1
