@@ -1,5 +1,6 @@
 """The owner costs complete alternative walks before either can train."""
 import torch
+import pytest
 
 
 def test_output_pair_costs_complete_paths_and_keeps_greedy_ties():
@@ -79,6 +80,30 @@ def test_thought_pair_tie_keeps_greedy_state_and_shared_meter():
     assert result.work is meter
     assert meter.spent==4+memory.thought_state().work_spent
     assert meter.counts['bracket']==4
+
+
+@pytest.mark.parametrize('components,keep', [(((0.,4.),(1.,1.)),True),
+                                           (((2.,0.),(0.,3.)),False)])
+def test_thought_keep_credit_and_audit_share_ra_when_the_terms_conflict(components,keep):
+    from test_normal_thought_controller import _catalog_world
+    model,registry,memory,part,whole=_catalog_world()
+    model.train()
+    calls=[]
+    def score(result):
+        pair=components[len(calls)]
+        calls.append(result)
+        return dict(reconstruction=pair[0],answer=pair[1])
+    with model._query_boundary_scope((0,)):
+        result=model.run_selected_thought(registry.form('part',part,whole),work_budget=16,score=score)
+    assert len(calls)==2
+    costs=tuple(sum(pair) for pair in components)
+    audit=model._last_thought_comparison
+    assert audit['explore_kept']==keep
+    assert audit['costs']==audit['keep_costs']==model._last_thought_score_function['costs']==costs
+    assert result.records==calls[int(keep)].records
+    assert model._walk_audit['think']['strict_violations']==0
+    surrogate=model._last_thought_score_function['surrogate']
+    assert surrogate is not None and bool(surrogate < 0)==keep
 
 
 def test_thought_explore_starts_at_detached_departure_without_reopening_episode(monkeypatch):
@@ -177,10 +202,10 @@ def test_forecast_previews_publish_only_the_committed_observation():
     for _ in range(2):
         _, held = owner.sentence_prediction_cost([3], [meaning.roles], mask,
             layout='infix', role_masks=[meaning.role_mask])
-        assert held[0][0].prediction is not None
+        assert held[0].prediction is not None
         assert owner._inter_last_meaning[0] is pending
         assert not hasattr(owner, 'consume_expectation_walk_outcomes')
-    owner._inter_last_meaning = held[0]
+    owner._inter_last_meaning = held
     owner.observe_stm_end_state([3], [meaning.roles], mask=mask, layout='infix',
         role_masks=[meaning.role_mask], train_prediction=False)
     assert owner.last_expectation_comparison(0) is not None

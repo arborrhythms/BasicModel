@@ -23,14 +23,14 @@
   </defs>
 
   <rect width="1320" height="860" fill="#fcfcfc"/>
-  <text x="40" y="40" class="title">Storing the two truths: three row architectures (2026-10-19)</text>
+  <text x="40" y="40" class="title">Storing the two truths: three row architectures considered (2026-10-19)</text>
   <text x="40" y="64" class="small">Absolute truth S (an idea; e.g. de dicto "[Alec runs] PP(W)") and relative truth S REL S (a relation; e.g. de re "[Alec] part-of [running things PP(W)]"). Each panel shows the LTM/STM row for each truth.</text>
 
   <!-- ===================== Panel 1: three slots (today) ===================== -->
   <g transform="translate(40,90)">
     <rect x="0" y="0" width="400" height="640" rx="8" class="box"/>
-    <text x="16" y="30" class="panel">1. Three slots per row (today)</text>
-    <text x="16" y="50" class="verdict" fill="#8a6d00">in use; retires with item 3.5</text>
+    <text x="16" y="30" class="panel">1. Three positions per row</text>
+    <text x="16" y="50" class="verdict" fill="#2e7d32">adopted (Alec, 2026-10-19): argument, kind, argument</text>
 
     <text x="16" y="88" class="rowlabel">absolute S: one slot used, two empty</text>
     <rect x="16" y="98" width="110" height="44" class="slot-vec"/>
@@ -41,23 +41,24 @@
     <text x="311" y="124" text-anchor="middle" class="small">empty</text>
     <text x="16" y="160" class="small">fused point, evaluated by coverage</text>
 
-    <text x="16" y="208" class="rowlabel">relative S REL S: three slots used</text>
+    <text x="16" y="208" class="rowlabel">relative S REL S: three positions (kind = DEF / said / if-then)</text>
     <rect x="16" y="218" width="110" height="44" class="slot-ref"/>
     <text x="71" y="244" text-anchor="middle" class="mono">→ row [Alec]</text>
     <rect x="136" y="218" width="110" height="44" class="slot-sym"/>
     <text x="191" y="244" text-anchor="middle" class="mono">part-of</text>
     <rect x="256" y="218" width="110" height="44" class="slot-ref"/>
     <text x="311" y="244" text-anchor="middle" class="mono">→ row [running…]</text>
-    <text x="16" y="280" class="small">exact references; evaluated by traversal</text>
+    <text x="16" y="280" class="small">arguments are ideas or REFs; evaluated by traversal</text>
 
     <line x1="16" y1="310" x2="384" y2="310" stroke="#ddd"/>
     <text x="16" y="340" class="label">Properties</text>
     <text x="16" y="364" class="small">+ references exact, no clean-up</text>
     <text x="16" y="384" class="small">+ idea and relation told apart by slot count</text>
-    <text x="16" y="404" class="small">− most rows are ideas: 2 of 3 slots empty</text>
-    <text x="16" y="424" class="small">− row width ×3 for every row</text>
-    <text x="16" y="444" class="small">− reduce sweep holds a relation at depth 3</text>
-    <text x="16" y="464" class="small">   by a per-row depth floor</text>
+    <text x="16" y="404" class="small">+ parthood and kinds are NOT rows: folds in the</text>
+    <text x="16" y="424" class="small">   main tree (meronomy, taxonomy); de re modal =</text>
+    <text x="16" y="444" class="small">   membership evidence; de dicto = an idea row</text>
+    <text x="16" y="464" class="small">− vectors wasted: ideas leave two empty, relations</text>
+    <text x="16" y="484" class="small">   use refs and leave all three null (see panel 3)</text>
   </g>
 
   <!-- ===================== Panel 2: fused point (rejected) ===================== -->
@@ -91,7 +92,7 @@
   <g transform="translate(880,90)">
     <rect x="0" y="0" width="400" height="640" rx="8" class="box"/>
     <text x="16" y="30" class="panel">3. One slot + definition (reading B)</text>
-    <text x="16" y="50" class="verdict" fill="#2e7d32">adopted (Alec, 2026-10-19)</text>
+    <text x="16" y="50" class="verdict" fill="#b84a4a">withdrawn as logic; survives only as a storage layout</text>
 
     <text x="16" y="88" class="rowlabel">absolute S: one slot, a concept vector</text>
     <rect x="16" y="98" width="200" height="44" class="slot-vec"/>
@@ -126,8 +127,10 @@
     <text x="16" y="466" class="small">+ truth kind read from the symbol's definition,</text>
     <text x="16" y="486" class="small">   relativity propagates through the DEF table</text>
     <text x="16" y="506" class="small">− one extra write per relation (row + DEF entry)</text>
-    <text x="16" y="526" class="small">− the two S must be minted before the relation</text>
-    <text x="16" y="546" class="small">   (the intended prerequisite)</text>
+    <text x="16" y="526" class="small">− one position cannot carry two arguments; the</text>
+    <text x="16" y="546" class="small">   three positions of panel 1 are not reducible</text>
+    <text x="16" y="566" class="small">→ kept: LTM = 3 reference positions + 1 vector;</text>
+    <text x="16" y="586" class="small">   STM keeps 3 vectors for composition</text>
   </g>
 
   <!-- ===================== Legend ===================== -->

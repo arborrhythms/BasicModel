@@ -270,10 +270,10 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
     result=run(model,goal,work_budget=64,
             score=lambda result:float(needs_episode(result.meaning)))
-    assert not model._last_thought_comparison['explore_kept']  # reconstruction tie
+    assert model._last_thought_comparison['explore_kept']
     assert tuple(item[1] for item in model._last_thought_comparison['components'])==(1.,0.)
     assert model._last_thought_comparison['costs'][0] > model._last_thought_comparison['costs'][1]
-    assert needs_episode(result.meaning)
+    assert not needs_episode(result.meaning)
     value=model._last_thought_score_function['surrogate']
     assert value is not None
     optimizer=torch.optim.SGD(chooser.parameters(),lr=.1)

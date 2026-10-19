@@ -129,13 +129,13 @@ def test_retired_controllers_cannot_be_constructed_or_restored():
 def test_policy_records_work_but_departure_uses_reconstruction_and_answer(monkeypatch):
     from test_item6_2_thinking import credit_chain_world, run
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
-    # Isolate the R + A terms; §14's nonzero episode work price has separate
-    # coverage, and never enters the compose trial judgement.
-    monkeypatch.setattr(model, 'WHAT_STEP_COST', 0.)
+    # Work is bounded and reported, but cannot change the R+A judge.
+    monkeypatch.setattr(model, 'WHAT_STEP_COST', 1000.)
     result = run(model, goal, work_budget=64)
     audit = model._last_thought_comparison
     assert result.work.spent > 0
     assert audit['costs']==(0.,0.)
+    assert all(spent > 0 for spent in audit['work_spent'])
     assert model._last_thought_score_function['surrogate'] is None
 
 

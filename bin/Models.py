@@ -20725,7 +20725,14 @@ class BasicModel(BaseModel):
                     # This candidate was reduced and promoted exactly once.
                     # Its hard support selects that payload, not another pass
                     # through the perceptual reducer with an already resolved row.
+                    raw_lanes = payload[11]
                     if not closing:
+                        reading = getattr(self, '_attention_words', None)
+                        if reading is not None:
+                            from ModelAttention import read_poles
+                            w = index.clamp(0, reading.accepted.shape[1]-1)
+                            raw_lanes = read_poles(self, 'SymbolField.read').gather(
+                                1, w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
                         payload = self._attention_sentence_payload(payload,index)
                     if fork is not None:
                         fork.current_rows = payload[7].reshape(B)
@@ -20738,7 +20745,7 @@ class BasicModel(BaseModel):
                     symbol_field.anticipate(current_stm)
                     reducer._symbol_expectation_read = symbol_field.read(
                         incoming_ids=torch.where(payload[4] >= 0, payload[4], payload[2]).reshape(B),
-                        incoming_lanes=payload[11], incoming_rows=payload[8].reshape(B))
+                        incoming_lanes=raw_lanes, incoming_rows=payload[8].reshape(B))
                     current_lang, current_stm, current_feedback = compose_word(
                         payload, index, None, current_lang, current_stm)
                     if field is not None:

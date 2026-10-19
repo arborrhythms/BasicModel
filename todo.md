@@ -40,6 +40,9 @@ Claude reviewed candidate `f7e74af04` and did not approve a sweep. The
 follow-up fixes confidence, omission retention, native handles and compact
 retained keys. The selection-prime and φ defaults await Alec's decision
 (review B3); enabled-expectation zero-gain parity remains unproved.
+The re-review of `7285b38` confirms those fixes and finds two further seams:
+raw P-to-S observation and the thought R+A keep/credit judge. Their repairs
+and native regressions are in the same round receipt.
 **Item 4 remains open:** the copular-identity prerequisite is missing, the
 carried initial-binding distribution check fails, and global derivation
 optimality, per-level learning/collapse and all-level XOR are not established.
@@ -606,12 +609,13 @@ not by a passing identity lesson.
      the chooser's reference variants: the variants collapse to the
      determiner mode on `lower`, and the individual is `bind`'s. One rule
      called per referent ([minimality](doc/specs/2026-09-30-occurrence-tense-aspect.md#131-the-operators-minimal-alec-2026-10-19-the-operators-should-be-minimal--just-one-rule-called-twice)).
-     **With it, the one-slot row** ([two truths §1 amendment](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided),
-     Alec 2026-10-19): the three-slot relation row retires; an idea's slot
-     holds a concept vector that need not be a codebook entry, a
-     relation's slot holds a minted symbol whose DEF row carries `R` and
-     two defined `S` symbols; writing a relation over an idea mints it
-     (`bind`'s job); references are exact, no clean-up, no width.
+     **With it, the row amendment** ([two truths §1](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided),
+     Alec 2026-10-19): three positions stay (argument, kind, argument;
+     kinds `DEF`, *said*, *if-then*; arguments ideas or REFs); parthood
+     and kinds are folds in the main tree, not rows; an idea's fused
+     point need not be a codebook entry and a REF to it mints it
+     (`bind`'s job). Storage note: LTM may hold three reference positions
+     and one vector; STM keeps three vectors.
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.

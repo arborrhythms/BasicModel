@@ -16,6 +16,9 @@ Perceptual mean and variance supply per-coordinate salience and a scalar
 region gain; codebook lookup reads the original coordinates.
 Closing confidence κ is per symbol, the maximum of its two predicted
 activations. It is never taken from the representative envelope's role slot.
+Word and S reads use κ=1: their predicted lane magnitudes supply the local
+certainty, without a second confidence gate. Closing reads retain the
+explicit presence-confidence gate required by repair G.
 
 A native handle identifies an activated symbol in its bank address domain.
 Without a handle, a bank identity requires raw-key distance at most `1e-5`.
@@ -27,6 +30,9 @@ poles receive P at perception and S once at their symbol consumer. The S read
 uses the actual for/against lanes, including purely negative evidence. Repeated
 reads cannot compound S. The sentence prime and S read are cleared before
 closing thoughts and before the next peer-word input.
+P's gain affects the incoming content, but the S residual and its gain both
+compare the original lane pair with the S prior. P cannot change that local
+observation or manufacture an omission for S.
 
 The local residual has excess and omission signs for each evidence lane.
 It trains only the predictor: both target and all source context are detached.
@@ -103,6 +109,9 @@ its existing declared weight; neither enters the R+A trial judge.
 Source encodings, observed targets, thought effects and durable history are
 detached. Only the shared predictor receives local E gradients. Both the
 paired-trial keep rule and chooser credit use `R + A`; E is independent.
+This includes thought departures: keeping, credit and the audit use the
+same sum, even when R and A disagree. Work remains metered and reported,
+without an additional work-price term in the judge.
 Mechanism checks and learning measurements have separate receipts in the
 [Item 4 record](plans/2026-10-19-item4-start.md). Carried Item 0 findings and
 5.5 learning gates are not cleared by these checks.

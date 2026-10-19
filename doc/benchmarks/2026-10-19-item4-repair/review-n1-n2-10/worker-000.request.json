@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_item4_review.py::test_inverse_cdf_never_selects_a_zero_probability_edge",
+    "test/test_item4_review.py::test_bank_confidence_follows_each_symbol_in_every_role",
+    "test/test_item4_review.py::test_native_activated_word_is_observed_by_handle_with_both_lanes",
+    "test/test_item4_review.py::test_omission_surprise_and_non_marks_agree_at_both_native_writers",
+    "test/test_item4_review.py::test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact",
+    "test/test_item4_review.py::test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments",
+    "test/test_item4_review.py::test_native_s_gain_uses_raw_arrival_even_when_p_dims_the_payload[0.0]",
+    "test/test_item4_review.py::test_native_s_gain_uses_raw_arrival_even_when_p_dims_the_payload[0.75]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/review-n1-n2-10/worker-000.recycle.json"
+}

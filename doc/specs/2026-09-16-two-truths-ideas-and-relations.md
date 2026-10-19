@@ -41,31 +41,42 @@ the row's kind:
 | `exist_O1` | idea | one fused point | ultimate | "the cat chased the mouse"; "the cat"; "he said she said it's so beautiful" |
 | relative start | relation | three: `row`, `R`, `row` | relative | "cats are animals"; "cats breathe"; "he said cats are animals"; "if cats are animals then cats breathe" |
 
-**Amendment, 2026-10-19 (Alec; decided): one slot, not three**
-([diagram of the three alternatives](../diagrams/2026-10-19-row-architectures.svg)). The
-three-slot relation row is retired for efficiency — most rows are ideas
-and left two of three slots empty. Every STM and LTM row has **one slot**,
-and the two truths differ by what it holds:
+**Amendment, 2026-10-19 (Alec; decided): three positions stay; what fills
+them, and what is a row at all**
+([diagram of the alternatives considered](../diagrams/2026-10-19-row-architectures.svg)).
 
-| row | the slot holds | must be a codebook entry? | evaluated by |
-|---|---|---|---|
-| idea (absolute, `S`) | a concept vector: the fused point on the manifold | **no** — an idea stays subsymbolic until something refers to it | coverage / luminosity |
-| relation (relative, `S REL S`) | a **minted symbol** whose definition row holds `R` and the two referenced `S` symbols (the DEF row whose operands are symbols, with the two-way lookup table) | **yes**, and so must the two `S` it references | relationally, by traversal of the definition, never by coverage |
-
-Consequences: the two `S` of a relation must be defined concepts before
-the relation is written — **writing a relation over an idea is what mints
-it** (mint on reference, the identity system's discipline applied to
-sentences); the references are exact symbols reached by lookup, so no
-clean-up against the bank and no content width is needed for inference;
-the cost of a relation is one row plus one definition entry. The
-statements below about slots are read accordingly: "no two-slot absolute
-form" and "fusion is fair iff every operand has a fused point" become
-statements about symbols — a relation symbol gets no fused point of its
-own, which is what keeps coverage honest, and a symbol defined over a
-relative symbol is itself relative (relativity propagates through the
-definition table). A raw absolute vector is never an observation of its
-nearest codebook entry. Reaches the code with item 3.5's `bind`, where
-sentences begin to be minted as symbols.
+- **A row has three positions: argument, kind, argument.** The kind is a
+  relation that takes a truth as an argument — `DEF` (word DEF object),
+  attribution (*he said REF*), the conditional (*if S then S*) — and each
+  outer position holds either an idea or a **REF** to another row. The
+  definition is one such row, as `Interpret.define` already writes it
+  (`rel_type = REL_DEF`, refs `[word, −1, obj]`); the definition index is
+  the two-way lookup over those rows' refs, not a separate store. "The
+  DEF table" therefore lives in STM/LTM, and the same three positions
+  serve multi-clause sentences and conditionals. The three positions are
+  not reducible to one: a single position cannot carry two arguments
+  without folding them, and a fold over references needs clean-up at the
+  content width (item 3) — rejected.
+- **Parthood and kinds are not rows.** They are structure in the main
+  perceptual and conceptual tree, written by folds: parthood in the
+  meronomy (the codebook's `part_parents`, order 0) and kind membership in
+  the taxonomy over symbols (the concept allocator's part edges with row
+  testimony; the orders' membership by evidence). "Cats are animals"
+  writes an edge; equality is membership in a singleton. A *de re* modal
+  reading (*Alec is a part of running things in the kept worlds*) writes
+  membership evidence, not a row; only the *de dicto* reading writes a row
+  (occurrence spec §14.3).
+- **Absolute truths may hold vectors that are not codebook entries.** An
+  idea's position holds its fused point; it stays subsymbolic until
+  something refers to it, and a REF to it is what mints it (mint on
+  reference, `bind`'s job in item 3.5).
+- **Storage note (Claude, proposed):** the waste is in vectors, not
+  positions. A relation row's outer vectors are already null (refs name
+  the operands), and an idea leaves two vectors empty. LTM can hold three
+  reference positions (integers) and **one** concept-width vector (the
+  idea's fused point; empty for a relation); STM keeps three vectors
+  because composition needs the operands' vectors while the sentence is
+  open. This changes layout only, never the three-position logic.
 
 **Fusion is fair iff every operand has a fused point.** Concept rows and
 idea rows have one; relation rows do not, being constraints rather than

@@ -1,0 +1,26 @@
+[collect] 6 selectors; limit 180s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.47 GiB
+[worker-000] 8 selectors; limit 180s, 8.0 GiB
+[worker-001] 8 selectors; limit 180s, 8.0 GiB
+[worker-001] exit 0; 4.0s; peak 0.41 GiB
+[worker-002] 8 selectors; limit 180s, 8.0 GiB
+[worker-000] exit 0; 5.1s; peak 1.94 GiB
+[worker-003] 8 selectors; limit 180s, 8.0 GiB
+[worker-002] exit 0; 3.9s; peak 0.41 GiB
+[worker-003] exit 0; 3.9s; peak 0.35 GiB
+[worker-004] 8 selectors; limit 180s, 8.0 GiB
+[worker-005] 8 selectors; limit 180s, 8.0 GiB
+[worker-004] exit 0; 3.9s; peak 0.41 GiB
+[worker-005] exit 0; 4.9s; peak 0.41 GiB
+[worker-006] 8 selectors; limit 180s, 8.0 GiB
+[worker-007] 8 selectors; limit 180s, 8.0 GiB
+[worker-007] exit 0; 4.0s; peak 0.41 GiB
+[worker-008] 8 selectors; limit 180s, 8.0 GiB
+[worker-008] exit 0; 4.0s; peak 0.41 GiB
+[worker-009] 8 selectors; limit 180s, 8.0 GiB
+[worker-006] exit 0; 10.1s; peak 1.30 GiB
+[worker-010] 2 selectors; limit 180s, 8.0 GiB
+[worker-009] exit 0; 4.0s; peak 0.41 GiB
+[worker-010] exit 0; 41.5s; peak 1.32 GiB
+Result: passed, exit 0; 82/82 cases completed.
+doc/benchmarks/2026-10-19-item4-repair/review-n1-n2-11/result.json

@@ -830,20 +830,20 @@ in the two-truths syntax Alec fixed the same day — an absolute truth is
 
 | reading | derivation | written as | truth |
 |---|---|---|---|
-| *de re*: of Alec, running is possible | the modal's `position` on the verb phrase, before it acts on the noun phrase | `S REL S`: `[Alec] part-of [running things PP(W)]` — the Alec region part of the predicate's region, the predicate nominalized and located in the worlds the modal keeps | relative (two truths §1, as "cats breathe") |
+| *de re*: of Alec, running is possible | the modal's `position` on the verb phrase, before it acts on the noun phrase | `S REL S` read as membership: `[Alec]` in the set `[running things PP(W)]` — written as taxonomy evidence, not a row, the predicate nominalized and located in the worlds the modal keeps | relative (two truths §1, as "cats breathe") |
 | *de dicto*: that Alec runs is possible | the modal's `position` on the sentence | `S`: `[Alec runs] PP(W)` — the sentence's own occurrence row, located in the worlds the modal keeps | absolute, in those worlds |
 
 The syntax is the store's own shape (Alec, 2026-10-19: "that corresponds
-exactly to the use of LTM and STM slots"), under the one-slot amendment of
-[two truths §1](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)
-(Alec, 2026-10-19): every row has **one slot**. An absolute truth `S`
-holds a concept vector — the idea fused to one point, which need not be a
-codebook entry. A relative truth `S REL S` holds a minted symbol whose
-definition row carries `R` and the two referenced `S` symbols, which must
-be codebook entries; writing the relation is what mints them. So *de re*
-writes a relation symbol defined over `[Alec]` and `[running things
-PP(W)]`, and *de dicto* writes the fused point of `[Alec runs] PP(W)`. No
-new row kind is needed for the modal.
+exactly to the use of LTM and STM slots"; [two truths §1, amended 2026-10-19](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):
+a row has three positions, argument, kind, argument. An absolute truth `S`
+fills one position with its fused point, which need not be a codebook
+entry. A relative truth `S REL S` fills all three, the kind being a
+relation that takes a truth as an argument (`DEF`, *said*, *if-then*) and
+each argument an idea or a REF to a row. Parthood and kind membership are
+not rows but folds in the main tree (meronomy, taxonomy). So the *de re*
+reading writes membership evidence — Alec in the set of running things in
+the kept worlds — and the *de dicto* reading writes the fused point of
+`[Alec runs] PP(W)` as a row. No new row kind is needed for the modal.
 Each `S` has its noun phrase, verb phrase and world, defaulting to
 everything, occurs and all possible worlds (§14.4); `[Alec]` and
 `[running things]` are such sentences with their defaults, and the modal
@@ -861,9 +861,9 @@ What is written, then:
   world differs from it in the restrictions the modal names. The part
   relation between worlds is the world individual's own row, as a
   document's is.
-- ***De re*** writes `S REL S`: the part relation between the two truths,
-  the second located in the world — a relative truth. Nothing enters
-  Alec's history as having happened.
+- ***De re*** writes `S REL S` as membership evidence in the taxonomy:
+  `[Alec]` in `[running things PP(W)]` — a relative truth, not a row.
+  Nothing enters Alec's history as having happened.
 - ***De dicto*** writes `S`: the sentence's occurrence row located in the
   world — an absolute truth, true there. The actual stream's rows are
   untouched unless the world is the actual one (the indicative).

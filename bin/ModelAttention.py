@@ -7,7 +7,7 @@ from Attention import narrow_words, read_code_field, BracketKeys
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
                   'commit_word_reference_slab:per_word',
-                  'commit_word_reference_slab:whole_slab')
+                  'commit_word_reference_slab:whole_slab', 'SymbolField.read')
 
 
 def read_poles(model, consumer):

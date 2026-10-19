@@ -4,6 +4,10 @@ BasicModel baseline `9207f5e03`; WikiOracle baseline `929e4a8`. Both checkouts a
 
 **Item 4 is not complete.** Claude reviewed candidate `f7e74af04` and did not approve the landing sweep; the full report is [claude-review.md](claude-review.md). The follow-up repairs below address the code findings, but B3 requires Alec's decision on the unscaled selection prime and `φ=.5`. All four attenuation gains are zero; those two other effects are not. The missing copular-identity artifact prevents one requested certificate from executing. The carried initialization-distribution failure remains. Global derivation optimality, per-level learning/collapse, learned repeated-cat recognition and all-level XOR are not established. The original failed learning run is unchanged; Item 0 and Item 5.5 remain open. No full sweep or push has run in this round.
 
+Claude's [re-review of `7285b38`](claude-followup-review.md) confirms those
+repairs apart from B3, and identifies N1/N2 below. They are repaired under
+the existing raw-observation and R+A decisions; B3 remains undecided.
+
 ## §9.1 — Does zero gain preserve the previous landing?
 
 | Consumer check | Result | Limits |
@@ -173,6 +177,8 @@ prior logits, target, omission and surprise.
 | M5 | lxml installed from the existing requirements; both canonical configs validate and retired scope values are rejected. |
 | L1–L4 | CDF edge handling, configured omission threshold, dead state and stale configuration/docs repaired. |
 | L5 | Word and S reads intentionally train the shared head from different causal contexts and targets; documented in ExpectationRetention. Their content gain is not applied twice. |
+| N1 (re-review) | The incoming S observation now reads the raw poles through the declared `SymbolField.read` consumer. P dims only the content payload. Fixed S priors at P=0 and P=.75 exercise the same S gain. |
+| N2 (re-review) | Thought keep, credit and audit all use R+A. Work remains bounded and reported without a work-price term in the judge. Native conflict cases exercise both directions where R and A disagree. |
 
 The native causality diagnostic distinguishes the forecast of a fixed key
 from the representative selected out of a changing vocabulary. The repaired
@@ -189,12 +195,18 @@ losses. Toggling the sentence head preserves the configured word switch.
 | Native closings, retained NP checkpoints and packed boundaries | 13/13 passed; `native-final-1/result.json` |
 | Focused native/gain/attention/device coverage | 92 passed, 1 skipped; `native-and-focus-final.log` |
 | Claude review of `f7e74af04` | Completed; not approved to sweep. `claude-review.md` and `claude-review-status.json`. |
+| Claude re-review of `7285b38` | Completed; prior code findings resolved, B3 pending, N1/N2 found. `claude-followup-review.md`. |
 | Review-specific/native/schema/NP restoration checks | 64 passed, four slow cases skipped and separately exercised; `review-targeted-5/result.json`. |
 | Broader affected checks after review | 248 completed; three failures found; `review-regression-7/result.json`. Follow-up repairs recorded separately. |
 | Repair of those three regressions plus review/native/thought coverage | 90/90 passed with slow cases enabled; `review-repairs-9/result.json`. |
+| N1/N2 repairs, controller coverage and nonzero compiled boundary | 82/82 passed with slow cases enabled; `review-n1-n2-11/result.json`. The first attempt found an undeclared raw-pole consumer; `SymbolField.read` is now in the consumer census. |
 | One full landing sweep | Not run; follows review |
 | Push / WikiOracle bump / Item 4 completion | Not done |
 
 The NP restoration fixture now preserves the native loader’s migrated sidecar fingerprints while retaining exact learned tensors. It previously restored old fingerprint bytes over migrated metadata and corrupted its next checkpoint. The production migration remains one routine at load.
 
 Generated runner source manifests and the transient verbose compiler trace are not publication artifacts. The trace excerpt and result logs retain the diagnostic findings. Historical benchmark directories are unchanged.
+
+Concurrent edits to the row-layout specs, Philosophy, the row diagram and
+todo are preserved with the candidate. Their future row/membership changes
+are not implemented as part of Item 4's expectation repair.

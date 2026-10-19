@@ -140,3 +140,60 @@ def test_expectation_free_placement_is_independent_of_forecasts_and_percept_mome
         assert not torch.equal(after,context(model,values,addresses,valid,parts=parts))
     finally:
         model.End();model.symbolSpace.soft_reset()
+
+
+@pytest.mark.parametrize('percept_gain',[0.,.75])
+def test_native_s_gain_uses_raw_arrival_even_when_p_dims_the_payload(tmp_path,monkeypatch,eager_reading,percept_gain):
+    from test_compiled_word_chunk import _tiny_canonical_model,_stage_fullgraph_tensor_peer
+    from SymbolField import SymbolField
+    import ModelAttention
+    model=_tiny_canonical_model(tmp_path,monkeypatch,input_width=16,word_buckets='8',stm_capacity=3,chooser_depth=1,
+        training_overrides={'perceptExpectationGain':percept_gain,'symbolExpectationGain':.5})
+    model.eval();model._tensor_peer_while_eager=True
+    model._chart_compose_per_word=lambda:None
+    stage=ModelAttention.stage_percept_expectation
+    def perfect_percept_prior(owner,active):
+        stage(owner,active)
+        # A controlled perfect P prior supplies its declared content floor.
+        owner._percept_word_gain=torch.full_like(owner._percept_word_gain,1.-percept_gain)
+    monkeypatch.setattr(ModelAttention,'stage_percept_expectation',perfect_percept_prior)
+    payload=model._attention_sentence_payload
+    current={};records=[]
+    def record_payload(value,index):
+        raw=model._attention_poles.detach()
+        w=index.clamp(0,raw.shape[1]-1)
+        current['raw']=raw.gather(1,w.reshape(1,1,1).expand(len(raw),1,2)).squeeze(1).clone()
+        result=payload(value,index)
+        current['content']=result[11].clone()
+        return result
+    monkeypatch.setattr(model,'_attention_sentence_payload',record_payload)
+    read=SymbolField.read
+    def record_read(owner,**kwargs):
+        result=read(owner,**kwargs)
+        raw=current.pop('raw',None)
+        if raw is None or result is None:return result
+        content=current.pop('content')
+        ids=kwargs['incoming_ids'];live=kwargs['incoming_rows']
+        known=ids[:,None]==result.identities[None]
+        selected=known.long().argmax(-1)
+        live=live & known.any(-1) & raw.ne(0).any(-1)
+        torch.testing.assert_close(kwargs['incoming_lanes'][live],raw[live])
+        torch.testing.assert_close(content[live],raw[live]*(1.-percept_gain))
+        # Hold the same perfect S prior over the raw observation at every P
+        # setting; no source or head is trained by this mechanism probe.
+        expected=result.expected.clone()
+        expected[torch.arange(len(ids)),selected]=raw
+        result=replace(result,expected=expected)
+        gains=result.gains(result.keys.new_zeros(len(ids),1,result.keys.shape[-1]),identities=ids[:,None])[:,0]
+        torch.testing.assert_close(gains[live],torch.full_like(gains[live],.5))
+        records.extend(gains[live].tolist())
+        return result
+    monkeypatch.setattr(SymbolField,'read',record_read)
+    try:
+        with torch.no_grad():
+            raw=_stage_fullgraph_tensor_peer(model,['cat','dog'])
+            with model._sentence_run():result=model._forward_with_compiled_sentence_state(raw)
+            model._publish_compiled_sentence_state(result);model._end_step()
+        assert records
+    finally:
+        model.End();model.symbolSpace.soft_reset()

@@ -132,7 +132,7 @@ class ThoughtTrialState:
 
 
 def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
-    """One detached episode fork; keep R, credit R + A and local work."""
+    """One detached episode fork; the same R + A judge keeps and credits."""
     from copy import copy
     from QueryWork import QueryWorkBudget
     base = ThoughtTrialState(model)
@@ -172,7 +172,8 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
                 choices=_detached(trace['choices'][:departure]),
                 departure=departure, excluded=fork['excluded'])
             explore, second, other_state = run(other, fork['work'], fork=fork)
-        wins = departure >= 0 and second[0] < first[0]
+        costs = (sum(first), sum(second))
+        wins = departure >= 0 and costs[1] < costs[0]
         trace['reader_weight'], other['reader_weight'] = float(not wins), float(wins)
         trace['comparison_weight'] = .5 if departure >= 0 else 1.
         other['comparison_weight'] = .5 if departure >= 0 else 0.
@@ -184,21 +185,17 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
         if work is not None:
             work._spent, work._counts = result.work.spent, result.work._counts.copy()
             result = replace(result, work=work)
-        # §14 keeps sentence departure judgement at R + A. The episode's
-        # own walk still pays for its metered work, as §5 specifies; that
-        # local cost never enters the enclosing compose comparison or keep.
-        work_costs = tuple(float(model.WHAT_STEP_COST) * result.work.spent
-                           for result in (greedy, explore))
-        costs = (sum(first)+work_costs[0], sum(second)+work_costs[1])
-        model._last_thought_comparison = dict(costs=costs, keep_costs=(first[0],second[0]),
-            components=(first,second), work_costs=work_costs,
+        # Work remains bounded and reported. Alec's R+A judge is identical
+        # for keeping the episode, policy credit and the departure audit.
+        model._last_thought_comparison = dict(costs=costs, keep_costs=costs,
+            components=(first,second), work_spent=(greedy.work.spent,explore.work.spent),
             explore_kept=wins, departure=departure,
             greedy=tuple(trace['actions']), explore=tuple(other['actions']),
             stable=trace['actions'] == other['actions'])
         from ThoughtCredit import complete
         complete(model,trace,other,departure,costs,row)
         width = max(len(trace['actions']),len(other['actions']))
-        audit = dict(model._last_thought_comparison, costs=(first[0],second[0]),
+        audit = dict(model._last_thought_comparison,
             greedy=tuple(trace['actions'])+(-1,)*(width-len(trace['actions'])),
             explore=tuple(other['actions'])+(-1,)*(width-len(other['actions'])))
         observe_comparison(model,'think',audit,row=row)
