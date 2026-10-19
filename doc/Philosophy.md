@@ -1281,13 +1281,16 @@ are not discrepancies on inspection.
    sentence is open; later recall generates from its stored end state. The
    earlier proposal to decay derivations before points is therefore vacuous.
 
-3. **Forgetting and consolidation (profile, future, urgent).** LTM is
-   append-only to capacity, with recency as the only decay; people
-   consolidate selectively and forget (McClelland, McNaughton & O'Reilly
-   1995; Ebbinghaus 1885). The store's capacity is a wall, so a forgetting
-   model is needed soon regardless of profile. Direction: forget what is
-   not fully understood (low luminosity) and what does not integrate with
-   other ideas (few references to or from it). Specified in FutureWork.md.
+3. **Forgetting and consolidation (Item 5 candidate).** The
+   [forgetting spec](specs/2026-09-16-forgetting.md) now has a boundary pass:
+   retain valuable knowledge by source trust, utility and luminosity, with
+   bounded stream-history age in both profiles under capacity pressure.
+   Low surprise and a surviving one-step derivation reduce retention value;
+   isolation alone does not. Opposing sources contribute dissonance, while
+   a row's intrinsic *both* remains heterogeneous content. Optional coverage
+   uses positive area minus negative and contested area. Wording and
+   subordinate detail can go before gist; this mechanism does not establish
+   a psychological forgetting curve or learned consolidation result.
 
 4. **Document boundaries (future).** The hard reset at a document boundary
    clears transient context; people carry context across texts and

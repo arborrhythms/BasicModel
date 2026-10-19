@@ -15,6 +15,21 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
+    <!-- LTM retention: bounded age and value choose rows under capacity pressure. -->
+    <forgetting>true</forgetting>
+    <forgetHighWater>0.9</forgetHighWater>
+    <forgetLowWater>0.7</forgetLowWater>
+    <forgetMinInterval>256</forgetMinInterval>
+    <forgetAtEpoch>false</forgetAtEpoch>
+    <forgetTrustWeight>1.0</forgetTrustWeight>
+    <forgetUtilityWeight>1.0</forgetUtilityWeight>
+    <forgetLuminosityWeight>1.0</forgetLuminosityWeight>
+    <forgetAgeWeight>1.0</forgetAgeWeight>
+    <forgetHalfLife>4096</forgetHalfLife>
+    <forgetSimilarity>0.9</forgetSimilarity>
+    <forgetCoverage>false</forgetCoverage>
+    <forgetProtectOrigins>provisioned user</forgetProtectOrigins>
+
     <!-- The data tier (embedding | numeric) is set under <data> as
          <dataType>; this defaults file uses numeric (see <data> below). -->
 

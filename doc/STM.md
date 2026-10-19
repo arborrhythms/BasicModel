@@ -680,7 +680,7 @@ only by `interpret`: `word DEF object`. The two operands name conceptual
 identities in `refs`, with null operand vectors and a fixed DEF atom in the
 middle slot. A new word costs one inventory row, which becomes the object's,
 and one row of this store. The definition has its own fixed `.when` and a
-refreshable recency timestamp, and it is eligible for forgetting. Its
+position in each witnessing stream, and it is eligible for forgetting. Re-witnessing does not move it. Its
 provenance and scalar trust do not come from the sentence containing the word.
 One derived index supplies form/unit → word, word → objects and object → words;
 load and compaction rebuild it. See
@@ -714,11 +714,45 @@ and bindings. Native word/object META bindings migrate to DEF rows in every
 reading, including the serial aligned path; their META identities and fold
 are retired. [Checkpoint migration](../bin/Layers.py).
 
-Admission preflights clause dependencies and native concept capacity. A full
-store returns `-1` for a new clause without publishing a child prefix; it may
-still join evidence into an existing relation. Optional estimates yield to
-observations when capacity is tight. Stable addresses survive row compaction,
-and referenced prior states participate in the existing retention rules.
+Admission preflights clause dependencies and native concept capacity. An
+insufficient store raises before publishing a child prefix; re-witnessing an
+existing address remains possible. Nested readings and expectation pairs
+reserve their complete transaction.
+
+The [Item 5 forgetting pass](specs/2026-09-16-forgetting.md) runs after backward
+and reset at a document boundary, or after a stateful inference request.
+Default occupancy thresholds are 90% to trigger and 70% to target, with at
+least 256 completed presentations between passes. Value combines absolute
+`source_trust`, surprise/one-step utility, luminosity contribution and a bounded
+age penalty. Age is rows back in the witnessing stream, using the youngest
+position for a shared row. It is neither a document number nor time since use.
+Both profiles use it under pressure; neither runs free-standing age decay.
+
+Protected origins and live thought/expectation roots retain their semantic
+dependencies. Wording goes before subordinate structure; an idea operand can
+leave its cached point in the parent, whereas a missing relational operand
+cascades. Each row advances at most one detail stage per pass. Compaction
+preserves stable addresses and stream order, rebuilds physical indexes and
+DEF lookup, unlinks removed expectation endpoints, and retracts taxonomy
+edges supported only by deleted testimony. Legacy edges without recorded
+provenance remain conservative native structure. Predictor tensors are unchanged.
+
+The pass logs its cut-off, deletions by origin, wording/coarsening/cascade
+counts and whether the target was reached. Its counters and separate source
+trust round-trip with tensor state. Missing old source trust is unknown zero,
+not a reconstruction from the evidence poles. Gradual loss or protected roots
+can prevent reaching the target; a long document can also fill the store before
+its boundary. Both conditions stay visible rather than bypassing protections.
+
+Concept reclamation is separate: at maximum preallocation, after all streams
+close, erase unreferenced exact redundancies, smallest meaning first,
+while retaining a representative. Unused mints with no definition, reference,
+posting or sparse placement can also be reclaimed, without requiring them
+to match each other. Smallness cannot erase a referenced or defined concept.
+Distinct individuals are not merged by
+matching descriptions. Unreferenced zero-relevance identity/change columns can
+also be pruned. A freed physical seat receives a fresh monotonic identity and
+cleared moments; no retired handle can denote its replacement.
 
 `Exist` compares the full occupied description, bindings, scope and references
 against assertive fact records, retaining positive/negative degrees and

@@ -140,9 +140,11 @@ def attach_clause_index(model, store, space):
 
     store.configure_clause_index(concept_point=concept_point,
         predicate_kind=predicate_relation, preflight=lambda count: space_ref()._preflight_concept_allocation(count, context='clause taxonomy'))
-    from ConceptIndex import ClauseTaxonomyPlan
+    from ConceptIndex import ClauseTaxonomyPlan, rebuild_ltm_taxonomy
     object.__setattr__(store, '_clause_index_plan',
         lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))
+    object.__setattr__(store, '_rebuild_taxonomy',
+        lambda: rebuild_ltm_taxonomy(space_ref(), store))
 
 
 class ClauseRows:
@@ -466,6 +468,8 @@ class ClauseRows:
                 def update(row):
                     self.c_plus[row] = max(float(self.c_plus[row]), positive)
                     self.c_minus[row] = max(float(self.c_minus[row]), negative)
+                    if abs(degree) >= abs(float(self.source_trust[row])):
+                        self.source_trust[row] = degree
                     self.witness_count[row] += 1
                     self.witness_stream(row, stream)
                     if asserted:
@@ -543,6 +547,8 @@ class ClauseRows:
                 return row
 
             row = append(references)
+            if index_plan is not None:
+                index_plan.record_row(value, row)
             rows[id(value)] = row
             for companion in value.companions:
                 write(companion, asserted=asserted, primary=False)
@@ -664,7 +670,7 @@ class ClauseRows:
                 self.content_key(row)))
             try:
                 self.append_meaning(resolved, kind=self.KINDS[int(self.record_kind[row])],
-                    rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),
+                    rel_type=int(self.rel_type[row]), trust=float(self.source_trust[row]),
                     evidence=evidence_pair(resolved),
                     order=int(self.order[row]), address=int(self.address_keys[row]))
             finally:
@@ -720,7 +726,7 @@ class ClauseRows:
             self.content_key(row)))
         try:
             self.append_meaning(meaning, kind=self.KINDS[int(self.record_kind[row])],
-                rel_type=int(self.rel_type[row]), trust=float(self.trust[row]),
+                rel_type=int(self.rel_type[row]), trust=float(self.source_trust[row]),
                 evidence=evidence_pair(meaning), order=int(self.order[row]),
                 address=int(self.address_keys[row]))
         finally:

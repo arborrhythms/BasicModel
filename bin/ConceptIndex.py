@@ -90,6 +90,30 @@ def taxonomy_parents(cs, cid):
     return [parent for parent in alloc.placement if cid in taxonomy_children(cs, parent)]
 
 
+@torch.no_grad()
+def rebuild_ltm_taxonomy(cs, store):
+    """Withdraw only edges whose recorded testimony has all been forgotten.
+
+    Native edges (including legacy edges with no provenance) are independent.
+    Surviving learned coefficients are preserved, not reinitialized by replay.
+    """
+    alloc = _concept_alloc_of(cs)
+    for edge, sources in list(alloc.ltm_edges.items()):
+        surviving = {ref for ref in sources if store.index_of_row(ref[2]) is not None}
+        if surviving:
+            alloc.ltm_edges[edge] = surviving
+            continue
+        parent, part = edge
+        alloc.remove(parent, 'part', ('sym', part))
+        target, source = cs._csw_row_of(parent), cs._csw_row_of(part)
+        if target is not None and source is not None:
+            alloc.layer().remove_edges([(target, source)])
+        del alloc.ltm_edges[edge]
+    meaning = getattr(cs.similarity_codebook, 'mereology', None)
+    if meaning is not None:
+        meaning.begin_forward()
+
+
 class ClauseTaxonomyPlan:
     """Validate a closing's taxonomy changes before either owner mutates."""
 
@@ -99,6 +123,7 @@ class ClauseTaxonomyPlan:
         self.alloc = _concept_alloc_of(cs)
         self.definitions, self.edges, self.keys, self.forms = {}, set(), {}, []
         self.points = {}
+        self.row_edges = {}
         self._prepared = {}
         visiting = set()
 
@@ -115,6 +140,7 @@ class ClauseTaxonomyPlan:
             factored = (None if value.factored_refs is None else tuple(
                 self.term(ref) if isinstance(ref, ClausePredicate) else ref for ref in value.factored_refs))
             relation = store.clause_relation(value)
+            edge = None
             if (relation == 'part' and all(type(refs[i]) is int and refs[i] > 0
                                            for i in (0, 2))
                     and all(store.index_of_row(refs[i]) is None for i in (0, 2))):
@@ -134,12 +160,15 @@ class ClauseTaxonomyPlan:
                         parent = self.symbol_at(right, order)
                         self.keys[key] = parent
                     self.edges.add((parent, left))
+                    edge = parent, left
                     self.forms.append((right, parent))
                     # The index may symbolize the parent, but the completed
                     # row keeps the reference actually held when it ended.
             result = replace(value, relation=relation, refs=refs, children=children, companions=companions,
                              factored_refs=factored)
             self._prepared[id(value)] = result
+            if edge is not None:
+                self.row_edges[id(result)] = edge
             visiting.remove(id(value))
             return result
         self.clause = prepare(clause)
@@ -147,6 +176,7 @@ class ClauseTaxonomyPlan:
             # Optional symbolization is all-or-nothing. The completed field
             # still writes its actual references and the reading goes on.
             self.definitions, self.edges, self.keys, self.forms = {}, set(), {}, []
+            self.row_edges.clear()
             self.points = {cid: point for cid, point in self.points.items()
                            if (1 << 61) <= cid < (1 << 62)}
 
@@ -236,6 +266,11 @@ class ClauseTaxonomyPlan:
     def count(self):
         return len(self.definitions)
 
+    def record_row(self, clause, row):
+        edge = self.row_edges.get(id(clause))
+        if edge in self.alloc.ltm_edges:
+            self.alloc.ltm_edges[edge].add(self.store.occurrence_of(row))
+
     def commit(self):
         cs, alloc = self.cs, self.alloc
         for cid, (source, order) in self.definitions.items():
@@ -248,7 +283,9 @@ class ClauseTaxonomyPlan:
                 alloc.add(cid, 'part', ('sym', member))
         alloc.relate_idx.update(self.keys)
         for parent, part in sorted(self.edges):
-            alloc.add(parent, 'part', ('sym', part))
+            if ('sym', part) not in alloc.refs(parent, 'part'):
+                alloc.ltm_edges.setdefault((parent, part), set())
+            alloc.add(parent, 'part', ('sym', part), ltm=True)
             alloc.singletons.add(parent)
             alloc.raised.add(parent)
         for source, parent in self.forms:

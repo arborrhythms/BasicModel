@@ -1,10 +1,12 @@
 # Forgetting: keeping LTM under its limit by value
 
-> **Status:** specification, 2026-09-16, written by Claude from Alec's
+> **Status:** implementation candidate, amended 2026-10-19 after Alec's
+> instruction to begin Item 5.0 with age retained for LTM turnover. Original
+> specification, 2026-09-16, written by Claude from Alec's
 > decisions in conversation on 2026-09-16. Simple by intent. Owns
-> [FutureWork.md §2](../FutureWork.md#2-forgetting-and-consolidation-urgent).
+> [FutureWork.md §2](../FutureWork.md#2-forgetting-and-consolidation).
 > Builds on the [two-truths spec](2026-09-16-two-truths-ideas-and-relations.md)
-> (every S writes a row; rows are referenced by index) and on the
+> (completed readings write rows; references now use stable addresses) and on the
 > [operation profile](../FutureWork.md#1-operation-profile-optimal-versus-human).
 > Everything marked **(decided)** is Alec's decision. §4a (detail before rows)
 > added 2026-09-20 from his ruling that day.
@@ -45,45 +47,56 @@ terms, and a well-integrated row may be exactly the deducible one.
 For a row `i`, at pass time:
 
 ```text
-V(i) = w_t · T(i) + w_u · U(i) + w_l · L(i)          (profile: optimal)
-V(i) = the same − w_a · A(i)                           (profile: human)
+V(i) = w_t · T(i) + w_u · U(i) + w_l · L(i) − w_a · A(i)
 ```
 
-- **T(i) = |trust(i)|.** A confidently false row is knowledge as much as a
-  confidently true one; the sign is not the value. (If Alec means positive
-  trust only, change this to `max(0, trust)`; the difference is one line
-  and one test.)
+- **T(i) = |source_trust(i)|.** This separately stored provenance scalar is
+  independent of the two evidence poles. The legacy `trust` accessor still
+  returns their signed difference for existing readers; forgetting does not
+  use it. Checkpoints without provenance load unknown trust as zero, never
+  infer it from the evidence pair. An older explicit scalar is migrated.
 - **U(i) = 1 − deducibility(i)**, with deducibility in `[0, 1]`:
-  - For an **idea row**: the expectation's discrepancy when the row was
+  - For an **idea row** (`REL_NONE` or ordinary-sentence `REL_OPERATOR`):
+    the expectation's discrepancy when the row was
     observed, recorded at write time as a per-row `surprise` column
     (normalised all-role squared residual of the local-role
     expectation; `-1` when no expectation was staged, treated as
     surprise `1`). A well-expected sentence was deducible from its
     context and is low utility. No extra computation at pass time.
-  - For a **relation row**: one step of the relation readers over the
+  - For a **part or implication relation row**: one step of the relation readers over the
     other rows. A part row `A ⊑ C` is deducible if some `B` has `A ⊑ B`
-    and `B ⊑ C` with both trusts at least the row's own. An implies row
-    is deducible if modus ponens over other rows yields it in one step.
+    and `B ⊑ C` with both source trusts and positive evidence at least the
+    row's own. Modus ponens requires both an implication and its actual
+    antecedent, and makes the consequent expendable.
     Deducibility is `1` when found, else `0`. One step only: the pass
-    is not a theorem prover.
+    is not a theorem prover. Only positive-only evidence in the same scope
+    supplies these certificates. A deleted conclusion's supporting rows are
+    pinned for the rest of that pass. Loss of a support raises a pending
+    candidate's utility before selection.
+  - Other relation kinds have utility `1`.
 - **L(i) = 1 − dissonance(i)**, with dissonance in `[0, 1]`:
   - **Cheap test, always run.** Rows are dissonant in pairs: two idea rows
     whose fused points fall in the same region (cosine above
-    `<forgetSimilarity>`) with opposite trust signs, or two relation rows
-    with the same kind and operands and opposite signs (the dedup path
+    `<forgetSimilarity>`) with opposing single-pole evidence, or two relation rows
+    with the same kind and operands and opposing poles (the dedup path
     already collapses same-sign duplicates). Of a dissonant pair, the row
     with the lower `|trust|` carries dissonance `1`, the other `0`; a row
     in no dissonant pair has `0`. This is `TruthLayer.consistency`'s
-    report path applied to the store rather than the view.
+    report path applied to the store rather than the view. Scope and order
+    must match. Intrinsic *both* within one row is heterogeneous content,
+    not conflicting sources, and is not penalized by this test.
   - **Coverage gain, optional.** When `<forgetCoverage>` is on, `L(i)` is
     instead the drop in catuṣkoṭi coverage of the truth view if row `i`
     were removed, normalised to `[0, 1]`. Off by default; too expensive
     to run at every pass at scale.
-- **A(i)**, human profile only: age since the row was last used
-  (written, read as expectation context, resolved as a relation operand,
-  or returned by a query), on an Ebbinghaus-shaped curve
-  `1 − exp(−age / <forgetHalfLife>)`. Under the optimal profile age does
-  not enter value at all.
+- **A(i)**, both profiles under capacity pressure: rows back from the tail
+  of the row's witnessing stream, on the bounded curve
+  `1 − exp(−age / <forgetHalfLife>)`. A row shared by streams uses the
+  smallest distance. Unknown legacy history receives zero age penalty.
+  Re-witnessing does not move a row; a read does not refresh it. This is
+  5.5's stream history, not a document index, wall clock or last-use clock.
+  The retained parameter name denotes an exponential scale, not a literal
+  half-life. There is no free-running age-decay pass in either profile.
 
 Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
 `[0, 1]` so the weights are comparable.
@@ -96,8 +109,10 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
    regardless of occupancy when `<forgetAtEpoch>` is on. Not more often
    than `<forgetMinInterval>` sentences since the last pass.
 2. **Protection.** Rows whose origin is in `<forgetProtectOrigins>`
-   (default: provisioned and user) are never deleted; they are supplied
-   truths with their own replace-on-resubmit and re-provision rules. If
+   (default: provisioned and user) are never coarsened or deleted; they are supplied
+   truths with their own replace-on-resubmit and re-provision rules. Retained
+   thought results, returned understanding and pending expectation references
+   also protect their rows and semantic dependencies. If
    protected rows alone exceed the target, the pass logs and does nothing.
    *Noted (Alec, 2026-09-29).* A definition row, `REL_DEF`, ties a word
    concept to its object concept
@@ -111,7 +126,9 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
    the kind of truth, relative rows against ideas, with definitions
    among the relative; a definition's use, each reading of its word, is
    counted in its utility; and step 7 rebuilds the definitions table
-   after compaction, since the rows it indexes have moved.
+   after compaction, since the rows it indexes have moved. This extra
+   truth-kind/use weighting was not decided and is not added here; DEF rows
+   use the ordinary relation value and origin protections.
 3. **Value.** Compute `V` for every unprotected row (§3).
 4. **Selection.** Delete the lowest-`V` unprotected rows until
    `count ≤ <forgetLowWater> · capacity`. Ties break oldest first.
@@ -119,19 +136,24 @@ Weights `w_t, w_u, w_l, w_a` are `model.xml` elements (§6). Terms are in
    it, whatever its own value, because a relation over a missing row is
    meaningless. Cascade repeats until stable. The cascade is counted
    toward the target, so step 4 may delete fewer rows than it planned.
-6. **Compaction.** Rows are compacted in place (the mechanism
-   `clear_origin` already uses) and the `refs` column of every surviving
-   row is remapped to the new indices. No dangling reference survives a
-   pass; a debug assertion checks it.
+6. **Compaction.** Rows are compacted in store order. Stable occurrence
+   addresses in `refs` do not change. Physical postings, definitions,
+   adjacency, semantic contexts and fingerprints are rebuilt or filtered.
+   Semantic references are validated before mutation. Coarsened rows are
+   reindexed from their surviving content. Expectation-pair links are
+   unlinked when an endpoint is removed, preserving a surviving observation.
 7. **Dependents.** After compaction: the truth view (`sync_from_ltm`) is
-   rebuilt; the concept-level taxonomy index is rebuilt from surviving
-   part rows and META bindings; the discourse observation view is
-   untouched (it holds tensors, not indices); pending expectation state
-   is untouched.
+   rebuilt; testimony-owned taxonomy edges lose deleted supports. An edge
+   disappears only when it has no surviving support and no independent
+   native definition. Provenance rides the allocator sidecar; legacy edges
+   without provenance are conservatively preserved. Surviving learned
+   coefficients and optimizer moments stay intact. Predictor tensors and
+   pending expectation state are untouched; their live sources are protected.
 8. **Record.** The pass appends one line to the training log: rows
    before, rows after, the value cut-off, the count deleted per origin,
    and the count deleted by cascade. A checkpoint records the number of
-   passes and the last pass's cut-off, nothing about deleted rows.
+   passes, completed-sentence interval counter and last cut-off. Logging also
+   distinguishes dropped wording, coarsening and an unreachable target.
 
 ## 4a. Detail before rows (Alec, 2026-09-20)
 
@@ -166,18 +188,41 @@ itself a relation, since fusion is fair only where operands have points
 first, and stops as soon as the target occupancy is met. A row's main idea,
 its trust and its `surprise` are unchanged by stages 1 and 2.
 
-**Profiles.** Pressure-driven detail-dropping applies under both profiles,
-because the capacity wall does. Age-driven decay with no pressure remains
-`human` only (§3's `A(i)`). Neither profile retains a derivation after the
-sentence ends.
+**Profiles.** Pressure-driven detail loss and the bounded age preference
+apply under both profiles. Neither profile retains a derivation or performs
+age-driven decay without pressure. The explicit epoch option remains available.
+
+The host hook runs after the final backward and reset at a document boundary,
+or after a stateful inference request. A document can still exhaust capacity
+before reaching that boundary; atomic admission then raises. Protected roots
+and one-stage detail loss can also prevent reaching low water. These cases
+warn or fail visibly instead of deleting live content or partially admitting
+a graph. Capacity must include room for a complete document transaction.
 
 ## 5. What is not forgotten and what is not done
 
-- Concept rows in the shared index are not the store's rows and are not
-  forgotten by this pass. A fused idea row that is deleted keeps its
-  concept row if any surviving row or binding references it; otherwise
-  the concept row's release is the codebook's own business and out of
-  scope here.
+- Concept rows have a separate capacity recovery pass, after all streams
+  close and backward completes. Reaching maximum preallocation warns,
+  including an allocation that exactly fills it. The pass groups identical
+  nonempty definitions, orders, sparse coefficients and feature groups;
+  it ranks redundant candidates by meaning magnitude and keeps a stronger
+  representative (a referenced one takes precedence). Smallness or zero
+  meaning alone is insufficient. **Also decided, 2026-10-19:** unused mints
+  with no definition, reference/posting evidence or sparse placement may be
+  reclaimed, smallest magnitude first. They need not be the same concept.
+  Native records, definition rows, witness/reference metadata, feature groups
+  and zero-valued sparse edges exclude this unused-mint route. A referenced
+  or defined concept is never reclaimed merely for being small.
+  Distinct order-one individuals are never
+  merged by matching descriptions. Independently, unreferenced identity/change
+  columns with zero relevance can be removed. Native references, definitions,
+  postings, component coordinates, live thoughts and frozen concepts protect
+  their targets. If nothing is safe, a warning reports no reclaimed seat.
+  Physical seats can be reused with cleared moments; retired handles remain
+  retired, and new handles increase monotonically. Allocator reclamation
+  counts and maps survive checkpoints. Existing `n/(n+4)` definedness keeps
+  an unwitnessed derived meaning zero and grows its magnitude with witnesses;
+  it is a certainty proxy, not a calibrated probability.
 - Derivation decay is vacuous under the September 28 row contract (§4a).
   Learning experiments during an open sentence are outside this forgetting
   pass; [FutureWork.md §3](../FutureWork.md#3-lossy-reconstruction-trace-inversion-as-learning) records the revised decision.
@@ -188,7 +233,7 @@ sentence ends.
 
 ## 6. Configuration
 
-All under `<architecture>`, next to `<ltmCapacity>`:
+All under `<architecture>`; the hard limit remains `SymbolSpace.ltmCapacity`:
 
 | Element | Default | Meaning |
 |---|---|---|
@@ -200,8 +245,8 @@ All under `<architecture>`, next to `<ltmCapacity>`:
 | `forgetTrustWeight` | `1.0` | `w_t` |
 | `forgetUtilityWeight` | `1.0` | `w_u` |
 | `forgetLuminosityWeight` | `1.0` | `w_l` |
-| `forgetAgeWeight` | `1.0` | `w_a`, human profile only |
-| `forgetHalfLife` | `4096` | sentences, human profile only |
+| `forgetAgeWeight` | `1.0` | `w_a`, both profiles under pressure |
+| `forgetHalfLife` | `4096` | exponential age scale in retained stream rows |
 | `forgetSimilarity` | `0.9` | cosine for the dissonant-pair test |
 | `forgetCoverage` | `false` | compute coverage gain instead of the cheap test |
 | `forgetProtectOrigins` | `provisioned user` | origins never deleted |
@@ -223,23 +268,23 @@ Schema entries with these defaults; Params.md rows; the comment in
 3. **Protection.** Provisioned and user rows survive a pass that deletes
    every conversation row; a store of only protected rows logs and does
    nothing.
-4. **Cascade and references.** Deleting an idea row deletes the relation
-   rows over it; after compaction every `refs` entry points at the row it
-   pointed at before, or is `-1` because that row was deleted; the debug
-   assertion passes.
+4. **Cascade and references.** Point-bearing idea operands can coarsen their
+   parents; missing relational operands cascade. Surviving addresses keep
+   their identity and stream order; no reference names a replacement row.
 5. **Dependents.** After a pass, the truth view, the taxonomy index and
    `relations()` agree with the surviving rows; the discourse observation
    view is byte-identical before and after.
-6. **Profiles.** Under `optimal`, two rows differing only in age have equal
-   value; under `human`, the older has lower value.
+6. **Age.** In both profiles, older rows rank lower at otherwise equal value.
+   Trust/utility can outweigh age; shared and unknown histories follow §3.
 7. **Surprise column.** An idea row observed without a staged expectation
    has surprise `-1` and is treated as maximally useful; a row observed
    with a near-zero discrepancy is treated as deducible.
-8. **Packed and single-sentence parity.** The same corpus in both cursors
-   yields the same surviving rows.
+8. **Packed and single-sentence parity.** The same ordered stream and document
+   boundaries, with presentations grouped differently, retain the same rows.
 9. **Checkpoint.** The pass count and last cut-off round-trip; a
    checkpoint saved between passes reloads with the same occupancy.
-10. **Determinism.** Two runs with the same seed delete the same rows.
+10. **Determinism.** The same state deletes the same rows, with stable-address
+    tie breaking; no random selection or test seed is required.
 11. **Detail before rows.** Under pressure a pass drops wording from the
     lowest-value rows, then subordinate rows, and deletes a standalone row
     only when that has not reached low water; after its trace is dropped a
@@ -251,8 +296,13 @@ Schema entries with these defaults; Params.md rows; the comment in
     the dropped operand had no point.
 13. **Gradual.** Successive passes take the same row one stage further
     before it is deleted; no pass takes a row more than one stage.
-14. **Profiles.** With no pressure, `optimal` drops no detail at any age;
-    `human` drops it on the age curve.
+14. **No free-running decay.** With no pressure or explicit epoch trigger,
+    neither profile drops detail at any age.
+
+The implementation certificates live in `test_forgetting.py` and
+`test_concept_forgetting.py`, alongside the existing occurrence, taxonomy,
+expectation-retention and structural-checkpoint tests. Learning and long-run
+capacity sizing remain separate gates; this mechanism makes no learning claim.
 
 ## 8. Documentation required with implementation
 

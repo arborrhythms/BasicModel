@@ -5740,6 +5740,7 @@ class ConceptAllocator:
 
     def __init__(self, layer_sizer=None, order_cap=None):
         self.next_id = 1                 # 0 reserved
+        self.reclaimed_seats = 0         # capacity credits, never recycled handles
         self.placement = {}              # cid -> derived order (bookkeeping)
         self.raised = set()              # σ-raised: never re-refined
         self.singletons = set()          # unit-set rows (min-support exempt)
@@ -5750,6 +5751,7 @@ class ConceptAllocator:
         self.reference_orders = {}       # grammar-resolved object order
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
+        self.ltm_edges = {}              # (parent, part) -> supporting LTM occurrences
         self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
         self._order_cap = order_cap      # () -> max ramsified order S
@@ -5831,8 +5833,12 @@ class ConceptAllocator:
         self.placement[cid] = new
         return new
 
-    def add(self, cid, role, ref):
+    def add(self, cid, role, ref, *, ltm=False):
         cid = self.touch(cid)
+        if not ltm and role == 'part' and isinstance(ref, tuple) and ref[0] == 'sym':
+            # Independent native evidence makes this edge permanent with
+            # respect to LTM pruning, even if testimony first introduced it.
+            self.ltm_edges.pop((cid, int(ref[1])), None)
         self.store_of(cid).add_constituent(cid, role, ref)
         self.settle(cid)
 
@@ -5864,6 +5870,7 @@ class ConceptAllocator:
             ids.discard(cid)
         for k in [k for k, v in self.relate_idx.items() if int(v) == cid]:
             self.relate_idx.pop(k, None)
+        self.ltm_edges = {edge: refs for edge, refs in self.ltm_edges.items() if cid not in edge}
 
 
 class MeronymicFoldAdapter(Layer):
@@ -8714,6 +8721,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('c_plus', torch.zeros(capacity))
         self.register_buffer('c_minus', torch.zeros(capacity))
+        self.register_buffer('source_trust', torch.zeros(capacity))
+        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence'):
+            self.register_buffer(name, torch.tensor(0, dtype=torch.long))
+        self.register_buffer('forget_cutoff', torch.tensor(0.))
         self.register_buffer('refs', torch.full((capacity, 3), -1, dtype=torch.long))
         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('where', torch.zeros(capacity, 4))
@@ -9245,12 +9256,17 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         stream = state_dict.get(prefix + 'stream')
         if stream is not None:
             self.stream = self.stream.new_zeros(self.capacity, stream.shape[1])
+        legacy_trust = state_dict.pop(prefix + 'trust', None)
+        if legacy_trust is not None:
+            state_dict.setdefault(prefix + 'source_trust', legacy_trust)
         self._resize_checkpoint_rows(state_dict, prefix)
         self._definition_rows = {}
         self.definitions.rebuild()
         # Legacy checkpoints retain their recorded pair. The retired scalar
         # was provenance, so it must not silently overwrite that evidence.
-        state_dict.pop(prefix + 'trust', None)
+        state_dict.setdefault(prefix + 'source_trust', torch.zeros_like(self.source_trust))
+        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
+            state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
         # Checkpoint schema migration only: the removed clock has no live reader.
         state_dict.pop(prefix + 'timestamp', None)
         state_dict.pop(prefix + '_next_ts', None)
@@ -9477,6 +9493,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
         self.rel_type[n] = int(rel_type)
         self.c_plus[n], self.c_minus[n] = evidence
+        if previous is None or abs(float(trust)) >= abs(float(self.source_trust[n])):
+            self.source_trust[n] = max(-1., min(1., float(trust)))
         self.order[n] = order
         self.surprise[n] = surprise
         self.origin[n] = self.ORIGIN_CONVERSATION
@@ -9749,6 +9767,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
             'stream': tuple(self.stream[i].nonzero().flatten().tolist()),
             'trust': float(self.trust[i].item()),
+            'source_trust': float(self.source_trust[i].item()),
             'order': int(self.order[i]),
             'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
             'corners': self.corners(i),
@@ -9788,7 +9807,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     @property
     def trust(self):
-        """Compatibility read of signed evidence; no separate stored column."""
+        """Compatibility signed evidence; provenance is ``source_trust``."""
         return self.c_plus - self.c_minus
 
     @torch.no_grad()
@@ -9801,6 +9820,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             raise ValueError("fact trust must be finite")
         signed = max(-1.0, min(1.0, float(trust)))
         self.c_plus[i], self.c_minus[i] = max(signed, 0.), max(-signed, 0.)
+        self.source_trust[i] = signed
 
     @torch.no_grad()
     def set_evidence(self, idx, positive, negative):
@@ -9882,6 +9902,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             facts, self.KINDS.index("unverified"))
         self.c_plus[:count].masked_fill_(selected, 0)
         self.c_minus[:count].masked_fill_(selected, 0)
+        self.source_trust[:count].masked_fill_(selected, 0)
 
     @torch.no_grad()
     def clear_origin(self, origin: int, *, retained_occurrences=(), preserve_addresses=()) -> int:
@@ -9966,54 +9987,44 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.withdraw_origin(origin, preserve_addresses=preserve_addresses)
         if removed == 0:
             return 0
-        self._ensure_texts(c)
-        kept_texts = [self._texts[int(i)] for i in keep.tolist()]
+        self.compact_rows(keep)
+        return removed
+
+    @torch.no_grad()
+    def compact_rows(self, keep):
+        """Compact physical rows in store order; stable addresses do not move."""
+        count = len(self)
+        keep = torch.as_tensor(keep, dtype=torch.long, device=self.count.device)
+        rows = keep.tolist()
+        if rows != sorted(set(rows)) or any(i < 0 or i >= count for i in rows):
+            raise ValueError('LTM compaction requires ordered, unique surviving rows')
+        size = len(rows)
+        self._ensure_texts(count)
+        texts = [self._texts[i] for i in rows]
         self.compact_leaf_rows(keep)
-        self.slots[:n_keep] = self.slots[keep]
-        self.rel_type[:n_keep] = self.rel_type[keep]
-        self.surprise[:n_keep] = self.surprise[keep]
-        self.origin[:n_keep] = self.origin[keep]
-        for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
-                     'address_keys', 'document_keys', 'sentence_content_keys', 'sentence_index', 'witness_count',
-                     'metadata_required', 'semantic_fingerprint',
-                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order', 'stream'):
+        columns = ('slots', 'rel_type', 'surprise', 'origin', 'role_mask', 'record_kind',
+                   'grammatical_mode', 'polarity', 'address_keys', 'document_keys',
+                   'sentence_content_keys', 'sentence_index', 'witness_count',
+                   'metadata_required', 'semantic_fingerprint', 'c_plus', 'c_minus',
+                   'source_trust', 'refs', 'row_ids', 'where', 'when', 'order', 'stream',
+                   'leaf_complete')
+        minus_one = {'surprise', 'address_keys', 'sentence_index', 'refs', 'row_ids', 'order'}
+        for name in columns:
             values = getattr(self, name)
-            values[:n_keep] = values[keep]
-        alive = set(int(value) for value in self.address_keys[:n_keep].tolist())
-        self._semantic_rows = {key: value for key, value in self._semantic_rows.items()
-                               if key in alive}
-        self._expectation_rows = {
-            key: value for key, value in self._expectation_rows.items()
-            if key in alive}
-        self.slots[n_keep:c].zero_()
-        self.sentence_content_keys[n_keep:c].zero_()
-        self.rel_type[n_keep:c].zero_()
-        self.stream[n_keep:c].zero_()
-        self.surprise[n_keep:c].fill_(-1.)
-        self.origin[n_keep:c].zero_()
-        self.role_mask[n_keep:c].zero_()
-        self.record_kind[n_keep:c].zero_()
-        self.grammatical_mode[n_keep:c].zero_()
-        self.polarity[n_keep:c].fill_(True)
-        self.address_keys[n_keep:c].fill_(-1)
-        self.document_keys[n_keep:c].zero_()
-        self.sentence_content_keys[n_keep:c].zero_()
-        self.sentence_index[n_keep:c].fill_(-1)
-        self.witness_count[n_keep:c].zero_()
-        self.metadata_required[n_keep:c].zero_()
-        self.semantic_fingerprint[n_keep:c].zero_()
-        for name in ('c_plus', 'c_minus', 'where', 'when'):
-            getattr(self, name)[n_keep:c].zero_()
-        self.refs[n_keep:c].fill_(-1)
-        self.row_ids[n_keep:c].fill_(-1)
-        self.order[n_keep:c].fill_(-1)
-        self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
-        self.count.fill_(n_keep)
+            values[:size] = values[keep]
+            values[size:count].fill_(-1 if name in minus_one else name == 'polarity')
+        alive = set(map(int, self.address_keys[:size].tolist()))
+        for name in ('_semantic_rows', '_expectation_rows', '_definition_rows'):
+            setattr(self, name, {key: value for key, value in getattr(self, name).items() if key in alive})
+        self._texts = texts + [None] * (len(self._texts) - size)
+        self.count.fill_(size)
         self.definitions.rebuild()
         self.rebuild_leaf_postings()
         self.retain_adjacency()
         self._validate_expectation_links()
-        return removed
+        rebuild = getattr(self, '_rebuild_taxonomy', None)
+        if rebuild is not None:
+            rebuild()
 
     @torch.no_grad()
     def reset(self):
@@ -10040,6 +10051,9 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._expectation_rows = {}
         self._definition_rows = {}
         self.definitions.rebuild()
+        self.source_trust.zero_()
+        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
+            getattr(self, name).zero_()
         self.c_plus.zero_()
         self.c_minus.zero_()
         self.refs.fill_(-1)

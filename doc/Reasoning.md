@@ -65,3 +65,22 @@ Boundary admission, typed capability views and work limits are documented in
 are in [ThoughtHistory](ThoughtHistory.md). Numerical proof utilities in
 `TruthGroundedReasoner` remain diagnostics; production reasoning uses the
 ordinary grammar controller and native row evidence.
+
+## Retention utility (Item 5)
+
+[Forgetting](specs/2026-09-16-forgetting.md) uses one-step deducibility as a
+retention score. A positive part edge can be omitted when two same-scope
+positive edges supply its transitive proof, with at least its source trust
+and positive evidence. Modus ponens needs both the implication and its actual
+antecedent. Negative or intrinsically both-valued evidence does not supply
+these deletion certificates. A removed conclusion pins a complete surviving
+proof; losing a proof raises an unselected candidate's utility. This pass does
+not recursively prove claims or change stored evidence.
+
+Idea utility uses the recorded expectation discrepancy, treating missing
+surprise as unknown/high utility. Cheap dissonance compares opposing sources
+in matching scope and order, penalizing the weaker source; heterogeneous
+content within a single both-valued row is not a disagreement between sources.
+The optional coverage term measures loss of positive catuṣkoṭi coverage on
+removal. Live thought results and pending expectation sources protect their
+addressed evidence throughout the transaction.

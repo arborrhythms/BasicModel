@@ -239,6 +239,32 @@ HTTP server settings (used by `serve.py`).
 
 ---
 
+### LTM forgetting (`<architecture>`)
+
+The [forgetting pass](specs/2026-09-16-forgetting.md) runs after backward at
+closed document boundaries in training, or after stateful inference. It never
+runs inside an open sentence or stateless request. `SymbolSpace.ltmCapacity`
+remains the hard limit; a document that fills the store before its boundary
+still fails atomic admission. The following settings are validated at model
+construction. The low-water fraction must be below high water; all weights
+are finite and nonnegative.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `forgetting` | bool | `true` | Enable LTM retention and boundary concept reclamation. Capacity warnings remain visible. |
+| `forgetHighWater` | float | `0.9` | Occupancy fraction that triggers a document-boundary pass. |
+| `forgetLowWater` | float | `0.7` | Target occupancy fraction; protected roots and gradual detail loss can prevent reaching it. |
+| `forgetMinInterval` | int | `256` | Minimum completed sentence presentations between passes. |
+| `forgetAtEpoch` | bool | `false` | Also consider retention at a completed training epoch, subject to the interval. |
+| `forgetTrustWeight` | float | `1.0` | Weight of absolute source trust, independent of evidence poles. |
+| `forgetUtilityWeight` | float | `1.0` | Weight of surprise or one-step non-deducibility. |
+| `forgetLuminosityWeight` | float | `1.0` | Weight of the dissonance or coverage contribution. |
+| `forgetAgeWeight` | float | `1.0` | Weight of the bounded age penalty, in both profiles. |
+| `forgetHalfLife` | float | `4096` | Positive exponential scale in rows back in the witnessing stream; shared rows use the youngest position. The retained name is not a literal half-life. |
+| `forgetSimilarity` | float | `0.9` | Cosine threshold in `[0,1]` for opposing idea rows in the same order/scope. |
+| `forgetCoverage` | bool | `false` | Use the more expensive leave-one-out catuṣkoṭi coverage contribution. |
+| `forgetProtectOrigins` | string | `provisioned user` | Space-separated origins that cannot be changed; accepts `conversation`, `provisioned`, `user`. Empty protects no origin. Live references remain protected. |
+
 ## BasicModel / MentalModel Quick Reference
 
 The two configurations that train the full P$\to$C$\to$S pipeline:

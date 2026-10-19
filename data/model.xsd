@@ -372,6 +372,20 @@
            (byte-identical). This gate governs the storage home; the
            reduce-or-describe routing itself is structural. -->
       <xs:element name="ltmConsolidation" type="xs:boolean" minOccurs="0"/>
+      <!-- Pressure-driven forgetting runs at closed host boundaries. -->
+      <xs:element name="forgetting" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="forgetHighWater" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetLowWater" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetMinInterval" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="forgetAtEpoch" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="forgetTrustWeight" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetUtilityWeight" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetLuminosityWeight" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetAgeWeight" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetHalfLife" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetSimilarity" type="xs:double" minOccurs="0"/>
+      <xs:element name="forgetCoverage" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="forgetProtectOrigins" type="xs:string" minOccurs="0"/>
       <!-- LTM provisioning (doc/specs/mereological-order-raising.md "Augment the
            LTM by parsing a TruthSet from XML config"; Alec 2026-06-18). A set of
            trusted truths appended to the consolidated LTM at model load

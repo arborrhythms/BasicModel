@@ -3247,7 +3247,7 @@ class BaseModel(Mereology, nn.Module):
             if alloc is None:
                 continue
             # next_id is one past every restored stable concept handle.
-            required = max(required, int(getattr(alloc, "next_id", 1) or 1))
+            required = max(required, int(getattr(alloc, "next_id", 1) or 1) - alloc.reclaimed_seats)
             for layer in getattr(alloc, "_layers", {}).values():
                 tensor_rows = getattr(layer, "_tensor_rows", None) or {}
                 if tensor_rows:
@@ -4085,7 +4085,7 @@ class BaseModel(Mereology, nn.Module):
         alloc_fields = (
             "placement", "raised", "singletons", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
-            "testimony_current",
+            "testimony_current", "reclaimed_seats", "ltm_edges",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4243,7 +4243,7 @@ class BaseModel(Mereology, nn.Module):
         fields = (
             "placement", "raised", "singletons", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
-            "testimony_current",
+            "testimony_current", "reclaimed_seats", "ltm_edges",
         )
         for name in fields:
             if name not in saved:
@@ -4271,6 +4271,8 @@ class BaseModel(Mereology, nn.Module):
         # A stale counter must never collide with a restored concept. Exact
         # checkpoints already satisfy this; max() is a corruption-safe guard.
         alloc.next_id = max(next_id, max(known_ids) + 1)
+        if not 0 <= alloc.reclaimed_seats <= len(alloc.retired):
+            raise ValueError('invalid reclaimed concept capacity in checkpoint')
 
         layer_blobs = saved.get("layers") or {}
         if len(layer_blobs) > 1:
@@ -7030,7 +7032,13 @@ class BasicModel(BaseModel):
                 "training/inference is IR-only; for sentence-level "
                 "generation use BasicModel.generate_sentence (Phase 4)."
             )
-        return self._infer_ir(text, document_key=document_key)
+        result = self._infer_ir(text, document_key=document_key)
+        if not self.stateless:
+            self._forget_document_boundary = True
+            self._forget_all_streams_closed = True
+            self._forget_training = False
+            self.post_tick_compact()
+        return result
 
     def _infer_ir(self, text, *, document_key=None):
         """IR-mode parallel-infill inference.
@@ -13302,6 +13310,10 @@ class BasicModel(BaseModel):
         from ThoughtCredit import finish_documents
         finish_documents(self, (b for b, ended in enumerate(
             getattr(self, '_thought_document_ends', ())) if ended))
+        if any(getattr(self, '_thought_document_ends', ())):
+            self._forget_document_boundary = True
+            self._forget_all_streams_closed = all(self._thought_document_ends)
+            self._forget_training = bool(getattr(self, '_sentence_training', False))
         self._sentence_codes_snapshotted = False
         self._staged_in_sub = None
         self._staged_concepts_in = None
@@ -15191,6 +15203,24 @@ class BasicModel(BaseModel):
             if tl is not None and hasattr(tl, 'compact'):
                 tl.sync_from_ltm()
         self._detach_persistent_state()
+        if self.__dict__.pop('_forget_document_boundary', False):
+            if self.__dict__.pop('_forget_training', False) or not self.stateless:
+                from Forgetting import model_boundary
+                model_boundary(self, document_boundary=True)
+                if (self.__dict__.get('_forget_all_streams_closed', False)
+                        and getattr(self, '_open_sentence_slot', None) is None):
+                    from ConceptForgetting import warn_capacity, reclaim_concepts, model_concept_roots
+                    from Forgetting import ForgettingConfig
+                    if ForgettingConfig.from_xml().enabled:
+                        seen = set()
+                        for owner in self.conceptualSpaces:
+                            alloc = getattr(owner, '_concept_allocator', None)
+                            if alloc is not None and id(alloc) not in seen:
+                                seen.add(id(alloc))
+                                if warn_capacity(owner):
+                                    reclaim_concepts(owner, self.symbolSpace.ltm_store, model=self,
+                                                     retained=model_concept_roots(self))
+            self.__dict__.pop('_forget_all_streams_closed', None)
 
     def _detach_persistent_state(self):
         """Walk every submodule under this model and detach the floats
@@ -15894,6 +15924,8 @@ class BasicModel(BaseModel):
                 f"B={B_eff}, W={self.serial_word_capacity}{_wu_text}).")
 
         if training and split == "train" and cursor_all_done:
+            from Forgetting import model_boundary
+            model_boundary(self, epoch_boundary=True)
             self._epoch_batches_seen = 0
             self._resume_batches_to_skip = 0
 
@@ -15951,6 +15983,8 @@ class BasicModel(BaseModel):
         extensively (sets every ``self.*Space`` attribute, ``self.spaces``,
         ``self.symbolSpace``, ``self.reversible``, etc.).
         """
+        from Forgetting import ForgettingConfig
+        ForgettingConfig.from_xml()  # reject invalid settings before allocating model state
         self.spaces = []
         # Execution-only epoch used by immutable carrier/codebook identities.
         # It intentionally does not ride in state_dict: no carrier or replica
@@ -21142,6 +21176,9 @@ class BasicModel(BaseModel):
             observations.clear()
             predictions.clear()
             self._open_sentence_slot = None
+            store = getattr(self.symbolSpace, 'ltm_store', None)
+            if store is not None:
+                store.forget_sentences.add_(present.sum().to(store.forget_sentences))
             self._sentence_reconstructions.append(tuple(v.detach() for v in reconstruction))
             stm, lang, feedback = chosen
             # The next closing starts with the committed discrete history and

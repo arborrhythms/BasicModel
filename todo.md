@@ -463,36 +463,21 @@ not by a passing identity lesson.
    offset-independence, addressed-chain, interleaving, preposition and
    surface-inverse certificates. Tense/aspect on VP phases waits for the
    carried identity sequence.
-- **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)), after item 7
-   (needs `refs` and every S writing a row). Document-boundary pass from the
-   high-water to the low-water mark deleting the lowest-value unprotected
-   rows; value = `|trust|` + utility (1 − deducibility) + luminosity
-   contribution; cascade, reference remap, dependents rebuilt, the human
-   profile's age term; and **detail before rows** (§4a): wording, then
-   subordinate rows, then the row, gradually, coarsening the referring row
-   instead of cascading where the operand's point survives. Exit: the fourteen
-   §7 tests, the accessible-mind spec's test 31 (retention by surprise), the
-   §6 elements in schema/`model.xml`/Params.md, the §8 docs, and the reviewed 9b
-   reconstruction measurements unchanged unless explicitly re-baselined.
-   *Compatibility (corrected, Alec, 2026-09-28):* rows carry the evidence
-   pair `(c⁺, c⁻)` (§1.1) **and, separately, a univalent trust scalar**.
-   `|trust|` in the value is that scalar; it is **not** the collapse
-   `|c⁺ − c⁻|`, which this line previously said and which was applying the
-   evidence algebra to trust. The collapse `c⁺ − c⁻` and the *both* mass
-   `min(c⁺, c⁻)` are the row's **evidence**, and the latter is the dissonance
-   in the luminosity term, so a heterogeneous row is protected, not
-   discarded. Open for Alec: forgetting
-   of the concept inventory itself — order-0 definitions, alternatives and
-   feature groups — is not in the spec; discovered rows are never recycled
-   (item 11), so their retirement needs a rule here or in FutureWork; the
-   same rule is the merge half of the bank's collision rule
-   ([FutureWork](doc/FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled)).
-   *Also here (deferred from 6.5):* pruning of learned identity/change
-   columns by their relevance scales (ICA spec §10), in the exit criteria.
-   *Age (Alec, 2026-09-30):* with no clock across documents (item 5.5), the
-   age term "can probably just be an increasing document index: more
-   important within a document will be its salience"
-   ([5.5 spec §9](doc/specs/2026-09-30-occurrence-tense-aspect.md#9-what-it-touches)).
+- **5. Forgetting** ([spec](doc/specs/2026-09-16-forgetting.md)). Implementation
+   candidate's review repairs are in validation; [record and validation](doc/plans/2026-10-19-item5-start.md).
+   Includes pressure-driven LTM value pruning, gradual detail loss, stable
+   references, expectation/definition/taxonomy repair, and concept reclamation
+   from exact redundancies, unused mints without definition/reference/posting/
+   sparse-placement evidence, or unreferenced zero-relevance columns. Source trust
+   is independent of the evidence pair. Alec retained age for LTM turnover on
+   October 19 and said to begin: the bounded penalty uses rows back in each
+   witnessing stream (youngest position for shared rows), in both profiles
+   under pressure. Re-witnessing does not refresh history. Concept meanings
+   start at zero and grow with witnessed definedness; smallness alone cannot
+   justify erasure. Maximum preallocation warns. Repair review and publication remain;
+   the item stays here until that landing.
+   Long-run sizing/learning remains with items 3/0. The historical 9b
+   reconstruction numbers require the item-0 rebaseline already recorded below.
 - **4.5. Expectation across the architecture** (Alec, 2026-10-08: "needs to
    go in sooner rather than later"; a spec of its own). **Spec (draft,
    2026-10-08 rev 3; two questions open in §8):**

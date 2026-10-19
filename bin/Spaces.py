@@ -14716,7 +14716,9 @@ class ConceptualSpace(Space):
     def _concept_capacity_window(self, count=1):
         """Return ``(next_id, end, capacity)`` for a prospective allocation.
 
-        ``end`` is the allocator's one-past id after ``count`` fresh concepts.
+        ``end`` is occupied allocation capacity after ``count`` fresh concepts,
+        including reserved zero and subtracting safely reclaimed seats. Fresh
+        handles remain monotonic even when physical seats are reused.
         A ``None`` capacity denotes the historical mixing-mode relation
         sidecar, whose handles are deliberately not dense-codebook addresses.
         This helper is inspection-only: neither the allocator nor an active
@@ -14732,7 +14734,7 @@ class ConceptualSpace(Space):
         capacity_raw = (None if legacy_relation_store
                         else getattr(self, "nVectors", None))
         capacity = None if capacity_raw is None else int(capacity_raw)
-        return nxt, nxt + n, capacity
+        return nxt, nxt + n - int(alloc.reclaimed_seats), capacity
 
     def _preflight_concept_row(self, order=0):
         """Check the physical seat before changing identity or definition records."""
@@ -14782,7 +14784,10 @@ class ConceptualSpace(Space):
         ConceptualSpace._preflight_concept_allocation(
             self, n, context=context)
         alloc = _concept_alloc_of(self)
-        return [alloc.new_concept() for _ in range(n)]
+        result = [alloc.new_concept() for _ in range(n)]
+        from ConceptForgetting import warn_capacity
+        warn_capacity(self)
+        return result
 
     def _automatic_concept_admitted(self, count=1, *, reason="automatic"):
         """Capacity gate for evidence-driven, optional concept discovery.
@@ -14821,12 +14826,12 @@ class ConceptualSpace(Space):
 
     def concept_admission_stats(self):
         """Public, host-side capacity/admission telemetry."""
-        nxt, _end, capacity = ConceptualSpace._concept_capacity_window(self, 0)
+        nxt, used, capacity = ConceptualSpace._concept_capacity_window(self, 0)
         return {
             "next_id": nxt,
             "capacity": capacity,
-            "remaining": (None if capacity is None else max(0, capacity - nxt)),
-            "lookup_only": bool(capacity is not None and nxt >= capacity),
+            "remaining": (None if capacity is None else max(0, capacity - used)),
+            "lookup_only": bool(capacity is not None and used >= capacity),
             "dropped": dict(getattr(self, "_concept_admission_drops", {}) or {}),
         }
 
@@ -15878,6 +15883,8 @@ class ConceptualSpace(Space):
         them afresh into the bounded attended field.
         """
         alloc = _concept_alloc_of(self)
+        if int(concept_id) in alloc.retired:
+            raise ValueError('a retired concept cannot be assigned a new storage row')
         if int(order) > 0 and alloc.order_of(concept_id) < int(order):
             alloc.reference_orders[int(concept_id)] = int(order)
             alloc.placement[int(concept_id)] = int(order)
@@ -15941,6 +15948,9 @@ class ConceptualSpace(Space):
                     f"CS {region} exhausted ({cap} rows): concept "
                     f"{int(concept_id)} gets records only, no weighted "
                     f"reading (overflow #{n})", RuntimeWarning)
+        if row is not None:
+            from ConceptForgetting import warn_capacity
+            warn_capacity(self)
         return row
 
     def _populate_concept_weights(self, concept_id, *, witness=None, pole=0, coactive=False,

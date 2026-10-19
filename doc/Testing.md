@@ -3028,3 +3028,45 @@ one optional full-model compile probe was interrupted before measurement and
 is not counted as passing. No full sweep or attribution training was added.
 Fresh BasicModel scoring remains stopped, with item 4's trained gate pending.
 Nothing is committed; the result is held for Claude's review.
+
+## Item 5.0 forgetting candidate (2026-10-19)
+
+The [implementation record](plans/2026-10-19-item5-start.md) contains the
+retention/capacity decisions, focused results and XOR certificate table.
+The initial candidate default sweep at `output/tests/20261019-013504-e963dc/result.json`
+completed **5,805 cases: 5,470 passed, 334 skipped, one expected failure,
+zero failures**, in 464.38 seconds. Peak worker memory was 4.58 GiB under
+the unchanged 8 GiB limit. XML schema validation and `git diff --check` pass.
+
+The 44 forgetting-specific cases cover per-stream age, source trust distinct
+from both evidence poles, one-step proofs, protected/live references, gradual
+coarsening, expectation unlinking, taxonomy provenance, slot reuse without
+identity reuse, optimizer moments, relevance pruning and checkpoint state.
+The focused packed/single and existing nested/expectation retention selection
+passed 113 cases before the final protected-metadata fix; the final full sweep
+includes that fix and its regression.
+
+The cleared-cache word-overlap test remains expected-failing. Copular identity
+(1), FineWeb (5) and stage 4e (1) retain their phase prerequisite skips.
+This work starts no separate NP, identity or corpus learning experiment and
+makes no mature-checkpoint learning claim. Claude reviewed that candidate;
+the repair pass below supersedes its source. Publication remains pending.
+
+
+### Item 5 review repair pass (2026-10-19)
+
+[The repair receipt](plans/2026-10-19-item5-start.md#repair-pass-receipt-2026-10-19)
+records A–D and the candidate branch. Stored surprise now governs ordinary
+three-role sentence rows as well as bare ideas. Unused mints without
+structural or reference evidence can be reclaimed independently, smallest
+magnitude first; defined and referenced concepts remain protected from
+smallness-based reclamation.
+
+The real BasicModel certificate logs the first document's **11→6** LTM
+pass at capacity 16, then reads and writes a second document. Its post-pass
+checkpoint restores occupancy, addresses and all four forgetting counters
+exactly. Focused checks passed **95** cases; the final isolated-source
+forgetting/concept selection passed **47**. XML and whitespace checks pass.
+No existing assertion is relaxed, no test seed is selected, and no separate
+learning experiment is run. One default sweep is pending on the committed
+repair source; its result will complete this receipt.

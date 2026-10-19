@@ -334,7 +334,7 @@ def _tiny_canonical_model(
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
         concept_rows=64, dimension=16,
         chooser_depth=None, training_overrides=None, architecture_overrides=None,
-        part_rows=256, stm_capacity=None):
+        part_rows=256, stm_capacity=None, ltm_capacity=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -373,6 +373,8 @@ def _tiny_canonical_model(
                 if node is not None and node.text == "16":
                     node.text = str(dimension)
     _set("./architecture/training/batchSize", batch_size)
+    if ltm_capacity is not None:
+        _set("./SymbolSpace/ltmCapacity", ltm_capacity)
     if chooser_depth is not None:
         _set("./architecture/transformChooserDepth", chooser_depth)
     _set("./architecture/training/branchDiagnosticsEvery", 0)

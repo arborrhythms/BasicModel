@@ -34,26 +34,21 @@ human-like behaviour for every item that
 |---|---|---|
 | Default belief | Cartesian: comprehension registers at trust `0`; provenance asserts | Spinozan: comprehension asserts at provenance trust; unbelieving is a later revision |
 | Verbatim retention | generation from stored structure | generation from stored structure |
-| Forgetting | capacity wall, recency only | forgetting model (§2) |
+| Forgetting | value and bounded history age under pressure (§2) | same pressure-driven pass (§2) |
 
 The profile is a switch over documented behaviours, never a hidden
 heuristic; each behaviour has its own test under both settings. Params.md
 gains the element when the first profile-dependent behaviour lands.
 
-## 2. Forgetting and consolidation (urgent)
+## 2. Forgetting and consolidation
 
-Specified in [the forgetting spec](specs/2026-09-16-forgetting.md)
-(2026-09-16). Summary: `<ltmCapacity>` is the limit; a pass runs when the
-store is nearly full, never mid-sentence and not more often than a minimum
-interval, and deletes the lowest-valued unprotected rows down to a target
-occupancy. Value combines trust (high trust preferred), utility (a row that
-is easily deduced from other rows is not worth keeping: low expectation
-surprise for ideas, one-step derivability for relations) and contribution
-to luminosity (dissonant rows are forgotten; full coverage gain is optional
-because it is expensive). Relations over deleted rows cascade; references
-are remapped on compaction. The human profile adds an age term. The earlier
-direction here, that isolated rows should be forgotten, is withdrawn: an
-isolated row can score high on all three terms.
+The [Item 5 implementation candidate](specs/2026-09-16-forgetting.md) owns
+pressure-driven retention, gradual detail loss, safe stable-address compaction
+and conservative concept-capacity recovery. Age uses 5.5's per-stream history
+in both profiles. Review and validation status are in the
+[implementation record](plans/2026-10-19-item5-start.md). Long-run capacity
+sizing and mature-checkpoint learning measurements remain with todo items 3
+and 0. No learned-consolidation claim follows from the mechanism tests.
 
 ## 3. Lossy reconstruction trace; inversion as learning
 
@@ -348,6 +343,49 @@ belong to the Teacher specification it cites. Moved from the todo on
 - Treat DOI and source date as optional aliases/provenance. FineWeb has neither;
   retain shard SHA-256 and corpus release metadata instead of fabricating them.
 
+
+## 13. LTM enhancement: episodic content and summary statistics beside the semantic row (Alec, 2026-10-19)
+
+**Direction (Alec, from the conference).** A stored row should hold some
+episodic content, not only the semantic vector, and some summary statistics
+such as surprise and use count. The question behind it: to which of our own
+actions do we have conscious access afterward, since a metacognitive memory
+is what lets later control improve on earlier performance.
+
+**What the row already carries** (`TernaryTruthStore` columns): `surprise`
+at write time (`-1` when no expectation was staged), `witness_count`
+(re-witnessing of the same address), `trust`, `stream` witnesses, `where`,
+`when`, `order`, `refs`. The stream history in store order is the record of
+what passed through STM. What it does not carry: any content that was
+active but never composed (§7), a count of *reads* (retrievals by the
+thought loop or priming, as opposed to re-witnessing), an effort trace of
+the reading (compose steps, departures taken, keep-cost margin), or an
+outcome mark set later (an answer that failed, a later contradiction).
+
+**Human evidence (summary; citations in the 2026-10-19 discussion, not
+re-verified).** People retain the contents that passed through working
+memory, in order, and evaluative summaries of their own processing:
+confidence, feeling of knowing, error awareness, effort and fluency, and a
+trace that an item was self-generated. They do not retain the process:
+memory for one's own fixations is near chance, verbatim form is lost beyond
+the clause and regenerated from meaning at recall, syntactic choices are
+not reportable, and explanations of choices are reconstructed. So the
+human-like record is the stream history plus a few summaries per row, not
+the attention path and not the kept program; the surface is regenerated
+from the idea by the generate grammar.
+
+**Proposed shape.** Beside each row: (a) §7's few most active indices with
+activations at the closing, the episodic part, which also recovers the
+dissonance `m` that the stored resultant cannot hold; (b) summaries:
+surprise (exists), witness count (exists), read count, effort (steps or
+departures, keep-cost margin), outcome mark; all a few numbers, detail
+first in forgetting (forgetting spec §4a). Consumers: item 5's value
+function (surprise and counts already feed utility), the chooser's control
+(where to re-read, when to explore), and interpretation-time
+discrimination (§5). Not recorded: the `.where` trajectory of a reading and
+the kept program.
+
+Unscheduled; §7 specifies the episodic part, this section is the umbrella.
 
 ## Four corners as prompts
 
