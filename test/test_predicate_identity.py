@@ -83,10 +83,9 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     before = dict(f.cs._csw_rows)
     clause = finish_reading(f.language, entry, registry=f.registry if use_registry else None)
     row = f.store.write_clause(clause)
-    expected = f.store.REL_PARTOF if relation == 'part' else f.store.REL_IMPLIES
-    assert f.store.rel_type[row] == expected
-    assert f.store.refs[row].tolist() == refs.tolist()
-    assert int(f.store.refs[row, 1]) == predicate_identity(relation)
-    assert torch.equal(f.store.slots[row, 1], point)
-    assert f.cs._csw_rows == before
+    assert f.store.parts.refs.shape[-1] == 2
+    arguments = f.store.row(row)['refs'].tolist()
+    assert reference[1] not in arguments
+    for argument, source in zip(arguments, (left, right)):
+        torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])
     assert f.cs._csw_row_of(reference[1]) is None

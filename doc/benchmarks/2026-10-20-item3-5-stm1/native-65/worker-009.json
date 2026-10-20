@@ -1,0 +1,148 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse",
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_identity_cube.py::test_chart_consumers_stay_in_cube_after_both_signs_of_learning",
+    "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.0]",
+    "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.5]",
+    "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[1.0]",
+    "test/test_identity_cube.py::test_union_is_an_exact_join_including_cube_rails"
+  ],
+  "completed": [
+    "test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse",
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_identity_cube.py::test_chart_consumers_stay_in_cube_after_both_signs_of_learning",
+    "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.0]",
+    "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.5]",
+    "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[1.0]",
+    "test/test_identity_cube.py::test_union_is_an_exact_join_including_cube_rails"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008044580463320017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012416500132530928,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008933749049901962,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000754582928493619,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033449986949563026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017212494276463985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001552498433738947,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_chart_consumers_stay_in_cube_after_both_signs_of_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008828339632600546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0038440830539911985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0019102499354630709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018067499622702599,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_cube.py::test_union_is_an_exact_join_including_cube_rails",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003084170166403055,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

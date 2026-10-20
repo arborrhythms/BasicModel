@@ -1,0 +1,708 @@
+............FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFF                  [100%]
+=================================== FAILURES ===================================
+___________ test_g1_definite_generator_referent_with_distractor[0-1] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...3796143002013) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: 5299303796143002013
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[0-2] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...3796143002013) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: 5299303796143002013
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[0-3] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...3796143002013) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: 5299303796143002013
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[1-2] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...1809194917776) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: 4615351809194917776
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[1-3] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...1809194917776) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: 4615351809194917776
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[1-0] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...1809194917776) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: 4615351809194917776
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[2-3] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...4475080298287) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: -4853844475080298287
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[2-0] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...4475080298287) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: -4853844475080298287
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[2-1] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...4475080298287) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: -4853844475080298287
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[3-0] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...6443602895047) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: -3501606443602895047
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[3-1] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...6443602895047) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: -3501606443602895047
+E     Use -v to get more diff
+___________ test_g1_definite_generator_referent_with_distractor[3-2] ___________
+test/test_bind_thought.py:123: in test_g1_definite_generator_referent_with_distractor
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('ltm', 'addr...6443602895047) == ('sym', -1)
+E     
+E     At index 0 diff: 'ltm' != 'sym'
+E     Left contains one more item: -3501606443602895047
+E     Use -v to get more diff
+________ test_g2_generated_leaf_without_object_uses_same_resolver[0-1] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[0-2] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[0-3] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[1-2] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[1-3] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[1-0] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[2-3] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[2-0] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[2-1] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[3-0] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[3-1] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[3-2] _________
+test/test_bind_thought.py:147: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True] ___
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x149ba57f0>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False] __
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x149512fc0>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True] ___
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x1494ff050>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False] __
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x14953e2d0>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True] ___
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x148384a40>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False] __
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x148384ce0>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True] ___
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x1483c9c10>.resolver
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False] __
+test/test_bind_thought.py:187: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert 2 in f.resolver.expected_roles(f.atoms[4])
+E   assert 2 in ()
+E    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))
+E    +    where expected_roles = ReferenceClose().expected_roles
+E    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x147463740>.resolver
+____ test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content ____
+test/test_bind_thought.py:229: in test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+    result = run(f.model, meaning, work_budget=128)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5973: in run_selected_thought
+    commit(self, result, row=row)
+bin/ThoughtStream.py:276: in commit
+    components.reference_close.commit_bindings(result)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ReferenceClose' object has no attribute 'commit_bindings'
+_________ test_participant_cache_rebuilds_from_retained_identity_rows __________
+test/test_bind_thought.py:242: in test_participant_cache_rebuilds_from_retained_identity_rows
+    assert f.resolver.expected_roles(f.atoms[4]) == (2,)
+E   assert () == (2,)
+E     
+E     Right contains one more item: 2
+E     Use -v to get more diff
+_ test_bind_keeps_self_and_containing_identities_and_reads_the_cycle_boundedly[False] _
+test/test_bind_thought.py:279: in test_bind_keeps_self_and_containing_identities_and_reads_the_cycle_boundedly
+    f.resolver.commit_bindings(SimpleNamespace(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ReferenceClose' object has no attribute 'commit_bindings'
+_ test_bind_keeps_self_and_containing_identities_and_reads_the_cycle_boundedly[True] _
+test/test_bind_thought.py:279: in test_bind_keeps_self_and_containing_identities_and_reads_the_cycle_boundedly
+    f.resolver.commit_bindings(SimpleNamespace(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ReferenceClose' object has no attribute 'commit_bindings'
+___________ test_paired_bind_trials_use_r_plus_a_with_no_work_reward ___________
+test/test_bind_thought.py:356: in test_paired_bind_trials_use_r_plus_a_with_no_work_reward
+    result = run(f.model, meaning, work_budget=128, score=score)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5973: in run_selected_thought
+    commit(self, result, row=row)
+bin/ThoughtStream.py:276: in commit
+    components.reference_close.commit_bindings(result)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ReferenceClose' object has no attribute 'commit_bindings'
+______ test_selected_open_formation_keeps_one_site_and_its_objectless_cue ______
+test/test_bind_thought.py:379: in test_selected_open_formation_keeps_one_site_and_its_objectless_cue
+    program = f.program(('lift', 'm', VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_pending_subject_keeps_its_composed_predicate_when_stored _________
+test/test_bind_thought.py:399: in test_pending_subject_keeps_its_composed_predicate_when_stored
+    program = f.program(('lift', 'm', ('verb', VERBS[0], KINDS[0])))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False] ___
+test/test_bind_thought.py:421: in test_objectless_predicate_keeps_its_identity_in_the_ended_compound
+    program = f.program(('equal', ('lift', KINDS[0], ('verb', 'v', KINDS[1])), KINDS[2]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in <genexpr>
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in <genexpr>
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3399: in forward
+    return self.apply_verb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True] ___
+test/test_bind_thought.py:421: in test_objectless_predicate_keeps_its_identity_in_the_ended_compound
+    program = f.program(('equal', ('lift', KINDS[0], ('verb', 'v', KINDS[1])), KINDS[2]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in <genexpr>
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in <genexpr>
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3399: in forward
+    return self.apply_verb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=============================== warnings summary ===============================
+test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5391: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]
+FAILED test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]
+FAILED test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+FAILED test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows
+FAILED test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_and_reads_the_cycle_boundedly[False]
+FAILED test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_and_reads_the_cycle_boundedly[True]
+FAILED test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward
+FAILED test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue
+FAILED test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored
+FAILED test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]
+FAILED test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]
+41 failed, 14 passed, 1 warning in 8.51s

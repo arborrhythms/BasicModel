@@ -12,16 +12,24 @@ both decomposition arms. The receipt reports those results separately.
 The copular-artifact prerequisite skip and the Item 0 / 5.5 learning gates
 remain explicit.
 
-Item 3.5 step 1 is now a separate
-[bind-as-thought candidate](benchmarks/2026-10-19-item3-5-bind/README.md).
-Its final affected scope completes all 335 cases: **334 passed, one copular
-prerequisite skip**. The whole §14 file, paired reconstruction and generated
-site gates pass. The unchanged one-/two-successor decomposition certificates
-pass under both gains-0 and all-gains-.5, with prime on and φ=.5 in both;
-all eight companion questions have the correct binding and chain length.
-The initial parameters match across these two new-catalogue arms. Earlier
-failed runs and their causes remain in the receipt. Claude's review, the
-one landing sweep and publication remain pending.
+Item 3.5 step 1 is published on both mains: BasicModel `204e1be55`,
+WikiOracle `a89c958`. Its [landing receipt](benchmarks/2026-10-19-item3-5-bind/landing.md)
+records one 5,907-case sweep, the 48 failures and scoped repairs, final
+native validation of 72 passed/one copular prerequisite skip, and both
+decomposition lengths passing in both gain arms with all eight questions
+correct.
+
+Step 1b remains an unpublished candidate on `codex/item3-5-first-pass`.
+The [current receipt](benchmarks/2026-10-20-item3-5-stm1/status.md) records
+native-95's 231 completed cases: 230 passed, one retired copular-artifact
+prerequisite skip. Whole §14, saved and random paired reconstruction,
+G1–G3 and cube/inverse gates have scoped evidence. Both saved arrival
+initializations pass in both orders (95/97); Claude's unsaved state is
+unavailable. The final proof-writer guard passes 46/46 in native-99. Both
+decomposition lengths pass in both gain arms in attempt 100, all eight
+companion questions correct. The full landing sweep and publication remain
+pending. All failed attempts are retained;
+the three signed-coordinate artifacts remain retired and prerequisite-skipped.
 
 Item 4's source `fdeef42b8` and October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
 records each §9 gate, the review of record, and close-out measurements.
@@ -107,6 +115,33 @@ The central collection hook skips them before fixture setup unless `RUN_SLOW=1`.
 `RUN_SLOW=0` stays fast. The older per-test `RUN_SLOW` gates remain supported.
 A slow check keeps its assertions and any explicit expected-failure status;
 skipping it in the default run is not evidence that its learning gate passed.
+
+**The generated math suite under `RUN_SLOW` (Alec, 2026-10-20).** Beside
+the convergence experiments, the slow tier carries a **generated, graded
+corpus of mathematical sentences in English** that trains a grammar for
+real, at scale, and whose gates are the things we claim the model can
+learn: equality and definition by name, `VP → VP NP` applied twice with
+order-sensitive roles ("x minus one" against "one minus x"), one-step then
+two-step decomposition with the answer line as supervision, premises in
+either order, `what` bound by `bind`, yes/no questions on the truth lanes,
+conditionals and counterfactuals with computable consequents, ellipsis and
+coordination, generics against particulars, attribution with conflicting
+sources and known truth, the inverse verb (minus undoes plus) and the verb
+groups (the additive verbs jointly diagonalizable in one basis, the
+multiplicative in another — a translation along the successor chain of
+opaque numerals is a diagonal in the chain's Fourier basis, so joint
+diagonalization has an exact answer to find), and the carrier variants of
+occurrence §13 (the same meaning under "equals", "is", "sums to", and the
+marker moved from word to affix). Numerals stay opaque words, so the suite
+tests mechanisms, never arithmetic competence. The corpus is produced in
+the Viterbi order (thinking spec §13.9: one more step per item, bottom-up)
+by the `MM_math_chain` generator and its successors; each run records
+throughput so item 1's runtime blocker is measured where it bites. **The
+same run is the compiler test at scale:** compiled and eager execution of
+the identical corpus, seed and budget must agree in actions,
+probabilities, costs and parameter updates, which no fixture-sized check
+can show. Coverage, and what the suite cannot reach, is in
+[Training, "The generated math suite"](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
 
 **Required XOR table (Alec, 2026-09-29).** Every receipt includes the six
 grounded cases in `test_grounded_xor.py`, the three curriculum cases in

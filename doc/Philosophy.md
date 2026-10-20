@@ -1717,6 +1717,42 @@ the three (Alec, 2026-10-19). The two
 differences are the project's reading of modality and are not to be
 reduced to "modals do not train" or to a probability over outcomes.
 
+## Identity by Intersection and by Union: the Materialist and the Uncollapsed Models (Alec, 2026-10-20)
+
+Alec, 2026-10-20: "the identity mechanism can form the identity based on an
+intersection or union of features. The first model corresponds to western
+materialism, with primary and secondary properties. The second is an
+'uncollapsed wave function' model."
+
+The mechanism holds both, and uses each for a different thing.
+
+- **Intersection.** Identity as what every occurrence shares: the
+  invariant core, with what varies treated as secondary — Locke's primary
+  and secondary qualities, substance as essence. In the architecture it is
+  the fold that makes a concept — in conceptual space, the similarity
+  space, never the percept cube of forms (SymbolFirewall) — which keeps
+  `.where`'s extent and drops the clock and the varying features, and it
+  is `bind`'s containment test through the meet (bind plan §6.1): what a
+  candidate must share with the request.
+- **Union.** Identity as the superposition of all its occurrences, none
+  privileged, held together without being reduced. In the architecture it
+  is STM1's wide vector, the join of the open sentence's constituents, and
+  it is recurrence in LTM1, where an individual is nothing but the set of
+  rows that name it ([identity is its occurrences](#)). The **collapse is
+  the act of reference**: `bind` selects one occurrence as the referent,
+  and since the identity candidate is computed in STM and never written
+  back, the selection can be reinterpreted — until a reference is made,
+  the identity is a distribution over candidates.
+
+So the two models are not rivals here: the meet is the **test**, the union
+is the **thing**, and the collapse is a reference, not a discovery. The
+Madhyamaka reading agrees with the second: no svabhāva, no intrinsic core,
+identity by designation; the first, taken as the thing itself, is what the
+non-affirming negation refuses. The symbol and concept split is the same
+pair seen from the shared index — a symbol is one situated occurrence, a
+concept is the meet over occurrences, the set of a symbol's activations is
+the union — and a minted individual carries all three.
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

@@ -1,0 +1,19 @@
+............sssF                                                         [100%]
+=================================== FAILURES ===================================
+___________ test_no_grad_fallback_retains_eager_stm_depth_semantics ____________
+test/test_compiled_word_chunk.py:945: in test_no_grad_fallback_retains_eager_stm_depth_semantics
+    assert chunked.conceptualSpace.stm._max_depth_host > 0
+E   assert 0 > 0
+E    +  where 0 = ShortTermMemory()._max_depth_host
+E    +    where ShortTermMemory() = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...ayer()\n      (26): DefiniteUnaryLayer()\n      (27): PrepositionUnaryLayer()\n      (28): SurfaceUnaryLayer()\n    )\n  )\n).stm
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...ayer()\n      (26): DefiniteUnaryLayer()\n      (27): PrepositionUnaryLayer()\n      (28): SurfaceUnaryLayer()\n    )\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub..._features=64, bias=True)\n      (1): Tanh()\n    )\n    (readout): Linear(in_features=64, out_features=1, bias=True)\n  )\n).conceptualSpace
+=============================== warnings summary ===============================
+test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py:551: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(presence.max()) > .5
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics
+1 failed, 12 passed, 3 skipped, 1 warning in 223.59s (0:03:43)

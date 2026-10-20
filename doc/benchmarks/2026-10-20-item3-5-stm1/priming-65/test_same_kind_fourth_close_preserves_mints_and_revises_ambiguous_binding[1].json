@@ -1,0 +1,11 @@
+{
+  "test": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

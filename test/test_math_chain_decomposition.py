@@ -9,7 +9,7 @@ import pytest
 @pytest.mark.slow
 @pytest.mark.parametrize('successors', (1, 2))
 def test_forced_native_decomposition_through_training_driver(tmp_path, successors, eager_reading):
-    path = Path(__file__).resolve().parents[1]/'doc/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py'
+    path = Path(__file__).resolve().parents[1]/'doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py'
     spec = importlib.util.spec_from_file_location('forced_decomposition_certificate', path)
     fixture = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(fixture)

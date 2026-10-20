@@ -5,7 +5,7 @@ from collections import namedtuple
 from contextlib import contextmanager, nullcontext
 import numpy as np
 import torch
-from Layers import bounded_atanh as _bounded_atanh
+from Layers import bounded_atanh as _bounded_atanh, cube_chart, cube_unchart, assert_cube
 import torch.nn as nn
 import torch.nn.functional as F
 from GrammarPreference import operator_is_structural, structural_argmax, require_opaque_mlp
@@ -132,9 +132,7 @@ class RoutingState:
     rule_probs : torch.Tensor | None
         Dense ``[B, n_rules]`` float distribution over the grammar's
         rule vocabulary (``n_rules == len(TheGrammar.rule_table)``). This
-        is the rule-conditioning signal the intra-sentence predictor
-        consumes (``ConceptualSpace._intra_routing_for_predict`` ->
-        ``IntraSentenceLayer.routing``). FIRST CUT (see
+        is the current rule-conditioning signal. FIRST CUT (see
         ``SymbolSubSpace._synthesize_rule_probs``): mass is scattered onto
         the SELECTED rule-ids and L1-normalized per row, so this encodes
         WHICH rules fired (not yet the gradient-bearing soft marginals
@@ -2597,7 +2595,10 @@ PEEL_SUPPORT_EPS = 1e-2
 
 
 class SynthesizeLayer(GrammarLayer):
-    """``chunk(C, C) = left + right`` — the additive mereological sum.
+    """Additive synthesis in the operand domain's coordinates.
+
+    Native identity values add in the cube chart and return through its
+    inverse. Structural numeric tensors retain their additive coordinates.
 
     RENAMED from ``union`` (2026-07-05, Alec): there is no such GRAMMATICAL
     operation, so ``chunk`` is a STRUCTURAL op that lives in ``<PartSpace>``
@@ -2624,10 +2625,18 @@ class SynthesizeLayer(GrammarLayer):
     lossy            = False
     space_role       = 'CS'
     reads_activation = False
+    identity_cube = False
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         """Plain additive binary op; optional butterfly cascade parity."""
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        if self.meaning_layout is not None:
+            self.configure_identity_domain()
+
+    def configure_identity_domain(self):
+        """The language owner supplies cube coordinates to synthesis."""
+        self.identity_cube = True
+        self.inverse_kind = 'chart_sum'
 
     # -- Butterfly per-pair op (structural parity with the siblings) ---
     def _butterfly_pair_op(self, x_pair, W_node):
@@ -2648,6 +2657,8 @@ class SynthesizeLayer(GrammarLayer):
         """Binary ``left + right``; butterfly mode runs the cascade."""
         if self.butterfly:
             return self._butterfly_forward(left)
+        if self.identity_cube:
+            return cube_unchart(cube_chart(left) + cube_chart(right))
         return left + right
 
     def compose(self, left, right):
@@ -2655,7 +2666,7 @@ class SynthesizeLayer(GrammarLayer):
         if self.butterfly:
             return self._butterfly_forward(
                 torch.cat([left, right], dim=-2))
-        return left + right
+        return self.forward(left, right)
 
     @staticmethod
     def difference(whole, part):
@@ -2684,14 +2695,16 @@ class SynthesizeLayer(GrammarLayer):
                     left_rows, int(W.shape[0]))
                 rows = W if left_rows is None else W[left_rows]
                 if rows.numel() == 0:
-                    return parent, torch.zeros_like(parent)
+                    return parent, torch.full_like(parent, .5 if self.identity_cube else 0.)
                 flat = parent.detach().reshape(-1).to(W.dtype)
                 if flat.shape[0] == rows.shape[-1]:
                     sims = torch.nn.functional.normalize(rows, dim=-1) @ \
                         torch.nn.functional.normalize(flat, dim=0)
                     best = rows[int(sims.argmax())].reshape(parent.shape)
-                    return best, parent - best
-        return parent, torch.zeros_like(parent)
+                    remainder = (cube_unchart(cube_chart(parent) - cube_chart(best))
+                                 if self.identity_cube else parent - best)
+                    return best, remainder
+        return parent, torch.full_like(parent, .5 if self.identity_cube else 0.)
 
     @classmethod
     def peel(cls, whole, basis, max_parts=8, eps=PEEL_SUPPORT_EPS,
@@ -2944,6 +2957,7 @@ class LiftLayer(GrammarLayer):
     in ``doc/Language.md``.
     """
     order_delta = 0
+    head_role = 2
     inverse_kind = 'fold'
     rule_name  = "lift"
     predicate_identity = 'lift'
@@ -3017,7 +3031,7 @@ class LiftLayer(GrammarLayer):
         if int(nInput) > 0:
             self._sigma = SigmaLayer(
                 nInput=int(nInput), nOutput=int(nOutput),
-                invertible=invertible, nonlinear=nonlinear)
+                invertible=invertible, nonlinear=nonlinear, unit_interval=True)
             self._sigma._bounded_backward = True   # nested grammar fold
             self.layers.append(self._sigma)
             # Lexical-mask projection (GrammarOpsPass §2): the word's
@@ -3247,11 +3261,11 @@ class LiftLayer(GrammarLayer):
         output_dtype = value.dtype
         value_f32 = value.to(dtype=torch.float32)
         log_gain_f32 = log_gain.to(dtype=torch.float32)
-        interior = _bounded_atanh(value_f32, bounded=False)
+        interior = cube_chart(value_f32, bounded=False)
         chart = torch.exp(log_gain_f32) * interior
         if shift is not None:
             chart = chart + shift.to(dtype=torch.float32)
-        transformed = torch.tanh(chart)
+        transformed = cube_unchart(chart)
         return transformed.to(dtype=output_dtype)
 
     def apply_verb(self, np_what, verb_what):
@@ -3479,7 +3493,7 @@ class LowerLayer(GrammarLayer):
         super().__init__(int(nInput or 0), int(nOutput or nInput or 0))
 
     def forward(self, marker, description, gate=None):
-        return description
+        return assert_cube(description)
 
     def compose(self, marker, description, gate=None):
         return self.forward(marker, description, gate=gate)
@@ -3529,24 +3543,29 @@ class SurfaceLayer(GrammarLayer):
             self.marker_prior[-1].bias.zero_()
 
     def compose(self, left, right):
-        return self.marker_map(left) + right
+        # Marker translation acts inside the content chart. An unrestricted
+        # learned affine map may move chart coordinates either way without
+        # sending the resulting concept outside its membership cube.
+        marker = cube_chart(left)
+        return cube_unchart(self.marker_map(marker) + cube_chart(right))
 
     forward = compose
 
     def generate(self, parent):
-        marker = self.marker_prior(parent)
-        return marker, parent - self.marker_map(marker)
+        marker = cube_unchart(self.marker_prior(parent))
+        return marker, self.reconstruct(parent, marker, 'left')[1]
 
     reverse = generate
 
     def reconstruct(self, parent, reference, side):
         if side == "left":
-            return reference, parent - self.marker_map(reference)
+            return reference, cube_unchart(cube_chart(parent) -
+                self.marker_map(cube_chart(reference)))
         if side != "right":
             raise ValueError("surface witness side must be left or right")
-        rhs = parent - reference - self.marker_map.bias
-        marker = torch.linalg.solve(self.marker_map.weight, rhs.unsqueeze(-1)).squeeze(-1)
-        return marker, reference
+        rhs = cube_chart(parent) - cube_chart(reference) - self.marker_map.bias
+        marker_chart = torch.linalg.solve(self.marker_map.weight, rhs.unsqueeze(-1)).squeeze(-1)
+        return cube_unchart(marker_chart), reference
 
 
 class PrepositionLayer(GrammarLayer):
@@ -3607,12 +3626,13 @@ class MarkerUnaryLayer(GrammarLayer):
             self.register_buffer('marker', torch.full((width,), identity), persistent=False)
 
     def compose(self, value):
-        return self.base.compose(self.marker.expand_as(value), value)
+        marker = cube_unchart(self.marker) if isinstance(self.base, SurfaceLayer) else self.marker
+        return self.base.compose(marker.expand_as(value), value)
 
     forward = compose
 
     def reverse(self, parent):
-        marker = self.marker.expand_as(parent)
+        marker = (cube_unchart(self.marker) if isinstance(self.base, SurfaceLayer) else self.marker).expand_as(parent)
         if isinstance(self.base, SurfaceLayer):
             return self.base.reconstruct(parent, marker, 'left')[1]
         return self.base.reverse(parent, marker=marker)[1]
@@ -4906,6 +4926,10 @@ class LanguageLayer(Layer):
 
     def _attach_ops(self, arity, ops, rule_ids, op_names, op_space_roles, space_role):
         ops = tuple(ops)
+        for op in ops:
+            implementation = getattr(op, 'gl', op)
+            if isinstance(implementation, SynthesizeLayer):
+                implementation.configure_identity_domain()
         rule_ids = list(range(len(ops))) if rule_ids is None else list(map(int, rule_ids))
         if len(rule_ids) != len(ops):
             raise ValueError("one rule id is required for each compose operator")
@@ -6838,8 +6862,8 @@ class OperationSelectionLayer(nn.Module):
                 op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
             score_delta = None
             if symbol_read is not None and symbol_read.strength > 0.:
-                # Identify before attenuation. Composed operands retain their
-                # raw norm and leaves their projection coefficient; S is one
+                # Identify before attenuation. Composed operands have presence
+                # and leaves their projection coefficient; S is one
                 # scalar on this consumer view and never mutates either.
                 operand_gain = symbol_read.gains(x, live, identities=operand_identities)
                 # Activation-aware operators also consume S. Their content
@@ -6847,7 +6871,7 @@ class OperationSelectionLayer(nn.Module):
                 # only the latter may be selected into STM or the journal.
                 content_activations = operand_content_activations
                 if content_activations is None:
-                    raw_activation = x.norm(dim=-1) if operand_activations is None else operand_activations
+                    raw_activation = x.ne(0).any(-1).to(x) if operand_activations is None else operand_activations
                     content_activations = raw_activation * operand_gain
                 content_binary = self._stacked_reduced(x, grammar_context, reference_data,
                                                        content_activations)
@@ -7152,6 +7176,8 @@ class OperationSelectionLayer(nn.Module):
                 repeated = repeated_symbol(left, width,
                     reference_data.get('_left_activation', None if activations is None else activations[:, :-1]))
                 value = torch.where(same[..., None], repeated, value)
+            if grammar_context is not None:
+                assert_cube(value)
             result.append(value)
         return torch.stack(result, 2)
 
@@ -12397,12 +12423,12 @@ class LanguageSpace(nn.Module):
         window_depth = depth.clamp(0, n)
         source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
         window = buffer.gather(1, source[..., None].expand(B, n, D))
-        # Native leaves carry their projection coefficient separately from
-        # their full-presence form. A composed kernel result already encodes
-        # its activation as its norm, with identity in its unit direction.
+        # Native leaves carry their projection coefficient separately. A wide
+        # cube value is a present working identity, not a unit direction:
+        # its Euclidean length is not an activation probability.
         window_activations = None
         if len(state) >= 6:
-            magnitudes = torch.where(state[4] >= 0, state[5].abs(), buffer.norm(dim=-1))
+            magnitudes = torch.where(state[4] >= 0, state[5].abs(), buffer.ne(0).any(-1).to(buffer))
             window_activations = magnitudes.gather(1, source)
         # STOP tests the whole sentence/STM depth, not the two-slot window.
         limit = torch.as_tensor(slots, device=buffer.device)
@@ -12446,9 +12472,9 @@ class LanguageSpace(nn.Module):
         content_activations = None
         symbol_read = getattr(layer, '_symbol_expectation_read', None)
         if symbol_read is not None and symbol_read.strength > 0.:
-            # Keep the raw norm/projection coefficient for identity operators
+            # Keep the raw presence/projection coefficient for identity operators
             # and the explicit gained coefficient for their consumer view.
-            raw_activation = window.norm(dim=-1) if window_activations is None else window_activations
+            raw_activation = window.ne(0).any(-1).to(window) if window_activations is None else window_activations
             occupied = torch.arange(n, device=buffer.device)[None] < window_depth[:, None]
             content_activations = raw_activation * symbol_read.gains(window, occupied,
                 identities=state[4].gather(1, source))
@@ -12544,8 +12570,8 @@ class LanguageSpace(nn.Module):
                 # The selected operation carries its column reference. A
                 # dictionary association cannot decide individual identity;
                 # the kept close resolves its constituent's request.
-                columns = getattr(getattr(owner, 'components', None), 'nouns', None)
-                if columns is None or int(refs[leaf]) not in columns.ids:
+                from Spaces import _concept_alloc_of
+                if int(refs[leaf]) not in _concept_alloc_of(owner).individuals:
                     refs[leaf] = -1
                 orders[leaf] = order
                 continue
@@ -13122,8 +13148,7 @@ class LanguageSpace(nn.Module):
             if reference is None:
                 return generated_left, generated_right, yes
             from_left = op.reconstruct(parent, ref, "left")
-            inverse = W_inv if W_inv is not None else torch.linalg.inv(op.marker_map.weight)
-            from_right = (F.linear(parent - ref - op.marker_map.bias, inverse), ref)
+            from_right = op.reconstruct(parent, ref, "right")
             left = torch.where(on_right[:, None], from_right[0], from_left[0])
             right = torch.where(on_right[:, None], from_right[1], from_left[1])
             return (torch.where(known[:, None], left, generated_left),
@@ -13143,12 +13168,22 @@ class LanguageSpace(nn.Module):
                     parent, W_inv=W_inv, reference=reference,
                     reference_side=(on_right, known))
                 return left, right, yes
+        if inverse == "chart_sum":
+            left, right = oriented(cube_unchart(cube_chart(parent) - cube_chart(ref)))
+            half = cube_unchart(cube_chart(parent) * .5)
+            return (torch.where(known[:, None], left, half),
+                    torch.where(known[:, None], right, half), yes)
         if inverse == "residual":
             scale = op.residual_scale
             left, right = oriented(parent * scale - ref)
             half = parent * (scale * .5)
-            return (torch.where(known[:, None], left, half),
-                    torch.where(known[:, None], right, half), yes)
+            left = torch.where(known[:, None], left, half)
+            right = torch.where(known[:, None], right, half)
+            available = ((left >= 0) & (left <= 1) & torch.isfinite(left)
+                         & (right >= 0) & (right <= 1) & torch.isfinite(right)).all(-1)
+            # An impossible operand is an unavailable inverse, not content.
+            return (torch.where(available[:, None], left, 0.),
+                    torch.where(available[:, None], right, 0.), available)
         if inverse == "right":
             # The marker is the discarded LEFT operand.
             usable = known & ~on_right

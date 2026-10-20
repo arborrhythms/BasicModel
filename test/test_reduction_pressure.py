@@ -154,7 +154,7 @@ def test_native_packed_unary_preference_still_records_every_sentence(tmp_path, m
     monkeypatch.setattr(chooser, 'score_unary', prefer_unary)
     try:
         store = model.symbolSpace.ltm_store
-        before = int((store.rel_type[:len(store)] != store.REL_DEF).sum())
+        before = len(store) + len(store.parts)
         completed = []
         write = store.write_clause
         def observed_write(*args, **kwargs):
@@ -171,8 +171,8 @@ def test_native_packed_unary_preference_still_records_every_sentence(tmp_path, m
         # A completed sentence can own embedded clause rows. Count its
         # two root writes, preserving the nested rows the grammar chose.
         assert len(completed) == 2 and len(set(completed)) == 2
-        assert all(int(store.rel_type[row]) != store.REL_DEF for row in completed)
-        assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before >= 2
+        assert all(store.row(row)['meaning'] is not None for row in completed)
+        assert len(store) + len(store.parts) - before >= 2
         assert (model._tensor_sentence_roots_depth[0, :2] > 0).all()
         # The caller observes the open readings; the completed rows discard
         # their operation records. Retain the same unary-execution assertion.

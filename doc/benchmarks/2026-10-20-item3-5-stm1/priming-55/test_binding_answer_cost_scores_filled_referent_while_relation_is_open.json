@@ -1,0 +1,15 @@
+{
+  "test": "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+  "events": 0,
+  "overlap_events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "max_sources": 0,
+  "max_part_reads": 0,
+  "max_candidates": 0,
+  "max_comparisons": 0,
+  "max_overlap_edges": 0,
+  "truncated_frontiers": 0,
+  "nonzero_overlap_transfers": 0,
+  "projections": []
+}

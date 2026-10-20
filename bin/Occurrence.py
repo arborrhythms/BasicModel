@@ -324,7 +324,6 @@ class OccurrenceRows:
             if encoder is None:
                 encoder = WhenEncoding(n_when=4).set_capacity(max(self.capacity, int(positions.max()) + 1))
             state[prefix + 'when'][:count] = encoder.encode(positions).to(state[prefix + 'when'])
-            state[prefix + 'when'][:count][state[prefix + 'rel_type'][:count] == self.REL_DEF] = 0
 
     def _migrate_address_tensors(self, state, prefix):
         """Old snapshots lack source coordinates: retain them in a legacy document.
@@ -356,9 +355,6 @@ class OccurrenceRows:
             content = (bytes(prior_content[row].tolist()) if prior_content is not None
                        and bool(prior_content[row].any()) else native_content_key(meaning))
             row_document, position = document, int(old)
-            if int(state[prefix + 'rel_type'][row]) == self.REL_DEF:
-                row_document = document_digest(('DEF', int(refs[row, 0]), int(refs[row, 2])))
-                position, content = 0, sentence_key(())
             key = address_key(row_document, position, content)
             buffers['address_keys'][row] = key
             buffers['document_keys'][row] = buffers['document_keys'].new_tensor(list(row_document))
@@ -383,7 +379,6 @@ class OccurrenceRows:
             encoder = WhenEncoding(n_when=4).set_capacity(max(self.capacity, max(old_ids.tolist(), default=0) + 1))
         when = state[prefix + 'when'].clone()
         when[:count] = encoder.encode(buffers['sentence_index'][:count]).to(when)
-        when[:count][state[prefix + 'rel_type'][:count] == self.REL_DEF] = 0
         state[prefix + 'when'] = when
         state.update({prefix + name: value for name, value in buffers.items()})
 
@@ -402,7 +397,7 @@ class OccurrenceRows:
             if index is None:
                 continue  # Existing schema migration deliberately discarded this row.
             fingerprint = self._context_fingerprint(record.get('context'), record.get('text'),
-                record.get('expectation'), record.get('definition'))
+                record.get('expectation'))
             if fingerprint != self.semantic_fingerprint[index].tolist():
                 raise ValueError('truth semantic content differs from its checkpoint fingerprint')
             migrated = self.remap_legacy_references(record)
@@ -415,5 +410,5 @@ class OccurrenceRows:
             index = self._index_occurrences[record['id']]
             self.semantic_fingerprint[index] = self.semantic_fingerprint.new_tensor(
                 self._context_fingerprint(record.get('context'), record.get('text'),
-                    record.get('expectation'), record.get('definition')))
+                    record.get('expectation')))
         return result

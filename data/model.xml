@@ -312,13 +312,6 @@
       <explorationUniformFraction>0.5</explorationUniformFraction>
       <explorationTemperature>1.0</explorationTemperature>
 
-      <!-- In-STM autoregressive prediction (IntraSentenceLayer, STM
-           serial/parallel modes plan).  Loss weight on the per-word
-           L_intra = MSE(predicted idea, observed idea) added to the
-           IR-loss path.  The PI-then-Sigma predictor itself is owned by
-           ConceptualSpace; this scales its contribution to the total
-           loss. -->
-      <intraLossWeight>0.1</intraLossWeight>
 
       <!-- Shared bank-activation predictor: sources and targets are detached;
            the local residual alone trains its weights. -->

@@ -1,0 +1,14 @@
+[collect] 5 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 1.9s; peak 0.17 GiB
+[worker-000] 10 selectors; limit 900s, 8.0 GiB
+[worker-001] 4 selectors; limit 900s, 8.0 GiB
+[worker-002] 3 selectors; limit 900s, 8.0 GiB
+[worker-001] exit 0; 4.2s; peak 0.45 GiB
+[worker-002] exit 0; 5.2s; peak 0.46 GiB
+[worker-003] 6 selectors; limit 900s, 8.0 GiB
+[worker-004] 11 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 1; 6.7s; peak 0.61 GiB
+[worker-003] exit 0; 24.2s; peak 0.74 GiB
+[worker-004] exit 0; 42.8s; peak 0.82 GiB
+Result: test_failure, exit 1; 34/34 cases completed.
+doc/benchmarks/2026-10-20-item3-5-stm1/native-53/result.json

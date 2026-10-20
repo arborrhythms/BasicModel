@@ -551,15 +551,60 @@ which properties/level).
   codebook-retrieval prior. The chosen bracket supplies the scope handed
   to mereology; there is no separate `ReadingAttention` module.
 
-**Priming diffusion (`<primingSpread>`, default 0.25, LIVE by default,
-Alec 2026-07-12).** Before the SEEN bump, `prime_seen` moves an `s =
+**Amended 2026-10-20 (Alec):** the diffusion is the layer's spreading
+activation and stays on by default at a **small** value — `primingSpread`
+default lowered from 0.25 to **0.05** — over the sparse mereological
+context, never an N×N matrix: today the concept store's untyped part and
+kind edges plus the word-to-sentence membership graph; under LTM2 these
+are one thing, the `Part(x, y)` edges of the one store (a word is part of
+its sentence). **And a conceptual channel — stratified by order (Alec, same day;
+[Orders §9](Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided)):**
+the surface is one vector but is read per order; restricted to the
+symbols of order *n−1* it is a point in order *n*'s conceptual space.
+Within an order above 0, conceptual overlap is shared membership, reached
+by the existing two-hop through the shared member, so no code-derived
+channel exists there. Within order 0 only, the geometric overlap in the
+dense similarity space where word meanings are placed by context — the
+one code-derived channel, computed on read against the active field and
+STM's recent rows, never stored, and the one that placement must not
+read. Both feed the one degree-normalized, energy-conserving budget. No
+matrix, and never the percept cube (forms and meanings do not share a
+metric, [SymbolFirewall](SymbolFirewall.md)).
+**Guard against the feedback loop (Alec's question, 2026-10-20):** codes
+are written from content only — the fold of parts and wholes, the fold
+over occurrences, the pretraining's observed context — and *(amended the same day, Alec: "can the priming surface be used to
+do the SBOW after registering the context on that surface?")* placement
+**may read the registered surface as its context** — the seen bumps and
+the symbolic diffusion along recorded Part and membership edges, which
+are observed structure (skip-gram factorizes shifted co-occurrence PMI,
+Levy & Goldberg 2014; random-walk embeddings factorize the *diffused*
+co-occurrence, Qiu et al. 2018 — the surface after registration is that
+object) — **but never the conceptual channel**, the overlap-weighted
+diffusion derived from the codes themselves. One surface, two read
+points: placement reads it before the conceptual channel is applied; the
+chooser and attention read it after. That is the exact form of the loop
+guard: codes never read what was computed from codes. The
+loop that remains is indirect and bounded: priming biases attention and
+the chooser, which biases what is observed and composed, which the folds
+are taken over — the small spread, the decay to neutral, energy
+conservation and the capped read keep it a bias on sampling. In `bind`
+priming enters only the expectation term, never the content term (the
+meet over content), and recurrence, not priming, mints.
+Decay (`primingDecay` 0.9), the seen bump, the
+signed desire channel and the bounded read are unchanged.
+
+**Priming diffusion (`<primingSpread>`, default 0.05, LIVE by default,
+amended 2026-10-20).** Before the SEEN bump, `prime_seen` moves an `s =
 <primingSpread>` fraction of each connected row's standing priming energy
-to its neighbors via `_priming_edges` (the concept store's untyped edges,
-ConceptualSpace-only; `None` elsewhere $\to$ no diffusion) — a conservative
+to its neighbors through Part and its derived word-to-sentence memberships
+(ConceptualSpace-only; other spaces have no diffusion graph) — a conservative
 transfer (dst gains exactly what src loses), not amplification, so
 successive SEEN events propagate energy further out into the connected
 symbols before decay + bump apply. `0` restores pure decay+bump (the
 pre-diffusion behavior).
+Step 1b carries this edge path and the default. Orders §9 assigns the
+stratified reads, the order-0 geometric channel and placement to item 3;
+the geometric channel is not yet a production read.
 
 **Frozen concepts (`freeze_concept` / `_frozen_concepts`, Alec 2026-07-11).**
 A concept's relational structure can be FROZEN: no FORMING of new edges, no

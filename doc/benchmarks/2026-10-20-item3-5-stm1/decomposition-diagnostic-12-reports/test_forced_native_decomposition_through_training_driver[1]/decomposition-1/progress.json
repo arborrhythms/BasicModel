@@ -1,0 +1,176 @@
+{
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": 26,
+      "address": [
+        "sym",
+        26
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 6,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 4,
+      "row_id": 35,
+      "address": [
+        "sym",
+        35
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 7,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 1,
+      "row_id": 51,
+      "address": [
+        "sym",
+        51
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 28,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 5,
+      "row_id": 63,
+      "address": [
+        "sym",
+        63
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 12,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 2,
+      "row_id": 74,
+      "address": [
+        "sym",
+        74
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 6,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 6,
+      "row_id": 84,
+      "address": [
+        "sym",
+        84
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 14,
+      "query_open": []
+    }
+  ],
+  "episodes": [],
+  "menus": [],
+  "source_readings": {
+    "(0, 0)": [
+      [
+        "sym",
+        17
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "sym",
+        24
+      ]
+    ],
+    "(1, 0)": [
+      [
+        "sym",
+        27
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "sym",
+        33
+      ]
+    ],
+    "(0, 1)": [
+      [
+        "sym",
+        39
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "sym",
+        50
+      ]
+    ],
+    "(1, 1)": [
+      [
+        "sym",
+        52
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "sym",
+        62
+      ]
+    ],
+    "(0, 2)": [
+      [
+        "sym",
+        67
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "sym",
+        72
+      ]
+    ],
+    "(1, 2)": [
+      [
+        "sym",
+        77
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "sym",
+        82
+      ]
+    ]
+  }
+}

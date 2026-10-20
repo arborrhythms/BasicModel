@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_part_closing.py",
+    "test/test_part_store.py",
+    "test/test_bind_thought.py"
+  ],
+  "collect": true,
+  "keyword": "not cache and not cyclic and not self and not objectless",
+  "marker": null,
+  "recycle_file": null
+}

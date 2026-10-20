@@ -1,0 +1,136 @@
+[
+  {
+    "epoch": 1,
+    "source": 0,
+    "row_id": 28,
+    "address": [
+      "sym",
+      28
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 6,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 4,
+    "row_id": 39,
+    "address": [
+      "sym",
+      39
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 7,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 1,
+    "row_id": 57,
+    "address": [
+      "sym",
+      57
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 28,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 5,
+    "row_id": 72,
+    "address": [
+      "sym",
+      72
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 12,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 2,
+    "row_id": 83,
+    "address": [
+      "sym",
+      83
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 6,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 6,
+    "row_id": 93,
+    "address": [
+      "sym",
+      93
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 14,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 3,
+    "row_id": -7456975404113305974,
+    "address": [
+      "ltm",
+      "address-v1",
+      -7456975404113305974
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        94
+      ]
+    ],
+    "episode": true,
+    "departure": 48,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 7,
+    "row_id": -2537032892874623840,
+    "address": [
+      "ltm",
+      "address-v1",
+      -2537032892874623840
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        94
+      ]
+    ],
+    "episode": true,
+    "departure": -1,
+    "query_open": []
+  }
+]

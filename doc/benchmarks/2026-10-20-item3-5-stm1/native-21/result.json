@@ -1,0 +1,252 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[False]",
+    "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[True]",
+    "test/test_part_expectation.py::test_part_expectation_capacity_failure_precedes_all_admission",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "completed": [
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[False]",
+    "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[True]",
+    "test/test_part_expectation.py::test_part_expectation_capacity_failure_precedes_all_admission",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21/worker-000.json"
+      ],
+      "pid": 33476,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2819083504,
+      "elapsed_seconds": 63.63363120891154,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+        "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[False]",
+        "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[True]",
+        "test/test_part_expectation.py::test_part_expectation_capacity_failure_precedes_all_admission",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "completed": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+        "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[False]",
+        "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[True]",
+        "test/test_part_expectation.py::test_part_expectation_capacity_failure_precedes_all_admission",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011587457964196801,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007521670777350664,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006072088144719601,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00020316685549914837,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00013575004413723946,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012979214079678059,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02349545806646347,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009516041027382016,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_expectation.py::test_part_expectation_capacity_failure_precedes_all_admission",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006802832940593362,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 7.590536417206749,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 6.308109582867473,
+          "message": "(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8388: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8166: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23699: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17037: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22251: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21821: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20815: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:149: in sentence_pair\n    explore = compose(cache, exploit)\n              ^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20694: in compose\n    word_step(index, payload, native)\nbin/Models.py:20683: in word_step\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21656: in stage_cs_lang\n    proposal = choose_operation(\ntest/forced_math_grammar.py:36: in choose_operation\n    return choose(state, row_gate, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:12473: in choose_operation\n    _, _, route = layer(window, **arguments)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/forced_math_grammar.py:40: in operation\n    return forward(x, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6805: in forward\n    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7117: in _stacked_reduced\n    values = self._stacked_reduced(x, grammar_context, grouped, activations)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7147: in _stacked_reduced\n    value = (op.forward_with_grammar_context(left, right, x, context=selected_context)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:4766: in forward_with_grammar_context\n    return self.forward_with_context(left, right, slab)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:4751: in forward_with_context\n    return self.gl.compose_blocks(self.gl.compose, left, right)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:2483: in compose_blocks\n    return kernel(*operands, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3324: in compose\n    return self.forward(left, right, gate=gate)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3191: in forward\n    return self._sigma.compose(left, right, gate=gate)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:3287: in compose\n    a_r = self._chart(right)\n          ^^^^^^^^^^^^^^^^^^\nbin/Layers.py:3131: in _chart\n    return cube_chart(value, bounded=self._bounded_backward)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 44.1064489998389,
+          "message": "test/test_math_chain_section14.py:401: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:376: in after\n    assert not bindings(value).get('_forward_references')\nE   AssertionError: assert not ((0, 12),)\nE    +  where ((0, 12),) = <built-in method get of dict object at 0x12f9e5840>('_forward_references')\nE    +    where <built-in method get of dict object at 0x12f9e5840> = {'_equality': True, '_evidence_pair': (0.18185824155807495, 0.0), '_formation_records': ((('choice', 'open'), ('probab...int'), ('probability', 0.024502208456397057), ('reference', -1), ('role', 2))), '_forward_references': ((0, 12),), ...}.get\nE    +      where {'_equality': True, '_evidence_pair': (0.18185824155807495, 0.0), '_formation_records': ((('choice', 'open'), ('probab...int'), ('probability', 0.024502208456397057), ('reference', -1), ('role', 2))), '_forward_references': ((0, 12),), ...} = bindings(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 4010033338316264258), ('ltm', 'address-v1'... 0.15004175901412964, 0.0896872952580452, 0.13687728345394135)), ('role', 0))),))), scope=(), sentence_kind='relation'))",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=31.214s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 300.0,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21",
+  "elapsed_seconds": 68.07792508299462,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2819083504,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21/collect.json"
+    ],
+    "pid": 33458,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 501531920,
+    "elapsed_seconds": 3.736331457970664,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-21/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+        "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[False]",
+        "test/test_part_expectation.py::test_closing_audit_survives_bank_changes_and_checkpoint[True]",
+        "test/test_part_expectation.py::test_part_expectation_capacity_failure_precedes_all_admission",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

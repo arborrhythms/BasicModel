@@ -28,6 +28,7 @@ class TaxonomyEdge:
     whole: tuple
     owner: tuple
     role: str
+    evidence: tuple = (1., 0.)
 
 
 @dataclass(frozen=True)
@@ -86,11 +87,11 @@ class ConceptualTaxonomyView:
         elif part == whole:
             result["support_true"] = 1.0  # reflexive inclusion of a known concept
         else:
-            queue = deque([(part, ())])
-            visited = {part}
+            queue = deque([(part, (), 1.)])
+            visited = {part: 1.}
             stopped = False
             while queue and not stopped:
-                current, path = queue.popleft()
+                current, path, strength = queue.popleft()
                 outgoing = self._outgoing.get(current, ())
                 if len(path) >= max_steps:
                     if outgoing:
@@ -107,15 +108,18 @@ class ConceptualTaxonomyView:
                         break
                     edge = outgoing[index]
                     result["edges_expanded"] += 1
-                    if edge.whole in visited:
-                        continue
                     proof = path + (edge,)
+                    support = min(strength, edge.evidence[0])
                     if edge.whole == whole:
-                        result["support_true"], result["path"] = 1.0, proof
-                        stopped = True
-                        break
-                    visited.add(edge.whole)
-                    queue.append((edge.whole, proof))
+                        if support > result["support_true"]:
+                            result["support_true"], result["path"] = support, proof
+                        # A negative direct edge is counterevidence. It is
+                        # never propagated through positive containment.
+                        if current == part:
+                            result["support_false"] = max(result["support_false"], edge.evidence[1])
+                    if support > visited.get(edge.whole, 0.):
+                        visited[edge.whole] = support
+                        queue.append((edge.whole, proof, support))
         result["incomplete"] = tuple(dict.fromkeys(incomplete))
         return result
 
@@ -142,6 +146,7 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024,
     placement, retired = allocator.placement, allocator.retired
     concepts, edges, visited = set(), [], set()
     nodes = records = 0
+    seen_edges = set()
     incomplete = ["capture_limit"] if truncated_focus else []
 
     def order():
@@ -167,33 +172,30 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024,
             continue
         owner = ("sym", int(cid))
         concepts.add(owner)
-        count = layer.constituent_count(cid)
-        take = min(count, max_records - records)
-        source = None
-        for _index in range(take):
-            if work is not None and not work.consume("record"):
-                incomplete.append("work_budget")
+        part_store = allocator.parts
+        incident = [part_store.find(part, cid) for part in part_store.parts(cid)]
+        incident.extend(part_store.find(cid, whole) for whole in part_store.wholes(cid))
+        for symbol in incident:
+            if symbol in seen_edges:
+                continue
+            if records >= max_records:
+                incomplete.append('capture_limit')
                 break
-            if source is None:
-                source = layer.iter_constituents(cid)
-            role, reference = next(source)
+            if work is not None and not work.consume('record'):
+                incomplete.append('work_budget')
+                break
+            seen_edges.add(symbol)
             records += 1
-            if role not in ("part", "whole"):
+            record = part_store.row(symbol)
+            a, b = record['refs'].tolist()
+            if not available(a) or not available(b):
+                incomplete.append('unavailable_reference')
                 continue
-            try:
-                ref = concept_reference(reference)
-            except TypeError:
-                continue  # a raw percept/whole code has another domain
-            if not available(ref[1]):
-                incomplete.append("unavailable_reference")
-                continue
-            concepts.add(ref)
-            part, whole = (ref, owner) if role == "part" else (owner, ref)
-            edges.append(TaxonomyEdge(part, whole, owner, role))
-        if "work_budget" in incomplete:
-            break
-        if take < count:
-            incomplete.append("capture_limit")
+            part, whole = ('sym', a), ('sym', b)
+            concepts.update((part, whole))
+            evidence = (float(record['truth_plus']), float(record['truth_minus']))
+            edges.append(TaxonomyEdge(part, whole, ('sym', symbol), 'part', evidence))
+        if 'work_budget' in incomplete or 'capture_limit' in incomplete:
             break
     return ConceptualTaxonomyView(frozenset(concepts), tuple(edges), nodes, records,
                                   tuple(dict.fromkeys(incomplete)))

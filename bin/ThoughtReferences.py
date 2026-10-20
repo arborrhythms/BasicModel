@@ -193,7 +193,12 @@ def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
         elif (evidence.get('reference') is not None
               and torch.is_tensor(evidence.get('binding_value', evidence.get('value')))):
             references[role] = evidence['reference']
-            roles[role], mask[role] = evidence.get('binding_value', evidence.get('value')).to(roles), True
+            value = evidence.get('binding_value', evidence.get('value')).to(roles)
+            width = min(value.shape[-1], roles.shape[-1])
+            # An unminted LTM1 candidate can answer only at its retained
+            # width. The rest remains the current working request, never a
+            # reconstruction of lost occurrence structure.
+            roles[role, :width], mask[role] = value[:width], True
     data = bindings(meaning)
     filled_roles = tuple((kind, role) for kind, role in open_slots(meaning)
                          if kind != 'evidence' and references[role] is not None)

@@ -31,6 +31,41 @@ The detached role view carried beside the native occurrence anchor remains
 transitional and is retired in todo item 2 (spec §10); item 5 owns
 pruning of learned columns using their relevance scales.
 
+## Placement from the registered priming surface: one metric for SBOW, diffusion and `bind` (Alec, 2026-10-20; proposed, with the objective to decide)
+
+Alec: "can the priming surface be used to do the SBOW after registering
+the context on that surface? I think there is a shared metric here that we
+are not taking advantage of."
+
+- **The identity of the two computations.** Skip-gram with negative
+  sampling factorizes the shifted co-occurrence PMI (Levy & Goldberg
+  2014); random-walk embeddings factorize the *diffused* co-occurrence,
+  the sum of powers of the normalized adjacency (Qiu et al. 2018, NetMF).
+  The priming surface after a sentence is registered on it is that
+  object: seen bumps are the window co-occurrence, the symbolic diffusion
+  step is the walk, the decay is the recency weighting. Reading the
+  registered surface as SBOW's context replaces a re-sampled implicit
+  estimate with the explicit one the model maintains, and gives placement
+  second-order context (words that never co-occur but share neighbours).
+- **The objective in conceptual space's own metric** (never the percept
+  cube's: forms and meanings do not share a metric, SymbolFirewall). A
+  word's meaning code is moved to
+  raise its meet ratio with the codes the registered surface activates and
+  to lower it against negatives, so the overlap that drives the
+  conceptual diffusion channel, `bind`'s content term and placement is one
+  quantity. Collapse risk: a code that is everything overlaps everything;
+  the negatives are the brake and the existing collapse diagnostic (the
+  mean meet ratio against random codes must not rise while the ratio
+  against context rises) is the measurement.
+- **The read points.** Placement reads the **order-0 stratum** of the
+  surface (Orders §9) after the seen bumps and the edge diffusion and
+  **before** the order-0 geometric channel; chooser and attention read the
+  full surface, all strata. Codes never read what was computed from codes (Architecture,
+  priming guard).
+- **Where.** Phase 1 pretraining (`embed.py`, SBOW/CBOW) and the online
+  code updates of the codebook; todo item 3 carries it with the corpus,
+  unless Alec places it in 3.5.
+
 ## 1. Operation profile: optimal versus human
 
 **Decision (Alec, 2026-09-16).** Parameterise optimal versus more-human

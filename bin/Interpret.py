@@ -76,9 +76,13 @@ class InterpretLayer(GrammarLayer):
         return forms[0] if len(forms) == 1 else None
 
     def _preflight(self, *, inventory=True, word=None):
+        from Spaces import _concept_alloc_of
         store = self.owner.definitions._store()
         reserved = sum(cid != word for cid in self._pending)
-        if len(store) + reserved >= store.capacity:
+        alloc = _concept_alloc_of(self.owner)
+        needed = 3 if inventory else 1  # word, object and its Part edge
+        if (len(store) + reserved >= store.capacity
+                or alloc.next_id + needed + reserved > store.capacity):
             raise RuntimeError('definition store capacity exhausted; no word was admitted')
         if inventory:
             self.owner._preflight_concept_row(0)
@@ -155,8 +159,7 @@ class InterpretLayer(GrammarLayer):
             for candidate in index.objects(word):
                 row = index.row(word, candidate)
                 store = index._store()
-                store._definition_rows[int(store.address_keys[row])] = value
-                store._update_semantic_fingerprint(row)
+                _concept_alloc_of(cs).word_descriptions[word] = value
                 index.add(row)
             return word
         # In the discovering field, interpretation names the case it admits.
@@ -255,8 +258,7 @@ class InterpretLayer(GrammarLayer):
                 cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True, coactive=True)
                 row = index.row(word, obj)
                 store = index._store()
-                store._definition_rows[int(store.address_keys[row])] = value
-                store._update_semantic_fingerprint(row)
+                _concept_alloc_of(cs).word_descriptions[word] = value
         index.rebuild()
         self._identity_revision = identity.revision
 
@@ -264,38 +266,30 @@ class InterpretLayer(GrammarLayer):
     def define(self, word, obj, *, description=None):
         """The sole writer of word DEF object. Operands name, never copy, codes."""
         from Spaces import _concept_alloc_of
-        from Meaning import ConceptualMeaning
-        from References import symbol_code
-        from Occurrence import definition_key, sentence_key
         cs, word, obj = self.owner, int(word), int(obj)
         alloc, index = _concept_alloc_of(cs), cs.definitions
-        store = index._store()
+        store = alloc.parts
         if getattr(cs, '_online_learning_frozen', False):
             return index.row(word, obj)
         if word == obj or any(cid not in alloc.placement or cid in alloc.retired for cid in (word, obj)):
-            raise ValueError('DEF requires distinct, live native identities')
+            raise ValueError('definition requires distinct, live native identities')
         row = index.row(word, obj)
         if row is not None:
-            store.witness_count[row] += 1
+            store.add(obj, word, truth_plus=1.)
             return row
         self._preflight(inventory=False, word=word)
         description = description or self._pending.get(word) or index.description(word)
         if description is None:
             description = dict(forms=(), parts=(tuple(cs.concept_parts(word)),),
                                wholes=tuple(cs.concept_wholes(word)))
-        roles = store.slots.new_zeros(3, store.nDim)
-        # Null operand vectors are intentional: refs is the identity column.
-        roles[1] = symbol_code(store.REL_DEF, store.nDim, 0, 0).to(roles)
-        meaning = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool, device=roles.device),
-            mode='assertive', sentence_kind='relation', role_refs=(('sym', word), None, ('sym', obj)))
-        row = store.append_meaning(meaning, kind='unverified', rel_type=store.REL_DEF,
-                                   trust=0., evidence=(0., 0.), order=cs._concept_source_order(obj),
-                                   document_key=('DEF', word, obj), content_key=sentence_key(()),
-                                   address=definition_key(word, obj))
-        store.refs[row] = store.refs.new_tensor([word, -1, obj])
-        store.row_ids[row] = int(store.address_keys[row])
-        store._definition_rows[int(store.address_keys[row])] = description
-        store._update_semantic_fingerprint(row)
+        alloc.word_descriptions[word] = description
+        alloc.symbol_types.setdefault(word, set()).add('word')
+        alloc.symbol_types.setdefault(obj, set()).add('object')
+        alloc.reference_orders.setdefault(word, 0)
+        from RowTime import stamp
+        occurrence_store = cs._closed_clause_store()
+        row = store.add(obj, word, truth_plus=1.,
+                        when=None if occurrence_store is None else stamp(occurrence_store))
         index.add(row)
         self._pending.pop(word, None)
         self._field_pending.discard(word)

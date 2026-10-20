@@ -1,0 +1,11 @@
+{
+  "test": "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

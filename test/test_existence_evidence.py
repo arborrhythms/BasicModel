@@ -16,7 +16,9 @@ def _description():
 def test_exist_matches_the_complete_relational_description(changed_role):
     roles = _description()
     store = TernaryTruthStore(6, capacity=8)
-    store.append_relation(*roles, trust=.85)
+    from Meaning import ConceptualMeaning
+    store.append_meaning(ConceptualMeaning.from_payload(roles, depth=3, layout='infix'),
+                         kind='fact', trust=.85)
     probe = roles.clone()
     if changed_role is not None:
         probe[changed_role] = torch.eye(6)[4]

@@ -1,0 +1,1348 @@
+{
+  "test": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+  "events": 15,
+  "overlap_events": 10,
+  "max_energy_error": 0.00048828125,
+  "max_graph_edges": 400,
+  "max_sources": 8,
+  "max_part_reads": 32,
+  "max_candidates": 32,
+  "max_comparisons": 248,
+  "max_overlap_edges": 64,
+  "truncated_frontiers": 80,
+  "nonzero_overlap_transfers": 4352,
+  "projections": [
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1928,
+          "row": 1927,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1928,
+          "row": 1927,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 200,
+          "row": 199,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 201,
+          "row": 200,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 516,
+          "row": 515,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1152,
+          "row": 1151,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 1928,
+          "row": 1927,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    }
+  ]
+}

@@ -11,7 +11,9 @@ from test_cs_symbol_table import _cs
 def test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence():
     a, b = torch.eye(8)[:2]
     store = TernaryTruthStore(8)
-    store.append_relation(a, torch.ones(8), b, rel_type=store.REL_PARTOF, trust=1)
+    from Meaning import ConceptualMeaning
+    store.append_meaning(ConceptualMeaning.from_payload(torch.stack((a, torch.ones(8), b)),
+        depth=3, layout='infix'), kind='fact', trust=1)
     reasoner = TruthGroundedReasoner(store=store)
     assert reasoner.is_part_direct(a, torch.ones(8)) is None
     assert reasoner.is_part(a, b) == []

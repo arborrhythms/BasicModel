@@ -7,17 +7,17 @@ from definition_fixtures import witness_object
 
 
 def test_copied_definition_index_is_owned_by_the_copied_store():
-    m=model(); word,obj=admit(m,'hello'); original=m.symbolSpace.ltm_store
+    m=model(); word,obj=admit(m,'hello'); original=m._concept_owner()._concept_allocator
     restored=copy.deepcopy(original)
-    restored.clear_origin(restored.ORIGIN_CONVERSATION)
+    restored.parts.retain([])
     assert original.definitions.deref(word)==obj
     assert restored.definitions.deref(word) is None
-    assert restored.definitions._store() is restored
+    assert restored.definitions._store() is restored.parts
 
 
 def test_two_pending_words_cannot_overbook_the_last_definition_row():
     m=model(); cs=m._concept_owner(); store=m.symbolSpace.ltm_store
-    while len(store)<store.capacity-1:store.append_idea(torch.zeros(store.nDim), sentence_index=len(store))
+    store.parts.capacity = cs._concept_allocator.next_id + 3
     first=cs.interpret.lookup_word([7],[],form='first')
     alloc=cs._concept_allocator
     before=alloc.next_id,dict(alloc.placement),dict(alloc.layer()._tensor_rows)
@@ -60,9 +60,7 @@ def test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting(
     row = cs._csw_row_of(obj)
     assert cs.word_surface_for_row(row) == b'hello'
     definition = cs.definitions.row(word, obj)
-    store.origin[definition] = store.ORIGIN_USER
-    store._update_semantic_fingerprint(definition)
-    store.clear_origin(store.ORIGIN_USER)
+    store.parts.retain([r for r in store.parts.indices().tolist() if r != definition])
     assert cs.word_surface_for_row(row) is None
     cs.interpret.define(other, obj)
     assert cs.word_surface_for_row(row) == b'there'
@@ -95,7 +93,7 @@ def test_taxonomy_keeps_the_forms_derived_from_definition_rows():
     assert cs._concept_source_order(parent) == cs._concept_source_order(part) + 1
 
 
-def test_migrated_meta_has_no_live_identity_or_inventory_row():
+def test_retired_meta_checkpoint_is_permanently_rejected():
     from test_cs_sparse_weights import _cs
     from test_structural_checkpoint import _model_with
     from Layers import TernaryTruthStore
@@ -104,12 +102,8 @@ def test_migrated_meta_has_no_live_identity_or_inventory_row():
     target = _model_with(cs, SimpleNamespace())
     target.symbolSpace = SimpleNamespace(ltm_store=TernaryTruthStore(cs.nDim, capacity=32))
     object.__setattr__(cs, '_model', target)
-    target._restore_structural_extras(fixture['structural'])
-    meta = fixture['meta']
-    alloc = cs._concept_allocator
-    assert meta not in alloc.placement
-    assert cs._csw_row_of(meta) is None
-    assert not alloc.records(meta)
+    with pytest.raises(ValueError, match='retired META'):
+        target._restore_structural_extras(fixture['structural'])
 
 
 from types import SimpleNamespace
@@ -175,6 +169,6 @@ def test_new_definitions_do_not_alias_later_sentence_identities():
     from test_ltm_consolidation import _make_model_provisioned, _SERIAL_CONFIG
     model = _make_model_provisioned(_SERIAL_CONFIG)
     store = model.symbolSpace.ltm_store
-    symbols = set(store.refs[store.relations(store.REL_DEF)][:, (0, 2)].reshape(-1).tolist())
+    symbols = set(store.parts.refs[store.relations('definition')].reshape(-1).tolist())
     rows = store.rows_of_origin(store.ORIGIN_PROVISIONED)
     assert symbols.isdisjoint(store.row_ids[rows].tolist())

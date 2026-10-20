@@ -1,0 +1,378 @@
+............FFFFFFFFFFFFF.F.F.F.                                         [100%]
+=================================== FAILURES ===================================
+________ test_g2_generated_leaf_without_object_uses_same_resolver[0-1] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[0-2] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[0-3] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[1-2] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[1-3] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[1-0] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[2-3] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[2-0] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[2-1] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[3-0] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[3-1] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_g2_generated_leaf_without_object_uses_same_resolver[3-2] _________
+test/test_bind_thought.py:160: in test_g2_generated_leaf_without_object_uses_same_resolver
+    program = f.program(('lift', marker, VERBS[0]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True] ___
+test/test_bind_thought.py:213: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('sym', 12) == ('sym', -1)
+E     
+E     At index 1 diff: 12 != -1
+E     Use -v to get more diff
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True] ___
+test/test_bind_thought.py:213: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('sym', 12) == ('sym', -1)
+E     
+E     At index 1 diff: 12 != -1
+E     Use -v to get more diff
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True] ___
+test/test_bind_thought.py:213: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('sym', 12) == ('sym', -1)
+E     
+E     At index 1 diff: 12 != -1
+E     Use -v to get more diff
+__ test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True] ___
+test/test_bind_thought.py:213: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open
+    assert actual == ('sym', expected)
+E   AssertionError: assert ('sym', 12) == ('sym', -1)
+E     
+E     At index 1 diff: 12 != -1
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5391: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]
+FAILED test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]
+FAILED test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]
+16 failed, 16 passed, 1 warning in 6.49s

@@ -1,0 +1,107 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+    "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+    "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+    "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+    "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
+    "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "completed": [
+    "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+    "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+    "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+    "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+    "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
+    "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.2753605409525335,
+      "message": "test/test_parts_of_speech.py:131: in test_kept_readings_alone_supply_occupation_counts\n    assert parts.counts == expected.counts and parts.counts\nE   AssertionError: assert ({12: Counter(...n1': 1}), ...} == {12: Counter(...n1': 1}), ...}\nE     \nE     Omitting 6 identical items, use -vv to show\nE     Left contains 6 more items:\nE     {18: Counter({'intersection_argout1': 1, 'lower_argin1': 1}),\nE      19: Counter({'lower_argin2': 1}),\nE      20: Counter({'lower_argout1': 1}),\nE      23: Counter({'intersection_argout1': 1, 'lower_argin1': 1}),...\nE     \nE     ...Full output truncated (3 lines hidden), use '-vv' to show)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010970840230584145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.1423429159913212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004353125113993883,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.33053037500940263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011262208921834826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "np_definite",
+      "duration": 0.00026637502014636993,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_parts_of_speech.py', 324, 'Skipped: phase artifact absent: np_definite (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "np_description",
+      "duration": 0.00023191701620817184,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_parts_of_speech.py', 324, 'Skipped: phase artifact absent: np_description (no producing lesson registered)')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

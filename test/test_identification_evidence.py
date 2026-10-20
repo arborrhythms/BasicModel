@@ -10,10 +10,8 @@ from Meaning import ConceptualMeaning
 
 
 def store_and_clause():
-    store = TernaryTruthStore(4, capacity=8)
-    identities = iter(range(10, 100))
-    store.configure_clause_index(allocate=lambda _point: next(identities),
-                                 concept_point=lambda _cid: torch.ones(4))
+    from part_fixtures import native_store
+    store, _ = native_store(points=torch.eye(4), capacity=8)
     point = torch.tensor([.2, .4, .6, .8])
     return store, Clause(ConceptualMeaning.from_description(point), point=point)
 
@@ -94,13 +92,13 @@ def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
     assert fixture.store.row(row)['trust'] == pytest.approx(-.1)
 
 
-def test_index_unfolding_reads_the_stored_order():
+def test_index_reading_reads_the_stored_order():
     store, clause = store_and_clause()
     seen = []
     def unfold(value, limit, *, order, work=None):
         seen.append(order)
         return (1,), 1, True
-    store.configure_leaf_index(unfold=unfold)
+    store.configure_leaf_index(read=unfold)
     row = store.write_clause(replace(clause, order=3), trust=.8)
     store.reindex_meanings()
     assert seen == [3, 3]

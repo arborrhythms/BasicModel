@@ -87,13 +87,6 @@ def _as_vec(x) -> torch.Tensor:
     return torch.nan_to_num(x.reshape(-1).float())
 
 
-# The parthood relation kind. The reasoner climbs REL_PARTOF rows. The row
-# iteration + the climb primitive (wholes / parts / _chain_to_target) are the
-# CANONICAL ones on ConceptualSpace -- shared with ConceptualSpace.reason, not
-# re-implemented here.
-_REL_PARTOF = TernaryTruthStore.REL_PARTOF
-
-
 # -- the reasoner ------------------------------------------------------------
 
 class TruthGroundedReasoner:
@@ -235,8 +228,8 @@ class TruthGroundedReasoner:
             return best
         Y = _as_vec(Y)
         best = None
-        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
-                store, _REL_PARTOF):
+        for (idx, np1, np2, t1) in ConceptualSpace._iter_relation_rows(
+                store, 'part'):
             s = min(self.equal(X, np1), self.equal(Y, np2))
             if best is None or s > best["match"]:
                 best = {"np1": np1, "np2": np2, "trust": float(t1),

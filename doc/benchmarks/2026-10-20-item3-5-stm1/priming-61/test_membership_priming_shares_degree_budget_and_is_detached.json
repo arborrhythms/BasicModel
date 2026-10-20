@@ -1,0 +1,11 @@
+{
+  "test": "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+  "events": 2,
+  "max_energy_error": 1.1920928955078125e-07,
+  "max_graph_edges": 1,
+  "membership_events": 1,
+  "max_membership_edges": 2,
+  "max_membership_rows": 1,
+  "budget_limited_streams": 0,
+  "projections": []
+}

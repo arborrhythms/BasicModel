@@ -70,24 +70,28 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
     row = store.write_clause(kept, document_key='pending', sentence_index=0, written_rows=written)
     resolver.commit(plan, row, written, document='pending', position=0, training=False)
     original = store.meaning_of(row)
-    data = bindings(original)
-    assert data['_reference_mentions']
+    assert resolver._mentions[store.occurrence_of(row)]
+    rows, refs = store.slots.clone(), store.refs.clone()
     # A subsequent known binding refers to this same occurrence and role.
     pending = question(replace(original, role_refs=(None, None, None)),
                        (('referent', 0),))
-    store.upsert_resolved(row, pending)
     errors = Error()
-    store._reference_resolved = lambda row, role, ref: resolver.resolved(row, role, ref, errors)
     correct = plan['items'][0]['candidates'][1]
-    assert store.fill_slot(row, 0, correct, atoms[1])
+    from ThoughtReferences import fill, open_slots
+    resolved = fill(pending, dict(reference=('sym', correct), binding_value=atoms[1]),
+                    slots=(('referent', 0),))
+    assert ('referent', 0) not in open_slots(resolved)
+    resolver.resolved(row, 0, ('sym', correct), errors)
     loss = errors.total(objective='expectation')
     assert loss is not None and loss.requires_grad
     loss.backward()
     assert bool(resolver.policy.grad[4].ne(0))
     assert resolver.policy.grad[0] != 0
     # Filling it twice cannot produce duplicate credit.
-    assert not store.fill_slot(row, 0, correct, atoms[1])
+    resolver.resolved(row, 0, ('sym', correct), errors)
     assert errors._terms['expectation.reference_mentions']['count'] == 1
+    torch.testing.assert_close(store.slots, rows, rtol=0, atol=0)
+    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
 
 
 def test_mention_training_record_is_not_a_thought_chooser_feature():

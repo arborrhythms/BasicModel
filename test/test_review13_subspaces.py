@@ -62,19 +62,21 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
     store = TernaryTruthStore(5, capacity=8)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
+    part = store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b),
+                           symbol=cs.new_concept())
     root = torch.tensor([9.,8.,7.,.2,.4], requires_grad=True)
     roles = torch.stack((root, root*0, root*0))
     row = store.append_meaning(ConceptualMeaning(roles, torch.tensor([True,False,False]),
-        mode='assertive', sentence_kind='idea'), evidence=(0.,0.))
-    store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+        mode='assertive', sentence_kind='idea', role_refs=(('sym', part), None, None)),
+        evidence=(0.,0.))
     codes = cb.lookup_rows(torch.tensor([a,b]))
     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
     torch.testing.assert_close(codes[:,3:], torch.tensor([[1/5,0.],[1/5,0.]]))
     assert not codes.requires_grad
     assert root.grad is None and not store.slots.requires_grad
     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
-        mode='assertive', sentence_kind='idea'), evidence=(0.,0.))
-    store._append_leaf_terms(newer, ((a,b),(),()), (True,True,True))
+        mode='assertive', sentence_kind='idea', role_refs=(('sym', part), None, None)),
+        evidence=(0.,0.))
     mean = (root.detach()/2 + 2*root.detach())/1.5
     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
     torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([2/6,0.]))

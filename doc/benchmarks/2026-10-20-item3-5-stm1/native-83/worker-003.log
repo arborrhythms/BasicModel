@@ -1,0 +1,46 @@
+...FFFFF...F....                                                         [100%]
+=================================== FAILURES ===================================
+_ test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them _
+test/test_reference_close.py:121: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+    assert len({identities[a] for a in addresses}) == 1
+                ^^^^^^^^^^^^^
+E   KeyError: -6997856705104047482
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0] _
+test/test_reference_close.py:146: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x10c126180>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1] _
+test/test_reference_close.py:146: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x126430c80>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2] _
+test/test_reference_close.py:146: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x126431d20>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3] _
+test/test_reference_close.py:146: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x126431000>)
+_ test_revision_merges_three_accessible_groups_transitively_across_cued_documents _
+test/test_reference_close.py:215: in test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+    assert len({identities[a] for a in addresses}) == 1
+                ^^^^^^^^^^^^^
+E   KeyError: 5059024907979507958
+=============================== warnings summary ===============================
+test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]
+FAILED test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+6 failed, 10 passed, 1 warning in 2.23s

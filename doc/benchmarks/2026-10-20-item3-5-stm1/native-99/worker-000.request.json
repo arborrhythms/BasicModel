@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+    "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+    "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+    "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+    "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-99/worker-000.recycle.json"
+}

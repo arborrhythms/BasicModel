@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_part_closing.py",
+    "test/test_part_expectation.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

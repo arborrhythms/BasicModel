@@ -7,7 +7,7 @@ def _model(tmp_path, monkeypatch):
     from test_compiled_word_chunk import _tiny_canonical_model
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', input_width=32,
-        concept_rows=32, training_overrides={'intraLossWeight': 0., 'reconstructionPlacement': 'eager'})
+        concept_rows=32, training_overrides={'reconstructionPlacement': 'eager'})
     model._tensor_peer_while_eager = True
     model.inputSpace.data.has_supervised_outputs = False
     return model

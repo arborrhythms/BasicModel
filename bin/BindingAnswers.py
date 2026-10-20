@@ -26,38 +26,7 @@ def _bound_references(meaning):
 
 def matches(model, meaning, word):
     """Strict identity match against the existing lexical association index."""
-    known = set(model._concept_owner().word_concepts(word))
-    values = references(meaning)
-    if len(values) != 1 or not known:
-        return False
-    reference, _value = values[0]
-    store = getattr(model.symbolSpace, 'ltm_store', None)
-    seen = set()
-    current = meaning
-    for _ in range(64):
-        if reference in seen:
-            return False
-        seen.add(reference)
-        if reference[0] == 'sym':
-            return reference[1] in known
-        if reference[0] == 'constituent':
-            current = current.constituents[reference[1]]
-        elif reference[0] == 'ltm' and store is not None:
-            index = store._index_occurrences.get(reference)
-            if index is None:
-                return False
-            if int(store.row_ids[index]) in known:
-                return True
-            current = store.meaning_of(index)
-        else:
-            return False
-        if current is None or int(current.role_mask.sum()) != 1:
-            return False
-        role = int(current.role_mask.nonzero(as_tuple=False)[0])
-        reference = current.role_refs[role]
-        if reference is None:
-            return False
-    return False
+    return _matches(model, meaning, word, references(meaning))
 
 
 def _matches(model, meaning, word, values):
@@ -73,7 +42,19 @@ def _matches(model, meaning, word, values):
             return False
         seen.add(reference)
         if reference[0] == 'sym':
-            return reference[1] in known
+            if reference[1] in known:
+                return True
+            if store is None or not store.parts.contains(reference[1]):
+                return False
+            from PartRead import expression_components
+            from QueryWork import QueryWorkBudget
+            terms, _, incomplete = expression_components(store, (reference,),
+                max_records=64, work=QueryWorkBudget(64))
+            target = terms.get(reference, {}).get('reference')
+            if incomplete or target is None or target == reference:
+                return False
+            reference = target
+            continue
         if reference[0] == 'constituent':
             current = current.constituents[reference[1]]
         elif reference[0] == 'ltm' and store is not None:

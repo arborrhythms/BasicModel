@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+    "test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement",
+    "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+    "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker"
+  ],
+  "completed": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+    "test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement",
+    "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+    "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01782233314588666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016692080534994602,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003952208906412125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002961625112220645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011406749952584505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00743845896795392,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

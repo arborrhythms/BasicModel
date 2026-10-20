@@ -37,14 +37,14 @@ def append_indexed(store, meaning, *, terms, **kwargs):
     # Each call in these retrieval fixtures denotes a distinct source row.
     kwargs.setdefault('document_key', 'index-fixture')
     kwargs.setdefault('sentence_index', len(store))
-    prior = store._index_unfold
+    prior = store._index_read
     mapping = {tuple(value.detach().tolist()): tuple(codes)
                for value, live, codes in zip(meaning.roles, meaning.role_mask, terms) if live}
     def unfold(value, limit, **_kwargs):
         codes = mapping.get(tuple(value.detach().tolist()), ())
         return codes, min(1, limit), bool(limit)
-    store._index_unfold = unfold
+    store._index_read = unfold
     try:
         return store.append_meaning(meaning, **kwargs)
     finally:
-        store._index_unfold = prior or one_hot_unfold
+        store._index_read = prior or one_hot_unfold

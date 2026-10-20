@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

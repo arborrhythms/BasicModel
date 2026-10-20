@@ -5,7 +5,7 @@ from dataclasses import replace
 import pytest
 import torch
 
-from ClauseRow import Clause
+from ClauseRow import Clause, Composition, attach_clause_index
 from IdentityRows import witness_count
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
@@ -21,7 +21,7 @@ def fixture():
     import weakref
     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
     resolver = owner.components.reference_close
-    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    attach_clause_index(SimpleNamespace(), store, owner)
     return resolver, store, torch.eye(12)
 
 
@@ -38,10 +38,14 @@ def form_exposure(resolver, cue, content):
 
 def close(resolver, point, predicate, mode, frames, *, document, sentence, selected=None):
     request = dict(mode=mode, leaves=(1,), cue=torch.zeros_like(point), predicate=predicate, role=0)
+    term = Composition(point, order=1)
     np = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
-                reference_request=request)
-    clause = Clause(ConceptualMeaning.from_description(point+predicate), point=point+predicate,
-                    children=(np,), refs=(('clause', 0), -1, -1), order=2)
+                reference_request=request, composition=term)
+    value = torch.maximum(point, predicate)
+    composition = Composition(value, (term, Composition(predicate)), operation='lift', order=2)
+    clause = Clause(ConceptualMeaning.from_description(value), point=value,
+                    children=(np,), refs=(('clause', 0), -1, -1), order=2,
+                    composition=composition)
     plan = resolver.preview(clause, frames)
     if selected is not None:
         assert mode != 'mint'
@@ -51,9 +55,51 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
     row = resolver.store.write_clause(kept, document_key=document, sentence_index=sentence,
                                      written_rows=written)
     resolver.commit(plan, row, written, document=document, position=sentence, training=False)
-    frame = SituationFrame.from_row(resolver.store.row(row))
+    frame = replace(SituationFrame.from_row(resolver.store.row(row)),
+        symbol_ids=written.get(('symbols', id(kept)), ()),
+        activations=written.get(('activations', id(kept)), ()))
     address = resolver.last_audit[0]['occurrence']
     return frame, address, plan
+
+
+def current_identities(resolver, frames):
+    """Observe the working partition without editing a row or a bank code."""
+    store, bank = resolver.store, resolver.components.owner.similarity_codebook
+    before = store.refs.clone(), store.slots.clone(), bank.W.detach().clone()
+    result = {address: identity
+              for identity, item in resolver.individuals(resolver.accessible(frames)).items()
+              for address in item['occurrences']}
+    for actual, expected in zip((store.refs, store.slots, bank.W), before):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    return result
+
+
+def test_mint_uses_the_selected_member_order_instead_of_the_source_word_order():
+    resolver, store, atoms = fixture()
+    request = dict(mode='mint', leaves=(0,), cue=atoms[0], content=atoms[0], role=0)
+    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
+        order=1, reference_request=request, composition=Composition(atoms[0], order=0))
+    plan = resolver.preview(clause, ())
+    kept = resolver.prepare(clause, plan)
+    assert kept.composition.order == 1
+    store.write_clause(kept)
+    symbol = resolver.components.individual_ids[0]
+    assert resolver.components.owner._concept_source_order(symbol) == 1
+
+
+@pytest.mark.parametrize('order', (0, 3))
+def test_recent_minted_symbol_returns_at_its_native_conceptual_order(order):
+    resolver, store, atoms = fixture()
+    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
+        order=order, minted=True, composition=Composition(atoms[0], order=order))
+    row = store.write_clause(clause)
+    identity = store.raw_meaning_of(row).role_refs[0][1]
+    frame = replace(SituationFrame.from_row(store.row(row)), symbol_ids=(identity,))
+    records = resolver.accessible((frame,))
+    assert identity in records
+    candidate = resolver.individuals(records)[identity]
+    torch.testing.assert_close(candidate['value'], atoms[0], rtol=0, atol=0)
+    assert resolver.components.owner._concept_source_order(identity) == order
 
 
 def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them():
@@ -69,8 +115,10 @@ def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_t
             document='merge', sentence=sentence, selected=1 if sentence == 3 else None)
         frames.append(frame); addresses.append(address)
         if sentence == 1:
-            assert len({int(store.refs[store.index_of_row(a), 0]) for a in addresses}) == 2
-    assert len({int(store.refs[store.index_of_row(a), 0]) for a in addresses}) == 1
+            identities = current_identities(resolver, frames)
+            assert len({identities[a] for a in addresses}) == 2
+    identities = current_identities(resolver, frames)
+    assert len({identities[a] for a in addresses}) == 1
     for address, point in zip(addresses, contents):
         torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
 
@@ -96,7 +144,8 @@ def test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding(ki
                 assert plan['items'][0]['selected'][0] == 'new'
             else:
                 assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
-        references = [int(store.refs[store.index_of_row(address), 0]) for address in occurrences]
+        identities = current_identities(resolver, frames)
+        references = [identities[address] for address in occurrences]
         assert len(set(references)) == (2 if distinct else 1)
         assert references[0] == references[2] and references[1] == references[3]
         for address, content in zip(occurrences, contents):
@@ -160,12 +209,12 @@ def test_revision_merges_three_accessible_groups_transitively_across_cued_docume
         frames.extend((first, second)); addresses.extend((a, b))
     _, inaccessible, _ = close(resolver, atoms[0]+atoms[4], atoms[6], 'mint', (),
                                document='outside', sentence=0)
-    outside = int(store.refs[store.index_of_row(inaccessible), 0])
+    outside = resolver.last_audit[0]['reference']
     before = {address: store.point_of_row(address).clone() for address in addresses}
-    resolver.revise(resolver.accessible(frames))
-    assert len({int(store.refs[store.index_of_row(a), 0]) for a in addresses}) == 1
-    assert int(store.refs[store.index_of_row(inaccessible), 0]) == outside
-    assert sum(bool(witness_count(resolver.components.owner, cid)) for cid in resolver.components.individual_ids) == 2
+    identities = current_identities(resolver, frames)
+    assert len({identities[a] for a in addresses}) == 1
+    assert outside not in set(identities.values())
+    assert len(resolver.components.individual_ids) == 4
     for address, point in before.items():
         torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
 
@@ -216,6 +265,30 @@ def test_only_order_one_defers_reference_and_higher_orders_keep_their_contract()
     assert ordinary['unary_choices'][0, 0, selected, 0].tolist() == [-1]
 
 
+@pytest.mark.parametrize('candidate_order', (0, 3))
+@pytest.mark.parametrize('reference_role', (False, True))
+def test_implicit_reference_offers_retained_definitions_at_their_native_orders(candidate_order, reference_role):
+    from Interpret import InterpretLayer
+    from ReferenceContext import ReferenceBank, prepare_operands
+    values = torch.ones(1, 1, 4)
+    ids, stamps = torch.tensor([[7]]), torch.tensor([[1]])
+    flags = torch.zeros_like(ids)
+    bank = ReferenceBank(torch.tensor([[100]]), values * .5,
+        torch.ones(1, 1, dtype=torch.bool), torch.zeros(1, 1, dtype=torch.bool),
+        values[:, 0], torch.zeros(1, dtype=torch.bool),
+        orders=torch.tensor([[candidate_order]]), close_references=True,
+        associations=torch.tensor([[7, 100]]), interpreter=InterpretLayer())
+    rule = SimpleNamespace(reference_roles=('argin1',) if reference_role else ())
+    result = prepare_operands(values, ids, flags, flags, orders=stamps,
+        rules=(), unary_rules=(rule,), bank=bank,
+        live=(values, ids, stamps, flags.bool(), flags),
+        active=torch.ones_like(ids, dtype=torch.bool))
+    valid = result['unary_valid'][0, 0]
+    refs = result['unary_refs'][0, 0, valid, 0]
+    assert 100 in refs and 7 not in refs
+    torch.testing.assert_close(result['unary'][0, 0, valid][refs == 100][0], values[0, 0] * .5)
+
+
 def test_deferred_reference_request_survives_kept_trial_detachment(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import record_reading
@@ -234,6 +307,23 @@ def test_deferred_reference_request_survives_kept_trial_detachment(monkeypatch):
     assert before[0].reference_request['mode'] == after[0].reference_request['mode'] == 'mint'
     assert before[0].reference_request['leaves'] == after[0].reference_request['leaves']
     torch.testing.assert_close(before[0].point, after[0].point, rtol=0, atol=0)
+
+
+def test_objectless_marker_stays_literal_under_an_implicit_reference_read():
+    from Interpret import InterpretLayer
+    from ReferenceContext import ReferenceBank, prepare_operands
+    value = torch.ones(1, 1, 4)
+    ids = torch.tensor([[7]])
+    zero = torch.zeros_like(ids)
+    bank = ReferenceBank(torch.tensor([[100]]), value * .5,
+        torch.ones_like(ids, dtype=torch.bool), zero.bool(), value[:, 0], zero[:, 0].bool(),
+        orders=zero, interpreter=InterpretLayer(), literal_ids=torch.tensor([7]))
+    rule = SimpleNamespace(reference_roles=('argin1',))
+    result = prepare_operands(value, ids, zero, zero, orders=zero, rules=(), unary_rules=(rule,),
+        bank=bank, live=(value, ids, zero, zero.bool(), zero), active=torch.ones_like(ids, dtype=torch.bool))
+    valid = result['unary_valid'][0, 0]
+    assert result['unary_refs'][0, 0, valid, 0].tolist() == [7]
+    torch.testing.assert_close(result['unary'][0, 0, valid][0], value[0, 0])
 
 
 @pytest.mark.parametrize('description_order', (0, 2))

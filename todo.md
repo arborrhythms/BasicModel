@@ -20,24 +20,33 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-Step 1b's native identity migration is on `codex/item3-5-first-pass`;
-its [round receipt](doc/benchmarks/2026-10-20-item3-5-identity/README.md)
-records the gates and the landing sweep. **Publication is held** by Alec's
-2026-10-20 decision: keep strict rejection of signed legacy identity
-occurrences until a migration decision. The stage-3, NP-definite and
-NP-description artifact-load failures remain open; no lossy conversion,
-replacement training or artifact rewrite closes them.
-The [live cube counterexample](doc/benchmarks/2026-10-20-item3-5-identity/live-cube.md)
-also blocks step 1b: after an ordinary optimizer update, the learned `lift`
-maps native [0, 1] operands to signed output. Define its region/inverse
-contract before the strict meet can consume that path; do not clip, snap
-to a code, or count the fixed G0/G1–G3 probes as closure of this regression.
-The final §14 initialization-read certificate hits the strict cube check
-too; its earlier pass is not promoted. The latest row audit also carries
-`IntraSentenceLayer` / `intraLossWeight`: retire the surviving slot predictor
-and its loss/config/checkpoint plumbing, or obtain an accepted architectural
-justification before claiming one predictor. The per-dimension withheld
-mark belongs in concept content beside the lanes at the row conversion.
+Step 1b's native identity candidate `027ce224d` is on
+`codex/item3-5-first-pass`; its
+[original receipt](doc/benchmarks/2026-10-20-item3-5-identity/README.md)
+records the failed sweep and scoped repairs. **The migration decision is
+resolved:** Alec retired stage3, np_definite and np_description. They are
+unregistered and archived beside their producing receipts, never to be
+read; their certificates are prerequisite-skipped until their producing
+lessons are next needed with fixed budgets/seeds. Rejection of retired
+coordinates is permanent. The
+[STM1 follow-up](doc/benchmarks/2026-10-20-item3-5-stm1/README.md) records
+the retirement and removal of the blanket cycle restriction.
+**Step 1b landing remains:** the §6.10 close/read repair and saved
+reverse-order replays pass. Both decomposition lengths pass in both arms
+in [attempt 100](doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-100.md),
+all eight companion questions correct. Run this round's one full sweep,
+repair its findings and publish both
+mains with the October 20 docs and a clean BasicModel tree. The
+[current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
+records completed scoped work: transient full-width STM1 and close
+dissolution; shared six-column Part store; cube-coordinate maps and
+inverse checks; Part-derived exact bootstrap and saved/random paired
+reconstruction; both premise orders and whole §14; predictor retirement;
+G1–G3 and reference-close. These are not a completed landing.
+Alec's §6.6 answers withdraw the exact-leaf inversion and width gates;
+identity computed in STM is never written back into LTM. All-LTM2
+integration is implemented in this step, including the expression reader. The per-dimension withheld mark belongs in concept content
+beside the lanes at the row conversion.
 Production keeps the prime ON and uncapped,
 P/S/R/D=0 and φ=.5.
 
@@ -60,12 +69,16 @@ has completed Claude's review, one full sweep (5,907/5,907 completed;
 48 failures repaired with scoped checks), and final native validation:
 72 passed, one copular prerequisite skip; both decomposition lengths pass
 in both gain arms with all eight questions correct. Publication to both
-mains preceded step 1b's G0 and identity migration. G1–G3, the 18 reference
-cases and both decomposition lengths in both arms now pass on the native
-scorer; step 1b's one full sweep completes all 5,926 cases with 15 failures,
-followed by scoped repairs of 11 failed cases. Three artifact loads and
-the native cube smoke remain failed; final validation adds the §14 cube
-failure. The [disposition](doc/benchmarks/2026-10-20-item3-5-identity/landing-disposition.md)
+mains preceded step 1b's G0 and identity migration. On the earlier
+identity candidate, G1–G3, the 18 reference cases and both decomposition
+lengths in both arms passed on the native scorer; that candidate's full
+sweep completed all 5,926 cases with 15 failures,
+followed by scoped repairs of 11 failed cases. The three artifact failures
+remain in that historical result; their artifacts are now retired, not
+regraded as successful loads. The later STM1/Part round repairs the native
+cube, final §14 read failures and expression-type defects. Its scoped
+gates pass; the one landing sweep remains. The historical
+[disposition](doc/benchmarks/2026-10-20-item3-5-identity/landing-disposition.md)
 records each case. Its
 [row audit](doc/benchmarks/2026-10-20-item3-5-identity/row-audit.md) explicitly
 carries the physical LTM1/LTM3 split, context wholes, spatial extent and
@@ -81,6 +94,19 @@ decomposition certificates pass; Alec decided it lands after its sweep and
 (identity only in the major structures: the meet as the content term,
 containment for the form term, no nouns dictionary, no count tables, no
 ICA event chart, STM as an index) before LTM1/LTM3.
+*Review of the step 1b tree (Claude, 2026-10-20, later):* step 1 is
+published (`204e1be55` / WikiOracle `a89c958`, with the answer-kind judge);
+step 1b is an unpublished candidate carrying the identity migration, the
+retired artifacts, STM1 in progress, the `PartStore` (LTM2 and the
+taxonomy as one owner), the cube chart, and model-time `.when`. Every
+decision of 2026-10-19/20 is in the
+[decisions ledger](doc/plans/2026-10-19-bind-thought-operation.md#7-decisions-ledger-for-the-current-round-2026-10-20-what-is-carried-and-where)
+with its status and the commit it lands in; Codex's §6.7 read question is
+answered in [§6.8](doc/plans/2026-10-19-bind-thought-operation.md#68-claudes-answer-to-67-the-read-rule-needs-nothing-new-2026-10-20)
+(symbol types and ordered pairs suffice; no metadata on Part). Open on the
+branch: the live-cube counterexample, the §14 initialization read, the
+expression read and the bootstrap read, the paired-reconstruction `.1`,
+reverse-order premise resolution, `IntraSentenceLayer`.
 
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
@@ -614,11 +640,14 @@ not by a passing identity lesson.
      kinds `DEF`, *said*, *if-then*; arguments ideas or REFs); parthood
      and kinds are folds in the main tree, not rows; two forms of LTM named by
      their slots — **LTM1** (one concept per row, possibly unminted; ideas
-     and their addresses; retention by surprise) and **LTM3** (three
-     symbol references: argument, kind, argument; only minted concepts) —
-     with STM as **STM1** — one wide, invertible concept vector per entry
-     at item 3's content width (derived in step 1b for STM only) plus the
-     index of recent rows and the activation field (bind plan §6.1, §6.4);
+     and their addresses; retention by surprise) and **LTM2** (two
+     symbol references and the truth pair — one relation, `Part(x, y)`,
+     read by its arguments' types; the same structure as the taxonomy over
+     symbols; only minted concepts) —
+     with STM as **STM1** — one wide concept vector per entry (the concept
+     space's full width; computed in STM, never written to LTM, no
+     inversion gate) plus the index of recent rows and the activation
+     field (bind plan §6.1, §6.6); all of LTM2 in step 1b;
      the three signed-chart phase artifacts are retired and regenerated
      only when their lessons are next needed, strict rejection permanent; a concept is
      minted by recurrence in LTM1 (the access count, the type criterion
@@ -637,8 +666,10 @@ not by a passing identity lesson.
      stays confined to verbs (plan §17), and it goes when the teacher lands.
      *Formulation (Alec, 2026-10-19; [occurrence spec §14](doc/specs/2026-09-30-occurrence-tense-aspect.md#14-two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19-written-by-claude)):*
      the **first difference** — the verb is a group element acting on
-     the identity's frame (object before ↦ object after; the diagonal the
-     verb defines, as `<verbSpectrum>` has it, not a subtraction);
+     the identity's frame (object before ↦ object after; a diagonal in a
+     **shared basis per verb group**, groups learned by joint
+     diagonalization and minted on recurrence — occurrence §14.1,
+     2026-10-20; `<verbSpectrum>` is the one-group case);
      identity element = the undefined verb = unknown; support = the
      nonzero log-eigenvalues, zero by default; teacher = the coordinatewise
      log-ratio of the after- and before-frames read from the stream's
@@ -706,10 +737,49 @@ not by a passing identity lesson.
      offset-independence, addressed-chain, interleaving, preposition and
      surface-inverse ([spec §8](doc/specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).
 
+   - **Priming diffusion** (Alec, 2026-10-20): spreading activation stays
+     on by default at a small `primingSpread` (0.05, down from 0.25); the
+     step 1b carries the config default and the symbolic graph along the
+     one store's `Part(x, y)` edges, including word-to-sentence membership
+     read from the retained derivation. Per the later
+     [Orders §9 amendment](doc/Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided),
+     item 3 carries per-order strata, geometric overlap only at order 0,
+     and placement with its declared read point. One conservative budget;
+     no N×N matrix ([Architecture, priming](doc/Architecture.md)).
+   - **The generated math suite under `RUN_SLOW`** (Alec, 2026-10-20): a
+     generated, graded corpus of mathematical sentences in English that
+     trains a grammar for real, at scale, with the learning claims as its
+     gates (names and equality, roles, decomposition, `what` bound,
+     conditionals and counterfactuals, ellipsis, generics, attribution,
+     the inverse verb and the verb groups' exact bases, the carrier
+     variants) — [Testing](doc/Testing.md#fast-regression-and-slow-experiments),
+     coverage in [Training](doc/Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
+     The same run is item 1's compiler parity test at scale (compiled and
+     eager agree in actions, probabilities, costs, updates). Built from the
+     `MM_math_chain` generator in the Viterbi order; throughput recorded,
+     since item 1's runtime is where it bites.
    Not here: dimensional `lift`/`lower` (FutureWork); the 6.5, 6.2 and 6.1
    learning gates and 9's and 8's empirical evidence (item 0). Exit: the
    list above empty, each line with a receipt hash or a written move.
-- **3. Corpus at target size.** *Takes from item 4 (Alec, 2026-10-19,
+- **3. Corpus at target size.** *Added 2026-10-20 (Alec):* placement from
+   the registered priming surface — SBOW's context is the surface after
+   the seen bumps and the symbolic diffusion, before the conceptual
+   channel; the objective in the cube's own metric (raise the meet ratio
+   with the registered context, lower it against negatives; the collapse
+   diagnostic as the gate); one metric for SBOW, diffusion and `bind`
+   ([FutureWork](doc/FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
+   *Added 2026-10-20 (Alec; [Orders §9](doc/Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided)):*
+   **per-order conceptual spaces, ramsified over the one symbol tree** —
+   order *n*'s space is the cube over the order-(*n−1*) symbol index, its
+   concepts characteristic vectors realized by LTM2's Part edges, similarity
+   the meet of membership vectors, centroids above order 0 only as
+   validated caches, cross-order comparison by membership; and **the
+   stratified priming surface** — one vector read per order (a point in
+   every order's space at once), the kernel edge-based across and above
+   order 0 and geometric only at order 0, read points declared per
+   consumer (placement: the order-0 stratum before the geometric channel;
+   `bind`: the request's order; attention and the chooser: all strata).
+   *Takes from item 4 (Alec, 2026-10-19,
    [spec §3.1](doc/specs/2026-10-08-expectation-at-every-level.md#31-withdrawn-the-unfolding-by-inversion-rev-3--moved-to-item-3)):*
    the invertible-path program — exact inverted targets for the maps,
    sources going live, reconstruction retiring to an audit where the
@@ -793,7 +863,10 @@ not by a passing identity lesson.
    5.5" (FutureWork has it); the [catalogue](doc/specs/2026-09-29-operator-catalogue.md)
    §12 headings still say "(uncommitted)" and its table lists `bind` as
    open (decided, thought-loop plan §3–§4).
-- **1. Compiler work.** *Added 2026-10-04:* the open read of 6.8-1 made the
+- **1. Compiler work.** *Added 2026-10-20:* the generated math suite under
+   `RUN_SLOW` (item 3.5) is the compiler test at scale — compiled and eager
+   runs of the identical corpus, seed and budget agree in actions,
+   probabilities, costs and parameter updates. *Added 2026-10-04:* the open read of 6.8-1 made the
    whole forward 2.6× slower (.141 s against .055 s on the XOR fixture;
    [profile](doc/benchmarks/2026-10-03-operators-attention/attention-profile-review/measurement.json));
    Alec: "the slowdown will have to be addressed." *2026-10-09:* the

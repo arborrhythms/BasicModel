@@ -1,0 +1,17 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

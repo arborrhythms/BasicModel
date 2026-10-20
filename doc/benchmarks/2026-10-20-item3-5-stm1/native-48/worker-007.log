@@ -1,0 +1,18 @@
+.F.....                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_part_and_converse_executor_read_native_taxonomy_without_writes ______
+test/test_query_executors.py:66: in test_part_and_converse_executor_read_native_taxonomy_without_writes
+    assert result.evidence["path"][0].owner == ("sym", a)
+E   AssertionError: assert ('sym', 3) == ('sym', 1)
+E     
+E     At index 1 diff: 3 != 1
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes
+1 failed, 6 passed, 1 warning in 2.05s

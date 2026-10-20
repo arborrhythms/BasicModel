@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_priming_overlap.py::test_graph_and_meet_share_outflow_without_code_feedback_or_cross_streams",
+    "test/test_priming_overlap.py::test_meet_reads_reach_bank_through_bounded_part_walk_not_full_scan",
+    "test/test_priming_overlap.py::test_overlap_reads_recent_stm_symbols_in_their_own_stream",
+    "test/test_priming_overlap.py::test_part_neighbour_index_rebuilds_after_forgetting_and_load"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-53/worker-001.recycle.json"
+}

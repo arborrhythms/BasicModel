@@ -3,7 +3,7 @@ bias must backprop into the signal router's scorer parameters.
 
 Before this change, ``SymbolSubSpace._synthesize_rule_probs`` scattered unit
 mass onto the SELECTED (hard, argmax) rule-ids -- a DETACHED distribution,
-so ``IntraSentenceLayer.routing_proj(rule_probs)`` could not train the
+so a downstream projection of ``rule_probs`` could not train the
 router. The fix (``_synthesize_rule_probs_soft``) aggregates the router's
 SOFT per-space_role marginals cached in ``LanguageLayer._last_space_role_routings``
 (``unary action_probs`` apply columns + ``binary reduce_marginal_op``
@@ -105,7 +105,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
           * ``rule_probs.sum()`` is degenerate -- each L1-normalized row
             sums to a constant 1 -- so the bias is projected by a
             non-uniform map, exactly as the real
-            ``IntraSentenceLayer.routing_proj`` does.
+            a downstream rule-conditioned reader does.
           * The unary action scorer is a straight-through softmax; with
             random anchors it can SATURATE to one-hot, where
             ``d(softmax)/d(logits) ~= 0`` and the (real, connected)

@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-60/worker-006.recycle.json"
+}

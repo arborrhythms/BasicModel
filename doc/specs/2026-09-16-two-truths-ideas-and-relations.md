@@ -78,7 +78,7 @@ them, and what is a row at all**
   surprise acts on it as now. (The name says one slot, one concept — not
   "absolute as all concepts".) **LTM3** holds **three symbol references**
   — argument, kind, argument — so it remembers only known concepts; the
-  definition, attribution and conditional rows live here. **STM is STM1** (Alec, 2026-10-20): each of its entries (about eight) holds **one wide concept vector** — at the content width where the fold is invertible, item 3's `D ≈ c·k·log N`, derived now for STM only — plus the index of recent rows and the symbol activation field. The temporary identity of the open sentence is that wide vector, **invertible to its parts**, not a centroid; `bind`'s meet is computed on the wide vectors; the close narrows the wide vector to the LTM1 concept, so the expensive width lives only in STM's few entries and LTM stays at concept width. Identity content a lesson writes is therefore always recoverable by inversion, which is what the retired signed-chart artifacts lacked. **The path to a concept is
+  definition, attribution and conditional rows live here. **STM is STM1** (Alec, 2026-10-20): each of its entries (about eight) holds **one wide concept vector** — the full concept-space width of the composed value, not the codebook's symbol — plus the index of recent rows and the symbol activation field. The temporary identity of the open sentence is that wide vector; **it is computed in STM, may be reinterpreted, and is never written to LTM** (Alec, 2026-10-20), so nothing has to be reconstructed from it: it is a working object for `bind`, thought and output, and what persists is what the close writes — the narrowed LTM1 concept and the LTM2 edges from the derivation. No inversion gate applies to it, and item 3's content width stays item 3's. `bind`'s meet is computed on the wide vectors; a candidate no longer in STM compares at the width it was stored at (a minted symbol by its code, an unminted LTM1 row by containment at concept width), and recurrence is what buys the wide comparison back. Maps on the identity path (lift, lower) act through the chart so the cube is preserved and the meet is never fed a negative coordinate. **The path to a concept is
   recurrence in LTM1:** a row remembered several times (the store's
   re-witnessing count) is minted as a concept row and a symbol at the
   shared index — the type criterion of nested admission and the minting of
@@ -89,6 +89,12 @@ them, and what is a row at all**
   table below: no address columns). Psychologically LTM1 is the episodic trace
   and LTM3 the index over cortical codes (Tulving; Teyler & DiScenna),
   with minting on recurrence as consolidation.
+- **Shared identity and self-reference (Alec, 2026-10-20).** Several
+  references can tie to one identity present in STM1. They share its
+  finite wide concept vector; they do not recursively unfold it into
+  those references. A relation may therefore be self-referential.
+  Bounded readers report revisited occurrences without erasing the
+  relation, manufacturing evidence or banning the binding.
 - **The row, field by field (Alec, 2026-10-20; decided after a walk
   through every column of `TernaryTruthStore`).** The rule: LTM1 holds
   one concept and a `.when`; LTM3 holds three symbol references and a
@@ -151,6 +157,31 @@ them, and what is a row at all**
   rebuildable caches. (The earlier "storage note" and "identity column"
   paragraphs above are superseded by this table where they differ: LTM1
   carries **no identity**; identity needs LTM3's separate S, V, O.)
+- **LTM2, one relation (Alec, 2026-10-20; supersedes "LTM3" and the
+  three-position row above).** A relation is **two symbol references
+  and the truth pair**: `Part(x, y)`, with `.when`, the access count and
+  `surprise`. There is one relation. Its reading comes from the **types
+  of its arguments**, not from a stored kind and not from retrieval
+  context alone: two situations is a conditional (implication is
+  containment, thinking spec §2); a situation and a speech individual
+  (the verb's after-state, "what Alec said") is an attribution; an object
+  and a word is a definition (the object a member of what the word
+  names); two kinds is subsumption; equality is membership in a
+  singleton. Retrieval context chooses among the readings the arguments
+  permit. So the "kind" position disappears and **LTM2 and the taxonomy
+  over symbols are one structure**: Part edges with evidence are
+  membership evidence (orders are fuzzy sets of symbols, membership by
+  evidence per set); the meronomy at order 0 is the perceptual case.
+  Yesterday's distinction between "folds in the main tree" and "rows in
+  LTM3" collapses into this one store. **Pairs are the derivation's,
+  not STM's:** STM1 holds the constituents' wide vectors; the operation
+  that composed two of them (its argument roles) says which is the part
+  and which the whole; at the close each operation writes one edge, with
+  its arguments minted as symbols (an S that is an argument of a relation
+  is minted at the close; an unreferenced idea stays an unminted LTM1 row
+  until recurrence). Nesting is the derivation's nesting: an inner edge's
+  result is minted and becomes an argument of the outer edge. STM's
+  capacity (about eight) bounds what can be open at once.
 - **The definition index is a cache.** Definitions are LTM rows (as
   `Interpret.define` already writes them: `rel_type = REL_DEF`, refs
   `[word, −1, obj]`); `cs.definitions` is a cache over those rows for fast

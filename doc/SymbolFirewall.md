@@ -19,6 +19,58 @@ order, where persistent state has extent/intent structure, and DisCoCat-like
 grammar composition, where semantic mutations are typed operations over known
 units. The firewall requires those units to remain inspectable.
 
+## Two spaces, two metrics, one index: the bifurcation is complete (Alec, 2026-10-20)
+
+Alec: "the centroid definition of parts and wholes from order zero symbols
+can continue into higher order symbols, but the conceptual space is not
+shared with perceptual space; it is a similarity space where the metric is
+not conditioned by distances between objects in the physical world. And
+that bifurcation needs to be complete; we don't want leakage."
+
+- **Perceptual space** (PartSpace and WholeSpace, the [0, 1] percept cube
+  under the meronomy) holds **forms**. A word form's code is the fold of
+  its letters and letter-wholes; its metric is overlap of form. It
+  identifies *which word* (step 1 of the identity staircase: the same form
+  is the same word symbol) and nothing about meaning. "cat" is near "cot"
+  here and that is all it is for.
+- **Conceptual space** holds **meanings**. It is a similarity space placed
+  by context (the registered priming surface, SBOW), with its own cube and
+  its own meet; its metric is never conditioned by form or by physical
+  distance. "cat" is near "dog" here. The centroid definition continues
+  upward in *this* space: a kind is the fold over its members, an
+  individual the fold over its occurrences, a higher-order symbol's
+  concept the fold over the concepts it collects — the conceptual
+  mereology (a cat's parts; the taxonomy's kinds), a second tree, not the
+  perceptual one.
+- **The symbol index is the only link.** A symbol has a form in the one
+  space and a meaning in the other, tied at the shared index (word DEF
+  object). Nothing else crosses: no metric, no gradient, no fold reads
+  across the boundary. Any computation that compared a form code with a
+  meaning code, or let letter overlap move a meaning, or let meaning move
+  a form code, is leakage and a defect.
+- **Psychological standing.** Two stores linked by an entry is the
+  settled picture of lexical access: Levelt's lemma and lexeme, the form
+  lexicons against the semantic system, a form-specific visual word form
+  area (Dehaene & Cohen); double dissociations (semantic dementia spares
+  regular reading; deep dyslexia reads "cat" as "dog"; surface dyslexia
+  the reverse); the tip-of-the-tongue state (Brown & McNeill 1966) as a
+  link that fails between two intact stores; separable form and semantic
+  priming. The qualification: humans show small form–meaning
+  *interaction* — mixed errors above chance (Dell 1986), sound symbolism,
+  a small reliable form–meaning systematicity (Monaghan et al. 2014).
+  That is shared **activation**, not a shared **metric**: form activates
+  its symbol, the symbol primes its meaning, the meaning's neighbours
+  prime their symbols and forms — the priming surface over the symbol
+  index does exactly this and would produce mixed errors with no geometry
+  crossing. The architecture is Levelt on representation and Dell on
+  dynamics, which is where the field settled.
+- **Consequences for the decided mechanisms.** `bind`'s content term, the
+  conceptual diffusion channel of the priming surface, placement by the
+  registered surface, and the two identity models (intersection, union)
+  are all **in conceptual space**. The perceptual fold enters identity
+  only as form identification (the word symbol). Where earlier text says
+  "the cube" for these, read the conceptual cube.
+
 ## Principle
 
 > All computation must be composed over known, typed, introspectable units —

@@ -26,11 +26,19 @@ def test_direct_and_depth_one_two_chains_keep_native_premises(hops):
     for a, b in zip(refs[:hops], refs[1:hops + 1]):
         model.conceptualSpace.add_whole(a[1], b)
     query = registry.form('isPart', refs[0], refs[hops])
+    from reasoning import QuerySpec, TruthGroundedReasoner
+    proof = TruthGroundedReasoner(model).evaluate(
+        QuerySpec.from_surface('isPart', refs[0], refs[hops]))
+    assert len(proof['path']) == hops
     result = model.reason_about(query)
     assert result.posture == 'TRUE' and result.support_true == 1
-    assert len(result.result.evidence['path']) == hops
-    assert len(store) == 1 and store.row(0)['kind']=='inference'
-    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
+    # Direct membership can already be the retained conclusion. A proved
+    # chain adds that same native Part edge, not a second LTM1 relation.
+    edge = store.parts.find(refs[0][1], refs[hops][1])
+    assert edge is not None and store.parts.truth_plus[edge] == 1
+    assert len(store) == 0
+    if hops > 1:
+        model.conceptualSpace.retire_concept(edge)
     model.conceptualSpace.retire_concept(refs[1][1])
     if hops > 1:
         assert model.reason_about(query).posture == 'UNKNOWN'
@@ -70,8 +78,10 @@ def test_concluding_without_evidence_is_illegal_while_work_remains(monkeypatch):
 def test_world_refutation_or_conflict_never_closes_taxonomy_false(trusts):
     model, registry, store, (a, b, _c, _d) = _world()
     for trust in trusts:
-        store.append_relation(registry._payload(a), torch.zeros(8), registry._payload(b),
-                              rel_type=store.REL_PARTOF, trust=trust)
+        from Meaning import ConceptualMeaning
+        store.append_meaning(ConceptualMeaning.from_payload(torch.stack((
+            registry._payload(a), torch.zeros(8), registry._payload(b))),
+            depth=3, layout='infix'), kind='fact', trust=trust)
     result = model.reason_about(registry.form('isPart', a, b))
     assert result.posture == 'UNKNOWN'
     assert result.support_true == result.support_false == 0

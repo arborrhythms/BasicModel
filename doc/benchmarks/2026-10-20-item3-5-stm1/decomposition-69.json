@@ -1,0 +1,410 @@
+[
+  {
+    "arm": "zero",
+    "successors": 1,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "0",
+    "pair": [
+      3,
+      1
+    ],
+    "question_source": 3,
+    "episode": true,
+    "work": 198,
+    "answer": "four",
+    "bound_correct": false,
+    "committed_binding": [
+      "ltm",
+      "address-v1",
+      8233773193181494240
+    ],
+    "open": [],
+    "expected_chain_length": 1,
+    "inference_count": 1,
+    "chain_correct": false,
+    "inferences": [
+      {
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          8233773193181494240
+        ],
+        "refs": [
+          [
+            "sym",
+            50
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "sym",
+            39
+          ]
+        ],
+        "open": [],
+        "operation": "query",
+        "witnesses": [
+          [
+            "sym",
+            51
+          ]
+        ],
+        "known_witnesses": false,
+        "witness_texts": [
+          null
+        ],
+        "bound_words": []
+      }
+    ],
+    "operations": [
+      "query",
+      "ask",
+      "query",
+      "conclude",
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "zero",
+    "successors": 1,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "1",
+    "pair": [
+      3,
+      1
+    ],
+    "question_source": 7,
+    "episode": true,
+    "work": 198,
+    "answer": "four",
+    "bound_correct": false,
+    "committed_binding": [
+      "ltm",
+      "address-v1",
+      8759396745278225620
+    ],
+    "open": [],
+    "expected_chain_length": 1,
+    "inference_count": 1,
+    "chain_correct": false,
+    "inferences": [
+      {
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          8759396745278225620
+        ],
+        "refs": [
+          [
+            "sym",
+            62
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "sym",
+            52
+          ]
+        ],
+        "open": [],
+        "operation": "query",
+        "witnesses": [
+          [
+            "sym",
+            63
+          ]
+        ],
+        "known_witnesses": false,
+        "witness_texts": [
+          null
+        ],
+        "bound_words": []
+      }
+    ],
+    "operations": [
+      "query",
+      "ask",
+      "query",
+      "conclude",
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "zero",
+    "successors": 2,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "0",
+    "pair": [
+      3,
+      2
+    ],
+    "question_source": 5,
+    "episode": true,
+    "work": 70,
+    "answer": "five",
+    "bound_correct": false,
+    "committed_binding": null,
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "expected_chain_length": 2,
+    "inference_count": 0,
+    "chain_correct": false,
+    "inferences": [],
+    "operations": [
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "zero",
+    "successors": 2,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "1",
+    "pair": [
+      3,
+      2
+    ],
+    "question_source": 11,
+    "episode": true,
+    "work": 70,
+    "answer": "five",
+    "bound_correct": false,
+    "committed_binding": null,
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "expected_chain_length": 2,
+    "inference_count": 0,
+    "chain_correct": false,
+    "inferences": [],
+    "operations": [
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "enabled",
+    "successors": 1,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "0",
+    "pair": [
+      3,
+      1
+    ],
+    "question_source": 3,
+    "episode": true,
+    "work": 198,
+    "answer": "four",
+    "bound_correct": false,
+    "committed_binding": [
+      "ltm",
+      "address-v1",
+      1350068461454141319
+    ],
+    "open": [],
+    "expected_chain_length": 1,
+    "inference_count": 1,
+    "chain_correct": false,
+    "inferences": [
+      {
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          1350068461454141319
+        ],
+        "refs": [
+          [
+            "sym",
+            50
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "sym",
+            39
+          ]
+        ],
+        "open": [],
+        "operation": "query",
+        "witnesses": [
+          [
+            "sym",
+            51
+          ]
+        ],
+        "known_witnesses": false,
+        "witness_texts": [
+          null
+        ],
+        "bound_words": []
+      }
+    ],
+    "operations": [
+      "query",
+      "ask",
+      "query",
+      "conclude",
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "enabled",
+    "successors": 1,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "1",
+    "pair": [
+      3,
+      1
+    ],
+    "question_source": 7,
+    "episode": true,
+    "work": 198,
+    "answer": "four",
+    "bound_correct": false,
+    "committed_binding": [
+      "ltm",
+      "address-v1",
+      2207303883209970409
+    ],
+    "open": [],
+    "expected_chain_length": 1,
+    "inference_count": 1,
+    "chain_correct": false,
+    "inferences": [
+      {
+        "occurrence": [
+          "ltm",
+          "address-v1",
+          2207303883209970409
+        ],
+        "refs": [
+          [
+            "sym",
+            62
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "sym",
+            52
+          ]
+        ],
+        "open": [],
+        "operation": "query",
+        "witnesses": [
+          [
+            "sym",
+            63
+          ]
+        ],
+        "known_witnesses": false,
+        "witness_texts": [
+          null
+        ],
+        "bound_words": []
+      }
+    ],
+    "operations": [
+      "query",
+      "ask",
+      "query",
+      "conclude",
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "enabled",
+    "successors": 2,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "0",
+    "pair": [
+      3,
+      2
+    ],
+    "question_source": 5,
+    "episode": true,
+    "work": 70,
+    "answer": "five",
+    "bound_correct": false,
+    "committed_binding": null,
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "expected_chain_length": 2,
+    "inference_count": 0,
+    "chain_correct": false,
+    "inferences": [],
+    "operations": [
+      "query",
+      "conclude"
+    ]
+  },
+  {
+    "arm": "enabled",
+    "successors": 2,
+    "epoch": 1,
+    "phase": "ordinary_certificate",
+    "split": "train",
+    "document": "1",
+    "pair": [
+      3,
+      2
+    ],
+    "question_source": 11,
+    "episode": true,
+    "work": 70,
+    "answer": "five",
+    "bound_correct": false,
+    "committed_binding": null,
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "expected_chain_length": 2,
+    "inference_count": 0,
+    "chain_correct": false,
+    "inferences": [],
+    "operations": [
+      "query",
+      "conclude"
+    ]
+  }
+]

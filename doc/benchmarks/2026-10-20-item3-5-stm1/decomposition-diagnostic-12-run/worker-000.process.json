@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-diagnostic-12-run/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-diagnostic-12-run/worker-000.json"
+  ],
+  "pid": 53636,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1809582456,
+  "elapsed_seconds": 45.86308062495664,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-diagnostic-12-run/worker-000.log"
+}

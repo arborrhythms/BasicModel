@@ -1,0 +1,41 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 55.13675362500362,
+      "message": "test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver\n    assert proved, questions\nE   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]\nE   assert []",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 2 (\u0394=9.849s)\r\nbatch = 4 (\u0394=12.657s)\r\nbatch = 6 (\u0394=23.656s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 1], \"question_source\": 3, \"episode\": true, \"work\": 250, \"answer\": \"four\", \"bound_correct\": false, \"committed_binding\": [\"ltm\", \"address-v1\", 6759416728918330626], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": false, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", 6759416728918330626], \"refs\": [[\"sym\", 56], [\"sym\", 4010033338316264258], [\"sym\", 43]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 57]], \"known_witnesses\": false, \"witness_texts\": [null], \"bound_words\": []}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 1], \"question_source\": 7, \"episode\": true, \"work\": 250, \"answer\": \"four\", \"bound_correct\": false, \"committed_binding\": [\"ltm\", \"address-v1\", -9171067772000023307], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": false, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -9171067772000023307], \"refs\": [[\"sym\", 71], [\"sym\", 4010033338316264258], [\"sym\", 58]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 72]], \"known_witnesses\": false, \"witness_texts\": [null], \"bound_words\": []}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 78.2284065419808,
+      "message": "test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver\n    assert proved, questions\nE   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]\nE   assert []",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 2 (\u0394=9.976s)\r\nbatch = 4 (\u0394=14.612s)\r\nbatch = 6 (\u0394=12.300s)\r\nbatch = 8 (\u0394=12.299s)\r\nbatch = 10 (\u0394=21.843s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 2], \"question_source\": 5, \"episode\": true, \"work\": 82, \"answer\": \"five\", \"bound_correct\": false, \"committed_binding\": null, \"open\": [[\"referent\", 0]], \"expected_chain_length\": 2, \"inference_count\": 0, \"chain_correct\": false, \"inferences\": [], \"operations\": [\"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 2], \"question_source\": 11, \"episode\": true, \"work\": 82, \"answer\": \"five\", \"bound_correct\": false, \"committed_binding\": null, \"open\": [[\"referent\", 0]], \"expected_chain_length\": 2, \"inference_count\": 0, \"chain_correct\": false, \"inferences\": [], \"operations\": [\"query\", \"conclude\"]}\n\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

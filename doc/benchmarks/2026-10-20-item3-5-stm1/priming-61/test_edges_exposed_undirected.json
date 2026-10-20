@@ -1,0 +1,11 @@
+{
+  "test": "test/test_priming_energy.py::test_edges_exposed_undirected",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

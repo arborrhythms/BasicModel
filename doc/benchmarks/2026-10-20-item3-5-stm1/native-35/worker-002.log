@@ -1,0 +1,45 @@
+..F............................................F..F..F.                  [100%]
+=================================== FAILURES ===================================
+___ test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows ___
+test/test_existence_metadata.py:65: in test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+    assert all(candidate['support_true'] == candidate['support_false'] == 0
+test/test_existence_metadata.py:65: in <genexpr>
+    assert all(candidate['support_true'] == candidate['support_false'] == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'support_true'
+_________________ TestGrammarOps.test_query_idea_and_relation __________________
+test/test_truth_grounded_reasoning.py:188: in test_query_idea_and_relation
+    self.assertEqual(rel["kind"], "relation")
+                     ^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________________ TestPostureAndTrace.test_direct_trace_rendered ________________
+test/test_truth_grounded_reasoning.py:227: in test_direct_trace_rendered
+    self.assertEqual(res["path"][0].owner, a)
+E   AssertionError: Tuples differ: ('sym', 5) != ('sym', 1)
+E   
+E   First differing element 1:
+E   5
+E   1
+E   
+E   - ('sym', 5)
+E   ?         ^
+E   
+E   + ('sym', 1)
+E   ?         ^
+________ TestLegacyConsolidation.test_reason_open_mode_unchanged_shape _________
+test/test_truth_grounded_reasoning.py:240: in test_reason_open_mode_unchanged_shape
+    TernaryTruthStore.REL_PARTOF)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'TernaryTruthStore' has no attribute 'REL_PARTOF'
+=============================== warnings summary ===============================
+test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+FAILED test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation
+FAILED test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered
+FAILED test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape
+4 failed, 51 passed, 1 warning in 5.27s

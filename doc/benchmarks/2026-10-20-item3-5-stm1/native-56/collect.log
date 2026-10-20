@@ -1,0 +1,3 @@
+test/test_part_store.py::test_definition_cannot_answer_identity_query_with_its_singleton_word
+
+1 test collected in 0.84s

@@ -1,0 +1,11 @@
+{
+  "test": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 19/19 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0024484999012202024</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.3130815830081701</pre></td><td><pre>test/test_forgetting.py:347: in test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads
+    document(&#x27;first&#x27;, [&#x27;cat&#x27;, &#x27;dog&#x27;, &#x27;bird&#x27;, &#x27;horse&#x27;] * 2)
+test/test_forgetting.py:337: in document
+    model.runBatch(train=False, batchSize=1, split=&#x27;validation&#x27;,
+bin/Models.py:13475: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13631: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14007: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10089: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23724: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17060: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22276: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21846: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20965: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20283: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:173: in _append_observed_meaning
+    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:478: in write_clause
+    raise OverflowError(&#x27;LTM1 capacity exhausted before clause admission&#x27;)
+E   OverflowError: LTM1 capacity exhausted before clause admission</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>32.04358070809394</pre></td><td><pre>test/test_operators_final_b.py:165: in test_both_training_trials_share_bootstrap_snapshot
+    assert not audit[&#x27;components&#x27;][..., 0].any()
+E   assert not tensor(True)
+E    +  where tensor(True) = &lt;built-in method any of Tensor object at 0x12da67ca0&gt;()
+E    +    where &lt;built-in method any of Tensor object at 0x12da67ca0&gt; = tensor([[0.1000, 0.0000],\n        [0.1000, 0.0000],\n        [0.0000, 0.1000],\n        [0.1000, 0.0000]]).any</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 31.695s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.317s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.316s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.016691124998033047</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.9144951249472797</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.25675800000317395</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>171.70426129200496</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>29.00139220803976</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.08314479095861316</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.17296733404509723</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.1703210829291493</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.05336079210974276</pre></td><td><pre></pre></td><td><pre>Canonical fullgraph compile: lazy fused tensor word-loop lowering on cuda with fixed capacity and residual-part axes
+</pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.018993332982063293</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003840408753603697</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>53.4235916249454</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view</pre></td><td><pre>setup</pre></td><td><pre>skipped</pre></td><td><pre>0.00018133316189050674</pre></td><td><pre>(&#x27;/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py&#x27;, 783, &#x27;Skipped: requires explicit slow MPS Inductor run&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]</pre></td><td><pre>setup</pre></td><td><pre>skipped</pre></td><td><pre>0.00010304083116352558</pre></td><td><pre>(&#x27;/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py&#x27;, 838, &#x27;Skipped: requires explicit slow MPS Inductor run&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]</pre></td><td><pre>setup</pre></td><td><pre>skipped</pre></td><td><pre>9.837513789534569e-05</pre></td><td><pre>(&#x27;/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py&#x27;, 838, &#x27;Skipped: requires explicit slow MPS Inductor run&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.195113749941811</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

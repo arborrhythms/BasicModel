@@ -1,0 +1,161 @@
+{
+  "test": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+  "events": 2,
+  "overlap_events": 1,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 66,
+  "max_sources": 5,
+  "max_part_reads": 32,
+  "max_candidates": 28,
+  "max_comparisons": 135,
+  "max_overlap_edges": 0,
+  "truncated_frontiers": 8,
+  "nonzero_overlap_transfers": 0,
+  "projections": [
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [
+            22,
+            28,
+            34,
+            40,
+            46,
+            52,
+            58,
+            64
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [
+            22,
+            28,
+            34,
+            40,
+            46,
+            52,
+            58,
+            64
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 66,
+          "row": 57,
+          "objects": [
+            69,
+            82,
+            94,
+            106,
+            118,
+            130,
+            142,
+            154
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 67,
+          "row": 58,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 68,
+          "row": 59,
+          "objects": [
+            74,
+            87,
+            99,
+            111,
+            123,
+            135,
+            147,
+            159
+          ],
+          "objectless": false,
+          "pending": false
+        }
+      ]
+    }
+  ]
+}

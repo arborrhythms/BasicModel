@@ -1,0 +1,109 @@
+..FFF....FFFF                                                            [100%]
+=================================== FAILURES ===================================
+__________________________ test_untrained_is_identity __________________________
+test/test_verb_spectrum.py:82: in test_untrained_is_identity
+    assert torch.allclose(lyr.apply_verb(np_, verb), np_, atol=1e-5)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____________________ test_roundtrip_exact_and_nontrivial ______________________
+test/test_verb_spectrum.py:94: in test_roundtrip_exact_and_nontrivial
+    vp = lyr.apply_verb(np_, verb)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________________________ test_per_verb_differentiation _________________________
+test/test_verb_spectrum.py:110: in test_per_verb_differentiation
+    lyr.apply_verb(np_, verb_a), lyr.apply_verb(np_, verb_b), atol=1e-4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0] ____
+test/test_verb_spectrum.py:228: in test_low_precision_exact_rails_have_finite_forward_and_backward
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1] ____
+test/test_verb_spectrum.py:228: in test_low_precision_exact_rails_have_finite_forward_and_backward
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0] ____
+test/test_verb_spectrum.py:257: in test_low_precision_roundtrip_is_accurate_to_output_quantization
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1] ____
+test/test_verb_spectrum.py:257: in test_low_precision_roundtrip_is_accurate_to_output_quantization
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=========================== short test summary info ============================
+FAILED test/test_verb_spectrum.py::test_untrained_is_identity - RuntimeError:...
+FAILED test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial - Runt...
+FAILED test/test_verb_spectrum.py::test_per_verb_differentiation - RuntimeErr...
+FAILED test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]
+FAILED test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]
+FAILED test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]
+FAILED test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]
+7 failed, 6 passed in 4.25s

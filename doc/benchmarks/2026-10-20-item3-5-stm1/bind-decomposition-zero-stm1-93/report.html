@@ -1,0 +1,79 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>43.88211533310823</pre></td><td><pre>test/test_math_chain_decomposition.py:17: in test_forced_native_decomposition_through_training_driver
+    report = fixture.run(folder, successors)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py:159: in run
+    rows = train_documents(model, documents, folder, after=after, episode=episode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:77: in train_documents
+    present(model, split=&#x27;train&#x27;, optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+doc/benchmarks/2026-10-20-item3-5-stm1/forced_decomposition_grammar.py:40: in run_batch
+    return batch(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13475: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13631: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14007: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10089: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23739: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17060: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22291: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21861: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20980: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20338: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:110: in close
+    result = model.run_selected_thought(field.query, row=row,
+test/math_chain_ordinary.py:54: in observe_episode
+    return episode(original, model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py:137: in episode
+    assert not unexpected, unexpected
+           ^^^^^^^^^^^^^^
+E   AssertionError: [&#x27;conceptualSpaces.0.concept_parts_layer._constituents&#x27;, &#x27;symbolSpace.languageSpace.parts_of_speech.counts&#x27;, &#x27;symbolSpace.languageSpace.parts_of_speech.labels&#x27;]</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 2 (Δ=8.734s)
+batch = 4 (Δ=12.024s)
+</pre></td></tr><tr><td><pre>test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>74.48492650012486</pre></td><td><pre>test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver
+    assert proved, questions
+E   AssertionError: [{&#x27;epoch&#x27;: 1, &#x27;phase&#x27;: &#x27;ordinary_certificate&#x27;, &#x27;split&#x27;: &#x27;train&#x27;, &#x27;document&#x27;: &#x27;0&#x27;, ...}, {&#x27;epoch&#x27;: 1, &#x27;phase&#x27;: &#x27;ordinary_certificate&#x27;, &#x27;split&#x27;: &#x27;train&#x27;, &#x27;document&#x27;: &#x27;1&#x27;, ...}]
+E   assert []</pre></td><td><pre>batch = 0 (warm-up)
+batch = 2 (Δ=9.002s)
+batch = 4 (Δ=14.043s)
+batch = 6 (Δ=11.728s)
+batch = 8 (Δ=12.384s)
+batch = 10 (Δ=20.906s)
+{&quot;epoch&quot;: 1, &quot;phase&quot;: &quot;ordinary_certificate&quot;, &quot;split&quot;: &quot;train&quot;, &quot;document&quot;: &quot;0&quot;, &quot;pair&quot;: [3, 2], &quot;question_source&quot;: 5, &quot;episode&quot;: true, &quot;work&quot;: 81, &quot;answer&quot;: &quot;five&quot;, &quot;bound_correct&quot;: false, &quot;committed_binding&quot;: null, &quot;open&quot;: [[&quot;referent&quot;, 0]], &quot;expected_chain_length&quot;: 2, &quot;inference_count&quot;: 0, &quot;chain_correct&quot;: false, &quot;inferences&quot;: [], &quot;operations&quot;: [&quot;query&quot;, &quot;conclude&quot;]}
+{&quot;epoch&quot;: 1, &quot;phase&quot;: &quot;ordinary_certificate&quot;, &quot;split&quot;: &quot;train&quot;, &quot;document&quot;: &quot;1&quot;, &quot;pair&quot;: [3, 2], &quot;question_source&quot;: 11, &quot;episode&quot;: true, &quot;work&quot;: 81, &quot;answer&quot;: &quot;five&quot;, &quot;bound_correct&quot;: false, &quot;committed_binding&quot;: null, &quot;open&quot;: [[&quot;referent&quot;, 0]], &quot;expected_chain_length&quot;: 2, &quot;inference_count&quot;: 0, &quot;chain_correct&quot;: false, &quot;inferences&quot;: [], &quot;operations&quot;: [&quot;query&quot;, &quot;conclude&quot;]}
+
+</pre></td></tr></table></body></html>

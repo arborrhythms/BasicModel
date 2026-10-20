@@ -30,16 +30,16 @@ def named_compose_sequence(language, rule_ids, arities, positions):
 
 def compose_derivations(model, state, sid, active, *, record=None):
     lang = state[1]
-    owners, _, _ = model._compose_round_owners(lang[4])
+    owners, _, _ = model._compose_round_owners(lang[1])
     if record is None:
         record = model._last_sentence_understanding
     result = []
     for row in active.nonzero().flatten().tolist():
-        valid = lang[6][row] & (owners[row] == sid)
+        valid = lang[3][row] & (owners[row] == sid)
         sequence = named_compose_sequence(model.languageSpace,
-            lang[4][row][valid].detach().cpu().tolist(),
-            lang[5][row][valid].detach().cpu().tolist(),
-            lang[17][row][valid].detach().cpu().tolist())
+            lang[1][row][valid].detach().cpu().tolist(),
+            lang[2][row][valid].detach().cpu().tolist(),
+            lang[14][row][valid].detach().cpu().tolist())
         result.append(dict(batch_row=row, sentence_slot=int(sid),
             word_rows=record.word_rows[row][record.word_valid[row]].detach().cpu().tolist(),
             sequence=sequence))
@@ -67,7 +67,7 @@ def named_walk_observations(model):
         if row['kind'] == 'compose':
             # The stability trace uses flattened placement candidates (and
             # STOP), not grammar IDs. Full named rule/position sequences are
-            # recorded from lang[4:7], lang[17] at the trial and commit boundary.
+            # recorded from lang[1:4], lang[14] at the trial and commit boundary.
             row['action_encoding'] = 'flattened placement candidates, not rule IDs'
             row['rule_catalogue'] = list(catalogue.values())
         elif row['kind'] in ('generate.decoder', 'generate'):

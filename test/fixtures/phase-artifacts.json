@@ -1,21 +1,9 @@
 {
   "schema": 1,
   "phases": {
-    "stage3": {
-      "path": "output/stage4e-student-order-20261017/order.ckpt",
-      "sha256": "e19d84e8e7086da3bcf5678700c4047d3f22c1c9d1ed78146982f028e5d1e644",
-      "receipt": "doc/benchmarks/2026-10-17-stage4e-student-states/README.md"
-    },
-    "np_definite": {
-      "path": "output/np-definite-restored-20261018/trained.ckpt",
-      "sha256": "b52392d9fc05734fd6a546ef9547d642e4be9d33f77a350eda1c13335340cafa",
-      "receipt": "doc/benchmarks/2026-10-18-parts-of-speech/README.md"
-    },
-    "np_description": {
-      "path": "output/np-description-flow-20261018/trained.ckpt",
-      "sha256": "33b2d3e87b9b16844a42c69881cc2a195a2a9cd8aa731e81e58bd3e3c21cf3e0",
-      "receipt": "doc/benchmarks/2026-10-19-np-continuation/README.md"
-    },
+    "stage3": null,
+    "np_definite": null,
+    "np_description": null,
     "fineweb": null,
     "copular_identity": null,
     "stage4e": null

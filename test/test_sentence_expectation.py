@@ -262,7 +262,7 @@ def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch, eag
     model.provision_ltm()
     assert not bound
     store = model.symbolSpace.ltm_store
-    assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) == 3
+    assert len(store) == 3
     assert not any(discourse._inter_context)
     assert model.symbolSpace.expectation.expect_next_meaning() is None
 

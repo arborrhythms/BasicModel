@@ -17,6 +17,8 @@ from test_cs_symbol_table import _cs
 
 def world():
     cs = _cs()
+    with torch.no_grad():
+        cs.similarity_codebook.W.copy_(cs.similarity_codebook.W.sigmoid())
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
@@ -29,6 +31,8 @@ def world():
     model.spaces = []
     model.eval()
     model.attention_budget = 64
+    from ClauseRow import attach_clause_index
+    attach_clause_index(model, store, cs)
     object.__setattr__(model, 'conceptualSpace', cs)
     object.__setattr__(model, 'grammatical_thoughts', registry)
     object.__setattr__(model, 'symbolSpace', SimpleNamespace(ltm_store=store,
@@ -47,8 +51,7 @@ def run(model, q, **kwargs):
 def chain_world(monkeypatch):
     model, registry, store, (a,b,c) = world()
     for left,right in ((a,b),(b,c)):
-        store.append_meaning(registry.form('part',left,right,mode='assertive'),
-            kind='fact', rel_type=store.REL_PARTOF, evidence=(1.,0.),trust=1.)
+        store.append_relation(left[1], right[1], truth_plus=1.)
     chosen=[]
     def choose(root,active,actions,**kwargs):
         if None in actions:
@@ -71,9 +74,10 @@ def test_chain_two_queries_one_conclusion_and_both_witnesses(monkeypatch):
     assert [r.operation for r in result.records if r.kind=='thought']==['query','query','conclude']
     assert len(chosen)==2 and not open_slots(result.meaning)
     assert evidence_pair(result.meaning)==(1.,0.)
-    saved=store.row(2)
-    assert saved['kind']=='inference'
-    assert set(bindings(saved['meaning'])['_thought_witnesses'])=={store.occurrence_of(0),store.occurrence_of(1)}
+    saved=store.part_row(store.parts.find(a[1],c[1]))
+    assert saved['evidence']==(1.,0.)
+    assert set(bindings(result.meaning)['_thought_witnesses'])=={
+        ('sym',store.parts.find(a[1],b[1])),('sym',store.parts.find(b[1],c[1]))}
     assert saved['meaning'].role_refs[0]==a and saved['meaning'].role_refs[2]==c
 
 
@@ -201,9 +205,10 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
 def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     model,registry,store,(p,q,_)=world()
     premise=replace(ConceptualMeaning.from_description(registry._payload(p)),role_refs=(p,None,None))
-    store.append_meaning(premise,kind='fact',evidence=(.8,.2))
-    store.append_meaning(registry.form('implies',p,q,mode='assertive'),kind='fact',
-        rel_type=store.REL_IMPLIES,evidence=(.9,0.))
+    source=store.append_meaning(premise,kind='fact',evidence=(.8,.2))
+    for ref in (p,q):
+        model.conceptualSpace._concept_allocator.symbol_types.setdefault(ref[1],set()).add('situation')
+    rule=store.append_relation(p[1],q[1],truth_plus=.9)
     chosen=[]
     def choose(root,active,actions,**kwargs):
         if None in actions:return None
@@ -218,8 +223,8 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     result=run(model,registry.form('isImplied',p,q),work_budget=64)
     assert len(chosen)==2
     assert evidence_pair(result.meaning)==pytest.approx((.8,0.))
-    assert set(bindings(result.meaning)['_thought_witnesses'])=={store.occurrence_of(0),store.occurrence_of(1)}
-    assert store.row(2)['kind']=='inference'
+    assert set(bindings(result.meaning)['_thought_witnesses'])=={store.occurrence_of(source),rule}
+    assert store.part_row(rule[1])['evidence']==pytest.approx((.9,0.))
 
 
 def test_expectation_only_credit_does_not_enter_departure_comparison():
@@ -242,12 +247,13 @@ def credit_chain_world(monkeypatch):
     from Queries import ThoughtOperationCandidate
     model, registry, store, (a,b,c) = world()
     for left,right in ((a,b),(b,c)):
-        store.append_meaning(registry.form('part',left,right,mode='assertive'),
-            kind='fact', rel_type=store.REL_PARTOF, evidence=(1.,0.))
+        store.append_relation(left[1], right[1], truth_plus=1.)
     goal=registry.form('isPart',a,c)
     def candidate(name, meaning):
         return ThoughtOperationCandidate(registry.operation_spec(name),meaning,())
-    direct=candidate('isPart',goal)
+    # The common store exposes the forward transitive relation to the
+    # conceptual reader too. The reverse direction is the known wrong trial.
+    direct=candidate('isPart',registry.form('isPart',c,a))
     first=candidate('query',registry.form('query',query_pattern(goal,'part',a,None)))
     second=candidate('query',registry.form('query',query_pattern(goal,'part',b,c)))
     def menu(registry,root,active,current,records,descriptions=()):
@@ -284,7 +290,7 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     learned=run(model,goal,work_budget=64)
     assert [r.operation for r in learned.records if r.kind=='thought']==['query','query','conclude']
     assert not open_slots(learned.meaning)
-    assert store.row(len(store)-1)['kind']=='inference'
+    assert store.part_row(store.parts.find(goal.role_refs[0][1],goal.role_refs[2][1]))['evidence']==(1.,0.)
 
 
 def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch):
@@ -331,7 +337,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     from ClauseRow import Clause
     from Understanding import SentenceEndState
     model,registry,store,(a,b,c)=world()
-    source=ConceptualMeaning.from_description(torch.arange(8.).float())
+    source=ConceptualMeaning.from_description(torch.linspace(0.,1.,8))
     clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
     parsed=replace(source,mode='interrogative') if surface!='unicorn' else None
     q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))
@@ -346,17 +352,22 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     assert len(model._last_closing_thoughts)==1
     # A new occurrence can fill the earlier null. Its source address remains
     # distinct from the question's address and from the new inference.
-    supplied=with_slots(replace(source,role_refs=(a,None,None)),(),pair=(1.,0.))
-    index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),sentence_index=1)
+    supplied=with_slots(replace(source,role_refs=(b,None,None)),(),pair=(1.,0.))
+    copular=registry.form('equal',a,b,mode='assertive')
+    copular=with_slots(replace(copular,role_refs=(None,copular.role_refs[1],b),
+        bindings=dict(bindings(copular),_equality=True,_forward_references=((0,a[1]),))),
+        (('referent',0),),pair=(1.,0.))
+    index=store.append_meaning(copular,kind='observation',evidence=(1.,0.),
+        stream=0,sentence_index=1)
     address=store.occurrence_of(0)
-    completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
-    assert completed==(0,)
     assert store.occurrence_of(0)==address
     assert not open_slots(store.meaning_of(0))
+    assert store.meaning_of(0).role_refs[0]==b
+    assert open_slots(store.raw_meaning_of(0))
     assert store.occurrence_of(index) in bindings(store.meaning_of(0))['_thought_witnesses']
     assert not hasattr(model,'_open_thought_rows')
     # Reusing the same surface after a successful binding opens no episode.
-    bound_clause=Clause(supplied,point=supplied.roles[0],refs=(a[1],-1,-1),evidence=(1.,0.))
+    bound_clause=Clause(supplied,point=supplied.roles[0],refs=(b[1],-1,-1),evidence=(1.,0.))
     assert closing_question(supplied,bound_clause,replace(supplied,mode='interrogative'),
         SimpleNamespace(lexical_forms=(surface,))) is None
 
@@ -375,52 +386,51 @@ def test_answer_credit_is_complete_before_document_end():
     assert parameter.grad[1]<0
 
 
+def event_world(positions):
+    """Two minted situations and their conditional, all in the Part store."""
+    from RowTime import encoder
+    model,registry,store,(a,b,_)=world()
+    events=[]
+    for ref,position in zip((a,b),positions):
+        event=store.parts.add(ref[1],ref[1],truth_plus=.8,truth_minus=.1,when=encoder().encode(position))
+        owner=model.conceptualSpace
+        owner._concept_allocator.symbol_types.setdefault(event,set()).add('situation')
+        seat=owner._csw_concept_row(0,event)
+        with torch.no_grad():
+            owner.similarity_codebook.W[seat].copy_(registry._payload(ref))
+        events.append(('sym',event))
+    store.append_relation(events[0][1],events[1][1],truth_plus=1.)
+    return model,registry,store,events
+
+
 @pytest.mark.parametrize('positions,known', [((1,2),True),((2,1),False)])
 def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known):
-    model,registry,store,(a,b,c)=world()
-    events=[]
-    tick=[0]
-    object.__setattr__(store,'_model_present',lambda:tick[0])
-    for ref,position in zip((a,b),positions):
-        tick[0]=position
-        value=replace(ConceptualMeaning.from_description(registry._payload(ref)),role_refs=(ref,None,None))
-        index=store.append_meaning(value,kind='fact',evidence=(.8,.1),document_key='events',sentence_index=position)
-        events.append(store.occurrence_of(index))
-    rule=registry.form('implies',a,b,mode='assertive')
-    rule=replace(rule,role_refs=(events[0],rule.role_refs[1],events[1]))
-    store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
-    goal=registry.form('isImplied',a,b)
-    goal=replace(goal,role_refs=(events[0],goal.role_refs[1],events[1]))
+    model,registry,store,events=event_world(positions)
+    goal=registry.form('isImplied',*events)
     def choose(root,active,actions,**kwargs):
         return None if None in actions else next(action for action in actions if action.semantic_id=='isImplied')
     monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
     result=run(model,goal,work_budget=24)
     assert (not needs_episode(result.meaning)) is known
-    assert store.row(len(store)-1)['kind']==('inference' if known else 'question')
     if known:
         assert evidence_pair(result.meaning)==pytest.approx((.8,0.))
         assert set(events).issubset(bindings(result.meaning)['_thought_witnesses'])
+        assert store.parts.find(events[0][1],events[1][1]) is not None
+    else:
+        assert store.row(len(store)-1)['kind']=='question'
 
 
 def test_event_implication_cannot_invent_an_order_for_unknown_legacy_time():
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
-    _,registry,store,(a,b,_)=world()
-    events=[]
-    for ref in (a,b):
-        value=replace(ConceptualMeaning.from_description(registry._payload(ref)),role_refs=(ref,None,None))
-        row=store.append_meaning(value,kind='fact',evidence=(.8,.1),document_key='events')
-        events.append(store.occurrence_of(row))
-    rule=registry.form('implies',a,b,mode='assertive')
-    rule=replace(rule,role_refs=(events[0],rule.role_refs[1],events[1]))
-    store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
-    store.when[store._index_occurrences[events[0]]].zero_()
+    _,registry,store,events=event_world((1,2))
+    store.parts.when[events[0][1]].zero_()
     reader=ThoughtLTMCapability(store=lambda:store,equal=lambda *_:None,tau_id=.5)
     result=reader.relation_evidence('implies',*events,max_records=16,work=QueryWorkBudget(16))
     assert result['frames'] == ()
     assert (result['support_true'],result['support_false']) == (0.,0.)
     assert result['incomplete'] == ('unknown_event_time',)
-    assert result['records_scanned'] == len(store)+2
+    assert result['records_scanned'] == len(store.parts)+2
 
 
 def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):

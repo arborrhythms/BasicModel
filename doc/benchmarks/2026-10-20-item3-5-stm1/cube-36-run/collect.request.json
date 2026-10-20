@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,11 @@
+{
+  "test": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

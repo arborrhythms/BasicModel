@@ -238,27 +238,19 @@ def test_serial_commit_gate_fires_once_per_active_word():
 
 
 @pytest.mark.slow
-def test_word_prediction_and_physical_push_share_one_commit_boundary(monkeypatch):
-    """The tensor predictor and physical STM push share the complete-unit gate."""
+def test_physical_push_uses_one_complete_unit_commit_boundary(monkeypatch):
+    """The physical STM push uses exactly the complete-unit gate."""
     from Layers import ShortTermMemory
-    from Models import FunctionalPeerSTM
     m, x = _serial_model_and_batch()
-    m.conceptualSpace.intra_loss_weight = 1.
-    pushed, predicted = [], []
+    pushed = []
     original_push = ShortTermMemory.functional_push_step_masked
-    original_predict = FunctionalPeerSTM.predict
     def push(*args):
         pushed.append(args[7].reshape(-1).clone())
         return original_push(*args)
-    def predict(state, idea, gate, layer, **kwargs):
-        predicted.append((gate.reshape(-1) & (state[1] > 0)).clone())
-        return original_predict(state, idea, gate, layer, **kwargs)
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(push))
-    monkeypatch.setattr(FunctionalPeerSTM, 'predict', staticmethod(predict))
     m.forward(x)
     commits = m.inputSpace._word_last_slot_mask.sum(1)
     assert torch.equal(torch.stack(pushed).sum(0), commits)
-    assert torch.equal(torch.stack(predicted).sum(0), (commits - 1).clamp_min(0))
 
 
 

@@ -128,7 +128,10 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
     expected.counts={word:Counter(counts) for word,counts in initial.items()}
     for program, binary, unary in events:
         expected.observe_kept(program, binary, unary)
-    assert parts.counts == expected.counts and parts.counts
+    # The close also records admitted occupations of minted symbols. Word
+    # occupations still come only from the kept programs, exactly once.
+    assert {word: parts.counts[word] for word in expected.counts} == expected.counts
+    assert parts.counts and set(parts.counts) - set(expected.counts)
     before = {word:dict(counts) for word,counts in parts.counts.items()}
     parts.frozen = True
     for program,binary,unary in events:

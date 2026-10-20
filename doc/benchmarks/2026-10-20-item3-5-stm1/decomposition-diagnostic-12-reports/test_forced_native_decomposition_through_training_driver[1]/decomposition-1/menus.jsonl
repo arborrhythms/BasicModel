@@ -1,0 +1,6 @@
+{"target": ["sym", 39], "env": [0, "y"], "current": [null, ["sym", 4010033338316264258], ["sym", 39]], "chosen": "query"}
+{"target": ["sym", 39], "env": [0, "y"], "current": [["sym", 50], ["sym", 4010033338316264258], ["sym", 39]], "chosen": "ask"}
+{"target": ["sym", 19], "env": null, "current": [null, ["sym", 4010033338316264258], ["sym", 19]], "chosen": null}
+{"target": ["sym", 19], "env": null, "current": [["sym", 49], ["sym", 4010033338316264258], ["sym", 19]], "chosen": null}
+{"target": ["sym", 39], "env": [0, "y"], "current": [["sym", 50], ["sym", 4010033338316264258], ["sym", 39]], "chosen": "query"}
+{"target": ["sym", 39], "env": [0, "y"], "current": [["sym", 50], ["sym", 4010033338316264258], ["sym", 39]], "chosen": null}

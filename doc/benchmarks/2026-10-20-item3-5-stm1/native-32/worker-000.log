@@ -1,0 +1,1648 @@
+...................FFF.FF.........F..........F..F........F.............. [ 66%]
+F...F...........F..FF.F.............                                     [100%]
+=================================== FAILURES ===================================
+_________________ test_qa_config_builds_with_consumer_and_ltm __________________
+test/test_global_consume.py:131: in test_qa_config_builds_with_consumer_and_ltm
+    out = m.forward(x)[2]
+          ^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23723: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17058: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22275: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21845: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20839: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20766: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19745: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19586: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19582: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E   
+E   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E   Caused by: if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):  # doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py:13 in checked (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E   For more information, run with TORCH_LOGS="dynamic"
+E   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E   
+E   User Stack (most recent call last):
+E     (snipped, see stack below for prefix)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_qa.ckpt, starting fresh
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______________________ test_zero_gate_matches_consume_off ______________________
+test/test_global_consume.py:142: in test_zero_gate_matches_consume_off
+    freeze_admission(m, x, monkeypatch)
+test/configuration_fixtures.py:62: in freeze_admission
+    model.forward(inputs)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23723: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17058: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22275: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21845: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20839: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20766: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19745: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19586: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19582: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E   
+E   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E   Caused by: if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):  # doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py:13 in checked (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E   For more information, run with TORCH_LOGS="dynamic"
+E   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E   
+E   User Stack (most recent call last):
+E     (snipped, see stack below for prefix)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_qa.ckpt, starting fresh
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+___________________ test_gate_feeds_the_read_into_the_answer ___________________
+test/test_global_consume.py:159: in test_gate_feeds_the_read_into_the_answer
+    freeze_admission(m, x, monkeypatch)
+test/configuration_fixtures.py:62: in freeze_admission
+    model.forward(inputs)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23723: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17058: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22275: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21845: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20839: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20766: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19745: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19586: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19582: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E   
+E   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E   Caused by: if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):  # doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py:13 in checked (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E   For more information, run with TORCH_LOGS="dynamic"
+E   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E   
+E   User Stack (most recent call last):
+E     (snipped, see stack below for prefix)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_qa.ckpt, starting fresh
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______________________ test_answer_loss_trains_retrieval _______________________
+test/test_global_consume.py:199: in test_answer_loss_trains_retrieval
+    out = _generation_forward(m, x)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_global_consume.py:105: in _generation_forward
+    output = m.forward(x)
+             ^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23723: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17058: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22275: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21845: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20839: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20766: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19745: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19586: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19582: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E   
+E   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E   Caused by: if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):  # doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py:13 in checked (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E   For more information, run with TORCH_LOGS="dynamic"
+E   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E   
+E   User Stack (most recent call last):
+E     (snipped, see stack below for prefix)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_qa.ckpt, starting fresh
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_________________ test_ltm_truthset_read_is_fed_to_the_answer __________________
+test/test_global_consume.py:220: in test_ltm_truthset_read_is_fed_to_the_answer
+    m.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23723: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17058: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22275: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21845: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20839: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20766: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19745: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19586: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19582: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E   
+E   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E   Caused by: if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):  # doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py:13 in checked (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E   For more information, run with TORCH_LOGS="dynamic"
+E   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E   
+E   User Stack (most recent call last):
+E     (snipped, see stack below for prefix)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12004, in _reconstruct_sentences
+E       decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11923, in _decode_conceptual_sentence
+E       return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12878, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 395, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12829, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13073, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13064, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13110, in _reverse_of_binary_op
+E       return self._bounded_binary_reconstruction(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13280, in _bounded_binary_reconstruction
+E       folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+E                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3324, in compose
+E       return self.forward(left, right, gate=gate)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3399, in forward
+E       return self.apply_verb(left, right)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3267, in apply_verb
+E       return self._verb_rail_transform(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 3250, in _verb_rail_transform
+E       interior = cube_chart(value_f32, bounded=False)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 116, in cube_chart
+E       assert_cube(value)
+E     File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py", line 13, in checked
+E       if not emitted and not bool((torch.isfinite(value)&(value>=0)&(value<=1)).all()):
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_qa.ckpt, starting fresh
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______________ test_07_equality_is_one_membership_in_a_singleton _______________
+test/test_clause_acceptance.py:203: in test_07_equality_is_one_membership_in_a_singleton
+    f.store.set_evidence(first, .2, .4)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9927: in set_evidence
+    i = int(idx)
+        ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+_________ test_capacity_requires_room_for_new_estimate_and_observation _________
+test/test_sentence_retention.py:53: in test_capacity_requires_room_for_new_estimate_and_observation
+    with pytest.raises(OverflowError, match='forgetting'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'forgetting'
+E     Actual message: 'LTM1 capacity exhausted before clause admission'
+______________ test_reading_an_idea_returns_its_one_occupied_slot ______________
+test/test_sentence_end_state.py:21: in test_reading_an_idea_returns_its_one_occupied_slot
+    assert store.refs[row].tolist() == [1, 3, -1]
+E   assert [-1, -1, -1] == [1, 3, -1]
+E     
+E     At index 0 diff: -1 != 1
+E     Use -v to get more diff
+_____ test_one_native_sentence_owns_only_its_end_state_after_the_boundary ______
+test/test_sentence_end_state.py:187: in test_one_native_sentence_owns_only_its_end_state_after_the_boundary
+    model.runBatch(train=False, batchSize=1, split='runtime',
+bin/Models.py:13475: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13631: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14007: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10089: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23723: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17058: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22275: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21845: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20839: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20746: in compose
+    word_step(index, masked_payload(payload, rows), native)
+bin/Models.py:20707: in word_step
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21601: in stage_cs_lang
+    proposal = choose_operation(
+bin/Language.py:12475: in choose_operation
+    _, _, route = layer(window, **arguments)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6805: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7117: in _stacked_reduced
+    values = self._stacked_reduced(x, grammar_context, grouped, activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7162: in _stacked_reduced
+    assert_cube(value)
+doc/benchmarks/2026-10-20-item3-5-stm1/cube_diagnostic.py:33: in checked
+    return original(value)
+           ^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__________ test_reified_relation_is_visible_without_endpoint_mutation __________
+test/test_taxonomy_view.py:39: in test_reified_relation_is_visible_without_endpoint_mutation
+    assert cs.concept_wholes(a) == cs.concept_parts(b) == []
+E   AssertionError: assert [('sym', 2)] == [('sym', 1)]
+E     
+E     At index 0 diff: ('sym', 2) != ('sym', 1)
+E     Use -v to get more diff
+____ test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood _____
+test/test_taxonomy_view.py:89: in test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood
+    assert result["support_true"] == result["support_false"] == 0
+E   assert 1.0 == 0.0
+_____ test_public_evaluate_follows_taxonomy_and_retains_record_provenance ______
+test/test_taxonomy_entry.py:32: in test_public_evaluate_follows_taxonomy_and_retains_record_provenance
+    assert {edge.owner for edge in result["path"]} == {("sym", relation), b}
+E   AssertionError: assert {('sym', 21), ('sym', 22)} == {('sym', 5), ('sym', 21)}
+E     
+E     Extra items in the left set:
+E     ('sym', 22)
+E     Extra items in the right set:
+E     ('sym', 5)
+E     Use -v to get more diff
+_______ test_normal_entry_does_not_verify_generated_vectors_as_taxonomy ________
+test/test_taxonomy_entry.py:65: in test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+    assert len(cs._ltm_store) == 1
+E   assert 0 == 1
+E    +  where 0 = len(TernaryTruthStore())
+E    +    where TernaryTruthStore() = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...eptsFromPercepts(\n    (sigma): SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n  (_ltm_store): TernaryTruthStore()\n)._ltm_store
+_______ test_normal_controller_does_not_certify_a_world_row_as_taxonomy ________
+test/test_taxonomy_entry.py:75: in test_normal_controller_does_not_certify_a_world_row_as_taxonomy
+    rel_type=cs._ltm_store.REL_PARTOF, trust=1)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'REL_PARTOF'
+________ test_actual_model_entry_and_checkpoint_keep_taxonomy_identity _________
+test/test_taxonomy_entry.py:118: in test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+    assert restored.symbolSpace.ltm_store.row(0)['kind'] == 'inference'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9865: in row
+    raise IndexError(f"row {idx} of {n}")
+E   IndexError: row 0 of 0
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7837/test_actual_model_entry_and_ch0/taxonomy.pt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7837/test_actual_model_entry_and_ch0/taxonomy.pt
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config
+test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm
+test/test_global_consume.py::test_zero_gate_matches_consume_off
+test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer
+test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse
+test/test_global_consume.py::test_answer_loss_trains_retrieval
+test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 33 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 34 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 35 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 36 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 37 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 38 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 39 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 40 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 41 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 42 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 43 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 44 gets records only, no weighted reading (overflow #12)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 45 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 46 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 47 gets records only, no weighted reading (overflow #15)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 48 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 49 gets records only, no weighted reading (overflow #17)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 50 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 51 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 52 gets records only, no weighted reading (overflow #20)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 53 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 54 gets records only, no weighted reading (overflow #22)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 55 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 56 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 57 gets records only, no weighted reading (overflow #25)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 58 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 59 gets records only, no weighted reading (overflow #27)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 60 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 61 gets records only, no weighted reading (overflow #29)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 62 gets records only, no weighted reading (overflow #30)
+    warnings.warn(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:14399: RuntimeWarning: Concept inventory reached maximum preallocation (64); a redundancy review is required at a closed document boundary
+    return ConceptualSpace._new_concepts(
+
+test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15506: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 63 gets records only, no weighted reading (overflow #31)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm
+FAILED test/test_global_consume.py::test_zero_gate_matches_consume_off - torc...
+FAILED test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer
+FAILED test/test_global_consume.py::test_answer_loss_trains_retrieval - torch...
+FAILED test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+FAILED test/test_clause_acceptance.py::test_07_equality_is_one_membership_in_a_singleton
+FAILED test/test_sentence_retention.py::test_capacity_requires_room_for_new_estimate_and_observation
+FAILED test/test_sentence_end_state.py::test_reading_an_idea_returns_its_one_occupied_slot
+FAILED test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary
+FAILED test/test_taxonomy_view.py::test_reified_relation_is_visible_without_endpoint_mutation
+FAILED test/test_taxonomy_view.py::test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood
+FAILED test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance
+FAILED test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+FAILED test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy
+FAILED test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+15 failed, 93 passed, 40 warnings in 93.58s (0:01:33)

@@ -1,0 +1,46 @@
+{
+  "seed": 2012462406162999760,
+  "caps": [
+    4,
+    2
+  ],
+  "nVectors": 8,
+  "plan": [
+    {
+      "symbol": 8,
+      "seat": true,
+      "pair": null,
+      "order": 0,
+      "reference": -1,
+      "operation": null,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 9,
+      "seat": true,
+      "pair": null,
+      "order": 0,
+      "reference": -1,
+      "operation": null,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 10,
+      "seat": false,
+      "pair": [
+        8,
+        9
+      ],
+      "order": 0,
+      "reference": -1,
+      "operation": "part",
+      "types": [
+        "situation"
+      ]
+    }
+  ]
+}

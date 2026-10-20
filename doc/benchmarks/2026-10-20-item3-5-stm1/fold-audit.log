@@ -1,0 +1,13 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+{
+  "training_steps": 0,
+  "seed_selection": "none",
+  "bank_capacity": 4096,
+  "native_identities": [
+    12,
+    13
+  ],
+  "result": "existing_fold_not_injective_at_any_width",
+  "explanation": "Coordinatewise intersection commutes and is idempotent. Bank cleanup cannot choose uniquely between inputs with identical outputs."
+}

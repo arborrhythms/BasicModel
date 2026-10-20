@@ -1,0 +1,1744 @@
+{
+  "runs": {
+    "46": {
+      "counts": {
+        "failed": 1
+      },
+      "failures": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]"
+      ]
+    },
+    "47": {
+      "counts": {
+        "passed": 6,
+        "failed": 1
+      },
+      "failures": [
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs"
+      ]
+    },
+    "48": {
+      "counts": {
+        "passed": 61,
+        "failed": 18
+      },
+      "failures": [
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+        "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+        "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+        "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+        "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+        "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+        "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter"
+      ]
+    },
+    "49": {
+      "counts": {},
+      "failures": []
+    },
+    "50": {
+      "counts": {
+        "passed": 182,
+        "skipped": 1,
+        "failed": 1
+      },
+      "failures": [
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+      ]
+    },
+    "51": {
+      "counts": {
+        "passed": 6
+      },
+      "failures": []
+    },
+    "53": {
+      "counts": {
+        "passed": 31,
+        "failed": 3
+      },
+      "failures": [
+        "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+        "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+        "test/test_priming_energy.py::test_projection_bounded_across_epochs"
+      ]
+    },
+    "55": {
+      "counts": {
+        "passed": 114,
+        "skipped": 1
+      },
+      "failures": []
+    },
+    "57": {
+      "counts": {
+        "passed": 220,
+        "skipped": 1
+      },
+      "failures": []
+    },
+    "60": {
+      "counts": {
+        "passed": 66,
+        "skipped": 4
+      },
+      "failures": []
+    },
+    "61": {
+      "counts": {
+        "passed": 52,
+        "skipped": 1,
+        "failed": 1
+      },
+      "failures": [
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+      ]
+    },
+    "63": {
+      "counts": {
+        "failed": 1
+      },
+      "failures": [
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+      ]
+    },
+    "64": {
+      "counts": {
+        "failed": 1
+      },
+      "failures": [
+        "test/test_part_read.py::test_open_copular_occurrence_cannot_supply_its_own_reference_witness"
+      ]
+    },
+    "65": {
+      "counts": {
+        "passed": 180
+      },
+      "failures": []
+    },
+    "67": {
+      "counts": {
+        "passed": 2,
+        "failed": 1
+      },
+      "failures": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ]
+    },
+    "68": {
+      "counts": {
+        "passed": 101,
+        "failed": 10,
+        "skipped": 1
+      },
+      "failures": [
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+        "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+        "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+        "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+        "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]"
+      ]
+    },
+    "70": {
+      "counts": {
+        "passed": 206,
+        "failed": 4,
+        "skipped": 1
+      },
+      "failures": [
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]"
+      ]
+    },
+    "72": {
+      "counts": {
+        "passed": 26
+      },
+      "failures": []
+    }
+  },
+  "paired": {
+    "43": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.1,
+          0.1,
+          0.0,
+          0.1
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.1,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "47": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "48": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "50": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "53": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "55": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "57": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "60": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "61": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "65": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "68": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "70": [
+      {
+        "batch": 1,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 1,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 2,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "greedy",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "batch": 3,
+        "trial": "explore",
+        "reconstruction": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "decoded": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "expected": [
+          2,
+          2,
+          2,
+          2
+        ]
+      }
+    ]
+  }
+}

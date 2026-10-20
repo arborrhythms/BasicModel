@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-54/worker-000.recycle.json"
+}

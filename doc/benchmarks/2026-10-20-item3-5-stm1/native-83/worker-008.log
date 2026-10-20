@@ -1,0 +1,30 @@
+.F.......FF                                                              [100%]
+=================================== FAILURES ===================================
+_________ test_participant_cache_rebuilds_from_retained_identity_rows __________
+test/test_bind_thought.py:257: in test_participant_cache_rebuilds_from_retained_identity_rows
+    assert f.resolver.expected_roles(f.atoms[4]) == (2,)
+E   assert () == (2,)
+E     
+E     Right contains one more item: 2
+E     Use -v to get more diff
+__ test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False] ___
+test/test_bind_thought.py:454: in test_objectless_predicate_keeps_its_identity_in_the_ended_compound
+    assert int(f.store.parts.refs[vp, 1]) == word
+E   assert 17 == 12
+E    +  where 17 = int(tensor(17))
+___ test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True] ___
+test/test_bind_thought.py:454: in test_objectless_predicate_keeps_its_identity_in_the_ended_compound
+    assert int(f.store.parts.refs[vp, 1]) == word
+E   assert 17 == 12
+E    +  where 17 = int(tensor(17))
+=============================== warnings summary ===============================
+test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows
+FAILED test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]
+FAILED test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]
+3 failed, 8 passed, 1 warning in 2.26s

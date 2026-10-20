@@ -69,16 +69,6 @@ class ClauseScope(nn.Module):
         return torch.where(active[:, None, None], blank, state)
 
     @classmethod
-    def publish_name(cls, stm, scope, ended):
-        """A relative result occupies its slot by name, never by one operand."""
-        from References import address_code
-        buffer, *rest = stm
-        named = ((scope[..., 0].bitwise_and(cls.RELATIVE | cls.LOCAL)
-                  == cls.RELATIVE | cls.LOCAL) & (ended == 3)[:, None])
-        names = address_code(scope[..., 1], buffer.shape[-1], like=buffer)
-        return (torch.where(named[..., None], names, buffer), *rest)
-
-    @classmethod
     def resolve(cls, state, choice, references, relative):
         B, K, _ = state.shape
         positions = torch.arange(K, device=state.device)[None]

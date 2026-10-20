@@ -248,7 +248,7 @@ def run(args):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             model=_tiny_canonical_model(Path(tmp),patch,input_width=128,word_buckets='64',
-                concept_rows=4096,training_overrides={'intraLossWeight':0.,'reconstructionPlacement':'eager'})
+                concept_rows=4096,training_overrides={'reconstructionPlacement':'eager'})
         (args.out/'model.xml').write_text((Path(tmp)/'tiny_chunk_model.xml').read_text())
         model._tensor_peer_while_eager=True; model.checkpoint_every_batches=0
         model.inputSpace.data.has_supervised_outputs=False

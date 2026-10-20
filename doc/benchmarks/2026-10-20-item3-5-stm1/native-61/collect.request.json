@@ -1,0 +1,18 @@
+{
+  "selectors": [
+    "test/test_priming_diffusion.py",
+    "test/test_priming_energy.py",
+    "test/test_derived_concept_codes.py",
+    "test/test_sentence_priming.py",
+    "test/test_operators_final.py",
+    "test/test_part_store.py",
+    "test/test_part_read.py",
+    "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_math_chain_section14.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

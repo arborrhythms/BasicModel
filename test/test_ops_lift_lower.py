@@ -294,10 +294,10 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         out_lift = Ops.lift(self.x, self.y, mode='OR', kind='strict')
         self.assertTrue(torch.equal(out_disj, out_lift))
 
-    def test_disjunction_bitonic_equals_lift_soft(self):
-        # Union retains its soft radial kernel; intersection has a separate decided contract.
+    def test_disjunction_bitonic_equals_lift_strict(self):
+        # The maximum is closed over the cube, including its rails.
         out_disj = Ops.union(self.x, self.y, monotonic=False)
-        out_lift = Ops.lift(self.x, self.y, mode='OR', kind='soft')
+        out_lift = Ops.lift(self.x, self.y, mode='OR', kind='strict')
         self.assertTrue(torch.equal(out_disj, out_lift))
 
     def test_conjunction_monotonic_matches_torch_min(self):

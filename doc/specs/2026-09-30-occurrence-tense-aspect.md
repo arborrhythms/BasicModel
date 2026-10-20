@@ -759,8 +759,46 @@ The reading:
   re-witnesses the same individual, above it a new individual is minted
   (the pieces) and bound to the old by the row (item 6 §15 items 2–3:
   mint, then match).
+- **Parameterization: a shared basis per verb group, a diagonal per
+  verb** (Alec, 2026-10-20: "shared basis diagonal is attractive if verbs
+  can be factored into groups: I bet they can"). The diagonal was a
+  storage decision — a full matrix per verb is prohibitive — and the
+  group is the cheap way past it. Verbs fall into classes by what they
+  change (Levin 1993's alternation classes, which Pinker 1989 derives
+  from the verb's semantic structure; FrameNet's frames): motion acts on
+  location, change of state on a property, transfer on possession. In
+  frame coordinates that is a subspace per class, and one orthogonal
+  basis `Q_g` per class aligns it so that every verb in the class is a
+  diagonal in it: `v = Q_g · diag(e^{w_v}) · Q_gᵀ`, applied through the
+  chart. Storage: G bases (each a product of a few Householder
+  reflections or a butterfly — cheap, exactly invertible as its
+  transpose) plus V diagonals, with G ≪ V. Within a class verbs commute
+  (the order of two scalings of the same dimensions is the rows'); across
+  classes they do not, which is the interaction between coordinates the
+  abelian diagonal lacked. **The groups are learned**: a set of verbs
+  shares a basis exactly when their observed before-to-after maps are
+  jointly diagonalizable, and approximate joint diagonalization is the
+  classical Jacobi-style problem at the heart of ICA (JADE, FFDiag) — so
+  ICA returns here, not as identity columns but as the procedure that
+  finds a class's basis from its occurrences. A verb joins the group
+  whose basis makes its map most nearly diagonal; when none fits,
+  recurrence mints a new group, as nested admission mints a marker,
+  **up to a capacity of a couple of dozen groups, each with its own
+  `Q_g`** (Alec, 2026-10-20; a model.xml knob, `verbGroups`, default 24 —
+  Levin's inventory has about 48 broad classes and the coarse division by
+  what a verb changes sits in the twenties). At capacity a verb joins the
+  best-fitting group and the fit is reported. Storage at width 1032: a
+  butterfly basis is of order `D log D` per group, so two dozen bases are a
+  few hundred thousand parameters in all. The
+  teacher splits: `Q_g` by joint diagonalization over the group's
+  occurrences; `w_v` by the coordinatewise log-ratio of after over before
+  in `Q_g`'s coordinates — the teacher below, rotated. Sparse shears
+  within a group (`I + α·E_ij`, exactly invertible) are the recorded
+  fallback if a verb refuses to diagonalize at a sensible G; not built
+  now. The NP-conditional basis noted in the code is a different idea
+  and is not this.
 - **Support, zero by default.** The verb's support is the set of
-  coordinates where `w_v ≠ 0`. A fresh verb is `e` everywhere — support
+  coordinates where `w_v ≠ 0` in its group's basis. A fresh verb is `e` everywhere — support
   empty, undefined. A coordinate enters the support when the log-ratio
   recurs across occurrences (the type criterion of §12), and the sparsity
   threshold is the admission. Outside the support there is no expectation

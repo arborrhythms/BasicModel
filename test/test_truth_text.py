@@ -33,11 +33,8 @@ def test_given_truth_texts_are_plain_english():
 
 
 def test_supplied_trust_preserves_both_possible_grammatical_fields():
-    allocator = ConceptAllocator()
-    points = {allocator.new_concept(): value for value in torch.eye(4)}
-    store = TernaryTruthStore(4, capacity=8)
-    store.configure_clause_index(allocate=lambda point: allocator.new_concept(),
-        concept_point=points.get, predicate_kind=lambda ref: 'part' if ref == 3 else 'operator')
+    from test_clause_storage import clause_store
+    store, points = clause_store()
     meaning = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool))
     fields = [Clause(meaning, point=torch.ones(4), refs=(1, 2, -1)),
               Clause(meaning, relation='part', refs=(1, 3, 2))]
@@ -47,7 +44,7 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
             store.write_clause(field)
         assert len(rows) == 1
         row = rows[0]
-        assert int(store.role_mask[row].sum()) == len(field.slots)
+        assert store.row(row)['refs'].numel() == (3 if field.relation is None else 2)
         assert store.row(row)['trust'] == pytest.approx(.8)
     assert store.ideas().tolist() == [0]
-    assert store.relations(rel_type=store.REL_PARTOF).tolist() == [1]
+    assert store.relations().tolist() == [store.parts.find(1, 2)]

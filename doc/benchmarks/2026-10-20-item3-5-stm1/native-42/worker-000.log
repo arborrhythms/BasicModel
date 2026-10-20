@@ -1,0 +1,44 @@
+..F......sF.F                                                            [100%]
+=================================== FAILURES ===================================
+_______ test_copula_fills_the_addressed_open_column_without_a_word_alias _______
+test/test_math_chain_section14.py:65: in test_copula_fills_the_addressed_open_column_without_a_word_alias
+    assert not open_slots(resolved)
+E   AssertionError: assert not (('referent', 0),)
+E    +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(None, ('sym', 7), ('sym', 7)), bindings=(('_evidence...0.0)), ('_open_references', (('referent', 0),)), ('_source_evidence', (0.0, 0.0))), scope=(), sentence_kind='relation'))
+___ test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage ___
+test/test_math_chain_section14.py:327: in test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage
+    assert item['minted'] and not item['after'] and not open_slots(committed)
+E   AssertionError: assert (True and not () and not (('referent', 0),))
+E    +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 16), ('sym', 25)), bindings=(('_evidence_p...0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)), ('role', 0))),))), scope=(), sentence_kind='relation'))
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+__________ test_forced_ordinary_pending_premise_in_both_orders[True] ___________
+test/test_math_chain_section14.py:408: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+test/test_math_chain_section14.py:381: in after
+    assert not bindings(value).get('_forward_references')
+E   AssertionError: assert not ((0, 15), (2, 14))
+E    +  where ((0, 15), (2, 14)) = <built-in method get of dict object at 0x12b02b040>('_forward_references')
+E    +    where <built-in method get of dict object at 0x12b02b040> = {'_evidence_pair': (0.32151275873184204, 0.0), '_formation_records': ((('choice', 'open'), ('probability', 0.025413041... ('role', 2))), '_forward_references': ((0, 15), (2, 14)), '_open_references': (('referent', 0), ('referent', 2)), ...}.get
+E    +      where {'_evidence_pair': (0.32151275873184204, 0.0), '_formation_records': ((('choice', 'open'), ('probability', 0.025413041... ('role', 2))), '_forward_references': ((0, 15), (2, 14)), '_open_references': (('referent', 0), ('referent', 2)), ...} = bindings(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 4010033338316264258), None), bindings=(('_..., 0.15004175901412964, 0.0896872952580452, 0.13687728345394135)), ('role', 2)))))), scope=(), sentence_kind='relation'))
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=25.643s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias
+FAILED test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]
+3 failed, 9 passed, 1 skipped, 1 warning in 242.77s (0:04:02)

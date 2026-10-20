@@ -255,13 +255,13 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     stm = (entry.end_state[None], torch.ones(1, dtype=torch.long),
            torch.zeros(1, 3, dtype=torch.long), torch.zeros(1, 3, dtype=torch.long),
            torch.full((1, 3), -1, dtype=torch.long), torch.ones(1, 3))
-    lang = [torch.zeros(1, 1) for _ in range(26)]
-    lang[9] = torch.zeros(1, sid + 1, width)
-    lang[13] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()
-    lang[14] = torch.ones(1, sid + 1, dtype=torch.long)
-    lang[20] = torch.zeros(1, 3, 2, dtype=torch.long)
+    lang = [torch.zeros(1, 1) for _ in range(23)]
+    lang[6] = torch.zeros(1, sid + 1, width)
+    lang[10] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()
+    lang[11] = torch.ones(1, sid + 1, dtype=torch.long)
+    lang[17] = torch.zeros(1, 3, 2, dtype=torch.long)
     lang.append(torch.full((1, 3), -1, dtype=torch.long))
-    lang.append(torch.zeros_like(lang[4], dtype=torch.bool))
+    lang.append(torch.zeros_like(lang[1], dtype=torch.bool))
     lang.append(torch.zeros(1,3,len(language.parts_of_speech.arguments)))
     state = stm, tuple(lang), None
     active = torch.tensor([active], dtype=torch.bool)

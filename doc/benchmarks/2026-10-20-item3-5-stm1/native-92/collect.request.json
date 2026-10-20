@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders",
+    "test/test_thought_binding.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

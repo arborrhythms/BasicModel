@@ -41,10 +41,8 @@ class TestReasoningCDEModel(unittest.TestCase):
         self.assertFalse(hasattr(self.m, 'selected_thought_choosers'))
         self.assertFalse(hasattr(self.m, "_intervening_generator"))
         for cs in self.m.conceptualSpaces:
-            self.assertEqual(cs.intraSentenceLayer.routing_dim,
-                             self.m.languageSpace._n_rules)
-            self.assertEqual(cs.intraSentenceLayer.routing_proj.in_features,
-                             self.m.languageSpace._n_rules)
+            self.assertFalse(hasattr(cs, 'intraSentenceLayer'))
+            self.assertFalse(any('intra' in key for key in cs.state_dict()))
 
     @pytest.mark.phase("fineweb")
     def test_truthset_provisions_source_rows(self):
@@ -53,12 +51,14 @@ class TestReasoningCDEModel(unittest.TestCase):
         written = self.m._ltm_ingest_truth_texts(store,
             ['socrates is a human', 'humans are mortal'], trusts=[.9, .9],
             origin=store.ORIGIN_PROVISIONED)
-        selected = {i for group in written for i in group}
-        rows = [store.row(int(i)) for i in store.relations(rel_type=store.REL_PARTOF)
-                if int(i) in selected]
-        assert {row['text'] for row in rows} == {
-            'socrates is a human', 'humans are mortal'}
-        assert all(abs(row['trust'] - .9) < 1e-6 for row in rows)
+        # The ingress result associates each source with its native writes;
+        # Part has no duplicate source-text or relation-kind column.
+        assert len(written) == 2
+        for group in written:
+            rows = [store.row(store.location(reference)) for reference in group
+                    if isinstance(store.location(reference), tuple)]
+            assert rows
+            assert all(abs(row['evidence'][0] - .9) < 1e-6 for row in rows)
 
 
     @pytest.mark.slow

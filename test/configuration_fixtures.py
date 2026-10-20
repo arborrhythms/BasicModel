@@ -38,7 +38,7 @@ def parallel_concepts(*, wide=False):
 
 
 @contextmanager
-def small_retained(name):
+def small_retained(name, *, concept_rows=None):
     """Same retained reading and feature switches at smoke-test geometry."""
     tree = ET.parse(ROOT/'data'/name)
     for node in tree.getroot().iter():
@@ -48,6 +48,8 @@ def small_retained(name):
             node.text = '512'
         elif node.tag in ('nInput', 'nOutput') and node.text and int(node.text) >= 256:
             node.text = '256'
+    if concept_rows is not None:
+        tree.find('ConceptualSpace/nVectors').text = str(concept_rows)
     with tempfile.TemporaryDirectory(prefix='retained-smoke-') as directory:
         path = Path(directory)/Path(name).name
         tree.write(path, encoding='unicode')

@@ -1,0 +1,90 @@
+{
+  "test": "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+  "events": 2,
+  "overlap_events": 1,
+  "max_energy_error": 1.1920928955078125e-07,
+  "max_graph_edges": 8,
+  "max_sources": 2,
+  "max_part_reads": 8,
+  "max_candidates": 4,
+  "max_comparisons": 6,
+  "max_overlap_edges": 5,
+  "truncated_frontiers": 0,
+  "nonzero_overlap_transfers": 20,
+  "projections": [
+    {
+      "shape": [
+        4,
+        6
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 1,
+          "row": 0,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 2,
+          "row": 1,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 3,
+          "row": 2,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 4,
+          "row": 4,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        4,
+        6
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 1,
+          "row": 0,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 2,
+          "row": 1,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 3,
+          "row": 2,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 4,
+          "row": 4,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    }
+  ]
+}

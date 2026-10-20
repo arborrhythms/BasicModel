@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+    "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+    "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+    "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+    "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
+    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-38/worker-012.recycle.json"
+}

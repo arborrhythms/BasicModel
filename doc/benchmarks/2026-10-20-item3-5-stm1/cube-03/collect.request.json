@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_identity_cube.py",
+    "test/test_operators_final.py",
+    "test/test_verb_spectrum.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

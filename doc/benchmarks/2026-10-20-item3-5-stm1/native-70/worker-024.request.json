@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-70/worker-024.recycle.json"
+}

@@ -321,7 +321,7 @@ def _native_step_comparison(tmp_path, monkeypatch):
             batch=1 if paired else 3
             model = _tiny_canonical_model(tmp_path, patch, input_width=32,
                 word_buckets='8', batch_size=batch, stm_capacity=8, concept_rows=64,
-                training_overrides={'intraLossWeight':0., 'reconstructionPlacement':'eager'})
+                training_overrides={ 'reconstructionPlacement':'eager'})
             model._tensor_peer_while_eager = True
             model.candidate_attention = None
             model.inputSpace.data.has_supervised_outputs = False

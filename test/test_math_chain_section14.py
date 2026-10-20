@@ -39,8 +39,8 @@ def test_formation_provenance_is_not_a_chooser_input():
 
 def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     from Layers import TernaryTruthStore
-    from ClauseRow import Clause, ClausePredicate, predicate_point
     from Occurrence import slot_key
+    from ThoughtStream import write
     store = TernaryTruthStore(4, capacity=32)
     points = {5:torch.tensor([.1,.2,.3,.4]), 7:torch.tensor([.4,.3,.2,.1])}
     store.configure_clause_index(concept_point=points.get)
@@ -53,17 +53,24 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     column = slot_key(int(store.address_keys[row]), 0)
     assert store.slot_of_reference(column) == (row,0)
     assert store.semantic_reference(column) == ('slot',address,0)
-    predicate = ClausePredicate(predicate_point('equal', points[5]), 'equal')
-    equal = ConceptualMeaning(torch.stack((store.point_of_row(column),predicate.point,points[5])),
-        torch.ones(3,dtype=torch.bool), bindings={'_equality':True})
-    store.write_clause(Clause(equal, relation='part', refs=(column,predicate,5),
-                             evidence=(1.,0.)), document_key='later answer', sentence_index=2)
-    resolved = store.meaning_of(row)
+    original = store.slots[row].clone(), store.raw_meaning_of(row)
+    # The copular reader's resolved column is a working conclusion. Persist
+    # its close at the addressed question boundary; never upsert the source.
+    answered = fill(replace(root, bindings=dict(bindings(root), _query_occurrence=address)),
+        dict(reference=('sym',5), binding_value=points[5], support_true=1.,
+             support_false=0.), slots=(('referent',0),))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+    conclusion = write(model, answered, row=0)
+    assert conclusion != row
+    resolved = store.meaning_of(conclusion)
     assert not open_slots(resolved)
     assert resolved.role_refs[0] == ('sym',5)
     assert bindings(resolved)['_bound_roles'] == (('referent',0),)
-    assert not bindings(resolved)['_pending']
+    assert not bindings(resolved).get('_pending', False) and not needs_episode(resolved)
     assert store.occurrence_of(row) == address and float(store.sentence_index[row]) == position
+    torch.testing.assert_close(store.slots[row], original[0], rtol=0, atol=0)
+    assert open_slots(store.meaning_of(row)) == open_slots(original[1])
+    assert open_slots(store.raw_meaning_of(row)) == open_slots(original[1])
     # Rebuilding the derived posting (as on checkpoint load) retains its ID.
     store._semantic_rows = dict(store._semantic_rows)
     assert store.slot_of_reference(column) == (row,0)
@@ -134,7 +141,7 @@ def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match()
     from QueryWork import QueryWorkBudget
     from index_fixtures import one_hot_unfold
     store = TernaryTruthStore(8,capacity=16)
-    store.configure_leaf_index(code_row=lambda ref:ref[-1], unfold=one_hot_unfold)
+    store.configure_leaf_index(code_row=lambda ref:ref[-1], read=one_hot_unfold)
     source = ConceptualMeaning(torch.eye(8)[:3],torch.ones(3,dtype=torch.bool),
         role_refs=(None,('sym',1),('sym',2)),sentence_kind='relation')
     pending = with_slots(source,(('referent',0),),pair=(1.,0.))
@@ -273,6 +280,7 @@ def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
 def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp_path, monkeypatch, eager_reading):
     """g on the authorized forced c/e grammars; both explore suffixes stay live."""
     import json
+    import ThoughtStream
     from forced_math_grammar import ForcedGrammar
     from math_chain_ordinary import ordinary_model, train_documents
     from math_chain_corpus import ChainDocument
@@ -290,12 +298,22 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
             5. if operation(candidate) == 'query' else 0. for candidate in requests])
         return value + bonus
     monkeypatch.setattr(chooser, 'thought_logits', query_then_conclude)
+    commits = []
+    commit = ThoughtStream.commit
+    def committed_episode(*args, **kwargs):
+        index = commit(*args, **kwargs)
+        commits.append(index)
+        return index
+    monkeypatch.setattr(ThoughtStream, 'commit', committed_episode)
     examples = []
     def episode(original, model, meaning, **kwargs):
+        before_commits = len(commits)
         result = original(model, meaning, **kwargs)
+        assert len(commits) == before_commits + 1
         operations = [record.operation for record in result.records if record.kind == 'thought']
         examples.append(dict(source_pair=bindings(meaning).get('_source_evidence'),
-            occurrence=bindings(meaning).get('_query_occurrence'), operations=operations,
+            occurrence=bindings(meaning).get('_query_occurrence'), committed=commits[-1],
+            operations=operations,
             before=open_slots(meaning), after=open_slots(result.meaning),
             minted=any(bindings(child).get('_formation_reason') == 'search_exhausted'
                        for child in result.meaning.constituents)))
@@ -313,13 +331,17 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         for item in examples:
             assert item['operations'] == ['query','conclude']
             index = store._index_occurrences[item['occurrence']]
-            committed = store.meaning_of(index)
+            # The close persists the working conclusion at its own address.
+            # The original occurrence retains its open reference.
+            committed = store.meaning_of(item['committed'])
+            assert open_slots(store.raw_meaning_of(index))
             if tuple(item['source_pair']) == (0.,0.):
                 assert item['after'] and open_slots(committed)
                 assert store.KINDS[int(store.record_kind[index])] == 'question'
                 assert not item['minted']
             else:
                 assert item['minted'] and not item['after'] and not open_slots(committed)
+                assert item['committed'] != index
     finally:
         model.End()
 
@@ -387,14 +409,16 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                         if ref in seen or ref in (-1,0):
                             continue
                         seen.add(ref)
+                        if store.parts.contains(ref):
+                            pending_refs.extend(store.parts.refs[ref].tolist())
                         child = store.index_of_row(ref)
                         if child is not None:
                             pending_refs.extend(store.refs[child].tolist())
                     return False
                 for field in model._sentence_fields[0]:
-                    index = store.index_of_row(field.row_id)
+                    index = store.location(field.row_id)
                     report.append(dict(occurrence=store.occurrence_of(index),
-                        bound_correct=carries_three(int(store.row_ids[index]))))
+                        bound_correct=carries_three(int(store.row(index)['row_id']))))
                 assert sum(item['bound_correct'] for item in report) >= 2
     try:
         with ForcedGrammar(model, open_names=('x',), named_bindings={'x':'three'}) as forced:

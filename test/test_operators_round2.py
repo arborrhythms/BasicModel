@@ -195,7 +195,7 @@ def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
     from SentenceCompose import sentence_pair
     from test_supplied_answer_training import _sentence
     model,state,_=_sentence(True)
-    root=state[1][9][:,0]
+    root=state[1][6][:,0]
     greedy=(root,torch.cat((root[:,None],torch.zeros(2,2,2)),1),torch.ones(2,dtype=torch.long))
     explore=(root+7,torch.cat(((root+7)[:,None],torch.zeros(2,2,2)),1),greedy[2])
     active=torch.ones(2,dtype=torch.bool)

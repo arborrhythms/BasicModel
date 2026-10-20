@@ -477,8 +477,8 @@ class PrimedSymbolReader(nn.Module):
 
     def consume(self, symbols, content):
         """Feed the soft-read ``content`` ``[B, Dc]`` into an owned operand
-        ``symbols`` (``[B, N, D]`` or ``[B, D]``) as a zero-init gated residual
-        on the common leading width: ``symbols[..., :d] += gate · content``.
+        ``symbols`` (``[B, N, D]`` or ``[B, D]``) as a zero-init chart translation
+        on the common leading width. The identity operand stays in the cube.
 
         This closes global attention's loop (reading-attention.md "(B)"): the
         answer/output loss backprops through ``symbols`` → ``content``
@@ -496,7 +496,8 @@ class PrimedSymbolReader(nn.Module):
         if symbols.dim() == 3:
             add = add.unsqueeze(1)                                     # [B,1,d]
         out = symbols.clone()
-        out[..., :d] = out[..., :d] + add
+        from Layers import cube_translate
+        out[..., :d] = cube_translate(out[..., :d], add)
         return out
 
     @staticmethod

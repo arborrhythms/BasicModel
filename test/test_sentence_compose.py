@@ -77,7 +77,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_reverse_traversal import _select_completed_binary_path
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
-        concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
+        concept_rows=128, part_rows=64, input_width=16, training_overrides={},
         stm_capacity=3, chooser_depth=1,
         architecture_overrides={'ltmConsolidation': True, 'conceptLayers': 2})
     # Completion is a fixture for this causal mechanism test. Both winners
@@ -233,8 +233,8 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
         _tensor_pushed_ideas=root[:, None],
         _sentence_observation=lambda *a: observation,
         _expectation_documents_for_slot=lambda *a: None)
-    lang = [None] * 15
-    lang[9], lang[13], lang[14] = root[:, None], root.repeat(1, 3)[:, None], torch.ones(1, 1)
+    lang = [None] * 12
+    lang[6], lang[10], lang[11] = root[:, None], root.repeat(1, 3)[:, None], torch.ones(1, 1)
     cost, *_ = BasicModel._sentence_path_cost(
         model, ((root[:, None],), lang, None), 0, torch.tensor([True]))
     cost.sum().backward()

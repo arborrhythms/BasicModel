@@ -125,20 +125,6 @@ def test_word_gate_matches_full_forward_without_building_unused_answer(monkeypat
         torch.testing.assert_close(after, before, rtol=0, atol=0)
 
 
-def test_capture_hook_runs_under_no_grad_without_loss_accumulation():
-    proxy = SimpleNamespace(_intra_capture=None, intra_loss_weight=0.0)
-    prediction = torch.tensor([[1.0, 2.0]])
-    target = torch.tensor([[3.0, 4.0]])
-    gate_tensor = torch.tensor([[True]])
-    with ConceptualSpace.capture_intra_predictions(proxy) as entries:
-        with torch.no_grad():
-            ConceptualSpace._accumulate_intra_loss(
-                proxy, prediction, target, row_gate=gate_tensor)
-    assert len(entries) == 1
-    assert torch.equal(entries[0]["prediction"], prediction)
-    assert torch.equal(entries[0]["target"], target)
-    assert torch.equal(entries[0]["row_gate"], gate_tensor)
-    assert proxy._intra_capture is None
 
 
 def test_frozen_control_scoring_disables_autograd(monkeypatch):

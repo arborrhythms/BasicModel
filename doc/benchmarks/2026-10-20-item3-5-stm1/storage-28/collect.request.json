@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_clause_storage.py",
+    "test/test_identity_rows.py",
+    "test/test_part_store.py",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

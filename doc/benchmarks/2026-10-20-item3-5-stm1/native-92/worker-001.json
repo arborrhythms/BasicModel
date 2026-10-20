@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+    "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+    "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+    "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+    "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents"
+  ],
+  "completed": [
+    "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+    "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+    "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+    "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+    "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009671251755207777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025958288460969925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011659169103950262,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00047591584734618664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.017533957958221436,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

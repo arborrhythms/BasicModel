@@ -7,7 +7,7 @@ from Layers import Error
 def bound_view(state, observation, sentence, row, meaning):
     """Substitute only this row's completed content into the existing reader."""
     language = list(state[1])
-    for index in (9, 13, 14):
+    for index in (6, 10, 11):
         language[index] = language[index].clone()
     count = int(meaning.role_mask.sum())
     from ThoughtReferences import open_slots
@@ -19,9 +19,9 @@ def bound_view(state, observation, sentence, row, meaning):
         slots = slots[[2,0,1]]
     packed = torch.zeros_like(meaning.roles)
     packed[:count] = slots
-    language[9][row,sentence] = slots[-1]
-    language[13][row,sentence] = packed.flatten()
-    language[14][row,sentence] = count
+    language[6][row,sentence] = slots[-1]
+    language[10][row,sentence] = packed.flatten()
+    language[11][row,sentence] = count
     view = dict(observation)
     view['meanings'] = list(observation['meanings'])
     view['meanings'][row] = meaning

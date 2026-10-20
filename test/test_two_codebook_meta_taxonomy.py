@@ -83,12 +83,12 @@ class TestInsertIdea(unittest.TestCase):
         _write_point(store, torch.ones(store.nDim))
         before = store.slots.detach().clone()
         point = torch.zeros(store.nDim)
-        point[0], point[1] = .7, -.3
+        point[0], point[1] = .7, .3
         row = _write_point(store, point)
         pos = int(store.row_ids[row])
         self.assertIsInstance(pos, int)
         self.assertNotIn(pos, (-1, 0))
-        self.assertEqual(int(store.rel_type[row]), store.REL_NONE)
+        self.assertEqual(store.role_mask[row].tolist(), [True, False, False])
         self.assertGreaterEqual(row, 0)
         self.assertLess(row, store.capacity)
         self.assertTrue(torch.allclose(store.slots[row, 0], point, atol=1e-5))

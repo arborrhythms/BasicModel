@@ -1,0 +1,84 @@
+.........s.FF........F..................................F............... [ 74%]
+........F................                                                [100%]
+=================================== FAILURES ===================================
+__________ test_forced_ordinary_pending_premise_in_both_orders[False] __________
+test/test_math_chain_section14.py:408: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+test/test_math_chain_section14.py:373: in after
+    assert store.occurrence_of(index) == address and not open_slots(value)
+E   AssertionError: assert (('ltm', 'addr...5111895420973) == ('ltm', 'addr...5111895420973)
+E     
+E     Use -v to get more diff and not (('referent', 0),))
+E    +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 16), ('sym', 66)), bindings=(('_evidence_p...0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)), ('role', 0))),))), scope=(), sentence_kind='relation'))
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=20.409s)
+__________ test_forced_ordinary_pending_premise_in_both_orders[True] ___________
+test/test_math_chain_section14.py:408: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:80: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:77: in record
+    after(model, split, rows, result, observations, observer)
+test/test_math_chain_section14.py:381: in after
+    assert not bindings(value).get('_forward_references')
+E   AssertionError: assert not ((0, 12),)
+E    +  where ((0, 12),) = <built-in method get of dict object at 0x12ae6e280>('_forward_references')
+E    +    where <built-in method get of dict object at 0x12ae6e280> = {'_equality': True, '_evidence_pair': (0.24589234590530396, 0.0), '_formation_records': ((('choice', 'open'), ('probab...ind'), ('probability', 0.02951778471469879), ('reference', -15), ('role', 2))), '_forward_references': ((0, 12),), ...}.get
+E    +      where {'_equality': True, '_evidence_pair': (0.24589234590530396, 0.0), '_formation_records': ((('choice', 'open'), ('probab...ind'), ('probability', 0.02951778471469879), ('reference', -15), ('role', 2))), '_forward_references': ((0, 12),), ...} = bindings(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 4010033338316264258), ('sym', 39)), bindin... 0.15004175901412964, 0.0896872952580452, 0.13687728345394135)), ('role', 0))),))), scope=(), sentence_kind='relation'))
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=32.064s)
+_ test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True] _
+test/test_identity_rows.py:140: in test_loader_permanently_rejects_signed_identity_without_modifying_the_row
+    owner.similarity_codebook.W[owner._csw_row_of(identity),0] = -.125
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: a view of a leaf Variable that requires grad is being used in an in-place operation.
+_______________________ TestReason.test_forward_chaining _______________________
+test/test_truth_ideas_routing.py:234: in test_forward_chaining
+    self.assertEqual({d['source'] for d in two['derived']}, {0, 1})
+E   AssertionError: Items in the first set but not the second:
+E   3
+E   6
+E   Items in the second set but not the first:
+E   0
+E   1
+______ TestOriginProvenance.test_clear_origin_compacts_survivors_in_place ______
+test/test_ternary_truth_store.py:233: in test_clear_origin_compacts_survivors_in_place
+    self.assertTrue(torch.equal(r1['np1'], _v(3)))
+E   AssertionError: False is not true
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5391: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]
+FAILED test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]
+FAILED test/test_truth_ideas_routing.py::TestReason::test_forward_chaining - ...
+FAILED test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place
+5 failed, 91 passed, 1 skipped, 4 warnings in 211.96s (0:03:31)

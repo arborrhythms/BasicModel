@@ -69,20 +69,19 @@ class MereologicalCodes(nn.Module):
         Its truth poles state a different fact and are never changed here.
         """
         store = self.owner._closed_clause_store()
-        if store is None or not len(store) or not self.context_width:
+        if store is None or not self.context_width:
             return {}
-        terms = occurrence_memberships(self.owner, store)
-        recency = store.recency_weights(b)
+        from PartRead import occurrence_roots, occurrence_codes
+        records = occurrence_roots(self.owner, store, b)
+        terms = occurrence_memberships(self.owner, store, records=records)
         result = {}
         from MeaningCodes import defined_code
-        codes = {row: store.identity_code(row, self.meaning_pairs, self.meaning_ones)
-                 for row in range(len(store)) if int(store.rel_type[row]) == store.REL_NONE}
+        codes = occurrence_codes(records, self.meaning_pairs, self.meaning_ones, store.slots)
         for code, rows in terms.items():
-            rows = [r for r in sorted(rows) if int(store.rel_type[r]) == store.REL_NONE]
+            rows = sorted(rows)
             if not rows:
                 continue
-            idx = torch.tensor(rows, dtype=torch.long, device=store.slots.device)
-            weight = recency[idx]
+            weight = torch.stack([records[row]['weight'] for row in rows])
             roots = torch.stack([codes[row] for row in rows])
             positive = (roots * weight[:, None]).sum(0) / weight.sum()
             positive = defined_code(positive, len(rows))
@@ -256,86 +255,23 @@ class MereologicalCodes(nn.Module):
                 start, k = self.percept_event_width, self.meaning_pairs
                 out[row_index[row], start:start+k] = mean[:k]
                 out[row_index[row], start+self.reserved_pairs:start+self.reserved_pairs+k] = mean[k:]
-        components = getattr(owner, 'components', None)
         from IdentityRows import cache_rows
         retained = set(cache_rows(owner))
         for row in unique:
             if row in retained:
                 out[row_index[row]] = cached[row]
-        if components is not None and components.verbs.ids:
-            for row in unique:
-                identity = owner.concept_id_at_row(row)
-                if identity in components.verbs.ids:
-                    point = components.column_point(identity)
-                    if point is not None:
-                        out[row_index[row], self.percept_event_width:] = point[self.percept_event_width:].to(out)
         result = out[torch.tensor([row_index[r] for r in requested], device=out.device, dtype=torch.long)]
         return result.reshape(*shape, self.code_width)
 
 
 @torch.no_grad()
-def occurrence_memberships(owner, store):
-    """Use both native slot references and the durable leaf-code postings."""
+def occurrence_memberships(owner, store, *, records=None):
+    """Map lexical seats to transient context rows rebuilt from Part edges."""
+    from PartRead import occurrence_roots, word_rows
+    if records is None:
+        records = occurrence_roots(owner, store)
     terms = {}
-    for (code, _role), rows in store._leaf_postings.items():
-        terms.setdefault(int(code), set()).update(rows)
-    for row, references in enumerate(store.refs[:len(store)].tolist()):
-        if int(store.rel_type[row]) == store.REL_DEF:
-            continue
-        for cid in set(references):
-            code = owner._csw_row_of(cid) if cid > 0 else None
-            if code is None and cid > 0:
-                definitions = owner._definition_index()
-                objects = () if definitions is None else definitions.objects(cid)
-                code = owner._csw_row_of(objects[0]) if len(objects) == 1 else None
-            if code is not None:
-                terms.setdefault(int(code), set()).add(row)
+    for row, record in enumerate(records):
+        for code in word_rows(owner, store.parts, record['root']):
+            terms.setdefault(code, set()).add(row)
     return terms
-
-
-@torch.no_grad()
-def diffuse_memberships(owner, surface, edges, spread, active):
-    """One shared outflow budget, across concept edges and sentence wholes.
-
-    Words conduct through the bipartite membership graph in two hops. Both
-    hops normalize each node's outgoing degree, and the transient sentence
-    energy is returned to words before the existing retrieval prior reads it.
-    """
-    from util import TheXMLConfig
-    if not bool(TheXMLConfig.space('ConceptualSpace', 'membershipPriming', True)):
-        return False
-    get_store = getattr(owner, '_closed_clause_store', None)
-    store = None if get_store is None else get_store()
-    if store is None or not len(store) or spread <= 0:
-        return False
-    B, V = surface.shape
-    pairs = sorted({(int(code), int(row)) for code, rows in occurrence_memberships(owner, store).items()
-                    if 0 <= code < V for row in rows if int(store.rel_type[row]) != store.REL_DEF})
-    if not pairs:
-        return False
-    words, rows = torch.tensor(pairs, device=surface.device, dtype=torch.long).T
-    src = dst = words.new_empty(0)
-    weight = surface.new_empty(0)
-    if edges is not None:
-        src, dst, weight = (value.to(surface.device) for value in edges)
-        valid = (src >= 0) & (src < V) & (dst >= 0) & (dst < V)
-        src, dst, weight = src[valid], dst[valid], weight[valid].to(surface)
-    membership_weight = surface.new_ones(len(words))
-    degree = surface.new_zeros(V).index_add_(0, src, weight).index_add_(0, words, membership_weight)
-    budget = spread * (surface - 1) * active[:, None]
-    concept_flow = budget[:, src] * (weight / degree[src])
-    flow = budget[:, words] / degree[words]
-    row_energy = surface.new_zeros(B, len(store)).index_add_(1, rows, flow)
-    row_degree = surface.new_zeros(len(store)).index_add_(0, rows, membership_weight)
-    returning = row_energy[:, rows] / row_degree[rows]
-    received = surface.new_zeros(B, V).index_add_(1, words, returning)
-    surface.index_add_(1, src, -concept_flow)
-    surface.index_add_(1, dst, concept_flow)
-    surface.index_add_(1, words, -flow)
-    surface.add_(received)
-    object.__setattr__(owner, '_last_occurrence_priming', dict(
-        rows=len(set(rows.tolist())), edges=len(pairs),
-        addresses=store.address_keys[rows.unique()].detach().clone(),
-        received=received.detach(), sent=flow.detach(), degree=degree.detach(),
-        row_energy=row_energy.detach()))
-    return True

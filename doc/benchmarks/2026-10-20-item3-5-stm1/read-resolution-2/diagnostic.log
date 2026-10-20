@@ -1,0 +1,22 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5391: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=30.605s)
+Traceback (most recent call last):
+  File "/tmp/item35-read-diagnostic2.py", line 38, in <module>
+    try:test_forced_ordinary_pending_premise_in_both_orders(folder,False,None)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py", line 401, in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/math_chain_ordinary.py", line 80, in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/MathChainTraining.py", line 52, in present
+    after_batch(model, split, rows, result)
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/math_chain_ordinary.py", line 77, in record
+    after(model, split, rows, result, observations, observer)
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py", line 368, in after
+    assert store.occurrence_of(index) == address and not open_slots(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

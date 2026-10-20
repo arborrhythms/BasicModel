@@ -1,0 +1,11 @@
+{
+  "test": "test/test_clause_scope.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

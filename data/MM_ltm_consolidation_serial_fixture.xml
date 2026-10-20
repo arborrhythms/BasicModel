@@ -65,7 +65,9 @@
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
-    <nVectors>8</nVectors>
+    <!-- LTM2 closing seats each composing argument. Eight lexical seats
+         cannot hold the three declared truths and their internal arguments. -->
+    <nVectors>64</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
 

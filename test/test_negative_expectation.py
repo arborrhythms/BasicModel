@@ -117,7 +117,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
     torch.manual_seed(946)
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1, input_width=16,
         training_overrides={"rowExpectationGain": 0., "reconstructInLoop": True,
-                            "reconstructionPlacement": "eager", "intraLossWeight": 0.},
+                            "reconstructionPlacement": "eager"},
         architecture_overrides={"ltmConsolidation": True})
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None

@@ -1,0 +1,50 @@
+FF.FFF....                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_open_closing_and_later_binding_are_reference_driven[which] ________
+test/test_item6_2_thinking.py:354: in test_open_closing_and_later_binding_are_reference_driven
+    completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'fill_forward_references'
+______ test_open_closing_and_later_binding_are_reference_driven[unicorn] _______
+test/test_item6_2_thinking.py:354: in test_open_closing_and_later_binding_are_reference_driven
+    completed=store.fill_forward_references((a[1],),int(store.row_ids[index]),supplied.roles[0])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'fill_forward_references'
+______ test_event_implication_reads_endpoint_when_order[positions0-True] _______
+test/test_item6_2_thinking.py:393: in test_event_implication_reads_endpoint_when_order
+    store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
+                                                   ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'REL_IMPLIES'
+______ test_event_implication_reads_endpoint_when_order[positions1-False] ______
+test/test_item6_2_thinking.py:393: in test_event_implication_reads_endpoint_when_order
+    store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
+                                                   ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'REL_IMPLIES'
+____ test_event_implication_cannot_invent_an_order_for_unknown_legacy_time _____
+test/test_item6_2_thinking.py:418: in test_event_implication_cannot_invent_an_order_for_unknown_legacy_time
+    store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
+                                                   ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'REL_IMPLIES'
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]
+FAILED test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]
+FAILED test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]
+FAILED test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time
+5 failed, 5 passed, 1 warning in 2.18s

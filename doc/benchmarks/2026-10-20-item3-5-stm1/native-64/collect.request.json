@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_part_read.py::test_open_copular_occurrence_cannot_supply_its_own_reference_witness"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

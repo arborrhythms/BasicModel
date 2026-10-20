@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-001.recycle.json"
+}

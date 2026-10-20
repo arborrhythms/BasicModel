@@ -1,0 +1,4 @@
+test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads
+test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+
+2 tests collected in 0.91s

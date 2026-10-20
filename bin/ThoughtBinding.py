@@ -49,22 +49,17 @@ def integrate(goal, result, previous):
         if key in visiting or len(visiting) >= 64:
             return None
         visiting = visiting | {key}
-        for source, other, reverse in ((left, right, False), (right, left, True)):
-            term = terms.get(source)
-            if (term is not None and term['kind'] == 0 and len(term['operands']) == 1
-                    and term.get('constructor') == ('reference', True)):
-                alias = term['operands'][0]
-                found = equivalent(other, alias, visiting) if reverse else equivalent(alias, other, visiting)
-                if found is not None:
-                    return found
         for other, witnesses, support in edges.get(left, ()):
             found = equivalent(other, right, visiting)
             if found is not None:
                 return (*witnesses, *found[0]), min(support, found[1])
         a, b = terms.get(left), terms.get(right)
+        for term, own, other in ((a, left, right), (b, right, left)):
+            if term is not None and term.get('reference') not in (None, own):
+                found = equivalent(term['reference'], other, visiting)
+                if found is not None:
+                    return found
         if a is None or b is None or a['kind'] != b['kind']:
-            return None
-        if a['kind'] == 0 and (a.get('constructor') is None or a.get('constructor') != b.get('constructor')):
             return None
         operands_a, operands_b = a['operands'], b['operands']
         if not operands_a or len(operands_a) != len(operands_b):

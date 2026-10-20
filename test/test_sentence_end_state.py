@@ -18,20 +18,20 @@ def test_reading_an_idea_returns_its_one_occupied_slot():
     assert meaning.role_mask.tolist() == [True, False, False]
     torch.testing.assert_close(meaning.roles[0], ended.point, rtol=0, atol=0)
     assert not meaning.roles[1:].any()
-    assert store.refs[row].tolist() == [1, 3, -1]
+    assert store.refs[row].tolist() == [-1, -1, -1]
     assert store.row(row)['evidence'] == (.75, .25)
 
 
-def test_relation_stores_the_supplied_contents_without_rereading_references():
+def test_part_stores_native_addresses_and_reads_current_concept_content():
     store, points = clause_store()
-    ended = part_clause()
-    # Reference identities can outlive a change to the native dictionary.
-    # Such a change cannot replace the values held when this clause ended.
-    for cid in points:
-        points[cid] = torch.full((4,), float(cid + 10))
-    row = store.write_clause(ended)
-    torch.testing.assert_close(store.slots[row], ended.meaning.roles, rtol=0, atol=0)
-    assert store.refs[row].tolist() == list(ended.refs)
+    row = store.write_clause(part_clause())
+    assert store.row(row)['refs'].tolist() == [1, 2]
+    assert not len(store)
+    owner = store._concept_owner()
+    with torch.no_grad():
+        owner.similarity_codebook.W[owner._csw_row_of(1)].fill_(.25)
+    torch.testing.assert_close(store.meaning_of(row).roles[0], torch.full((4,), .25))
+    torch.testing.assert_close(store.meaning_of(row).roles[2], points[2])
 
 
 def test_no_clause_derivation_or_factored_target_is_checkpointed():
@@ -125,32 +125,29 @@ def test_answer_and_recall_own_completed_fields_without_programs():
 def test_closing_discards_operations_without_changing_other_live_rows():
     from Models import BasicModel
 
-    lang = tuple(torch.ones(2, 4) for _ in range(25)) + (
+    lang = tuple(torch.ones(2, 4) for _ in range(22)) + (
         torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool),
         torch.ones(2, 4), torch.ones(2,4,3))  # log probabilities and head distributions
     _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
                                                                   torch.tensor([True, False]))
-    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28):
-        expected = -1 if index in (4, 5, 15, 16, 17, 18, 23, 25) else 0
+    for index in (1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25):
+        expected = -1 if index in (1, 2, 12, 13, 14, 15, 20, 22) else 0
         assert (cleared[index][0] == expected).all()
         torch.testing.assert_close(cleared[index][1], lang[index][1], rtol=0, atol=0)
-    for index in (0, 9, 13, 14, 20):
+    for index in (0, 6, 10, 11, 17):
         torch.testing.assert_close(cleared[index], lang[index], rtol=0, atol=0)
 
 
-def test_writer_takes_relation_kind_from_the_rel_identity():
+def test_part_reading_comes_from_argument_types_without_a_middle_column():
     store, _ = clause_store()
-    store.configure_clause_index(allocate=store._allocate_clause_row,
-        concept_point=store._concept_point,
-        predicate_kind=lambda reference: 'part' if reference == 3 else 'operator')
-    # The reading's annotation is not authoritative at the row boundary.
-    ended = replace(part_clause(), relation='operator')
-    row = store.write_clause(ended)
-    assert int(store.rel_type[row]) == store.REL_PARTOF
-    assert ended.slots.shape == (3, 4)
-    idea = idea_clause()
-    assert idea.slots.shape == (1, 4)
-    assert store.clause_relation(idea) is None
+    owner = store._concept_owner()
+    owner._concept_allocator.symbol_types[1] = {'concept', 'situation'}
+    owner._concept_allocator.symbol_types[2] = {'concept', 'situation'}
+    row = store.write_clause(part_clause())
+    assert store.row(row)['refs'].tolist() == [1, 2]
+    assert store.row(row)['readings'] == ('conditional',)
+    assert store.parts.refs.shape[-1] == 2
+    assert store.clause_relation(idea_clause()) is None
 
 
 def test_idea_caches_the_operand_addresses_recorded_before_fusion():

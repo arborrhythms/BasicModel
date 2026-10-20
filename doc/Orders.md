@@ -177,3 +177,85 @@ while its kind changes — kinds do not change, members do.
   (plan §6), never credited to phrase heads (the toy: heads merge pronouns
   into NP), with the referent's order and family admissible only as extra
   signature coordinates, weak enough that actual use overrides them.
+
+## 9. Per-order conceptual spaces, ramsified over one symbol tree; the stratified priming surface (Alec, 2026-10-20; decided)
+
+Alec's summary: the perceptual tree up to the zeroth-order symbol is
+mereological (the word form at the centroid of its letters and wholes in
+the percept cube); zeroth-order concepts are distributed relative to each
+other; first-order symbols are again mereological but a centroid may be
+meaningless for a discontinuous type; first-order concepts are distributed
+relative to each other — and the question whether all concepts share one
+space or are distributed per order. Decided: **per order, ramsified; all
+symbols in the one mereological tree.** In his words: "ramsify over
+conceptual spaces, but keep all symbols in the mereological space."
+
+- **Ramsify over conceptual spaces.** A concept at order *n* is defined by
+  its relations to the symbols of order *n−1* — a kind by which symbols
+  are its members, an individual by which occurrences are its, with the
+  truth lanes as degree (§3). Those relations are its coordinates: order
+  *n*'s conceptual space is the cube over the order-(*n−1*) symbol index,
+  a concept there is its characteristic vector, and similarity at order
+  *n* is overlap of relation sets — the meet of two sparse membership
+  vectors. This is §2 made geometric: intension at order 0, extension
+  above. It is never meaningless: a discontinuous type is a sparse vector
+  over disjoint members. Order 0 is the base case, its concepts placed by
+  context in a dense similarity space — a compression of the same kind of
+  relation set, the symbol's contexts ([FutureWork, placement](FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
+  Nothing is stored for the orders above 0 beyond LTM2's `Part(member,
+  whole)` edges: the edges *are* the vectors.
+- **Keep all symbols in the mereological space.** Every symbol of every
+  order lives in one structure, the symbol index with its Part tree
+  (two truths §1, "LTM2, one relation"): a word form the centroid of its
+  letters and wholes in the percept cube; a kind tied to its members, an
+  individual to its occurrences, a sentence to its constituents, by Part
+  edges. One tree, all orders, one relation; two carriers — geometric up
+  to order 0 (forms), recorded above it. The **centroid** of an order
+  above 0 is a derived cache over its Part edges (the intersection model
+  of identity), kept only while it passes the test that its meet with
+  each member stays high; where that fails the type is discontinuous and
+  the set is the only representation (the union model). The two identity
+  models of [Philosophy](Philosophy.md) are these two representations.
+- **"Is Felix in the same space as *cat*?" (Alec, 2026-10-20) — not as
+  a point beside him; the three things that could mean are each something
+  else.** Felix and the *kind* cat: **membership**, a Part edge, Felix one
+  coordinate of the kind's vector over order-1 symbols. Felix and a
+  *typical* cat: **typicality**, the meet of Felix's order-1 vector with
+  the kind's centroid cache — which lives **one order down, in the
+  members' space**, because it is the fold over members like him; so
+  that comparison does happen in one space, Felix's own. Felix and the
+  *word* "cat": the word is order 0 and is an **axis** of Felix's
+  representation (he was described as one), not a neighbour; the name
+  "Felix" is another axis, the proper noun whose definition is the
+  individual. A kind therefore has two representations in two spaces —
+  its member set above its members, its centroid among them, kept while
+  the type is continuous — and Felix belongs to the first and meets the
+  second.
+- **Cross-order comparison is membership, not distance.** An individual
+  against a kind is a membership read; an idea against a kind a membership
+  read of its participants; `bind` compares candidates at the request's
+  own order. Distance between orders was never a meaningful quantity, and
+  one shared space would buy only that, at the price of crowding and
+  meaningless centroids.
+- **The priming surface is the same object, read stratified.** It is one
+  vector of energy over the codebook rows with each row's order known
+  (`priming_row_orders`). Restricted to the symbols of order *n−1* it is a
+  fuzzy set of them — a point in order *n*'s conceptual space: the
+  activation over words is the current context as a point in order 1's
+  space, over individuals the current scene in order 2's. One vector, one
+  point in every order's space at once. **The diffusion kernel per
+  stratum:** across orders, along the Part edges (member to whole, whole
+  to its other members — the existing two-hop); within an order above 0,
+  the same two-hop through shared members, so no code-derived channel
+  exists there; within order 0 only, the geometric overlap in the dense
+  similarity space — the one code-derived channel, which placement must
+  not read. **Read points per consumer:** placement reads the order-0
+  stratum after the seen bumps and the edge diffusion, before the
+  order-0 geometric channel; `bind` reads the request's order as its
+  expectation term and the Part edges for the verb's participants;
+  attention and the chooser read all strata; thought's desire channel
+  bumps the stratum it names. Decay, bumps, energy conservation and the
+  capped read are unchanged ([Architecture, priming](Architecture.md)).
+- **Where:** todo item 3, with placement; the stratified surface and the
+  per-order kernel land with the LTM2 store (3.5 step 1b carries the
+  edges; item 3 carries the strata and placement).

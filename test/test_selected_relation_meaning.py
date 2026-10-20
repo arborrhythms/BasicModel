@@ -14,6 +14,8 @@ from test_query_vp_boundaries import _world
 
 def _program_owner(monkeypatch, *, face="part", interrogative=False):
     cs, grammar, _legacy_registry, a, b, _context = _world()
+    with torch.no_grad():
+        cs.similarity_codebook.W.copy_(cs.similarity_codebook.W.sigmoid())
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     selected = next(
         index for index, rule in enumerate(grammar.rules_upward)
@@ -48,7 +50,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
             tuple(grammar.rules_upward[rule_id] for rule_id in unary))
         if rule.method_name == "ask") if interrogative else None)
     leaves = torch.stack((
-        -.25 * registry._payload(a), .75 * registry._payload(b)
+        .25 * registry._payload(a), .75 * registry._payload(b)
     )).detach().requires_grad_()
     folded = layer.operation_layer.ops[local].compose(
         leaves[0].reshape(1, 1, -1),
@@ -63,7 +65,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
                 [[2, what_local, -1]], dtype=actions.dtype)))
         return AnswerProgram(
             rows=torch.tensor([3, 5]), word_rows=torch.tensor([7, 9]),
-            activations=torch.tensor([-.25, .75]), leaves=values,
+            activations=torch.tensor([.25, .75]), leaves=values,
             actions=actions,
             targets=torch.tensor([local, -1]), end_state=end,
             concept_ids=torch.tensor([reference[1] for reference in refs]))

@@ -26,8 +26,8 @@ def _truth_layer():
 
 
 def _relative_store():
-    from Layers import TernaryTruthStore
-    return TernaryTruthStore(_D, capacity=16)
+    from part_fixtures import native_store
+    return native_store(_D,capacity=16)[0]
 
 
 def _vec(*vals):
@@ -124,71 +124,48 @@ def test_truth_of_statement_feedback():
     assert not unknown['grounded'] and unknown['truth'] == 0.0
 
 
-# -- The sibling store: uncollapsed triples ---------------------------------
+# -- LTM2 reads the native arguments; the predicate is not a column. --
 
-def test_triples_stored_uncollapsed_and_separate_from_luminosity():
-    """All three components stored (VP(NP) never collapsed); recording
-    relations leaves the absolute store and its luminosity untouched."""
-    tl = _truth_layer()
-    rs = _relative_store()
-    tl.record(_vec(0.9), degree=1.0)
-    lum_before = tl.luminosity()
-    np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
-    idx = rs.append_relation(np1, vp, np2, trust=1.0)
-    assert idx == 0 and len(rs) == 1
-    s1, sv, s2 = rs.slots[0].unbind()
-    assert torch.allclose(s1, np1) and torch.allclose(sv, vp) \
-        and torch.allclose(s2, np2)
-    assert len(tl) == 1
-    assert tl.luminosity() == pytest.approx(lum_before)
+def test_part_arguments_remain_unscaled_and_separate_from_luminosity():
+    from part_fixtures import part
+    tl=_truth_layer();rs=_relative_store();tl.record(_vec(.9),degree=1.)
+    before=tl.luminosity()
+    left,right=_vec(1.),_vec(0.,0.,1.)
+    edge=part(rs,left,right,evidence=(1.,0.))
+    assert len(rs)==0 and len(rs.parts)==1
+    value=rs.row(edge)
+    assert value['refs'].numel()==2
+    torch.testing.assert_close(value['meaning'].roles[0],left)
+    torch.testing.assert_close(value['meaning'].roles[2],right)
+    assert len(tl)==1 and tl.luminosity()==pytest.approx(before)
 
 
-def test_relational_evaluation_not_coverage():
-    """Evaluation is relational: the stored relation licenses its own
-    triple, not a permuted one — and degrades gradedly."""
-    rs = _relative_store()
-    np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
-    rs.append_relation(np1, vp, np2, trust=1., evidence=(1., 0.))
-    assert rs.evaluate(np1, vp, np2)[0] == pytest.approx(1.0, abs=1e-5)
-    # Swapped consequent: the relation never licensed it.
-    assert rs.evaluate(np1, vp, _vec(0.0, 0.0, -1.0))[0] == pytest.approx(
-        0.0, abs=1e-5)
-    # Graded: a nearby antecedent scores between.
-    near = _vec(1.0, 0.3)
-    mid = rs.evaluate(near, vp, np2)[0]
-    assert 0.5 < mid < 1.0
+def test_relational_evaluation_respects_both_argument_positions():
+    from part_fixtures import part
+    rs=_relative_store();left,right=_vec(1.),_vec(0.,0.,1.)
+    part(rs,left,right,evidence=(1.,0.))
+    assert rs.evaluate(left,right)[0]==pytest.approx(1.)
+    assert rs.evaluate(right,left)[0]==0
+    assert .5 < rs.evaluate(_vec(1.,.3),right)[0] < 1.
 
 
-def test_consequents_drive_the_reasoning_step():
-    """The reasoning loop's expansion: a state near a stored antecedent
-    yields that relation's consequent; below threshold, nothing."""
-    rs = _relative_store()
-    np1, vp, np2 = _vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0)
-    rs.append_relation(np1, vp, np2, trust=1., evidence=(1., 0.))
-    out = rs.consequents(_vec(0.95, 0.05))
-    assert len(out) == 1
-    idx, match, vp_row, np2_row = out[0]
-    assert idx == 0 and match > 0.9
-    assert torch.allclose(np2_row, np2)
-    assert rs.consequents(_vec(0.0, 0.0, 0.0, 1.0)) == []
-    # A specified change filters by VP similarity.
-    assert rs.consequents(np1, vp=_vec(0.0, -1.0)) == []
+def test_consequents_read_the_native_whole_without_a_predicate_filter():
+    from part_fixtures import part
+    rs=_relative_store();left,right=_vec(1.),_vec(0.,0.,1.)
+    edge=part(rs,left,right,evidence=(1.,0.))
+    result,=rs.consequents(_vec(.95,.05))
+    assert result[0]==edge[1] and result[1]>.9
+    torch.testing.assert_close(result[2],right)
+    assert rs.consequents(_vec(0.,0.,0.,1.))==[]
 
 
-def test_structural_constraint_residuals():
-    """'Store all three and enforce them as a structural constraint':
-    two relations with agreeing (np1, vp) but disagreeing consequents
-    show a residual; a functionally consistent corpus shows none."""
-    rs = _relative_store()
-    rs.append_relation(_vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, 1.0))
-    rs.append_relation(_vec(0.0, 0.0, 0.0, 1.0), _vec(0.0, 1.0),
-                     _vec(0.0, 0.0, 0.0, 0.0, 1.0))
-    res = rs.constraint_residuals()
-    assert res.shape == (2,)
-    assert torch.all(res < 0.1), "distinct antecedents: no constraint"
-    # Same antecedent and change, contradictory consequent.
-    rs.append_relation(_vec(1.0), _vec(0.0, 1.0), _vec(0.0, 0.0, -1.0))
-    res = rs.constraint_residuals()
-    assert float(res.max()) > 1.0, "functional inconsistency must show"
-    rs.reset()
-    assert len(rs) == 0 and rs.constraint_residuals().numel() == 0
+def test_distinct_wholes_do_not_imply_negative_membership():
+    from part_fixtures import symbol
+    rs=_relative_store()
+    a,b,c=(symbol(rs,p) for p in (_vec(1.),_vec(0.,1.),_vec(0.,0.,1.)))
+    first=rs.append_relation(a,b,truth_plus=1.)
+    second=rs.append_relation(a,c,truth_plus=1.)
+    assert rs.row(first)['evidence']==rs.row(second)['evidence']==(1.,0.)
+    assert rs.append_relation(a,b,truth_minus=.8)==first
+    assert rs.row(first)['evidence']==pytest.approx((1.,.8))
+    assert rs.row(second)['evidence']==(1.,0.)

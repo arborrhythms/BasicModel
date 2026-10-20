@@ -1,0 +1,37 @@
+F..............F.F.F.                                                    [100%]
+=================================== FAILURES ===================================
+______ test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes ______
+test/test_part_closing.py:12: in test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes
+    assert location[0] == 'sym'
+           ^^^^^^^^^^^
+E   TypeError: 'int' object is not subscriptable
+______ test_determiner_mints_distinct_occurrence_and_universal_stays_high ______
+test/test_operators_final.py:135: in test_determiner_mints_distinct_occurrence_and_universal_stays_high
+    assert f.store.refs[a, 0] != f.store.refs[b, 0]
+E   assert tensor(-1) != tensor(-1)
+__ test_definition_sentence_joins_identities_beside_the_interpret_definition ___
+test/test_operators_final.py:165: in test_definition_sentence_joins_identities_beside_the_interpret_definition
+    assert int(f.store.refs[first, 1]) == predicate_identity('part')
+E   AssertionError: assert -1 == 4010033338316264258
+E    +  where -1 = int(tensor(-1))
+E    +  and   4010033338316264258 = <function predicate_identity at 0x110b82d40>('part')
+________ test_determiner_kept_closing_is_the_only_mint_and_lowers_once _________
+test/test_operators_final.py:209: in test_determiner_kept_closing_is_the_only_mint_and_lowers_once
+    assert f.store.index_of_row(int(f.store.refs[row, 0])) is not None
+E   assert None is not None
+E    +  where None = index_of_row(-1)
+E    +    where index_of_row = TernaryTruthStore().index_of_row
+E    +      where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x148964c50>.store
+E    +    and   -1 = int(tensor(-1))
+=============================== warnings summary ===============================
+test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5391: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes
+FAILED test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high
+FAILED test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition
+FAILED test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once
+4 failed, 17 passed, 1 warning in 10.81s

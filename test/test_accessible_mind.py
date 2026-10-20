@@ -102,7 +102,7 @@ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
     def unfold(idea, limit, **kwargs):
         calls.append((idea.clone(), limit))
         return (11, 23), 3, True
-    store.configure_leaf_index(unfold=unfold)
+    store.configure_leaf_index(read=unfold)
     idea = torch.full((1, 8), .23, requires_grad=True)
     meaning = ConceptualMeaning.from_description(idea)
     row = store.append_meaning(meaning, sentence_index=len(store))
@@ -114,7 +114,7 @@ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
 def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
     store = TernaryTruthStore(8, capacity=32)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     for i in range(12):
         store.append_meaning(_meaning(scope={"where": (i, i + 1)}), stream=0, sentence_index=len(store))
     work = QueryWorkBudget(5)
@@ -127,7 +127,7 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
 
 def test_priming_adds_code_disjoint_rows_without_write_position_contiguity():
     store = TernaryTruthStore(8, capacity=8)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
     second = append_indexed(store, _meaning(), terms=((92,), (), (93,)), stream=1)
     third = append_indexed(store, _meaning(), terms=((94,), (), (95,)), stream=1)
@@ -178,7 +178,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
     store = TernaryTruthStore(8, capacity=32)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     fact = _meaning()
     oldest = store.append_meaning(fact, trust=.2, sentence_index=len(store))
     for _ in range(20):
@@ -233,7 +233,7 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     def unfold(value, limit, **kwargs):
         matches = (fact.roles == value).all(-1).nonzero().flatten()
         return (terms[int(matches[0])], 1, True) if limit and len(matches) else ((), 0, False)
-    store.configure_leaf_index(unfold=unfold)
+    store.configure_leaf_index(read=unfold)
     oldest = append_indexed(store, fact, terms=terms, trust=.7)
     for _ in range(20):
         append_indexed(store, replace(fact, roles=fact.roles + 20,
@@ -356,7 +356,7 @@ def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
         with model._query_boundary_scope((0,)):
             context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(64), continuation=None)
             # Isolate the native priming cue from numerical generation.
-            store._index_unfold=lambda *_a,**_k:((),0,True)
+            store._index_read=lambda *_a,**_k:((),0,True)
             return _signature('query', 'argin1').invoke(context, cue)['frames']
     assert not retrieve()
     priming[0, 50] = 1.5
@@ -433,7 +433,7 @@ def test_nested_writes_are_shared_across_batch_positions():
     parent = replace(child, role_mask=torch.tensor([True, False, False]),
                      role_refs=(('constituent', 0), None, None), constituents=(child,))
     store = TernaryTruthStore(8, capacity=4)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
     assert not hasattr(store, 'index_stream')
     first = store.cued_rows(child, stream=0)['value']

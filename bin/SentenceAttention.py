@@ -87,9 +87,9 @@ class SentenceField(FieldTraversal):
         for column in columns:
             at = (torch.full((B, 1), column, device=rows.device, dtype=torch.long)
                   if isinstance(column, int) else column[:, None])
-            rule_ids = language[4].gather(1, at).squeeze(1)
+            rule_ids = language[1].gather(1, at).squeeze(1)
             pair = pairs[rule_ids.clamp(0,len(pairs)-1)] if pairs.numel() else torch.zeros_like(rows)
-            binary = rows & language[6].gather(1, at).squeeze(1) & (language[5].gather(1, at).squeeze(1) == 2)
+            binary = rows & language[3].gather(1, at).squeeze(1) & (language[2].gather(1, at).squeeze(1) == 2)
             transpose = binary & pair
             binary &= ~pair
             if K > 1:

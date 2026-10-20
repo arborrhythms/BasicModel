@@ -28,16 +28,21 @@ from recon_bench import _build_model, _resolve_config
 
 
 def _chain_cs():
-    """Sparse-active CS with an order-0 chain 3 -> 5 -> 6 (two hops) via
-    two order-1 relation rows (fixture style from test_cs_sparse_weights)."""
+    """Native Part chain 3 -> A -> 5 -> B -> 6, with disjoint content."""
     from test_cs_sparse_weights import _cs, _mint_row
     cs = _cs(nS=16, order=1)
+    for i in range(8):
+        assert _mint_row(cs, 0, 100 + i) == i
     rA = _mint_row(cs, 1, 301)
     rB = _mint_row(cs, 1, 302)
-    cs.add_concept_edge(rA, 3, weight=1.0)
-    cs.add_concept_edge(rA, 5, weight=1.0)     # A bridges 3 <-> 5
-    cs.add_concept_edge(rB, 5, weight=1.0)
-    cs.add_concept_edge(rB, 6, weight=1.0)     # B bridges 5 <-> 6
+    from Spaces import _concept_alloc_of
+    parts = _concept_alloc_of(cs).parts
+    for a, b in ((3, rA), (rA, 5), (5, rB), (rB, 6)):
+        parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b))
+    with torch.no_grad():
+        cs.similarity_codebook.W.zero_()
+        for i, row in enumerate((3, rA, 5, rB, 6)):
+            cs.similarity_codebook.W[row, i] = 1.
     object.__setattr__(cs, "_priming_boosts", None)
     object.__setattr__(cs, "_priming_spread", 0.5)
     object.__setattr__(cs, "_priming_decay", 1.0)   # isolate the transfer law
@@ -45,7 +50,7 @@ def _chain_cs():
 
 
 def test_edges_exposed_undirected():
-    """The concept store's |edges| back the priming diffusion graph."""
+    """The common Part pairs back the priming diffusion graph."""
     cs, rA, rB = _chain_cs()
     edges = cs._priming_edges()
     assert edges is not None
@@ -53,7 +58,7 @@ def test_edges_exposed_undirected():
     pairs = set(zip(src.tolist(), dst.tolist()))
     assert (3, rA) in pairs and (rA, 3) in pairs, "edges must be undirected"
     assert (rB, 6) in pairs and (6, rB) in pairs
-    assert bool((w > 0).all()), "diffusion weights are |magnitudes|"
+    assert bool((w == 1).all()), "each retained Part pair contributes one edge"
 
 
 def test_energy_transfers_not_amplifies():
@@ -100,12 +105,12 @@ def test_zero_spread_is_pure_decay_bump():
 
 @pytest.mark.slow
 def test_priming_spread_knob_stamped():
-    """<primingSpread> reaches the towers (default 0.25, live)."""
+    """<primingSpread> reaches the towers (default 0.05, live)."""
     from configuration_fixtures import parallel_concepts
     with parallel_concepts(wide=True) as path:
         model, *_ = _build_model(_resolve_config(path))
     for sp in list(model.conceptualSpaces) + list(model.wholeSpaces):
-        assert abs(float(getattr(sp, "_priming_spread")) - 0.25) < 1e-9
+        assert abs(float(getattr(sp, "_priming_spread")) - 0.05) < 1e-9
 
 
 # ---- CS->PS / CS->WS heat projection (Alec 2026-07-12) --------------------
@@ -115,10 +120,27 @@ def _projected_model(epochs=3):
     from configuration_fixtures import parallel_concepts
     with parallel_concepts(wide=True) as path:
         m, *_ = _build_model(_resolve_config(path))
+    # Projection precedes the document-end hard reset. Observe its live
+    # outputs there, rather than requiring heat to leak into the next document.
+    m._projection_fixture = []
+    original = m._prime_seen_step
+    def seen():
+        original()
+        m._projection_fixture.append(tuple(
+            None if value is None else value.detach().clone()
+            for value in (m.perceptualSpace.priming_weights(),
+                          m.wholeSpaces[-1].priming_weights())))
+    m._prime_seen_step = seen
     opt = m.getOptimizer(lr=0.01)
     for e in range(epochs):
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
     return m
+
+
+def _surface_descriptions(cs):
+    from Spaces import _concept_alloc_of
+    return [_concept_alloc_of(cs).word_descriptions.get(word) or cs.interpret._pending[word]
+            for word in cs._word_definition_ids()]
 
 
 @pytest.mark.slow
@@ -127,15 +149,16 @@ def test_cs_to_ps_projection_live():
     writes PS priming), on the word triples' pid rows."""
     m = _projected_model()
     cs0 = m._concept_owner()
-    bridge = [cs0.definitions.description(word) for word in cs0.definitions.word_ids]
-    assert bridge, 'admitted definitions must carry native surface references'
-    b_ps = m.perceptualSpace.priming_weights()
+    bridge = _surface_descriptions(cs0)
+    assert bridge, 'admitted words must carry native surface references'
+    b_ps = m._projection_fixture[-1][0]
     assert torch.is_tensor(b_ps), "PS surface must exist post-projection"
     assert float(b_ps.max()) > 1.0, "word pids must carry projected heat"
     # The heated rows are exactly bridge-mapped pids (no scatter elsewhere).
     mapped = {int(p) for definition in bridge for group in definition['parts'] for p in group}
     hot = set((b_ps > 1.0).any(0).nonzero().reshape(-1).tolist())
     assert hot and hot <= mapped, (sorted(hot)[:8], sorted(mapped)[:8])
+    assert m.perceptualSpace.priming_weights() is None
 
 
 @pytest.mark.slow
@@ -144,8 +167,8 @@ def test_cs_to_ws_projection_live():
     reading configs) carries projected word-whole heat."""
     m = _projected_model()
     cs0 = m._concept_owner()
-    bridge = [cs0.definitions.description(word) for word in cs0.definitions.word_ids]
-    b_ws = m.wholeSpaces[-1].priming_weights()
+    bridge = _surface_descriptions(cs0)
+    b_ws = m._projection_fixture[-1][1]
     assert torch.is_tensor(b_ws)
     V = int(b_ws.shape[1])
     mapped = {int(row) for definition in bridge for row in definition['wholes']}
@@ -160,8 +183,8 @@ def test_projection_bounded_across_epochs():
     """The destination decay event bounds the projected accumulation
     (steady state ~ gain * e / (1 - decay), not unbounded growth)."""
     m6 = _projected_model(epochs=6)
-    b6 = m6.perceptualSpace.priming_weights()
-    assert float(b6.max()) < 1000.0, "projection must not grow unbounded"
+    assert all(value is not None and float(value.max()) < 1000.
+               for value, _ in m6._projection_fixture), "projection must not grow unbounded"
 
 
 # ---- canonical order-indexed priming surface (Alec 2026-07-12) ------------
@@ -170,15 +193,15 @@ def test_projection_bounded_across_epochs():
 @pytest.mark.slow
 def test_one_canonical_surface_per_tower():
     """Per-stage WS/CS delegate to the ONE canonical surface (terminal WS,
-    stage-0 CS): a write through any stage is visible through every other,
+    native concept owner): a write through any stage is visible through every other,
     and it is the same tensor object."""
     import torch as _t
     m = _projected_model(epochs=1)
     ws_c = m.wholeSpaces[-1]
     for ws in m.wholeSpaces[:-1]:
         assert ws._priming_target() is ws_c
-    for cs in m.conceptualSpaces[1:]:
-        assert cs._priming_target() is m.conceptualSpaces[0]
+    for cs in m.conceptualSpaces:
+        assert cs._priming_target() is m._concept_owner()
     object.__setattr__(ws_c, "_priming_boosts", None)
     m.wholeSpaces[0].prime_seen(_t.tensor([1]), decay=1.0)
     b0 = m.wholeSpaces[0].priming_weights()

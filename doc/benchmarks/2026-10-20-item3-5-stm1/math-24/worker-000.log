@@ -1,0 +1,52 @@
+..FF..F.ss...                                                            [100%]
+=================================== FAILURES ===================================
+_______ test_copula_fills_the_addressed_open_column_without_a_word_alias _______
+test/test_math_chain_section14.py:59: in test_copula_fills_the_addressed_open_column_without_a_word_alias
+    store.write_clause(Clause(equal, relation='part', refs=(column,predicate,5),
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:375: in write_clause
+    return self.write_clause(clause, trust=trust, origin=origin, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+___ test_one_empty_region_query_permits_conclude_and_only_source_mints[True] ___
+test/test_math_chain_section14.py:91: in test_one_empty_region_query_permits_conclude_and_only_source_mints
+    result = run(model, root, work_budget=32)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5925: in run_selected_thought
+    commit(self, result, row=row)
+bin/ThoughtStream.py:333: in commit
+    index = write(model, result.meaning, row=row)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtStream.py:270: in write
+    raise ValueError('a concluded Part edge requires native symbol arguments')
+E   ValueError: a concluded Part edge requires native symbol arguments
+_ test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge _
+test/test_math_chain_section14.py:121: in test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge
+    model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item6_2_thinking.py:246: in credit_chain_world
+    kind='fact', rel_type=store.REL_PARTOF, evidence=(1.,0.))
+                          ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'REL_PARTOF'
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5391: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias
+FAILED test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+FAILED test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge
+3 failed, 8 passed, 2 skipped, 1 warning in 91.86s (0:01:31)

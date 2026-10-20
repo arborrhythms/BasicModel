@@ -186,11 +186,9 @@
       <!-- Exponential decay of the SEEN priming toward neutral 1.0, applied
            at each seen-write (sec C simplified law). Default 0.9. -->
       <xs:element name="primingDecay" type="xs:decimal" minOccurs="0"/>
-      <!-- Energy-dissipating prime diffusion (2026-07-12): the fraction of a
-           connected row's standing energy that moves to its neighbors (per-
-           source normalized over the concept store's |edge| weights) at each
-           prime event; successive primes propagate energy further out.
-           Live by default (0.25); 0 restores pure decay+bump. -->
+      <!-- Priming diffusion: the fraction of a connected row's energy shared
+           by Part and conceptual-overlap neighbours under one degree budget.
+           Live by default (0.05); 0 restores pure decay+bump. -->
       <xs:element name="primingSpread" type="xs:decimal" minOccurs="0"/>
       <!-- Discover concepts in a row pool by witnessed context and use. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
@@ -971,11 +969,6 @@
         </xs:restriction></xs:simpleType>
       </xs:element>
       <xs:element name="explorationTemperature" type="positiveFloat" minOccurs="0"/>
-      <!-- In-STM autoregressive prediction (IntraSentenceLayer). Loss
-           weight on the per-word L_intra = MSE(predicted idea, observed
-           idea), added to the IR-loss path. The PI-then-Sigma predictor
-           is owned by ConceptualSpace. -->
-      <xs:element name="intraLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Inter-sentence end-state prediction. Structured scope scores
            distinct occupied NP1/VP/NP2 vectors plus presence logits;
            root scope retains the historical single-vector MSE baseline.

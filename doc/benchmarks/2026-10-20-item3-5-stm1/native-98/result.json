@@ -1,0 +1,111 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
+  ],
+  "completed": [
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/worker-000.json"
+      ],
+      "pid": 84041,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 434177320,
+      "elapsed_seconds": 3.6171686670277268,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+        "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
+      ],
+      "completed": [
+        "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+        "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.016462499974295497,
+          "message": "test/test_thought_binding.py:102: in test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part\n    assert (len(store), len(store.parts)) == (counts[0] + 1, counts[1])\nE   assert (0, 1) == (1, 0)\nE     \nE     At index 0 diff: 0 != 1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.002305584028363228,
+          "message": "test/test_thought_binding.py:102: in test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part\n    assert (len(store), len(store.parts)) == (counts[0] + 1, counts[1])\nE   assert (0, 1) == (1, 0)\nE     \nE     At index 0 diff: 0 != 1\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 120.0,
+    "suite_seconds": 200.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98",
+  "elapsed_seconds": 6.115307457977906,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 434177320,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/collect.json"
+    ],
+    "pid": 84014,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181977928,
+    "elapsed_seconds": 1.773142709163949,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+        "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

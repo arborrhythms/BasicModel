@@ -11,7 +11,7 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     if configuration == 'aligned':
         from test_compiled_word_chunk import _tiny_canonical_model
-        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', concept_rows=256)
         model.reconstruct_in_loop = False
         model.loss.reconstruction_scale = 0.
         model._tensor_peer_while_eager = True

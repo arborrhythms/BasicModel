@@ -110,7 +110,7 @@ def forced_prefix_certificate():
         return original_attend(module,keys,legal,space,**kw)
     def capture(m,state,sid,active,*args):
         texts,unavailable=m.reconstruct_grammar_sentence(state,sid,active)
-        bank=m._sentence_primed_bank; root=state[1][9][:,sid]
+        bank=m._sentence_primed_bank; root=state[1][6][:,sid]
         op=next(getattr(op,'gl',op) for op in m._stm_reducer().ops
                 if getattr(getattr(op,'gl',op),'rule_name','')=='disjunction')
         flag=torch.zeros(len(root),dtype=torch.bool)

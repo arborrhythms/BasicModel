@@ -17,13 +17,14 @@ def fixture():
 def test_rows_conduct_to_other_words_without_crossing_batch_streams():
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
-    cs, cb, _ = fixture()
+    cs, cb, alloc = fixture()
     a, b, c = [word(cs, [(p, 1.)]) for p in (4, 7, 8)]
     store = TernaryTruthStore(3, capacity=8)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
+    root = cs.new_concept()
+    store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b), symbol=root)
     row = store.append_meaning(ConceptualMeaning(torch.eye(3), torch.tensor([True,False,False]),
-        mode='assertive', sentence_kind='idea'), evidence=(1.,0.))
-    store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+        mode='assertive', sentence_kind='idea', role_refs=(('sym', root), None, None)), evidence=(1.,0.))
     cs._priming_spread = .25
     # Existing diffusion transports standing energy before the new seen bump.
     cs.prime_seen(torch.tensor([[a],[c]]))

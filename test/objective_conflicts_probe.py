@@ -284,7 +284,6 @@ class Probe:
             codes += module_parameters(getattr(cs, 'similarity_codebook', None))
             percept += module_parameters(getattr(cs, 'concepts_from_percepts', None))
             percept += module_parameters(getattr(cs, 'concept_source_readout', None))
-            predictors += module_parameters(getattr(cs, 'intraSentenceLayer', None))
         operation = model.symbolSpace.languageLayer.operation_layer
         ops = list(operation.ops.parameters()) + list(operation.unary_ops.parameters())
         for layer in model.symbolSpace._host_layer_registry.values():
@@ -441,8 +440,8 @@ class Probe:
                 cosines = torch.nn.functional.cosine_similarity(
                     leaves[:, :, None], bank.codes[:, None], dim=-1)
                 lang = local['state'][1]
-                owners, _, _ = model._compose_round_owners(lang[4])
-                compose_valid = lang[6] & (owners == local['sid'])
+                owners, _, _ = model._compose_round_owners(lang[1])
+                compose_valid = lang[3] & (owners == local['sid'])
                 names = (*model.languageSpace._generate_binary_names,
                          *model.languageSpace._generate_unary_names, 'STOP')
                 rows = bank.rows.cpu().tolist()
@@ -465,8 +464,8 @@ class Probe:
                     decoder_derivations=[named_decoder_sequence(model.languageSpace, batch)
                                          for batch in actions.cpu().tolist()],
                     compose_derivations=compose_derivations(model, local['state'], local['sid'], active, record=record),
-                    compose_rules=[lang[4][b][compose_valid[b]].cpu().tolist() for b in range(len(rows))],
-                    compose_arities=[lang[5][b][compose_valid[b]].cpu().tolist() for b in range(len(rows))],
+                    compose_rules=[lang[1][b][compose_valid[b]].cpu().tolist() for b in range(len(rows))],
+                    compose_arities=[lang[2][b][compose_valid[b]].cpu().tolist() for b in range(len(rows))],
                     leaves=[leaves[b, :int(n)] for b,n in enumerate(counts)],
                     leaf_code_cosines=[cosines[b, :int(n)] for b,n in enumerate(counts)])
                 comparison = getattr(model, '_last_decoder_comparison', None)

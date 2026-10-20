@@ -1,0 +1,14 @@
+{
+  "test": "test/test_priming_energy.py::test_successive_primes_propagate_further",
+  "events": 5,
+  "overlap_events": 4,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 8,
+  "max_sources": 4,
+  "max_part_reads": 9,
+  "max_candidates": 5,
+  "max_comparisons": 16,
+  "max_overlap_edges": 0,
+  "truncated_frontiers": 0,
+  "nonzero_overlap_transfers": 0
+}

@@ -1,0 +1,386 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+  ],
+  "completed": [
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/worker-000.json"
+      ],
+      "pid": 22385,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430671144,
+      "elapsed_seconds": 3.819508875021711,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]"
+      ],
+      "completed": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012341750087216496,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0008150418289005756,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006749159656465054,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002376670017838478,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00016179122030735016,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00015308288857340813,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/worker-001.json"
+      ],
+      "pid": 22386,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1088718624,
+      "elapsed_seconds": 5.751094749895856,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+        "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+        "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+        "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+        "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+        "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+        "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+      ],
+      "completed": [
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+        "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+        "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+        "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+        "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+        "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+        "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0882492910604924,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.19581187516450882,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.2268589579034597,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00017987494356930256,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0024709580466151237,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00217737490311265,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002641999861225486,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0025997920893132687,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0019327499903738499,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021210000850260258,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.4577061671297997,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011092542205005884,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00918391696177423,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002318708226084709,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04",
+  "elapsed_seconds": 10.293227958027273,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 1359432536,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/collect.json"
+    ],
+    "pid": 22371,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 485410040,
+    "elapsed_seconds": 3.6750130420550704,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/part-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+        "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+        "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+        "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+        "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+        "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+        "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

@@ -1,0 +1,41 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_forced_native_decomposition_through_training_driver[1] __________
+test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver
+    assert proved, questions
+E   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]
+E   assert []
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 2 (Δ=8.950s)
+batch = 4 (Δ=12.886s)
+batch = 6 (Δ=23.225s)
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "0", "pair": [3, 1], "question_source": 3, "episode": true, "work": 251, "answer": "four", "bound_correct": false, "committed_binding": ["ltm", "address-v1", -6977223123368437981], "open": [], "expected_chain_length": 1, "inference_count": 1, "chain_correct": false, "inferences": [{"occurrence": ["ltm", "address-v1", -6977223123368437981], "refs": [["sym", 56], ["sym", 4010033338316264258], ["sym", 43]], "open": [], "operation": "query", "witnesses": [["sym", 57]], "known_witnesses": false, "witness_texts": [null], "bound_words": []}], "operations": ["query", "ask", "query", "conclude", "query", "conclude"]}
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "1", "pair": [3, 1], "question_source": 7, "episode": true, "work": 251, "answer": "four", "bound_correct": false, "committed_binding": ["ltm", "address-v1", 8185224631114151066], "open": [], "expected_chain_length": 1, "inference_count": 1, "chain_correct": false, "inferences": [{"occurrence": ["ltm", "address-v1", 8185224631114151066], "refs": [["sym", 71], ["sym", 4010033338316264258], ["sym", 58]], "open": [], "operation": "query", "witnesses": [["sym", 72]], "known_witnesses": false, "witness_texts": [null], "bound_words": []}], "operations": ["query", "ask", "query", "conclude", "query", "conclude"]}
+
+_________ test_forced_native_decomposition_through_training_driver[2] __________
+test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver
+    assert proved, questions
+E   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]
+E   assert []
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 2 (Δ=9.213s)
+batch = 4 (Δ=14.014s)
+batch = 6 (Δ=12.034s)
+batch = 8 (Δ=13.193s)
+batch = 10 (Δ=23.571s)
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "0", "pair": [3, 2], "question_source": 5, "episode": true, "work": 84, "answer": "five", "bound_correct": false, "committed_binding": null, "open": [["referent", 0]], "expected_chain_length": 2, "inference_count": 0, "chain_correct": false, "inferences": [], "operations": ["query", "conclude"]}
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "1", "pair": [3, 2], "question_source": 11, "episode": true, "work": 84, "answer": "five", "bound_correct": false, "committed_binding": null, "open": [["referent", 0]], "expected_chain_length": 2, "inference_count": 0, "chain_correct": false, "inferences": [], "operations": ["query", "conclude"]}
+
+=============================== warnings summary ===============================
+test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+FAILED test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]
+2 failed, 1 warning in 133.53s (0:02:13)

@@ -1,0 +1,29 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 48.88029420794919,
+      "message": "test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver\n    assert proved, questions\nE   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]\nE   assert []",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 2 (\u0394=8.633s)\r\nbatch = 4 (\u0394=12.428s)\r\nbatch = 6 (\u0394=20.463s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 1], \"question_source\": 3, \"episode\": true, \"work\": 198, \"answer\": \"four\", \"bound_correct\": false, \"committed_binding\": [\"ltm\", \"address-v1\", 5178484397488036711], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": false, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", 5178484397488036711], \"refs\": [[\"sym\", 50], [\"sym\", 4010033338316264258], [\"sym\", 39]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 51]], \"known_witnesses\": false, \"witness_texts\": [null], \"bound_words\": []}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 1], \"question_source\": 7, \"episode\": true, \"work\": 198, \"answer\": \"four\", \"bound_correct\": false, \"committed_binding\": [\"ltm\", \"address-v1\", 2387722756094705667], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": false, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", 2387722756094705667], \"refs\": [[\"sym\", 62], [\"sym\", 4010033338316264258], [\"sym\", 52]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 63]], \"known_witnesses\": false, \"witness_texts\": [null], \"bound_words\": []}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

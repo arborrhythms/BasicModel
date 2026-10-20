@@ -114,7 +114,7 @@ def run(mode,destination,epochs,control=None):
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(util,'TheCompileBackend','none')
         model=_tiny_canonical_model(destination,patch,word_buckets='8',input_width=64,concept_rows=64,batch_size=4,
-            training_overrides={'intraLossWeight':0.,'reconstructionPlacement':'eager'})
+            training_overrides={'reconstructionPlacement':'eager'})
         model._tensor_peer_while_eager=True
         model.inputSpace.data.has_supervised_outputs=False
         if mode=='disabled':model.candidate_attention=None

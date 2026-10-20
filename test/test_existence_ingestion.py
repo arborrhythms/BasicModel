@@ -5,13 +5,13 @@ from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 
-def test_legacy_materialized_relation_without_a_vp_stays_unverified():
+def test_part_without_supplied_evidence_stays_unverified():
+    from part_fixtures import native_store, part
     left, right = torch.eye(6)[:2]
-    store = TernaryTruthStore(6, capacity=8)
-    row = store.append_relation(left, torch.zeros_like(left), right,
-                                rel_type=store.REL_PARTOF, trust=.8, kind="unverified")
-    assert row >= 0
-    assert store.row(row)["kind"] == "unverified"
+    store, _ = native_store(width=6)
+    row = part(store, left, right, evidence=(0., 0.))
+    assert store.row(row)['evidence'] == (0., 0.)
+    assert store.row(row)['kind'] == 'unverified'
 
 
 def test_prediction_and_observation_occurrences_cannot_certify_their_content():

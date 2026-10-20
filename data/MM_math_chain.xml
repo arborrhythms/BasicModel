@@ -38,7 +38,6 @@
       <sentenceExpectation>true</sentenceExpectation>
 
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
-      <intraLossWeight>0.1</intraLossWeight>
     </training>
   </architecture>
   <InputSpace><nOutput>128</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>

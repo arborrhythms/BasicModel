@@ -1,0 +1,148 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-001.json"
+      ],
+      "pid": 79971,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437519656,
+      "elapsed_seconds": 3.7463709169533104,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]"
+      ],
+      "completed": [
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.01783470786176622,
+          "message": "test/test_reference_close.py:99: in test_recent_minted_symbol_returns_at_its_native_conceptual_order\n    assert identity in records\nE   assert 1 in {}",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.002598125021904707,
+          "message": "test/test_reference_close.py:99: in test_recent_minted_symbol_returns_at_its_native_conceptual_order\n    assert identity in records\nE   assert 1 in {}",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-000.json"
+      ],
+      "pid": 79970,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2172439336,
+      "elapsed_seconds": 42.25261654192582,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 38.31577983312309,
+          "message": "test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:77: in record\n    after(model, split, rows, result, observations, observer)\ntest/test_math_chain_section14.py:391: in after\n    assert correct, 'the arriving x is three must supply the bound referent'\nE   AssertionError: the arriving x is three must supply the bound referent\nE   assert False",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=22.012s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 30064771072,
+    "aggregate_memory_bytes": 30064771072,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 600.0,
+    "suite_seconds": 700.0,
+    "batch_size": 256,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82",
+  "elapsed_seconds": 45.28437670809217,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2172439336,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/collect.json"
+    ],
+    "pid": 79956,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263848848,
+    "elapsed_seconds": 2.305890583898872,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-82/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

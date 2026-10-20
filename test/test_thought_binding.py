@@ -1,6 +1,7 @@
 """Region alignment and proof-carrying equality substitution, without math."""
 from types import SimpleNamespace
 import torch
+import pytest
 
 from Meaning import ConceptualMeaning
 from ThoughtReferences import bindings, evidence_pair, question, with_slots
@@ -37,8 +38,8 @@ def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
     name, operand, value, answer, modifier = [('sym', n) for n in range(1, 6)]
     compound, rewritten = ('ltm', 'test', 6), ('ltm', 'test', 7)
     premise, binding, license = [('ltm', 'test', n) for n in (8, 9, 10)]
-    components = {compound: dict(kind=0, operands=(operand, modifier), constructor=('lift', True)),
-                  rewritten: dict(kind=0, operands=(value, modifier), constructor=('lift', True))}
+    components = {compound: dict(kind='lift', operands=(operand, modifier)),
+                  rewritten: dict(kind='lift', operands=(value, modifier))}
     first = read(name, compound, premise, components=components)
     goal = integrate(question(equality(None, name), (('referent', 0),)), first, ())
     step = read(rewritten, answer, license, components=components, pair=(.6, .1))
@@ -51,7 +52,7 @@ def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
     weak = integrate(goal, read(rewritten, answer, license, components=components, pair=(.9, .9)),
                      (first, read(operand, value, binding, pair=(.4, 0.))))
     assert evidence_pair(weak) == (.4, .4)
-    wrong_operation = {**components, rewritten: dict(components[rewritten], constructor=('other', True))}
+    wrong_operation = {**components, rewritten: dict(components[rewritten], kind='other')}
     wrong = read(rewritten, answer, license, components=wrong_operation)
     assert integrate(goal, wrong, (first, read(operand, value, binding))) is goal
 
@@ -63,3 +64,42 @@ def test_missing_cached_operand_is_not_a_structural_proof():
     step = read(b, answer, ('ltm', 'test', 9), components={
         a: dict(kind=0, operands=()), b: dict(kind=0, operands=())})
     assert integrate(goal, step, (first,)) is goal
+
+
+def test_conclusion_does_not_publish_unreferenced_working_constituents(monkeypatch):
+    from dataclasses import replace
+    from part_fixtures import native_store
+    from ThoughtStream import write
+    import Occurrence
+    store, (a, b, predicate) = native_store(width=3, points=torch.eye(3))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+    monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('document', 0))
+    unused = with_slots(ConceptualMeaning.from_description(torch.eye(3)[1]), (), pair=(1., 0.))
+    concluded = replace(equality(('sym', a), ('sym', b)), constituents=(unused,))
+    before = len(store)
+    index = write(model, concluded, row=0)
+    assert len(store) == before + 1
+    assert store.meaning_of(index).role_refs == concluded.role_refs
+
+
+@pytest.mark.parametrize('producer', ('query', 'bind'))
+def test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part(monkeypatch, producer):
+    from dataclasses import replace
+    from part_fixtures import native_store
+    from ThoughtStream import write
+    import Occurrence
+    store, (a, b, predicate) = native_store(width=3, points=torch.eye(3))
+    registry = SimpleNamespace(signature_for=lambda *args, **kwargs:
+        SimpleNamespace(operation=SimpleNamespace(semantic_id='isEqual')))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store), grammatical_thoughts=registry)
+    monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('document', 0))
+    meaning = equality(('sym', a), ('sym', b))
+    meaning = replace(meaning, bindings=dict(bindings(meaning),
+        _producing_operation=producer, _bound_roles=(('referent', 0),),
+        _thought_witnesses=(('sym', a),)))
+    counts = len(store), len(store.parts)
+    index = write(model, meaning, row=0)
+    assert (len(store), len(store.parts)) == (counts[0] + 1, counts[1])
+    assert store.row(index)['kind'] == 'inference'
+    assert store.meaning_of(index).role_refs == meaning.role_refs
+    assert bindings(store.meaning_of(index))['_thought_witnesses'] == (('sym', a),)

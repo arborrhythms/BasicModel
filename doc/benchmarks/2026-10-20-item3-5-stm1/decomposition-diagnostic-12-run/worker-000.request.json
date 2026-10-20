@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-diagnostic-12-run/worker-000.recycle.json"
+}

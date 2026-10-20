@@ -14,11 +14,12 @@ def test_partof_is_not_established_by_vector_containment():
     assert result["support_true"] == 0
 
 
-def test_partof_is_not_established_by_a_world_relation_row():
+def test_partof_is_not_established_by_an_ltm1_description():
     part, whole = torch.eye(4)[:2]
     store = TernaryTruthStore(4)
-    store.append_relation(part, torch.eye(4)[2], whole,
-                          rel_type=store.REL_PARTOF, trust=.9)
+    from Meaning import ConceptualMeaning
+    store.append_meaning(ConceptualMeaning.from_payload(torch.stack((part, torch.eye(4)[2], whole)),
+        depth=3, layout='infix'), kind='fact', trust=.9)
     result = TruthGroundedReasoner(store=store).evaluate(
         QuerySpec.from_surface("isPart", part, whole))
     assert result["posture"] == UNKNOWN

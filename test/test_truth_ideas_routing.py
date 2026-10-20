@@ -9,6 +9,7 @@ import unittest
 import warnings
 
 import torch
+from part_fixtures import native_store, part
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -149,8 +150,7 @@ def _v(*vals):
 
 
 def _store():
-    from Layers import TernaryTruthStore
-    return TernaryTruthStore(_D2, capacity=16)
+    return native_store(_D2,capacity=16)[0]
 
 
 _CACHED_CS = []
@@ -184,7 +184,7 @@ class TestReason(unittest.TestCase):
     def test_single_step_modus_ponens(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.8)  # A->B, t1
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(0.8,0.),max(-(0.8),0.)))  # A->B, t1
         res = cs.reason(_v(1, 0), 0.5, parthood_threshold=0.7, store=st)
         self.assertEqual(len(res['derived']), 1)
         d = res['derived'][0]
@@ -192,14 +192,14 @@ class TestReason(unittest.TestCase):
                         "consequent B recovered unscaled")
         self.assertAlmostEqual(d['trust'], 0.4, places=6)   # t1*t2 = 0.8*0.5
         self.assertAlmostEqual(d['parthood'], 1.0, places=6)
-        self.assertEqual(d['source'], 0)
+        self.assertEqual(d['source'], edge[1])
         self.assertEqual(d['step'], 0)
         self.assertAlmostEqual(res['luminosity_gain'], 0.4, places=6)
 
     def test_no_fire_below_parthood_threshold(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.8)
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(0.8,0.),max(-(0.8),0.)))
         res = cs.reason(_v(0, 0, 1), 1.0, parthood_threshold=0.7, store=st)
         self.assertEqual(res['derived'], [])
         self.assertEqual(res['luminosity_gain'], 0.0)
@@ -207,7 +207,7 @@ class TestReason(unittest.TestCase):
     def test_zero_trust_relation_skipped(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.0)
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(0.0,0.),max(-(0.0),0.)))
         res = cs.reason(_v(1, 0), 1.0, parthood_threshold=0.7, store=st)
         self.assertEqual(res['derived'], [],
                          "a ~zero-trust relation carries no knowing to fire")
@@ -215,7 +215,7 @@ class TestReason(unittest.TestCase):
     def test_negative_trust_lie_not_illuminating(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=-0.6)
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(-0.6,0.),max(-(-0.6),0.)))
         res = cs.reason(_v(1, 0), 0.5, parthood_threshold=0.7, store=st)
         self.assertEqual(len(res['derived']), 1)
         self.assertAlmostEqual(res['derived'][0]['trust'], -0.3, places=6)
@@ -225,13 +225,13 @@ class TestReason(unittest.TestCase):
     def test_forward_chaining(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 0, 0), _v(0, 1, 0), _v(0, 1, 0), trust=1.0)
-        st.append_relation(_v(0, 1, 0), _v(0, 0, 1), _v(0, 0, 1), trust=1.0)
+        edge = part(st, _v(1, 0, 0), _v(0, 1, 0), evidence=(max(1.0,0.),max(-(1.0),0.)))
+        edge = part(st, _v(0, 1, 0), _v(0, 0, 1), evidence=(max(1.0,0.),max(-(1.0),0.)))
         one = cs.reason(_v(1, 0, 0), 1.0, max_steps=1, store=st)
         self.assertEqual(len(one['derived']), 1, "one step -> one hop")
         two = cs.reason(_v(1, 0, 0), 1.0, max_steps=2, store=st)
         self.assertEqual(len(two['derived']), 2, "two steps -> the chain A->B->C")
-        self.assertEqual({d['source'] for d in two['derived']}, {0, 1})
+        self.assertEqual({d['source'] for d in two['derived']}, set(st.parts.indices().tolist()))
         self.assertEqual({d['step'] for d in two['derived']}, {0, 1})
 
     def test_empty_store(self):
@@ -246,109 +246,64 @@ class TestVerifyRelation(unittest.TestCase):
     def test_support_joins_evidence_without_rebaking(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(0.5,0.),max(-(0.5),0.)))
         # episodes whose antecedent is part of A=[1,1] and consequent part of
         # B=[0,0,1] -> full support.
         eps = [(_v(1, 0), _v(0, 0, 1)), (_v(0, 1), _v(0, 0, 1))]
-        new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
+        new = cs.verify_relation(edge, eps, store=st, support_weight=0.5)
         self.assertAlmostEqual(new, 0.5, places=6)   # observed positive evidence
         # Evidence updates leave the stored vectors unscaled.
-        np1, _vp, np2 = st.slots[0].unbind()
+        np1, _vp, np2 = st.row(edge)['meaning'].roles.unbind()
         self.assertTrue(torch.allclose(np1, _v(1, 1), atol=1e-5))
         self.assertTrue(torch.allclose(np2, _v(0, 0, 1), atol=1e-5))
 
     def test_counterevidence_joins_the_negative_pole(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5,
-                           evidence=(.5, 0.))
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(0.5, 0.0))
         # antecedent covered, consequent NOT (it's some other thing) -> all
         # relevant, none supporting.
         eps = [(_v(1, 0), _v(1, 0)), (_v(0, 1), _v(1, 0))]
-        new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
+        new = cs.verify_relation(edge, eps, store=st, support_weight=0.5)
         self.assertAlmostEqual(new, 0., places=6)  # equal independent poles
-        self.assertAlmostEqual(float(st.trust[0]), 0., places=6)
+        self.assertAlmostEqual(st.row(edge)['trust'], 0., places=6)
 
     def test_no_relevant_episode_leaves_trust(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(0.5,0.),max(-(0.5),0.)))
         # antecedent not covered by A -> no relevant evidence.
         eps = [(_v(0, 0, 1), _v(0, 0, 1))]
-        new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
+        new = cs.verify_relation(edge, eps, store=st, support_weight=0.5)
         self.assertAlmostEqual(new, 0.5, places=6)
 
     def test_zero_trust_relation_can_acquire_evidence(self):
         cs = _cs()
         st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.0)
-        self.assertEqual(cs.verify_relation(0, [(_v(1, 0), _v(0, 0, 1))],
+        edge = part(st, _v(1, 1), _v(0, 0, 1), evidence=(max(0.0,0.),max(-(0.0),0.)))
+        self.assertEqual(cs.verify_relation(edge, [(_v(1, 0), _v(0, 0, 1))],
                                             store=st), 0.5)
 
 
 # -- persistence: per-triple trust survives state_dict round-trip ----------
 
 class TestRelativeTrustPersistence(unittest.TestCase):
-    """The per-triple relation trust is a REGISTERED BUFFER (``trust``) so a
-    checkpoint save/load recovers it. Before the fix it lived in a plain
-    Python list outside the state_dict, so a reloaded relation reverted to
-    the 1.0 fallback in ``reason`` / ``verify_relation``."""
+    def test_evidence_and_unscaled_argument_identity_survive_checkpoint(self):
+        st=_store();edge=part(st,_v(1,1),_v(0,0,1),evidence=(.7,.2))
+        state=st.parts.state_dict()
+        self.assertEqual(set(state),{'refs','truth_plus','truth_minus','access_count','surprise','when','count'})
+        fresh=_store();same=part(fresh,_v(1,1),_v(0,0,1),evidence=(0.,0.))
+        self.assertEqual(same,edge)
+        fresh.parts.load_state_dict(state)
+        self.assertEqual(len(fresh.parts),1)
+        self.assertAlmostEqual(fresh.row(edge)['evidence'][0],.7,places=6)
+        self.assertAlmostEqual(fresh.row(edge)['evidence'][1],.2,places=6)
+        result=_cs().reason(_v(1,0),1.,store=fresh)
+        self.assertAlmostEqual(result['derived'][0]['trust'],.5,places=6)
+        torch.testing.assert_close(result['derived'][0]['concept'],_v(0,0,1))
 
-    def test_trust_in_state_dict_roundtrip(self):
-        st = _store()
-        idx = st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
-        self.assertEqual(idx, 0)
-        sd = st.state_dict()
-        self.assertNotIn('trust', sd)
-        self.assertIn('c_plus', sd)
-        self.assertIn('c_minus', sd)
-
-        fresh = _store()
-        self.assertEqual(float(fresh.trust[0]), 0.0)   # zero before load
-        fresh.load_state_dict(sd)
-        self.assertAlmostEqual(float(fresh.trust[0]), 0.7, places=6)
-        # back-compat list view tracks the buffer over live rows.
-        self.assertEqual(len(fresh), 1)
-        self.assertAlmostEqual(fresh.trust[0], 0.7, places=6)
-
-    def test_reason_over_reloaded_store_recovers_t1(self):
-        cs = _cs()
-        st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
-        sd = st.state_dict()
-
-        reloaded = _store()
-        reloaded.load_state_dict(sd)
-        # query covered by the antecedent A=[1,1]; query_trust=1.0 so the
-        # derived trust isolates t1 -> must be 0.7, NOT the 1.0 fallback.
-        res = cs.reason(_v(1, 0), 1.0, parthood_threshold=0.7, store=reloaded)
-        self.assertEqual(len(res['derived']), 1)
-        self.assertAlmostEqual(res['derived'][0]['trust'], 0.7, places=6)
-        # B recovered UNSCALED (np2/t1) -> proves t1=0.7 was used to unbake.
-        self.assertTrue(torch.allclose(
-            res['derived'][0]['concept'], _v(0, 0, 1), atol=1e-5))
-
-    def test_old_checkpoint_without_trust_loads_nonstrict(self):
-        st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
-        sd = st.state_dict()
-        del sd['c_plus']
-        del sd['c_minus']  # legacy artifact without recorded evidence
-        fresh = _store()
-        # non-strict load tolerates the missing key; trust stays zero-init.
-        fresh.load_state_dict(sd, strict=False)
-        self.assertEqual(float(fresh.trust[0]), 0.0)
-
-    def test_verify_relation_writes_back_to_buffer(self):
-        cs = _cs()
-        st = _store()
-        st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.5)
-        eps = [(_v(1, 0), _v(0, 0, 1)), (_v(0, 1), _v(0, 0, 1))]
-        new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
-        self.assertAlmostEqual(new, 0.5, places=6)
-        # the write landed in the buffer (not a discarded list snapshot).
-        self.assertAlmostEqual(float(st.c_plus[0]), 0.5, places=6)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_verify_relation_writes_both_registered_poles(self):
+        st=_store();edge=part(st,_v(1,1),_v(0,0,1),evidence=(.5,0.))
+        _cs().verify_relation(edge,[(_v(1,0),_v(0,0,1)),(_v(0,1),_v(1,0))],store=st)
+        self.assertAlmostEqual(float(st.parts.truth_plus[edge[1]]),.5,places=6)
+        self.assertAlmostEqual(float(st.parts.truth_minus[edge[1]]),.5,places=6)

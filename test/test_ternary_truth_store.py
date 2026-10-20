@@ -35,8 +35,8 @@ _D = 4
 
 
 def _store(cap=8, **kw):
-    from Layers import TernaryTruthStore
-    return TernaryTruthStore(_D, capacity=cap, **kw)
+    from part_fixtures import native_store
+    return native_store(_D,capacity=cap)[0]
 
 
 def _v(*vals):
@@ -56,37 +56,31 @@ class TestSchema(unittest.TestCase):
         self.assertTrue(torch.equal(row['np1'], _v(1)))
         self.assertTrue(torch.equal(row['vp'], torch.zeros(_D)))   # Null
         self.assertTrue(torch.equal(row['np2'], torch.zeros(_D)))  # Null
-        self.assertEqual(row['rel_type'], T.REL_NONE)
+        self.assertEqual(int(s.role_mask[r].sum()),1)
         self.assertAlmostEqual(row['trust'], 0.6, places=6)
 
-    def test_relation_is_np_vp_np(self):
-        s = _store()
-        from Layers import TernaryTruthStore as T
-        s.append_relation(_v(1), _v(0, 1), _v(0, 0, 1),
-                          rel_type=T.REL_IMPLIES, trust=0.9)
-        row = s.row(0)
-        self.assertTrue(torch.equal(row['np1'], _v(1)))
-        self.assertTrue(torch.equal(row['vp'], _v(0, 1)))
-        self.assertTrue(torch.equal(row['np2'], _v(0, 0, 1)))
-        self.assertEqual(row['rel_type'], T.REL_IMPLIES)
+    def test_relation_has_two_native_symbol_arguments(self):
+        from part_fixtures import part
+        s=_store();edge=part(s,_v(1),_v(0,0,1),evidence=(.9,0.))
+        row=s.row(edge)
+        self.assertEqual(row['refs'].tolist(),[1,2])
+        self.assertEqual(len(s),0)
+        self.assertEqual(len(s.parts),1)
+        torch.testing.assert_close(row['meaning'].roles[0],_v(1))
+        torch.testing.assert_close(row['meaning'].roles[2],_v(0,0,1))
 
-    def test_np_vp_null_unary(self):
-        s = _store()
-        from Layers import TernaryTruthStore as T
-        s.append_relation(_v(1), _v(0, 1), None, rel_type=T.REL_OPERATOR)
-        row = s.row(0)
-        self.assertTrue(torch.equal(row['np2'], torch.zeros(_D)))  # Null tail
+    def test_unary_content_is_an_idea_and_supplies_no_part_pair(self):
+        s=_store();s.append_idea(_v(.2,.3))
+        self.assertEqual(len(s.parts),0)
+        self.assertTrue(torch.equal(s.row(0)['np1'],_v(.2,.3)))
 
-    def test_unscaled_storage_trust_is_separate(self):
-        # trust is NOT baked into the magnitude (unlike RelativeTruthStore).
-        s = _store()
-        from Layers import TernaryTruthStore as T
-        s.append_relation(_v(2), _v(0, 3), _v(0, 0, 4),
-                          rel_type=T.REL_PARTOF, trust=0.5)
-        row = s.row(0)
-        self.assertTrue(torch.equal(row['np1'], _v(2)), "stored unscaled")
-        self.assertTrue(torch.equal(row['np2'], _v(0, 0, 4)), "stored unscaled")
-        self.assertAlmostEqual(row['trust'], 0.5, places=6)
+    def test_unscaled_storage_evidence_is_separate(self):
+        from part_fixtures import part
+        s=_store();edge=part(s,_v(.2),_v(0,0,.4),evidence=(.5,0.))
+        row=s.row(edge)
+        torch.testing.assert_close(row['meaning'].roles[0],_v(.2))
+        torch.testing.assert_close(row['meaning'].roles[2],_v(0,0,.4))
+        self.assertAlmostEqual(row['trust'],.5,places=6)
 
 
 class TestTimestampAndTrust(unittest.TestCase):
@@ -111,15 +105,12 @@ class TestTimestampAndTrust(unittest.TestCase):
 class TestQueries(unittest.TestCase):
 
     def test_relations_and_ideas_filters(self):
-        s = _store()
-        from Layers import TernaryTruthStore as T
-        s.append_idea(_v(1))                                    # 0: idea
-        s.append_relation(_v(1), _v(2), _v(3), rel_type=T.REL_PARTOF)   # 1
-        s.append_relation(_v(4), _v(5), _v(6), rel_type=T.REL_IMPLIES)  # 2
-        self.assertEqual(s.ideas().tolist(), [0])
-        self.assertEqual(sorted(s.relations().tolist()), [1, 2])
-        self.assertEqual(s.relations(T.REL_PARTOF).tolist(), [1])
-        self.assertEqual(s.relations(T.REL_IMPLIES).tolist(), [2])
+        from part_fixtures import part
+        s=_store();s.append_idea(_v(1))
+        a=part(s,_v(1),_v(0,1));b=part(s,_v(0,0,1),_v(0,0,0,1),types=('situation',))
+        self.assertEqual(s.ideas().tolist(),[0])
+        self.assertEqual(s.relations().tolist(),[a[1],b[1]])
+        self.assertEqual(s.relations('implies').tolist(),[b[1]])
 
     def test_empty_queries(self):
         s = _store()
@@ -151,26 +142,16 @@ class TestCapacityAndWidth(unittest.TestCase):
 
 class TestPersistence(unittest.TestCase):
     def test_state_dict_roundtrip(self):
-        from Layers import TernaryTruthStore as T
-        s = _store()
-        s.append_idea(_v(1), trust=0.3)
-        s.append_relation(_v(1), _v(0, 1), _v(0, 0, 1),
-                          rel_type=T.REL_IMPLIES, trust=-0.4)
-        sd = s.state_dict()
-        # every piece of state is a registered buffer -> rides state_dict
-        for k in ('slots', 'rel_type', 'stream', 'c_plus', 'c_minus', 'count'):
-            self.assertIn(k, sd, f"{k} must be in state_dict")
-        self.assertNotIn('trust', sd)
-        s2 = _store()
-        s2.load_state_dict(sd)
-        self.assertEqual(len(s2), 2)
-        self.assertEqual(s2.row(0)['rel_type'], T.REL_NONE)
-        self.assertAlmostEqual(s2.row(0)['trust'], 0.3, places=6)
-        self.assertEqual(s2.row(1)['rel_type'], T.REL_IMPLIES)
-        self.assertAlmostEqual(s2.row(1)['trust'], -0.4, places=6)
-        self.assertTrue(torch.equal(s2.row(1)['np2'], _v(0, 0, 1)))
-        # the clock survives so further appends keep increasing
-        r = s2.append_idea(_v(9))
+        from part_fixtures import part
+        s=_store();s.append_idea(_v(1),trust=.3)
+        edge=part(s,_v(1),_v(0,0,1),evidence=(0.,.4))
+        fresh=_store();same=part(fresh,_v(1),_v(0,0,1),evidence=(0.,0.))
+        self.assertEqual(same,edge)
+        fresh.load_state_dict(s.state_dict());fresh.parts.load_state_dict(s.parts.state_dict())
+        self.assertEqual(len(fresh),1);self.assertEqual(len(fresh.parts),1)
+        self.assertAlmostEqual(fresh.row(0)['trust'],.3,places=6)
+        self.assertAlmostEqual(fresh.row(edge)['trust'],-.4,places=6)
+        torch.testing.assert_close(fresh.row(edge)['meaning'].roles[2],_v(0,0,1))
 
     def test_reset_clears(self):
         s = _store()
@@ -237,8 +218,7 @@ class TestOriginProvenance(unittest.TestCase):
         s = _store()
         s.append_idea(_v(1), trust=0.1)            # 0: conversation
         s.append_idea(_v(2), trust=0.2)            # 1: user
-        s.append_relation(_v(3), _v(0, 3), _v(0, 0, 3),
-                          rel_type=T.REL_IMPLIES, trust=0.3)   # 2: prov
+        s.append_idea(_v(.3),trust=.3)   # 2: prov
         s.append_idea(_v(4), trust=0.4)            # 3: user
         s.set_origin(1, T.ORIGIN_USER, text="u1")
         s.set_origin(2, T.ORIGIN_PROVISIONED, text="p")
@@ -250,8 +230,7 @@ class TestOriginProvenance(unittest.TestCase):
         r0, r1 = s.row(0), s.row(1)
         self.assertTrue(torch.equal(r0['np1'], _v(1)))
         self.assertEqual(r0['origin'], T.ORIGIN_CONVERSATION)
-        self.assertTrue(torch.equal(r1['np1'], _v(3)))
-        self.assertEqual(r1['rel_type'], T.REL_IMPLIES)
+        self.assertTrue(torch.equal(r1['np1'], _v(.3)))
         self.assertAlmostEqual(r1['trust'], 0.3, places=6)
         self.assertEqual(r1['text'], "p")
         # vacated tail rows are zeroed

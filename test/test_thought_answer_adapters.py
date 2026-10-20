@@ -28,7 +28,7 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
 def _stored_query(model, registry, part, whole):
     from Layers import TernaryTruthStore
     store=TernaryTruthStore(8,capacity=16)
-    store.configure_leaf_index(unfold=lambda idea,limit,**kwargs:((7,),1,True))
+    store.configure_leaf_index(read=lambda idea,limit,**kwargs:((7,),1,True))
     model.symbolSpace.ltm_store=store
     source=registry.form('part',part,whole,mode='assertive')
     store.append_meaning(source,kind='fact',evidence=(.7,.1))

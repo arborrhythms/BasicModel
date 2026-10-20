@@ -1,0 +1,563 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+    "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+    "test/test_verb_spectrum.py::test_flag_off_is_noop",
+    "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+    "test/test_verb_spectrum.py::test_untrained_is_identity",
+    "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+    "test/test_verb_spectrum.py::test_per_verb_differentiation",
+    "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+    "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+    "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]"
+  ],
+  "completed": [
+    "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+    "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+    "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+    "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+    "test/test_verb_spectrum.py::test_flag_off_is_noop",
+    "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+    "test/test_verb_spectrum.py::test_untrained_is_identity",
+    "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+    "test/test_verb_spectrum.py::test_per_verb_differentiation",
+    "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+    "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+    "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]",
+    "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+    "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-000.json"
+      ],
+      "pid": 21853,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430277976,
+      "elapsed_seconds": 4.172708583064377,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]"
+      ],
+      "completed": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.034442750038579106,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003297792049124837,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0012618328910320997,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002329082926735282,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00023191701620817184,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00017787492834031582,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-002.json"
+      ],
+      "pid": 21855,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 534365600,
+      "elapsed_seconds": 5.92410312499851,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_verb_spectrum.py::test_flag_off_is_noop",
+        "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+        "test/test_verb_spectrum.py::test_untrained_is_identity",
+        "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+        "test/test_verb_spectrum.py::test_per_verb_differentiation",
+        "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+        "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+        "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+        "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+        "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+        "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+        "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+        "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]"
+      ],
+      "completed": [
+        "test/test_verb_spectrum.py::test_flag_off_is_noop",
+        "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+        "test/test_verb_spectrum.py::test_untrained_is_identity",
+        "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+        "test/test_verb_spectrum.py::test_per_verb_differentiation",
+        "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+        "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+        "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+        "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+        "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+        "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+        "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+        "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_flag_off_is_noop",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007697911933064461,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004795838613063097,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_untrained_is_identity",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0008095419034361839,
+          "message": "test/test_verb_spectrum.py:82: in test_untrained_is_identity\n    assert torch.allclose(lyr.apply_verb(np_, verb), np_, atol=1e-5)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0007812499534338713,
+          "message": "test/test_verb_spectrum.py:94: in test_roundtrip_exact_and_nontrivial\n    vp = lyr.apply_verb(np_, verb)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_per_verb_differentiation",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0008106669411063194,
+          "message": "test/test_verb_spectrum.py:110: in test_per_verb_differentiation\n    lyr.apply_verb(np_, verb_a), lyr.apply_verb(np_, verb_b), atol=1e-4)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006904168985784054,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0005750420968979597,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01526745897717774,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0013113331515341997,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0004823750350624323,
+          "message": "test/test_verb_spectrum.py:228: in test_low_precision_exact_rails_have_finite_forward_and_backward\n    vp_what = layer.apply_verb(np_what, verb_what)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0006842499133199453,
+          "message": "test/test_verb_spectrum.py:228: in test_low_precision_exact_rails_have_finite_forward_and_backward\n    vp_what = layer.apply_verb(np_what, verb_what)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0006584171205759048,
+          "message": "test/test_verb_spectrum.py:257: in test_low_precision_roundtrip_is_accurate_to_output_quantization\n    vp_what = layer.apply_verb(np_what, verb_what)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0007682500872761011,
+          "message": "test/test_verb_spectrum.py:257: in test_low_precision_roundtrip_is_accurate_to_output_quantization\n    vp_what = layer.apply_verb(np_what, verb_what)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3267: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3250: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-001.json"
+      ],
+      "pid": 21854,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 782207088,
+      "elapsed_seconds": 13.583067042054608,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+        "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+        "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+        "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+        "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+        "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+      ],
+      "completed": [
+        "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+        "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+        "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+        "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+        "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+        "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004667417146265507,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0055252499878406525,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004683458944782615,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001823666039854288,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 8.632497041020542,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004894579760730267,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.014932583086192608,
+          "message": "test/test_operators_final.py:132: in test_determiner_mints_distinct_occurrence_and_universal_stays_high\n    clause = f.clause(('lift', ('lower', 'a', 'cat'), 'sleeps'))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_clause_acceptance.py:98: in clause\n    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_clause_acceptance.py:85: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_clause_acceptance.py:80: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_clause_acceptance.py:80: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_clause_acceptance.py:84: in visit\n    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3485: in compose\n    return self.forward(marker, description, gate=gate)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3482: in forward\n    return assert_cube(description)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003622081130743027,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008577957982197404,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009413338266313076,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.006769082974642515,
+          "message": "test/test_operators_final.py:195: in test_determiner_kept_closing_is_the_only_mint_and_lowers_once\n    program = f.program(('lift', ('lower', 'a', 'cat'), 'sleeps'))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_clause_acceptance.py:85: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_clause_acceptance.py:80: in visit\n    values = tuple(visit(child) for child in children)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_clause_acceptance.py:80: in <genexpr>\n    values = tuple(visit(child) for child in children)\n                   ^^^^^^^^^^^^\ntest/test_clause_acceptance.py:84: in visit\n    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3485: in compose\n    return self.forward(marker, description, gate=gate)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3482: in forward\n    return assert_cube(description)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003099162131547928,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03",
+  "elapsed_seconds": 20.601610125042498,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 1519898680,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/collect.json"
+    ],
+    "pid": 21839,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 470877432,
+    "elapsed_seconds": 5.99948566686362,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/cube-03/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+        "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+        "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+        "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+        "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+        "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+        "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+        "test/test_verb_spectrum.py::test_flag_off_is_noop",
+        "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+        "test/test_verb_spectrum.py::test_untrained_is_identity",
+        "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+        "test/test_verb_spectrum.py::test_per_verb_differentiation",
+        "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+        "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+        "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+        "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+        "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+        "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+        "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+        "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

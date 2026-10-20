@@ -153,11 +153,10 @@ def _corrupt_child(store, child, reference):
     )
 
 
-@pytest.mark.parametrize("corruption", ("cycle", "dangling"))
-def test_structural_restore_rejects_invalid_local_links_atomically(corruption):
+def test_structural_restore_rejects_dangling_local_links_atomically():
     store, child, root = _world()
     good = copy.deepcopy(store.semantic_extras())
-    wrong = root if corruption == "cycle" else child[:2] + (999,)
+    wrong = child[:2] + (999,)
     _corrupt_child(store, child, wrong)
     saved, extras = copy.deepcopy(store.state_dict()), copy.deepcopy(store.semantic_extras())
     restored = TernaryTruthStore(5, capacity=5)
@@ -177,14 +176,22 @@ def test_cycle_is_reported_without_unbounded_read_or_evidence_transfer():
     assert view["incomplete"] == ("cycle",)
     assert len(view["rows"]) == 2 and view["records_scanned"] == 2
     assert view["rows"][1]["kind"] == "question"
+    restored = TernaryTruthStore(5, capacity=5)
+    restored.load_state_dict(copy.deepcopy(store.state_dict()))
+    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+    reread = restored.read_structure(root, max_nodes=2, max_depth=2, max_records=2)
+    assert reread["incomplete"] == ("cycle",)
+    assert reread["rows"][1]["kind"] == "question"
+    torch.testing.assert_close(restored.c_plus, store.c_plus, rtol=0, atol=0)
+    torch.testing.assert_close(restored.c_minus, store.c_minus, rtol=0, atol=0)
 
 
 def test_invalid_survivor_closure_cannot_partly_withdraw_evidence():
     store, child, root = _world()
     store.set_origin(0, store.ORIGIN_USER)
-    _corrupt_child(store, child, root)
+    _corrupt_child(store, child, child[:2] + (999,))
     before = copy.deepcopy(store.state_dict())
-    with pytest.raises(ValueError, match="cycle|constituent"):
+    with pytest.raises(ValueError, match="unavailable|constituent"):
         store.clear_origin(store.ORIGIN_USER)
     _unchanged(store, before)
 

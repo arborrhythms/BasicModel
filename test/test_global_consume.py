@@ -29,7 +29,7 @@ _DEFAULTS = os.path.join(_DATA, "model.xml")
 def test_consume_zero_init_is_noop():
     from Attention import PrimedSymbolReader
     ga = PrimedSymbolReader()                       # consume_gate zero-init
-    symbols = torch.randn(2, 5, 8)
+    symbols = torch.rand(2, 5, 8)
     content = torch.randn(2, 8)
     out = ga.consume(symbols, content)
     assert torch.equal(out, symbols), "zero-init gate must be a no-op residual"
@@ -43,8 +43,9 @@ def test_consume_gate_injects_on_leading_width():
     symbols = torch.zeros(2, 3, 8)
     content = torch.ones(2, 8)
     out = ga.consume(symbols, content)
-    assert torch.allclose(out, torch.full_like(out, 0.5)), (
-        "gate>0 must add gate*content on the common leading width")
+    from Layers import cube_translate
+    torch.testing.assert_close(out, cube_translate(symbols, .5))
+    assert bool((out > symbols).all())
 
 
 def test_consume_handles_2d_and_3d_symbols():
@@ -56,7 +57,8 @@ def test_consume_handles_2d_and_3d_symbols():
     out3 = ga.consume(torch.zeros(2, 4, 6), c)   # [B, N, D]
     out2 = ga.consume(torch.zeros(2, 6), c)      # [B, D]
     assert out3.shape == (2, 4, 6) and out2.shape == (2, 6)
-    assert float(out3.detach().mean()) == 1.0 and float(out2.detach().mean()) == 1.0
+    assert bool(((out3 > 0) & (out3 <= 1)).all())
+    torch.testing.assert_close(out3[:, 0], out2)
 
 
 def test_consume_none_content_is_noop():
@@ -74,7 +76,8 @@ def test_consume_width_mismatch_slices_to_common():
     symbols = torch.zeros(2, 10)                 # wider than content
     content = torch.ones(2, 4)                   # narrower
     out = ga.consume(symbols, content)
-    assert float(out[:, :4].mean()) == 1.0 and float(out[:, 4:].abs().max()) == 0.0
+    assert bool(((out[:, :4] > 0) & (out[:, :4] <= 1)).all())
+    assert not out[:, 4:].any()
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +87,9 @@ def test_consume_width_mismatch_slices_to_common():
 def _build(name):
     from configuration_fixtures import small_retained
     from recon_bench import _build_model
-    with small_retained(name) as path:
+    # Parsed relations now mint both arguments and composing intermediates.
+    # Keep the smoke-test field small, with seats for the retained TruthSet.
+    with small_retained(name, concept_rows=64) as path:
         model, *_ = _build_model(path)
     return model
 

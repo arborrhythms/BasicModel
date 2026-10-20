@@ -1,0 +1,15 @@
+{
+  "test": "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+  "events": 2,
+  "overlap_events": 1,
+  "max_energy_error": 4.76837158203125e-07,
+  "max_graph_edges": 8,
+  "max_sources": 2,
+  "max_part_reads": 8,
+  "max_candidates": 4,
+  "max_comparisons": 6,
+  "max_overlap_edges": 6,
+  "truncated_frontiers": 0,
+  "nonzero_overlap_transfers": 24,
+  "projections": []
+}

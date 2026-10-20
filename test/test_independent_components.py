@@ -54,21 +54,23 @@ def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_trut
     torch.testing.assert_close(restored.identity_code(row, 64, 3), second)
 
 
-def test_word_magnitude_counts_containing_rows_and_excludes_definition_rows():
+def test_word_magnitude_counts_containing_rows_and_excludes_definition_rows(monkeypatch):
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     from MeaningCodes import sentence_key
     from MereologicalCodes import MereologicalCodes
-    store = TernaryTruthStore(20, capacity=8)
-    owner = SimpleNamespace(_closed_clause_store=lambda: store,
-        _csw_row_of=lambda cid: None, _definition_index=lambda: None)
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    store, owner = f.store, f.cs
+    a, b = f.noun('a'), f.noun('b')
+    root = store.parts.add(a, b, truth_plus=1.)
     codes = MereologicalCodes(owner, torch.zeros(2, 20), percept_width=4, percept_event_width=4)
-    for position, kind in enumerate((store.REL_NONE, store.REL_NONE, store.REL_DEF)):
-        row = store.append_meaning(ConceptualMeaning.from_description(torch.ones(20)),
-            rel_type=kind, document_key='fixture', sentence_index=position,
+    for position in range(2):
+        row = store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
+            role_refs=(('sym', root), None, None)),
+            document_key='fixture', sentence_index=position,
             content_key=sentence_key([str(position).encode()]))
-        store._append_leaf_terms(row, ((0,), (), ()), (True, True, True))
-    count, value = codes.occurrence_terms()[0]
+    count, value = codes.occurrence_terms()[owner._csw_row_of(a)]
     assert count == 2 and value.norm().item() == pytest.approx(2 / 6)
     assert not value[8:].any() and not value.requires_grad
 
@@ -292,11 +294,11 @@ def test_continuity_is_binding_evidence_and_never_a_column_signature():
     original = columns.column_point(identity).detach().clone()
     frame = SituationFrame(1, torch.zeros(3, 12), torch.tensor([True, False, False]),
                            91, None, where=torch.tensor([2., 3.]), when=torch.tensor([8., 9.]))
-    located = columns.situated_point(identity, frame)
-    torch.testing.assert_close(located[:4], torch.tensor([2., 3., 0., 0.]))
-    torch.testing.assert_close(located[4:], original[4:])
+    located = columns.column_point(identity)
+    torch.testing.assert_close(located, original)
     # Changing only the retained model-time column cannot enter composition.
-    changed = columns.situated_point(identity, replace(frame, when=torch.tensor([99., 100.])))
+    frame = replace(frame, when=torch.tensor([99., 100.]))
+    changed = columns.column_point(identity)
     torch.testing.assert_close(changed, located, rtol=0, atol=0)
     torch.testing.assert_close(columns.column_point(identity), original)
 

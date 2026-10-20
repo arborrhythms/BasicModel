@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+    "test/test_existence_metadata.py",
+    "test/test_live_references.py",
+    "test/test_truth_text.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,106 @@
+FFFFF.F.F.FF.                                                            [100%]
+=================================== FAILURES ===================================
+__________________ test_source_trust_enters_the_positive_pole __________________
+test/test_identification_evidence.py:23: in test_source_trust_enters_the_positive_pole
+    row = store.write_clause(clause, trust=.8)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+_____ test_pair_retains_both_and_neither_until_explicit_signed_reassertion _____
+test/test_identification_evidence.py:31: in test_pair_retains_both_and_neither_until_explicit_signed_reassertion
+    both = store.write_clause(clause, trust=.8, evidence=(.6, .6))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+_________ test_clause_order_and_evidence_are_stored_without_a_program __________
+test/test_identification_evidence.py:47: in test_clause_order_and_evidence_are_stored_without_a_program
+    row = store.write_clause(clause)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+______________ test_row_compaction_preserves_each_order_and_pole _______________
+test/test_identification_evidence.py:60: in test_row_compaction_preserves_each_order_and_pole
+    first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+_________ test_embedded_identification_does_not_grant_source_authority _________
+test/test_identification_evidence.py:76: in test_embedded_identification_does_not_grant_source_authority
+    row = store.write_clause(parent, trust=.7)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+__________________ test_index_reading_reads_the_stored_order ___________________
+test/test_identification_evidence.py:104: in test_index_reading_reads_the_stored_order
+    row = store.write_clause(replace(clause, order=3), trust=.8)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+_________ test_old_scalar_checkpoint_does_not_invent_evidence_or_order _________
+test/test_identification_evidence.py:129: in test_old_scalar_checkpoint_does_not_invent_evidence_or_order
+    store.write_clause(clause, trust=.8)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+__________________ test_withdrawing_testimony_clears_its_pair __________________
+test/test_identification_evidence.py:155: in test_withdrawing_testimony_clears_its_pair
+    row = store.write_clause(replace(clause, evidence=(.8, .6)), trust=.9,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+__________ test_luminosity_view_reads_signed_testimony_from_the_pair ___________
+test/test_identification_evidence.py:165: in test_luminosity_view_reads_signed_testimony_from_the_pair
+    store.write_clause(replace(clause, evidence=(.8, .6)), trust=-.3,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:392: in write_clause
+    raise ValueError('clause admission requires its native concept owner')
+E   ValueError: clause admission requires its native concept owner
+=============================== warnings summary ===============================
+test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole
+FAILED test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion
+FAILED test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program
+FAILED test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole
+FAILED test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority
+FAILED test/test_identification_evidence.py::test_index_reading_reads_the_stored_order
+FAILED test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order
+FAILED test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair
+FAILED test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair
+9 failed, 4 passed, 1 warning in 2.84s

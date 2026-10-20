@@ -22,14 +22,16 @@ def test_batch_rows_never_prime_each_other():
     assert surface[0, first] > 1 and surface[1, first] == 1
 
 
-def test_no_edge_cap_and_no_scalar_host_walk(monkeypatch):
+def test_part_graph_has_no_edge_cap(monkeypatch):
     from types import SimpleNamespace
+    from PartStore import PartStore
     cs, _, _ = _chain_cs()
     count = 4100
-    layer = SimpleNamespace(nnz=count, nOutput=8192, values=torch.ones(count),
-        _indices=lambda device: (torch.arange(count, device=device), torch.arange(count, device=device)+1))
-    store = SimpleNamespace(part_matrices=lambda: [layer])
-    monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(_layers={0: store}))
+    parts = PartStore(capacity=count + 2)
+    parts.refs[1:count+1] = torch.stack((torch.arange(1, count+1), torch.arange(2, count+2)), -1)
+    parts.count.fill_(count)
+    monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(parts=parts))
+    monkeypatch.setattr(cs, '_csw_row_of', lambda symbol: symbol - 1)
     src, dst, weight = cs._priming_edges()
     assert src.numel() == dst.numel() == weight.numel() == 2 * count
     assert torch.equal(src[:count], dst[count:])

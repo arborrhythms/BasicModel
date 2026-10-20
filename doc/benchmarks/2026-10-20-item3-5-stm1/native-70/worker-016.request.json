@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_priming_diffusion.py::test_part_outflow_preserves_energy_codes_rng_and_inactive_streams",
+    "test/test_priming_diffusion.py::test_part_graph_follows_native_addresses_after_forgetting_and_load",
+    "test/test_priming_diffusion.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-70/worker-016.recycle.json"
+}

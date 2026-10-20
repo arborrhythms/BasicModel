@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_word_interpretation.py",
+    "test/test_identity_cube.py",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

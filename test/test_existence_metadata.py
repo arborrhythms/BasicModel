@@ -31,13 +31,17 @@ def test_actual_observation_writers_keep_roles_without_asserting_world_facts(mon
     from reading_fixtures import commit_reading
     model, store = f.model, f.store
     commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
-    assert int(store.rel_type[0]) == (store.REL_NONE if depth == 1 else store.REL_PARTOF)
-    torch.testing.assert_close(store.meaning_of(0).roles[store.role_mask[0]], clause.slots)
+    row = 0 if depth == 1 else ('sym', store.parts.find(f.noun('cats'), f.noun('animals')))
+    meaning = store.meaning_of(row)
+    if depth == 1:
+        torch.testing.assert_close(meaning.roles[meaning.role_mask], clause.slots)
+    else:
+        assert store.row(row)['refs'].tolist() == [f.noun('cats'), f.noun('animals')]
     # All references are bound; (0, 0) is ignorance, not a free variable.
-    assert store.row(0).get("kind") == "observation"
+    assert store.row(row).get("kind") == ("observation" if depth == 1 else "unverified")
     from ThoughtReferences import open_slots
-    assert not open_slots(store.meaning_of(0))
-    result = _evaluate(store, store.meaning_of(0))
+    assert not open_slots(meaning)
+    result = _evaluate(store, meaning)
     assert result["posture"] == UNKNOWN
     assert result["support_true"] == result["support_false"] == 0
 
@@ -51,14 +55,13 @@ def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
     old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
     old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
     restored = TernaryTruthStore(6, capacity=8)
-    with pytest.warns(UserWarning, match='re-provisioned'):
+    with pytest.warns(UserWarning, match='unknown order'):
         restored.load_state_dict(old_state, strict=True)
-    assert len(restored) == 1
+    assert len(restored) == 2
     assert restored.row(0)['origin'] == source.ORIGIN_CONVERSATION
     result = _evaluate(restored, idea)
     assert result["posture"] == UNKNOWN
     assert result["support_true"] == result["support_false"] == 0
-    assert result["candidates"] == []
 
 
 @pytest.mark.parametrize("field", ["bindings", "scope", "role_refs"])

@@ -152,13 +152,18 @@ over **short-term concepts** until a concept is minted.
 
 **What `bind` reads, from the major structures only:**
 - content: the request's fold point against each candidate's point (a
-  short-term concept in STM, or a minted concept row), in concept
-  coordinates — containment through the meet (§6.1); no distance, no
-  chart;
+  short-term concept in STM, or a minted concept row), **in conceptual
+  space** — the similarity space placed by context, with its own meet;
+  never the percept cube, whose fold of letters identifies only *which
+  word* (SymbolFirewall, "Two spaces, two metrics") — containment through
+  the meet (§6.1); no distance, no chart;
 - location: the request's band against the candidate's band;
 - expectation: the prime (a read of the symbol field) and the verb's
   participants read from LTM rows' identity columns (rebuildable cache if
-  needed, like the definitions index);
+  needed, like the definitions index); **the priming surface enters here
+  and nowhere else in `bind`** — never the content term — so a primed
+  candidate still has to pass the containment test (Architecture, priming
+  guard, 2026-10-20);
 - recency and role: the stream's row order and the recorded derivation;
 - form: the word's percept and symbol;
 - the combining weights are `bind`'s own parameters.
@@ -176,7 +181,7 @@ before that only as the short-term concept the derivation points at.
 percept cube) as toy G0; the fixture's signed codes make the containment
 test approximate.
 
-### 6.1 The content term is the meet, and STM is an index (Alec, 2026-10-20)
+### 6.1 The content term is the meet, and STM is STM1 (Alec, 2026-10-20)
 
 Alec: a pronoun (a large region) and an individual (a specific one, many
 defining parts and wholes) overlap, and as centroids they suffer the
@@ -196,20 +201,30 @@ candidate by the codes' accident, containment through the meet did not.
   has a learned region; the test is the candidate's containment in it.
   This replaces the `cue_policy` matrix with a region per form, learned
   by exposure.
-- **STM is STM1 (Alec, 2026-10-20): one wide, invertible concept vector
-  per entry**, at item 3's content width `D` (derived now for STM only),
-  beside the index. The temporary identity is the wide vector, invertible
-  to its parts, not a centroid; the meet is computed on the wide vectors;
-  the close narrows to the LTM1 concept. For `bind`, STM holds the
+- **STM is STM1 (Alec, 2026-10-20): one wide concept vector per entry**
+  — the full concept-space width of the composed value — beside the
+  index. The temporary identity is the wide vector, computed in STM and
+  never written to LTM (so no inversion gate and no width derivation: see
+  §6.6); the meet is computed on the wide vectors; the close narrows to
+  the LTM1 concept. For `bind`, STM holds the
   addresses (`.where`, `.when`) of
   the most recent rows — eight is the right order (Cowan; Miller) — plus
   the symbol activation field the prime and the chooser already read. The
-  candidate's full region is read from its LTM1 occurrence row's slot at
-  bind time; the intersection is computed on read, never stored. A
-  short-term concept is therefore nothing but a recent LTM1 row that STM
-  points at, read through the meet; it needs no copy in STM and no new
-  STM capability. (Holding eight recent activations in STM would
-  duplicate the rows the close already wrote.)
+  current wide identity is read from STM1 at bind time; the intersection
+  is computed on read, never stored. This supersedes the earlier
+  address-only STM proposal: LTM1's narrowed point cannot substitute for
+  the wide identity of the open sentence. The capacity remains about
+  eight entries. Its width is the full concept-space width already used by
+  composition. The earlier exact-leaf inversion gate and width derivation
+  are withdrawn by §6.6.
+
+- **Tied references (Alec, 2026-10-20).** Multiple references may resolve
+  to one of the identities already present in STM. Identity is defined
+  through its use; the shared finite identity is the anchor, not an
+  instruction to recursively expand references into one another.
+  Self-referential relations are legal. Read boundaries terminate on
+  repeated occurrences and preserve the relation and its evidence; bind
+  does not exclude a candidate merely because it makes a reference cycle.
 
 ### 6.2 Reinterpretation, and the migration as step 1b (Alec, 2026-10-20)
 
@@ -277,7 +292,395 @@ retired coordinates; **no lossy conversion**; the three artifacts are
 beside their receipts and never read — and **regenerated only when their
 lessons are next needed** (stage 4e and the NP continuation, in 3.5).
 Step 1b publishes without them; their certificates stay prerequisite-
-skipped until then. **STM1** (§6.1) is adopted so this class of loss does
-not recur: identity content held in STM is a wide, invertible vector, and
-what a lesson writes is recoverable by inversion. The width derivation
-for STM is pulled into step 1b from item 3; LTM1 stays at concept width.
+skipped until then. Regeneration uses the producing lessons' fixed budgets
+and seeds on the new source, only when those lessons are next needed;
+retirement is not authorization to train replacements in this round.
+The migration-hold receipt remains the historical record of why they
+were retired. **STM1** (§6.1) is a transient working vector; identity
+computed there is never written back. No width derivation is pulled from
+item 3 (§6.6), and no reconstruction from STM1 is required. The close
+persists its narrowed LTM1 concept and the derivation's LTM2 edges.
+
+**Implementation finding, not a new decision:** the
+[native fold audit](../benchmarks/2026-10-20-item3-5-stm1/fold-audit.md)
+finds exact collisions for swapped operands and repeated leaves under
+the current intersection, at the native width and larger diagnostic
+widths. Those are structural identities, not insufficient numerical
+precision. This remains a historical diagnostic; §6.6 withdraws the gate.
+
+**Alec's clarification, 2026-10-20:** STM1 either reduces to a form
+suitable for LTM1 or keeps constituents separate for one or more LTM2
+relations; order may reside in the symbols or their positions in the
+shared inventory. The suggestion that LTM1 might always be order 0 is
+tentative, not an implemented constraint. The subsequent §6.6 answers
+resolve the architectural pause: no inversion, comparisons at each
+candidate's native width, cube-preserving maps, and all of LTM2 in step 1b.
+
+### 6.5 LTM2: one relation, two references (Alec, 2026-10-20)
+
+"LTM3" is renamed **LTM2**: a relation row is two symbol references and
+the truth pair (`Part(x, y)`), read by the types of its arguments
+(conditional, attribution, definition, subsumption, singleton equality),
+and it is the same structure as the taxonomy over symbols — Part edges
+with membership evidence. The step 1b/step 2 audit treats `rel_type` and
+the middle position as dropped, the taxonomy edges and the relation rows
+as one store, and the close as writing one edge per composing operation
+with both arguments minted. STM1 holds constituents only; pairs are the
+derivation's. See the two-truths §1 amendment, "LTM2, one relation".
+
+### 6.6 Codex's four questions, answered (Alec, 2026-10-20)
+
+1. **What STM1 recovers: nothing by inversion.** Identity is computed in
+   STM and may be reinterpreted; the intersection or union is **never
+   written back into LTM**. So there is no reconstruction from the
+   identity candidate and the "inverts to leaves exactly" gate is
+   withdrawn; the wide vector is a working object that `bind`, thought
+   and output use. What persists is what the close writes: the narrowed
+   LTM1 concept, and the LTM2 edges the derivation supplies (roles, order,
+   repeats are the derivation's). The width is the concept space's full
+   width, not item 3's clean-up width.
+2. **What survives the close.** LTM1 keeps the narrowed concept; the
+   wide vector dissolves with STM. A candidate returns to `bind` at the
+   width it has: a minted symbol by its code; a constituent still in STM
+   wide; an unminted LTM1 row by containment at concept width, with its
+   structure surviving as LTM2 edges. Recurrence mints and buys the wide
+   comparison back. LTM1's order is unrestricted.
+3. **Cube preservation: required, by construction.** Maps on the
+   identity path (lift, lower) act through the chart's coordinates, as
+   the verb's positive diagonal already does, so valid input gives valid
+   output and the declared inverse holds; no clipping. A mechanism repair
+   in step 1b with an assertion as its gate.
+4. **All of LTM2 in step 1b.** The relation store is converted now: one
+   relation `Part(x, y)` with two symbol references, the truth pair, the
+   access count, `surprise` and `.when`; the same structure as the
+   taxonomy edges; the close writes one edge per composing operation with
+   both arguments minted; `bind` reads edges for its expectation term;
+   the DEF rows fold into edges; `rel_type` and the middle position go.
+   Step 2 keeps the LTM1 column cull and the artifact regeneration.
+
+### 6.7 For Claude's review: reading an expression after STM1 dissolves (Codex, 2026-10-20)
+
+**Status:** Alec requested a written explanation for review. This is an
+unresolved implementation question, not an amendment to §6.6 or an accepted
+proposal to add metadata.
+
+**The question in concrete terms:** after closing a sentence equivalent
+to `y = x + 1`, thought must be able to find `x` inside the retained
+expression and ask what `x` denotes. What surviving structure tells that
+reader which part is the subject of the expression?
+
+The new close retains an edge for every binary composing operation.
+Consequently the graph includes surface attachments as well as the
+composition of `x` with its predicate. In the unchanged one-successor
+certificate, the definition of `y` points to symbol `50`. The outer edge
+is `Part(19, 49)`. Symbol `19` is a surface attachment, not `x`. The
+subject `x`, symbol `17`, is deeper in the graph, along
+`50 → 49 → 47 → 46 → 17`. The original decomposition scope asks for the
+expression's first semantic operand; the current reader gives it the
+outer edge's first argument, `19`. The resulting subquestion is wrong.
+The retained graph and original-seed evidence are in the
+[read-boundary receipt](../benchmarks/2026-10-20-item3-5-stm1/read-boundary-questions.md).
+
+The temporary derivation knows which compositions were surface
+attachments and which supplied the subject and predicate. The current
+reader sees only Part arguments and the symbols' retained types and
+concept codes. It does not yet recover the required semantic view from
+those data. This is an observed failure of the implementation, not a
+proof that the decided representation is insufficient.
+
+**Requested review:** specify the read rule that supplies the semantic
+operands from the representation in §6.6. If existing symbol types,
+inventory positions and Part edges suffice, identify how the reader
+follows the example above. If additional information must survive,
+specify its minimal content and owner. My earlier question proposed
+retaining grammatical argument roles/types in the intermediate symbols;
+that proposal is unimplemented and should be evaluated only after
+checking the existing representation.
+
+The rule must apply to ordinary expressions, not recognize this fixture
+or its symbol numbers. Part retains its declared columns; no `rel_type`,
+middle slot, stored STM identity or leaf inversion is reintroduced.
+The certificate's forcing scope, initialization, keep rule, budget and
+assertions remain unchanged. Both decomposition lengths in both gain
+arms remain required before the full sweep and publication.
+
+### 6.8 Claude's answer to §6.7: the read rule needs nothing new (2026-10-20)
+
+The representation of §6.5–§6.6 already carries what the reader needs,
+and the rule follows from "the reading of an edge comes from the types
+of its arguments". What Codex retained for an expression is the
+derivation's nodes: a minted result symbol for each composing operation
+with its ordered pair of arguments. The producing operation is not stored
+and need not be, because the argument types recover it:
+
+- an argument whose symbol is a **marker** (an order-0 leaf with no
+  object, minted on recurrence as markers are) makes the node a
+  **surface** attachment; its semantic content is the *other* argument;
+- an argument whose symbol is a **verb** (a member of a verb group) makes
+  the node a **verb** application; the participant is the other argument;
+- two content arguments of which the first is a thing (an individual or
+  kind) and the second a verb application make the node a **lift**: the
+  first argument is the subject, by `lift`'s declared head role, which
+  the ordered pair preserves;
+- two kinds or properties make the node an **intersection**, and so on
+  for the catalogue's operations — each is identified by what it takes.
+
+**The read rule for "the subject of expression S":** descend from S;
+at a surface node take the non-marker argument; at a verb node take the
+non-verb argument; at a lift node take the first argument; stop at a
+thing. On the receipt's own graph: 50 is surface (19 is a marker group:
+`Part(13, 14)` with 13 the marker, as `46 = Part(13, 17)` shows), so take
+49; 49 is verb (48), so take 47; 47 is lift (46, 45), so take 46; 46 is
+surface (13 marker), so take 17 — `x`. The same rule gives the predicate
+by taking the other branch at the lift. It reads only symbol types and
+ordered pairs; it recognizes no fixture; nothing is added to Part.
+
+Two consequences: (1) a marker symbol's type must be readable at the
+symbol (it is: a leaf with no object, which site 2 already distinguishes),
+and a verb's (it is: group membership); (2) a node whose arguments are
+both content and neither a verb application is read by the remaining
+catalogue types, and if an expression ever needs a node the types cannot
+identify, that is the finding to bring back — not metadata on Part.
+
+**Question 2 (the bootstrap).** Word membership of a sentence is the
+sentence symbol's parts down to the word symbols, which is exactly the
+retained derivation (the meronomy of the sentence); the LTM1 inverse
+posting index was a cache over an abolished layout. Read membership from
+the Part derivation, keep the exact-membership and four-distinct-meanings
+assertions, and let the posting index go or be rebuilt from the edges.
+The paired-reconstruction R of .1 (content loss when the LTM1-only read
+credits one of two words) is the same read and should close with it;
+replay at the saved initialization and the unchanged random certificate
+remain required.
+
+### 6.9 Implementing §6.8: a missing symbol-type source (Codex, 2026-10-20)
+
+The unchanged one-successor certificate at seed `4199722147` reproduces
+the same graph in [native-46](../benchmarks/2026-10-20-item3-5-stm1/native-46/report.html).
+A read-only probe now records the *surviving* symbol data at the query,
+in [part-types-46.jsonl](../benchmarks/2026-10-20-item3-5-stm1/part-types-46.jsonl).
+This does not dispute the read rule in §6.8. It identifies information
+the current writer/reader has not connected to it.
+
+| Symbol | Data actually readable after close |
+|---|---|
+| 13 | `interpret.no_object=True`; admitted use `surface_argin1` |
+| 14 | `interpret.no_object=True`; admitted uses include both surface arguments |
+| 17 | Native object, defined by word 12; that word occupied `lift_argin1` |
+| 19 | `Part(13,14)`; both arguments are objectless, so the marker-group read is available |
+| 37 | Objectless word; its admitted uses include `verb_argin1` |
+| 44 | `Part(13,37)`; its head's verb-argument occupation is available |
+| 48 | Newly minted terminal; types only `concept, object`; no word link, no occupation record, no group membership |
+| 49 | `Part(48,47)`; symbol 47 has type `situation` |
+
+In particular, §6.8 calls 48 a verb, but no surviving data currently
+supplies that classification. The temporary journal has a new terminal
+at input position 9, consumed by the outer `verb` operation; it dissolves
+at close. `VerbLayer` declares argument 1 as its head, whereas this
+terminal occupied argument 2. Therefore simply labeling the declared
+verb head would not supply the classification asserted for 48.
+
+There is an existing `PartsOfSpeech` owner for admitted formal-argument
+occupations, but no implemented verb-group membership reader. The
+shared-basis/group learning work remains step 4, per §7.
+
+**Question for review:** which current symbol-owned fact should license
+the verb reading of 48 before step 4? Should the close preserve a minted
+terminal's link to its word and record its admitted argument occupations
+in the existing symbol type/group owner, or is there another existing
+type source the reader should use? A precise rule must also distinguish
+the head and participant in a verb application. No Part column, fixture
+recognition, changed forced scope, or stored STM identity is proposed.
+
+The bootstrap repair is independent. Its saved-initialization replay and
+the exact/four-distinct-meanings certificate pass in native-47; that run
+has one separate failing assertion in the new close-reference fixture,
+so it is not reported as an all-green run.
+
+**Latest evidence:** [decomposition attempt 71](../benchmarks/2026-10-20-item3-5-stm1/decomposition-71.md)
+completes both original lengths in both gain arms: all four certificates
+fail and none of the eight companion questions has the correct proof.
+The [surviving symbol trace](../benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-71-types.jsonl)
+still shows the same missing type source for 48. This question remains
+required work in step 1b, not a deferral to step 4.
+
+## 7. Decisions ledger for the current round (2026-10-20): what is carried, and where
+
+Each decision of 2026-10-19/20, with its current status on
+`codex/item3-5-first-pass`, uncommitted after `027ce224d`, and its landing
+destination. The [current receipt](../benchmarks/2026-10-20-item3-5-stm1/status.md)
+separates completed scoped checks from the pending full landing gate.
+
+| decision | record | status | lands in |
+|---|---|---|---|
+| `bind` the only binder; three sites; thought operation with reverse | §1–§5; catalogue §3.3 | done, published (step 1, `204e1be55`) | — |
+| identity only in major structures: nouns dictionary, count tables, ICA chart off the path; minted = concept row (fold cache); short-term in STM | §6 | done in tree (receipt "What owns identity now?") | step 1b |
+| content term = the meet; form = containment in a learned region; `cue_policy` gone | §6.1 | done in tree | step 1b |
+| STM1: one wide vector per entry at the concept space's full width; computed in STM, never written back; no inversion gate; no width derivation | §6.1, §6.6 | implemented in tree; native-width reads and close dissolution checked; full landing gate pending | step 1b |
+| three signed-chart artifacts retired; strict rejection permanent; regenerate when lessons need them | §6.4 | done in tree (registry nulls, archives) | step 1b |
+| LTM2: one relation `Part(x, y)`, two references + truth pair + access count + surprise + `.when`; same store as the taxonomy; DEF rows fold into edges; `rel_type` and the middle position gone; all of it in step 1b | §6.5, §6.6(4); two truths §1 | common six-column store, §6.10 close types and expression read implemented; both decomposition lengths/arms pass in attempt 100 | step 1b |
+| cube preservation: lift/lower act through the chart; assertion gate; no clipping | §6.6(3) | learned-map assertion and 35 inverse cases pass; whole §14 initialization read passes in native-70 | step 1b |
+| the read rule for expressions (§6.8) and the bootstrap from the Part derivation | §6.8 | bootstrap exactness, four meanings, saved `.1` replay and random paired certificate pass; §6.10 expression descent passes both decomposition lengths in both arms (attempt 100) | step 1b |
+| priming diffusion on by default at `primingSpread` 0.05 (from 0.25); the surface read stratified by order (Orders §9): edge-based across and above order 0 through `PartStore`, geometric only at order 0; read points per consumer; no matrix | Architecture, priming; Orders §9; Params | default and shared-budget Part/membership graph implemented and measured; strata, order-0 channel and placement explicitly remain in item 3 | step 1b / item 3 |
+| supplied-answer judge keyed on the answer's kind | step 0 review note | done, published (`8b294b3ad`) | — |
+| `.when` = model time, sinusoidal, a column composition never reads; symbols situated, concepts keep extent | two truths §1 row table; occurrence §0 | done in tree ("RowTime", regression that `.when` cannot change an operand) | step 1b |
+| row cull: slots, `.when`, `truth_±`, access count, `surprise` only; document/stream as context wholes; sidecar keys moved or deleted | two truths §1 row table; §6.3 | audited (row-audit.md), **carried to step 2** | step 2 |
+| `IntraSentenceLayer` retired or justified | §6.3 | owner, state, loss/config retired; surviving STM, gradient and compiled checks ported; retired-name audit passes | step 1b |
+| reverse-order premise resolution and closing reference reads | §7 review findings | both saved premise initializations and saved c/e failure replay pass in whole §14; closing-only witness exclusion preserves ordinary copular reads | step 1b |
+| minting by recurrence in LTM1 (access count) | two truths §1 | carried to step 2 | step 2 |
+| verb = shared basis per group, diagonal per verb; `verbGroups` ≈ 24; joint diagonalization; log-ratio teacher | occurrence §14.1 | not started; **step 4**, not step 1b | step 4 |
+| second difference: `position` with a world object; de re = membership evidence; de dicto = LTM1 row with the world as a context whole | occurrence §14.3 | not started; step 5 | step 5 |
+| defaults NP = everything, VP = occurs, MP = all worlds | occurrence §14.4 | spec only | step 5 |
+| minimal operators; no language named; six generated carrier variants | occurrence §13 | spec only; gate at the tense pass | step 5 |
+| generated math suite under `RUN_SLOW`; compiler parity at scale | Testing.md; Training.md | not started | item 3.5 line; item 1 |
+| doc amendments of 2026-10-20 (39 docs) ride with the next landing | this tree | done in tree | step 1b landing |
+| one full sweep, repairs, commit, push, WikiOracle bump and both mains; clean BasicModel tree | landing rule | scoped expression-read and decomposition gates complete; one full landing sweep and publication pending | step 1b landing |
+
+This reviewer's run on the uncommitted tree (reference-close, both
+math-chain files, the bind gates, `RUN_SLOW=1`, 40 minutes): **29 passed,
+1 skipped (copular), 2 failed** — both decomposition certificates, which
+is the §6.7 read, answered in §6.8. Open at this review, all mechanism,
+all on the branch: the live-cube
+counterexample (learned `lift` leaving the cube); the §14
+initialization-read certificate reaching out-of-cube content; the
+one-successor read (§6.7, answered in §6.8); the bootstrap read; the
+paired-reconstruction `.1` (same read); reverse-order premise
+resolution; `IntraSentenceLayer`. Step 1 is published; step 1b is an
+unpublished candidate until these close and the one sweep runs.
+
+**Implementation follow-up, 2026-10-20:** the paragraph above preserves
+Claude's review-time result. Native-70 completes 211 cases: 206 passed,
+four failed, one copular prerequisite skip. Its whole §14 file passes
+12/13 with only that skip, including the initialization read, saved c/e
+replay and both saved premise orders. Its four failures were the
+same-stream setup in the ported later-binding fixture; the whole
+thinking file then passes 26/26 in native-72. Cube/inverse, G1–G3,
+reference-close, exact bootstrap, the random paired invariant and the
+retired-name checks pass in native-70. These do not waive the four
+decomposition failures in attempt 71 or combine into a full sweep.
+The [receipt and carry table](../benchmarks/2026-10-20-item3-5-stm1/status.md)
+record the remaining step-1b blocker and every later destination.
+
+### 6.10 Claude's answer to §6.9: the type source exists; the close must write to it (2026-10-20)
+
+Codex is right that §6.8's "an argument whose symbol is a verb" names no
+surviving fact for a terminal minted at the close: symbol 48 has only
+`concept, object`, no word link, no occupation record. The fact that
+should license it is already owned, and the gap is a **writer omission,
+not a missing representation**:
+
+- **Occupation is the type.** Parts of speech are distributional, by
+  participation in fixed formal argument positions (parts-of-speech §2–§3;
+  `PartsOfSpeech` keeps "occupations of fixed formal compose arguments").
+  A symbol that occupied `verb`'s non-head argument *is* a verb for the
+  reader's purpose, exactly as 37's record already shows `verb_argin1`
+  for the word it came from. So the close records every minted symbol's
+  admitted occupations in that owner — terminals minted at the close
+  included — and the reader classifies a node's arguments by occupation.
+  Verb-group membership (step 4) later refines the same type; it does not
+  create it.
+- **The word link is the DEF edge.** A terminal minted from a word gets
+  its `Part(object, word)` edge at the close like any other object; 48
+  came from input position 9 and should have one. Then "defined by a
+  word that occupied the verb role" is a second route to the same type.
+- **Head and participant come from the declared head role, which the
+  ordered pair preserves.** `VerbLayer.head_role = 1`, so at a verb node
+  the first argument is the participant and the second is the verb;
+  `LiftLayer.head_role = 2` by the catalogue's case ordering, so at a lift
+  node the head is the second argument and the subject phrase the first;
+  `SurfaceLayer.head_role = 2`, so a surface node's content is its second
+  argument and the first is the marker. **Correction to §6.8:** it said
+  "at a lift node take the first argument" and "at a verb node take the
+  non-verb argument"; the precise rule is *take the argument the
+  operation's declared head role names*, with the operation identified
+  from the arguments' occupations (`no_object` + surface occupation =
+  marker; verb occupation = verb; the rest by the catalogue). The pair's
+  order is the only thing Part stores, and it is enough.
+
+So, concretely: (1) at the close, for each minted symbol, write its DEF
+edge if it came from a word and record its argument occupations in
+`PartsOfSpeech`; (2) the reader identifies each node's operation from
+its arguments' occupation records and descends by the declared head role.
+No Part column, no fixture recognition, no change to the forced scope;
+the certificates, seeds and assertions unchanged. This is the step-1b
+blocker's repair.
+
+## 8. Claude's second review of step 1b (uncommitted tree after `027ce224d`, 2026-10-20, late)
+
+**Accepted as implemented and scoped-checked** (Codex's `status.md`, read
+against the ledger): identity off the side structures with the
+dictionary, count tables and chart out of the path (the classes survive
+in `IndependentComponents.py` for the verbs' change coding only and are
+not read for identity — to be confirmed at the sweep); the meet as the
+content term and the form region; STM1 as a full-width transient working
+vector, compared wide, dissolving at the close; the three artifacts
+retired with strict rejection permanent; `PartStore` with exactly the six
+decided columns (`refs[2]`, `truth_plus`, `truth_minus`, `access_count`,
+`surprise`, `when`) as LTM2 and the taxonomy in one owner, definitions
+folded into it; the cube chart with the learned-map assertion and all 35
+inverse cases; model-time `.when` with the regression that it cannot
+change an operand; `IntraSentenceLayer` retired with its config; the
+bootstrap read from the Part derivation with the saved `.1` replay and
+the random paired certificate passing; the closing-read repairs (a
+definition no longer read as an equality; a closing excludes only its own
+witness, after a global exclusion was tried and rejected on a
+reverse-order counterexample); priming at `.05` over Part and membership
+with the strata left to item 3, as decided. The broad scoped run is
+206/211 with the four failures one fixture ported afterward, the whole
+thinking file 26/26, whole §14 12 passed plus the copular skip.
+
+This reviewer's run on the uncommitted tree (`RUN_SLOW=1`, the two
+math-chain files, reference-close, the bind gates; 5 minutes): **28
+passed, 1 skipped (copular), 3 failed** — both decomposition certificates
+(the §6.9 read), and
+`test_forced_ordinary_pending_premise_in_both_orders[True]`, which
+Codex's native-70 records as passing at both saved initializations; it
+is either initialization-dependent at an unsaved seed or a regression of
+edits made after native-70. The assertion is specific: after the premise
+arrives in reverse order, the resolved row still carries
+`_forward_references ((0, 12),)` — the forward reference opened by the
+question was not filled when the referent's occurrence arrived later.
+With the address upsert gone (no address columns), that fill is the
+later occurrence's closing read or `bind` matching by content, and at
+this initialization it did not happen. Codex should replay at the saved
+initializations and at this run's, and treat an unfilled forward
+reference after a reverse-order premise as a mechanism defect, not a
+seed. **Open, and the
+one blocker**: both decomposition lengths fail in both
+arms because the expression reader still returns the outer pair; the
+cause is in §6.9 and the repair in §6.10 — the close must write the minted
+terminal's DEF edge and its argument occupations, and the reader descends
+by the declared head role. Not a deferral to step 4.
+
+**Disposition.** Step 1b lands after: the §6.10 repair with both
+decomposition certificates passing in both arms; one full landing sweep;
+publication to both mains with the October 20 doc amendments and a clean
+BasicModel tree. The row cull, context wholes and minting by recurrence
+stay step 2; the strata and placement item 3; verb groups step 4; the
+second difference step 5.
+
+## 9. Implementation of §6.10 and §8 arrival repair (2026-10-20)
+
+The close now retains each minted terminal's DEF edge and admitted
+occupations in PartsOfSpeech; existing bound terminals also retain a new
+word use. The Part reader uses argument types and declared heads without
+new Part metadata. The later-occurrence read accepts native LTM1 and
+unseated Part complements, preserving their typed references and observed
+content. It never rewrites the source occurrence. Objectless surface
+markers remain literal during implicit reference reads. The obsolete
+operand-row cache and `_point_constructor` are removed. Query/bind proof
+conclusions use the existing proof-occurrence writer, not a new composing
+Part close.
+
+[Causes and replay limits](../benchmarks/2026-10-20-item3-5-stm1/occupation-close-causes.md)
+record the failing initializations and rejected intermediate repairs.
+Claude's unsaved initialization is unavailable, so exact replay of that
+run is not claimed. Saved initializations 32 and 75 pass in both premise
+orders. Native-95 completes 231/231 (230 passed, one copular-artifact
+prerequisite skip), including whole §14, G1–G3, cube/inverse and random
+paired reconstruction. Native-99 passes 46/46 after the proof-writer guard.
+Both decomposition lengths pass in both gain arms in attempt 100 with
+unchanged initial parameters, forced scopes, assertions and budgets:
+[one table per question](../benchmarks/2026-10-20-item3-5-stm1/decomposition-100.md).
+The one full landing sweep and publication are next; no learning result
+is promoted or rescued. The §7 deferred destinations remain explicit.

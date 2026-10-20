@@ -139,7 +139,6 @@ def make_model(folder, patch):
         'architecture/training/seed':20261010,
         'architecture/training/autoload':False,'architecture/training/autosave':False,
         'architecture/training/checkpointEveryBatches':0,
-        'architecture/training/intraLossWeight':0.,
         'architecture/training/reconstructionPlacement':'eager'}
     for name,value in settings.items():
         node=root.find('./'+name)

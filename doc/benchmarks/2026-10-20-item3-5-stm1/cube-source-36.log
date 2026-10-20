@@ -1,0 +1,3 @@
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+ImportError: cannot import name 'Interpret' from 'Interpret' (/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py)

@@ -1,5 +1,11 @@
 # Item 3.5 step 1b — identity in the native structures
 
+**Historical candidate `027ce224d`.** Alec's later October 20 decision
+retires the three signed-chart artifacts and makes rejection permanent.
+The [STM1 follow-up](../2026-10-20-item3-5-stm1/README.md) records that
+decision and the remaining work. The results and migration-hold evidence
+below remain the original measurement.
+
 Branch: `codex/item3-5-first-pass`. This round starts after the step-1
 landing on both mains: BasicModel `204e1be55`, WikiOracle `a89c958`.
 Step 1 includes the supplied-answer-kind judge correction, its full sweep

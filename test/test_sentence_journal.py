@@ -150,19 +150,6 @@ def test_packed_word_and_closing_leave_other_sentence_rows_unchanged(tmp_path, m
         model.End()
         model.symbolSpace.soft_reset()
         torch._dynamo.reset()
-def test_functional_prediction_cost_does_not_mutate_an_inactive_row():
-    import torch
-    from Layers import IntraSentenceLayer
-    from Models import FunctionalPeerSTM
-    layer = IntraSentenceLayer(concept_dim=2, working_dim=2, stm_capacity=3, routing_dim=2)
-    state = (torch.ones(2, 3, 2), torch.ones(2, dtype=torch.long),
-             torch.zeros(2, 3, dtype=torch.long), torch.zeros(2, 3, dtype=torch.long),
-             torch.zeros(2, 3, dtype=torch.long), torch.ones(2, 3))
-    _, error, count = FunctionalPeerSTM.predict(
-        state, torch.ones(2, 2), torch.tensor([[True], [False]]), layer)
-    assert error.shape == count.shape == (2,)
-    assert error[1] == count[1] == 0
-    assert count[0] == 2
 
 
 def _deep_derivation_owner(words=600):

@@ -586,6 +586,7 @@ def test_question_conditions_the_first_occupied_answer_role():
     got = m._condition_answer_on_question(answer, context)
     torch.testing.assert_close(got[:, 0], answer[:, 0], rtol=0, atol=0)
     torch.testing.assert_close(got[:, 2], answer[:, 2], rtol=0, atol=0)
-    torch.testing.assert_close(got[:, 1], answer[:, 1] + module(context))
+    from Layers import cube_translate
+    torch.testing.assert_close(got[:, 1], cube_translate(answer[:, 1], module(context)))
     got[:, 1].sum().backward()
     assert module.weight.grad.abs().sum() > 0

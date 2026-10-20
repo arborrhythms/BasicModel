@@ -920,20 +920,21 @@ class ThoughtLTMCapability:
         """Read the two poles of one addressed ended clause, under the same bound."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         from Layers import TernaryTruthStore
-        if not isinstance(store, TernaryTruthStore) or reference not in store._index_occurrences:
+        if not isinstance(store, TernaryTruthStore) or store.location(reference) is None:
             raise ValueError('ended clause occurrence is unavailable')
         if not max_records:
             raise ValueError('ended clause is unavailable within the query read limit')
         work.require('record')
-        index = store._index_occurrences[reference]
-        meaning = store.meaning_of(index)
+        index = store.location(reference)
+        retained = store.row(index)
+        meaning = retained['meaning']
         if meaning is None:
             raise ValueError('ended clause metadata is unavailable')
-        positive, negative = float(store.c_plus[index]), float(store.c_minus[index])
-        if store.KINDS[int(store.record_kind[index])] == 'estimate':
+        positive, negative = retained['evidence']
+        if retained['kind'] == 'estimate':
             positive = negative = 0.
         return dict(value=meaning, support_true=positive, support_false=negative, meaning=meaning,
-                    occurrence=reference, witnesses=(reference,), trust=float(store.trust[index]),
+                    occurrence=reference, witnesses=(reference,), trust=retained['trust'],
                     records_scanned=1, incomplete=())
 
     def best_match(self, pattern, *, max_records, work, references=()):
@@ -975,37 +976,13 @@ class ThoughtLTMCapability:
                     records_scanned=found['records_scanned'], incomplete=found['incomplete'])
 
     def _with_components(self, result, *, max_records, work):
-        """Read an ended row's native operand addresses on the same meter.
-
-        Absolute ideas retain only their permitted two-address cache. A
-        missing cached operand cannot be reconstructed from a former AST.
-        """
+        """Read the typed Part expression under the existing work meter."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        components, pending = {}, [frame['occurrence'] for frame in result.get('frames', ())]
-        scanned = result.get('records_scanned', 0)
-        incomplete = tuple(result.get('incomplete', ()))
-        while pending:
-            reference = pending.pop()
-            if reference in components or reference not in store._index_occurrences:
-                continue
-            if scanned >= max_records or not work.consume('record'):
-                incomplete = (*incomplete, 'component_read_limit')
-                break
-            scanned += 1
-            index = store._index_occurrences[reference]
-            kind = int(store.rel_type[index])
-            raw = tuple(int(value) for value in store.refs[index].tolist())
-            operands = raw[:2] if kind == store.REL_NONE else raw
-            if kind == store.REL_NONE and raw[0] not in (-1, 0) and raw[1] in (-1, 0):
-                operands = raw[:1]
-            operands = (() if any(value in (-1, 0) for value in operands) else
-                        tuple(store.semantic_reference(value) for value in operands))
-            meaning = store.meaning_of(index)
-            from ThoughtReferences import bindings
-            constructor = bindings(meaning).get('_point_constructor')
-            components[reference] = dict(kind=kind, operands=operands, meaning=meaning,
-                                         constructor=constructor)
-            pending.extend(value for value in operands if value and value[0] == 'ltm')
+        from PartRead import expression_components
+        components, scanned, missing = expression_components(store,
+            [frame['occurrence'] for frame in result.get('frames', ())],
+            max_records=max_records, work=work, scanned=result.get('records_scanned', 0))
+        incomplete = (*result.get('incomplete', ()), *missing)
         return dict(result, components=components, records_scanned=scanned,
                     incomplete=tuple(dict.fromkeys(incomplete)))
 
@@ -1021,9 +998,9 @@ class ThoughtLTMCapability:
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         if store is None:
             return pair(frames=(), records_scanned=0)
-        if reference and reference[0] == 'ltm':
+        if reference and store.location(reference) is not None:
             found = self.end_evidence(reference, max_records=max_records, work=work)
-            row = store.row(store._index_occurrences[reference])
+            row = store.row(store.location(reference))
             return dict(found, frames=(row,))
         scanned, best = 0, None
         for index in range(min(len(store), max_records)):
@@ -1047,76 +1024,56 @@ class ThoughtLTMCapability:
             frames=(best,), witnesses=(best['occurrence'],), records_scanned=scanned)
 
     def relation_evidence(self, relation, left, right, *, max_records, work, excluded=()):
-        """Read a direct symbolic link. Chaining belongs to serial result slots."""
+        """Read Part witnesses; argument types determine permissible readings."""
         from ThoughtFaces import pair
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         if store is None:
             return pair(frames=(), incomplete=('unavailable_ltm',), records_scanned=0)
-        kinds = {'part': store.REL_PARTOF, 'equal': store.REL_DEF, 'implies': store.REL_IMPLIES}
-        if relation not in kinds:
-            raise ValueError('unknown symbolic relation')
+        if relation not in ('part', 'equal', 'implies'):
+            raise ValueError('unknown symbolic relation reading')
         candidates, scanned, incomplete = [], 0, []
-        for index in range(len(store)):
+        for symbol in store.parts.indices().tolist():
             if scanned >= max_records or not work.consume('record'):
                 incomplete.append('work_budget' if work.remaining == 0 else 'capture_limit')
                 break
             scanned += 1
-            tag = int(store.rel_type[index])
-            if tag != kinds[relation] and not (relation == 'equal' and tag == store.REL_PARTOF):
+            row = store.part_row(symbol)
+            if row['occurrence'] in excluded or not any(row['evidence']):
                 continue
-            row = store.row(index)
-            meaning = row['meaning']
-            from ThoughtReferences import bindings
-            equality_row = meaning is not None and bindings(meaning).get('_equality', False)
-            if tag != kinds[relation] and not equality_row:
+            if relation == 'equal' and 'equality' not in row['readings']:
                 continue
-            if row['occurrence'] in excluded:
+            if relation == 'implies' and 'conditional' not in row['readings']:
                 continue
-            if meaning is None or row['kind'] in ('question', 'estimate', 'unverified'):
-                continue
-            refs = list(meaning.role_refs)
-            for role in (0, 2):
-                if refs[role] is None and int(row['refs'][role]) > 0:
-                    native = int(row['refs'][role])
-                    occurrence = ('ltm', store.address_domain, native)
-                    refs[role] = occurrence if occurrence in store._index_occurrences else ('sym', native)
+            row = store.part_row(symbol, reading=relation)
+            refs = row['meaning'].role_refs
             direct = (left is None or refs[0] == left) and (right is None or refs[2] == right)
             reverse = relation == 'equal' and (left is None or refs[2] == left) and (right is None or refs[0] == right)
             if direct or reverse:
                 temporal = ()
-                if relation == 'implies' and all(ref and ref[0] == 'ltm' for ref in (refs[0], refs[2])):
-                    # Event implications must follow the endpoints' .when
-                    # order. Rule insertion time is irrelevant. Read each
-                    # endpoint on this same meter, never through host clocks.
-                    endpoints = []
+                if relation == 'implies' and all(store.parts.contains(ref[1]) for ref in (refs[0], refs[2])):
+                    # Composed situations have their own retained .when.
+                    # Read the endpoints on this meter; rule insertion time
+                    # cannot stand in for their order.
+                    times = []
                     for ref in (refs[0], refs[2]):
                         if scanned >= max_records or not work.consume('record'):
                             incomplete.append('temporal_work_budget')
                             break
                         scanned += 1
-                        endpoint = store._index_occurrences.get(ref)
-                        if endpoint is None:
-                            incomplete.append('unavailable_temporal_reference')
-                            break
-                        endpoints.append(endpoint)
-                    if len(endpoints) != 2:
+                        times.append(store.parts.when[ref[1]])
+                    if len(times) != 2:
                         continue
-                    first, last = endpoints
-                    if not torch.equal(store.document_keys[first], store.document_keys[last]):
-                        incomplete.append('incomparable_event_documents')
-                        continue
-                    from RowTime import encoder
-                    times = store.when[endpoints]
+                    times = torch.stack(times)
                     if not bool(times.ne(0).any(-1).all()):
                         incomplete.append('unknown_event_time')
                         continue
+                    from RowTime import encoder
                     onset = encoder().decode_index(times)
                     if int(onset[0]) > int(onset[1]):
                         incomplete.append('reversed_event_order')
                         continue
                     temporal = (refs[0], refs[2])
-                candidates.append(dict(row, meaning=replace(meaning, role_refs=tuple(refs)),
-                                       temporal_witnesses=temporal, match=1.))
+                candidates.append(dict(row, temporal_witnesses=temporal, match=1.))
         best = max(candidates, key=lambda row: max(row['evidence'])) if candidates else None
         frames = () if best is None else (best,)
         positive, negative = (0., 0.) if best is None else best['evidence']

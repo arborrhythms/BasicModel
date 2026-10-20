@@ -72,7 +72,7 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
     original=model._sentence_path_cost
     def cost(state,*args,**kwargs):
         result=original(state,*args,**kwargs)
-        snapshots.append(dict(root=state[1][9].detach().clone(),
+        snapshots.append(dict(root=state[1][6].detach().clone(),
             activation=state[1][0].detach().clone(), meanings=result[2]['meanings'], entries=result[2]['entries']))
         return result
     monkeypatch.setattr(model,'_sentence_path_cost',cost)

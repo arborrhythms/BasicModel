@@ -14,10 +14,10 @@ def test_sentence_generation_lesson_keeps_its_weighted_output_gradient():
     lesson_errors['compose'].squared('compose', compose + 1., torch.ones_like(compose), category='expectation')
     lesson_errors['generate'].squared('generate', generate + 1., torch.ones_like(generate), category='output')
     batch, words, width = 2, 1, 3
-    lang = [None] * 15
-    lang[9] = torch.zeros(batch, 1, width, requires_grad=True)
-    lang[13] = torch.zeros(batch, 1, 3 * width)
-    lang[14] = torch.ones(batch, 1, dtype=torch.long)
+    lang = [None] * 12
+    lang[6] = torch.zeros(batch, 1, width, requires_grad=True)
+    lang[10] = torch.zeros(batch, 1, 3 * width)
+    lang[11] = torch.ones(batch, 1, dtype=torch.long)
     model = SimpleNamespace(
         _publish_sentence_scratch=lambda state: None,
         _trial_understanding=lambda *args: object(),

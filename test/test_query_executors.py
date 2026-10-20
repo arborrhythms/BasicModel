@@ -25,7 +25,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
         cs._csw_concept_row(0, ref[1])
     store = TernaryTruthStore(8)
     from index_fixtures import one_hot_unfold
-    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), unfold=one_hot_unfold)
+    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), read=one_hot_unfold)
     idea = replace(_meaning(), role_refs=refs)
     first = store.append_meaning(idea, kind="fact", trust=0.6, sentence_index=len(store))
     second = store.append_meaning(idea, kind="fact", trust=-0.4, sentence_index=len(store))
@@ -63,7 +63,7 @@ def test_part_and_converse_executor_read_native_taxonomy_without_writes():
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     result = registry.execute(registry.form('isPart', ('sym', a), ('sym', b)), context)
     assert result.support_true == 1
-    assert result.evidence["path"][0].owner == ("sym", a)
+    assert result.evidence["path"][0].owner == ("sym", cs._concept_allocator.parts.find(a, b))
     # ``whole(B, A)`` is a grammar permutation of canonical part(A, B).
     assert registry.execute(
         registry.form('whole', ('sym', b), ('sym', a)), context).support_true == 1

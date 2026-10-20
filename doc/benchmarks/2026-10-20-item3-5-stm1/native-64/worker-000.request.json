@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_part_read.py::test_open_copular_occurrence_cannot_supply_its_own_reference_witness"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-64/worker-000.recycle.json"
+}

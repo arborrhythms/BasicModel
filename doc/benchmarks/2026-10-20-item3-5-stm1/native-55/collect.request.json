@@ -1,0 +1,18 @@
+{
+  "selectors": [
+    "test/test_priming_energy.py",
+    "test/test_priming_overlap.py",
+    "test/test_sentence_priming.py",
+    "test/test_derived_concept_codes.py",
+    "test/test_operators_final_b.py",
+    "test/test_math_chain_section14.py",
+    "test/test_bind_thought.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_part_store.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,192 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.030732542043551803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023092499934136868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023955458076670766,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022436083061620593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02128125005401671,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02223624987527728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022267374908551574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022095083026215434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.022149708122015,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128aba060>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.02291366597637534,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128b198b0>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.021337042097002268,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128b19850>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.022306124912574887,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128c303b0>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.02240720810368657,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128bef260>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.021735999966040254,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128c55130>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0217572501860559,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128d191c0>.resolver",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.02237270795740187,
+      "message": "test/test_bind_thought.py:201: in test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open\n    assert 2 in f.resolver.expected_roles(f.atoms[4])\nE   assert 2 in ()\nE    +  where () = expected_roles(tensor([0., 0., 0., 0., 1., 0., 0., 0.]))\nE    +    where expected_roles = ReferenceClose().expected_roles\nE    +      where ReferenceClose() = <test_clause_acceptance.SentenceFixture object at 0x128d239e0>.resolver",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

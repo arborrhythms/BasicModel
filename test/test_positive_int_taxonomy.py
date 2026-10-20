@@ -59,7 +59,7 @@ class TestNativeAddresses(unittest.TestCase):
         pos = int(store.row_ids[row])
         self.assertIsInstance(pos, int)
         self.assertNotIn(pos, (-1, 0))
-        self.assertEqual(int(store.rel_type[row]), store.REL_NONE)
+        self.assertEqual(int(store.role_mask[row].sum()), 1)
         native_row = store.index_of_row(pos)
         self.assertIsInstance(native_row, int)
         self.assertGreaterEqual(native_row, 0)

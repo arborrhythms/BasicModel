@@ -1,0 +1,202 @@
+{
+  "test": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+  "events": 2,
+  "overlap_events": 1,
+  "max_energy_error": 3.5762786865234375e-07,
+  "max_graph_edges": 98,
+  "max_sources": 7,
+  "max_part_reads": 32,
+  "max_candidates": 22,
+  "max_comparisons": 147,
+  "max_overlap_edges": 0,
+  "truncated_frontiers": 8,
+  "nonzero_overlap_transfers": 0,
+  "projections": [
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [
+            19,
+            29,
+            38,
+            47,
+            56,
+            65,
+            74,
+            83
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [
+            24,
+            34,
+            43,
+            52,
+            61,
+            70,
+            79,
+            88
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [
+            23,
+            33,
+            42,
+            51,
+            60,
+            69,
+            78,
+            87
+          ],
+          "objectless": false,
+          "pending": false
+        }
+      ]
+    },
+    {
+      "shape": [
+        8,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [
+            19,
+            29,
+            38,
+            47,
+            56,
+            65,
+            74,
+            83
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [
+            24,
+            34,
+            43,
+            52,
+            61,
+            70,
+            79,
+            88
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [
+            23,
+            33,
+            42,
+            51,
+            60,
+            69,
+            78,
+            87
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 92,
+          "row": 59,
+          "objects": [
+            97,
+            102,
+            107,
+            112,
+            117,
+            122,
+            127,
+            132
+          ],
+          "objectless": false,
+          "pending": false
+        }
+      ]
+    }
+  ]
+}

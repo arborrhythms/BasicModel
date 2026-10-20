@@ -19,12 +19,13 @@ def individuals(owner):
 
 def cache_rows(owner):
     alloc = allocator(owner)
-    return tuple(row for cid in alloc.individuals | set(alloc.form_regions.values())
+    concepts = {cid for cid, types in alloc.symbol_types.items() if 'concept' in types}
+    return tuple(row for cid in concepts | alloc.individuals | set(alloc.form_regions.values())
                  if cid not in alloc.retired and (row := owner._csw_row_of(cid)) is not None)
 
 
-def coordinates(owner, point, *, region=True):
-    """Read concept coordinates, excluding the separate location/time band."""
+def carrier(owner, point, *, region=True):
+    """Validate the native carrier, excluding its separate location/time band."""
     like = owner.similarity_codebook.W
     if point is None:
         return like.new_zeros(like.shape[-1])
@@ -37,6 +38,20 @@ def coordinates(owner, point, *, region=True):
     return value
 
 
+def coordinates(owner, point, *, region=True):
+    """Read meanings only; the shared index is the link to perceptual form.
+
+    Keep the carrier's width so narrowed rows and wide STM values retain
+    their coordinate addresses. Form and location coordinates supply no
+    conceptual mass, overlap, exclusion or union.
+    """
+    value = carrier(owner, point, region=region)
+    derived = getattr(owner.similarity_codebook, 'mereology', None)
+    if derived is not None:
+        value[..., :derived.percept_event_width] = 0
+    return value
+
+
 def point(owner, identity):
     row = owner._csw_row_of(int(identity))
     if row is None:
@@ -46,6 +61,10 @@ def point(owner, identity):
 
 def meet_ratios(query, candidate):
     """Candidate coverage and request coverage, without a distance term."""
+    # A retained, unminted LTM1 concept has only its narrowed coordinates.
+    # Neither operand acquires imaginary coordinates to match a wider one.
+    width = min(query.shape[-1], candidate.shape[-1])
+    query, candidate = query[..., :width], candidate[..., :width]
     meet = torch.minimum(query, candidate).sum(-1)
     mass_q, mass_c = query.sum(-1), candidate.sum(-1)
     # An empty request supplies no content evidence. Empty content cannot
@@ -79,37 +98,23 @@ def mint(owner, content, *, form=None):
 
 
 def witnesses(owner, identity):
-    from ThoughtReferences import bindings
-    store = owner._closed_clause_store()
-    if store is None:
-        return ()
-    return tuple(row for row in (store.refs[:len(store), 0] == int(identity)).nonzero().flatten().tolist()
-                 if '_individual_context' in bindings(store.meaning_of(row)))
+    parts = allocator(owner).parts
+    rows = parts.indices()
+    return tuple(rows[(parts.refs[rows] == int(identity)).any(-1)].tolist())
 
 
 def witness_count(owner, identity):
-    store = owner._closed_clause_store()
-    return sum(int(store.witness_count[row]) for row in witnesses(owner, identity))
+    parts = allocator(owner).parts
+    return sum(int(parts.access_count[row]) for row in witnesses(owner, identity))
 
 
 @torch.no_grad()
-def absorb(owner, identity, content):
+def absorb_form(owner, identity, content):
     row = owner._csw_row_of(identity)
     if row is None:
         raise RuntimeError('an individual lost its concept row')
     value = coordinates(owner, content)
     owner.similarity_codebook.W[row].copy_(torch.maximum(point(owner, identity), value))
-
-
-@torch.no_grad()
-def refold(owner, identity):
-    """Revision re-folds retained members; forgetting alone never subtracts."""
-    rows = witnesses(owner, identity)
-    store = owner._closed_clause_store()
-    value = torch.zeros_like(point(owner, identity))
-    for row in rows:
-        value = torch.maximum(value, coordinates(owner, store.point_of_row(int(store.row_ids[row]))))
-    owner.similarity_codebook.W[owner._csw_row_of(identity)].copy_(value)
 
 
 def form_identity(owner, cue):
@@ -131,7 +136,23 @@ def form_identity(owner, cue):
 def form_region(owner, cue):
     form = form_identity(owner, cue)
     identity = allocator(owner).form_regions.get(form)
-    return None if identity is None else point(owner, identity)
+    return None if identity is None else coordinates(owner, point(owner, identity))
+
+
+def validate_retained(owner):
+    """Every load rejects non-native identity content, before any refold.
+
+    This is a permanent representation boundary. Retiring a phase artifact
+    does not make it eligible for a lossy conversion on a later load.
+    """
+    store = owner._closed_clause_store()
+    if store is not None:
+        for row in range(len(store)):
+            meaning = store.raw_meaning_of(row)
+            if meaning is not None:
+                coordinates(owner, meaning.roles[meaning.role_mask])
+    for row in cache_rows(owner):
+        coordinates(owner, owner.similarity_codebook.W[row])
 
 
 @torch.no_grad()
@@ -144,7 +165,7 @@ def expose_form(owner, cue, content):
     if identity is None:
         mint(owner, content, form=form)
     else:
-        absorb(owner, identity, content)
+        absorb_form(owner, identity, content)
 
 
 def migrate_checkpoint(model, state, live, drift, transforms):
@@ -155,21 +176,20 @@ def migrate_checkpoint(model, state, live, drift, transforms):
     """
     from IndependentComponents import _pack_state, _unpack_state
     from IndependentComponents import IndependentComponents
+    # Reject the retired representation before deleting any key or changing
+    # any native owner. Even a chart vector that happens to be nonnegative
+    # does not declare cube coordinates.
+    if any('.nouns.directions.' in '.' + key for key in state):
+        raise ValueError('retired signed-chart identity content requires its producing lesson')
     for name, component in model.named_modules(remove_duplicate=False):
         if not isinstance(component, IndependentComponents):
             continue
         prefix = name + '.'
-        identities = set()
         for key in tuple(state):
             if key.startswith(prefix+'nouns.'):
-                if '.directions.' in key:
-                    identities.add(int(key.rsplit('.', 1)[-1]))
                 del state[key]
                 transforms[key] = None
-                drift[key] = dict(action='retired identity dictionary; refold native rows from LTM')
-        if identities:
-            component._migrating_individuals = tuple(sorted(
-                identities | set(getattr(component, '_migrating_individuals', ()))))
+                drift[key] = dict(action='retired identity bookkeeping; native content unchanged')
         key = prefix+'reference_close._extra_state'
         if key in state and _unpack_state(state[key]).get('version', 1) < 3:
             state[key] = _pack_state(dict(version=3))

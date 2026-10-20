@@ -49,12 +49,13 @@ def test_missing_semantic_context_remains_visible_in_the_checked_result():
     assert result["incomplete_evidence"]
 
 
-def test_consolidated_legacy_chain_reads_the_actual_two_role_presence():
+def test_consolidated_pending_chain_reads_the_actual_two_role_presence():
     from types import SimpleNamespace
     from Layers import SymbolExpectation
     store = TernaryTruthStore(6, capacity=8)
     roles = torch.eye(6)[:2]
-    store.append_relation(roles[0], roles[1], None, trust=.8, stream=0)
+    store.append_meaning(ConceptualMeaning.from_payload(roles, depth=2, layout='infix'),
+                         trust=.8, stream=0)
     chain = SymbolExpectation.get_stm_chain(SimpleNamespace(_ltm_store=store))
     depth, payload, trust = chain[0]
     assert depth == 2

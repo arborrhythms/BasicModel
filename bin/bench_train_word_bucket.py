@@ -60,6 +60,7 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     """Time the exact compiled CSSub, CSSym, and CSLang word stages."""
     from Models import FunctionalPeerSTM
     from Layers import ShortTermMemory
+    from Interpret import positive_evidence
     import util as model_util
 
     _stage_peer_profile_batch(model, texts)
@@ -69,8 +70,9 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     cs = model.conceptualSpace
     ss = model.symbolSpace
     language = model.languageSpace
+    interpretation = model._concept_owner().interpret
     stm = cs.stm
-    symbolic_passes = tuple(range(max(0, int(model.concept_order_limit))))
+    symbolic_passes = (0,) if model.concept_order_limit > 0 else ()
     batch = int(isp._ar_embedded_N.shape[0])
 
     part_ids = isp._ar_word_part_ids[:, :1, :]
@@ -111,7 +113,6 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         isp._ar_embedded_N.new_zeros(batch, int(language._n_rules)),
         torch.zeros(batch, 1, dtype=torch.bool, device=device),
     )
-    predictor = cs.intraSentenceLayer
     part_references = isp._ar_part_reference_vectors[:, 0]
     whole_references = isp._ar_whole_reference_vectors[:, 0]
     reference_roles = isp._ar_percept_reference_roles[:, 0]
@@ -173,9 +174,6 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     def cs_lang_leg(symbol_event, symbol_orders, source_row,
                      source_activation, gate):
         word_idea = symbol_event[:, 0, :]
-        prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
-            stm_state, word_idea, commit, predictor,
-            routing=feedback[0], routing_valid=feedback[1])
         # Match the production canonical body: its entry-depth invariant
         # makes the retired pre-capacity chooser an inactive trace sentinel.
         pre_state = stm_state
@@ -186,11 +184,10 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         pushed_word = ShortTermMemory.functional_push_step_masked(
             *pre_state, word_idea, commit, word_order,
             torch.zeros_like(word_order), source_row, source_activation)
-        object_content = (
-            object_atom[:, :int(cs.nWhat)]
-            * source_activation.reshape(batch, 1))
-        object_idea = torch.cat(
-            (object_content, word_idea[:, int(cs.nWhat):]), dim=-1)
+        presence = source_activation.reshape(batch).abs()
+        object_idea = interpretation.forward(
+            word_idea, object_atoms=object_atom, presence=presence,
+            evidence=positive_evidence(presence))
         object_gate = torch.logical_and(
             commit.reshape(batch), object_row >= 0)
         resolved = FunctionalPeerSTM.resolve_top_reference(
@@ -217,8 +214,7 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         contribution = torch.where(
             gate, resolved_idea, torch.zeros_like(resolved_idea))
         return (
-            *final_state, contribution, prediction,
-            loss_sum, loss_weight, *grammar)
+            *final_state, contribution, *grammar)
 
     compiled_cs_lang = model_util.compile(
         cs_lang_leg, verbose=False, fullgraph=True)

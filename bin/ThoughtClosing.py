@@ -16,7 +16,12 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
     # Its selected native/child refs, rather than those temporary nulls,
     # determine whether the operation actually left an operand unfilled.
     index = None if written_rows is None else written_rows.get(id(clause))
-    committed = None if store is None or index is None else store.meaning_of(index)
+    committed = None if store is None or index is None else store.raw_meaning_of(index)
+    if committed is not None:
+        # At this boundary the chosen open formation still owns its binder.
+        # The row now closing cannot use its own complement to suppress that
+        # episode. Other retained witnesses still resolve it normally.
+        committed = store.read_reference_bindings(index, committed, exclude=(index,))
     named = committed if committed is not None else replace(clause.meaning, role_refs=tuple(
         ('selected', ref.identity if hasattr(ref, 'identity') else ref)
         if bool(clause.meaning.role_mask[role]) and ref not in (-1, 0) else None

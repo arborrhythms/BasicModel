@@ -1,0 +1,29 @@
+{
+  "selectors": [
+    "test/test_identity_cube.py",
+    "test/test_global_consume.py",
+    "test/test_sentence_end_state.py",
+    "test/test_taxonomy_entry.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_bind_thought.py",
+    "test/test_existence_metadata.py",
+    "test/test_live_references.py",
+    "test/test_truth_text.py",
+    "test/test_truth_grounded_reasoning.py",
+    "test/test_ltm_consolidation.py",
+    "test/test_definition_rows.py",
+    "test/test_definition_integrity.py",
+    "test/test_two_codebook_meta_taxonomy.py",
+    "test/test_independent_components.py",
+    "test/test_relation_closing.py",
+    "test/test_relation_references.py",
+    "test/test_assertion_provenance.py",
+    "test/test_part_store.py",
+    "test/test_part_closing.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

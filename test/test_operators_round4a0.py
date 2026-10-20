@@ -277,18 +277,19 @@ def test_serving_source_is_conversation_and_turn_and_replay_is_stable():
     assert _request_document(dict(messages=raw['messages'] * 2)) != _request_document(raw)
 
 
-def test_explicit_rewitness_rejects_a_self_reference_without_mutating_postings():
+def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
     store = TernaryTruthStore(4, 2)
     row = write(store)
     before = copy.deepcopy(store.state_dict())
     reference = store.occurrence_of(row)
     value = ConceptualMeaning(meaning().roles, meaning().role_mask,
                               role_refs=(reference, None, None))
-    with pytest.raises(ValueError, match='cycle'):
-        store.append_meaning(value, kind='observation', document_key='book',
-            content_key=sentence_key((b'the', b'cat')))
-    for name, tensor in before.items():
-        torch.testing.assert_close(store.state_dict()[name], tensor)
+    kept = store.append_meaning(value, kind='observation', document_key='book',
+        content_key=sentence_key((b'the', b'cat')))
+    assert kept == row and store.meaning_of(row).role_refs[0] == reference
+    assert store.read_structure(reference)['incomplete'] == ('cycle',)
+    for name in ('c_plus', 'c_minus'):
+        torch.testing.assert_close(store.state_dict()[name], before[name], rtol=0, atol=0)
 
 
 def test_local_reference_tag_distinguishes_a_journal_slot_from_the_same_signed_address():

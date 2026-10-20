@@ -232,11 +232,6 @@ class Teacher:
         copied._install_context(copied.context)
         return copied
 
-    @property
-    def legacy_prediction_enabled(self) -> bool:
-        """Whether independent next-state predictor losses may train."""
-        return not self.enabled
-
     def _install_context(self, context: ContextWhole) -> None:
         setter = getattr(self.data, "set_context_whole", None)
         if callable(setter):

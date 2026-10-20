@@ -93,58 +93,68 @@ def _scope_keys(store):
             for key in store.address_keys[:len(store)].tolist()]
 
 
-def _supports(store):
-    """Exact, one-step positive entailments; never infer from negative edges."""
-    n = len(store)
-    refs = store.refs[:n].tolist()
-    positive = ((store.c_plus[:n] > 0) & (store.c_minus[:n] == 0)).tolist()
-    trust = store.source_trust[:n].abs().tolist()
-    strengths = store.c_plus[:n].tolist()
-    scopes = _scope_keys(store)
-    by_left = {}
-    parts = (store.rel_type[:n] == store.REL_PARTOF).nonzero().flatten().tolist()
-    for row in parts:
-        if positive[row] and refs[row][0] not in (-1, 0) and refs[row][2] not in (-1, 0):
-            by_left.setdefault(refs[row][0], []).append(row)
-    result = {}
-    for row in parts:
-        if not positive[row]:
-            continue
-        for first in by_left.get(refs[row][0], ()):
-            if first == row:
-                continue
-            for second in by_left.get(refs[first][2], ()):
-                if row == second or first == second or refs[second][2] != refs[row][2]:
+def part_supports(parts):
+    """Two-hop positive Part proofs; negative testimony never licenses a hop."""
+    outgoing, result = {}, {}
+    positive = {row for row in parts.indices().tolist()
+                if float(parts.truth_plus[row]) > 0 and float(parts.truth_minus[row]) == 0}
+    for row in positive:
+        outgoing.setdefault(int(parts.refs[row, 0]), []).append(row)
+    for row in positive:
+        left, right = parts.refs[row].tolist()
+        for first in outgoing.get(left, ()):
+            for second in outgoing.get(int(parts.refs[first, 1]), ()):
+                if len({row, first, second}) != 3 or int(parts.refs[second, 1]) != right:
                     continue
-                if not scopes[first] == scopes[second] == scopes[row]:
-                    continue
-                if min(trust[first], trust[second]) >= trust[row] and min(
-                        strengths[first], strengths[second]) >= strengths[row]:
+                if min(float(parts.truth_plus[first]), float(parts.truth_plus[second])) >= float(parts.truth_plus[row]):
                     result.setdefault(row, []).append(frozenset((first, second)))
-    for implication in (store.rel_type[:n] == store.REL_IMPLIES).nonzero().flatten().tolist():
-        left, right = (store.index_of_row(refs[implication][role]) for role in (0, 2))
-        if left is None or right is None or len({left, right, implication}) < 3:
-            continue
-        if int(store.rel_type[right]) not in (store.REL_PARTOF, store.REL_IMPLIES):
-            continue  # Sentence utility comes from its recorded surprise.
-        if not scopes[left] == scopes[right] == scopes[implication]:
-            continue
-        if all(positive[i] for i in (left, implication, right)) and min(
-                trust[left], trust[implication]) >= trust[right] and min(
-                strengths[left], strengths[implication]) >= strengths[right]:
-            result.setdefault(right, []).append(frozenset((left, implication)))
     return result
+
+
+@torch.no_grad()
+def forget_parts(parts, config, *, retained=()):
+    """Retention over the same six columns for taxonomy and definitions."""
+    if len(parts) < math.ceil(config.high_water * parts.capacity):
+        return None
+    from RowTime import encoder
+    rows = parts.indices().tolist()
+    target = math.floor(config.low_water * parts.capacity)
+    ticks = encoder().decode_index(parts.when[rows])
+    known = parts.when[rows].ne(0).any(-1)
+    tail = int(ticks[known].max()) if bool(known.any()) else 0
+    ages = {row: max(0, tail-int(ticks[i])) if bool(known[i]) else 0 for i, row in enumerate(rows)}
+    proofs = part_supports(parts)
+    protected = {int(ref[1]) for ref in retained if ref[:1] == ('sym',) and parts.contains(ref[1])}
+    alive = set(rows)
+    def value(row):
+        utility = 1. if float(parts.surprise[row]) < 0 else float(parts.surprise[row])
+        if any(proof <= alive for proof in proofs.get(row, ())):
+            utility = 0.
+        access = math.log1p(int(parts.access_count[row]))
+        truth = max(float(parts.truth_plus[row]), float(parts.truth_minus[row]))
+        return (config.trust_weight*truth + config.utility_weight*utility
+                + config.luminosity_weight*access - config.age_weight*(-math.expm1(-ages[row]/config.half_life)))
+    for row in sorted(rows, key=lambda row: (value(row), -ages[row], row)):
+        if len(alive) <= target:
+            break
+        if row in protected:
+            continue
+        available = next((proof for proof in proofs.get(row, ()) if proof <= alive-{row}), None)
+        if available is not None:
+            protected.update(available)
+        alive.remove(row)
+    parts.retain(sorted(alive))
+    return dict(before=len(rows), after=len(alive), target=target, protected=len(protected),
+                target_reached=len(alive) <= target)
 
 
 def retention_values(store, config, *, alive=None, supports=None):
     """Return independent retention terms; no stored evidence is changed."""
     n = len(store)
     alive = set(range(n)) if alive is None else alive
-    supports = _supports(store) if supports is None else supports
+    supports = {} if supports is None else supports
     trust = store.source_trust[:n].abs()
     utility = torch.where(store.surprise[:n] < 0, 1., store.surprise[:n]).clamp(0, 1)
-    idea = (store.rel_type[:n] == store.REL_NONE) | (store.rel_type[:n] == store.REL_OPERATOR)
-    utility = torch.where(idea, utility, 1.)
     for row, choices in supports.items():
         if any(witnesses <= alive for witnesses in choices):
             utility[row] = 0.
@@ -154,17 +164,15 @@ def retention_values(store, config, *, alive=None, supports=None):
     signs = (positive.gt(0) & negative.eq(0)).long() - (negative.gt(0) & positive.eq(0)).long()
     points = F.normalize(store.slots[:n, 0], dim=-1)
     refs = store.refs[:n]
-    kinds, orders = store.rel_type[:n], store.order[:n]
+    orders = store.order[:n]
     scopes = _scope_keys(store)
     scope_ids = {key: i for i, key in enumerate(dict.fromkeys(scopes))}
     scope = torch.tensor([scope_ids[key] for key in scopes], device=trust.device)
     live = torch.tensor([i in alive for i in range(n)], device=trust.device)
     for start in range(0, n, 128):
         end = min(n, start + 128)
-        idea_pair = (kinds[start:end, None] == store.REL_NONE) & (kinds[None] == store.REL_NONE)
-        same = torch.where(idea_pair, points[start:end] @ points.T > config.similarity,
-            (refs[start:end, None] == refs[None]).all(-1) & (kinds[start:end, None] != store.REL_NONE))
-        same &= (kinds[start:end, None] == kinds[None]) & (orders[start:end, None] == orders[None])
+        same = points[start:end] @ points.T > config.similarity
+        same &= orders[start:end, None] == orders[None]
         same &= scope[start:end, None] == scope[None]
         contrary = signs[start:end, None] * signs[None] == -1
         weaker = trust[start:end, None] < trust[None]
@@ -172,7 +180,7 @@ def retention_values(store, config, *, alive=None, supports=None):
     if config.coverage:
         # Catuskoti coverage over occupied idea coordinates. Opposite poles
         # stay separate; leave-one-out measures the lost positive coverage.
-        ids = [i for i in sorted(alive) if int(kinds[i]) == store.REL_NONE]
+        ids = [i for i in sorted(alive) if int(store.role_mask[i].sum()) == 1]
         if ids:
             codes = store.slots[ids, 0].abs().clamp(0, 1)
             for_pole = codes * positive[ids, None]
@@ -208,15 +216,18 @@ def _references(store, row, context, rows):
 
 def _trim_expectations(store, alive):
     records = copy.deepcopy(store._expectation_rows)
+    def retained(reference):
+        return (store.parts.contains(reference[1]) if reference[0] == 'sym'
+                else reference[2] in alive)
     for key in list(records):
         if key not in alive:
             del records[key]
             continue
         value = records[key]
         if value['kind'] == 'estimate':
-            value['source_occurrences'] = tuple(ref for ref in value['source_occurrences'] if ref[2] in alive)
+            value['source_occurrences'] = tuple(ref for ref in value['source_occurrences'] if retained(ref))
             target = value['intended_occurrence']
-            if target is not None and target[2] not in alive:
+            if target is not None and not retained(target):
                 value['intended_occurrence'] = None
         else:
             refs = [ref for ref in (value['estimate_occurrence'], *value.get('previous_estimates', ()))
@@ -256,6 +267,8 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     dependencies = {i: _references(store, i, contexts[key], indexes) for i, key in enumerate(keys)}
     protected = {i for i in range(n) if int(store.origin[i]) in config.protect_origins}
     for ref in retained_occurrences:
+        if ref[:1] == ('sym',) and store.parts.contains(ref[1]):
+            continue
         if ref[:2] != ('ltm', store.address_domain) or ref[2] not in indexes:
             raise ValueError('forgetting live root is unavailable')
         protected.add(indexes[ref[2]])
@@ -265,7 +278,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
             if child not in protected:
                 protected.add(child)
                 pending.append(child)
-    supports = _supports(store)
+    supports = {}
     terms = retention_values(store, config, supports=supports)
     order = sorted(range(n), key=lambda i: (float(terms['value'][i]), -float(terms['age'][i]), keys[i]))
     alive, advanced, changed, coarsened = set(range(n)), set(), set(), set()
@@ -301,7 +314,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
                         ref = roles[role]
                         if ref is not None and ref[:2] == ('ltm', store.address_domain):
                             child = indexes[ref[2]]
-                        if child in lost and int(store.rel_type[child]) == store.REL_NONE and bool(store.role_mask[parent, role]):
+                        if child in lost and int(store.role_mask[child].sum()) == 1 and bool(store.role_mask[parent, role]):
                             roles[role], new_refs[role] = None, -1
                             coarse.add(child)
                     context['role_refs'] = tuple(roles)
@@ -381,8 +394,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
         context = store._semantic_rows.get(int(store.address_keys[row]), {})
         store.metadata_required[row] = bool(context.get('bindings') or context.get('scope') or
             any(ref is not None for ref in context.get('role_refs', ()))) or (
-            store.text_of(row) is not None or int(store.address_keys[row]) in expectations
-            or int(store.address_keys[row]) in store._definition_rows)
+            store.text_of(row) is not None or int(store.address_keys[row]) in expectations)
         store._update_semantic_fingerprint(row)
     for old in coarsened & alive:
         row = store.index_of_row(keys[old])
@@ -441,7 +453,12 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
         for pending in getattr(discourse, '_inter_last_meaning', ()):
             if pending is not None:
                 roots.update(getattr(pending, 'source_occurrences', ()))
-    result = forget(store, ForgettingConfig.from_xml(), document_boundary=document_boundary,
+    config = ForgettingConfig.from_xml()
+    if config.enabled and getattr(model, '_open_sentence_slot', None) is None and (document_boundary or epoch_boundary):
+        audit_roots = {ref for value in store._expectation_rows.values()
+                      for ref in store._expectation_references(value) if ref[0] == 'sym'}
+        store.last_part_forgetting_report = forget_parts(store.parts, config, retained=roots | audit_roots)
+    result = forget(store, config, document_boundary=document_boundary,
         epoch_boundary=epoch_boundary, open_sentence=getattr(model, '_open_sentence_slot', None) is not None,
         retained_occurrences=roots)
     if result is not None:

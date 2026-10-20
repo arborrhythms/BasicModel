@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads"
+  ],
+  "completed": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016708333045244217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003535829018801451,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004677040968090296,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

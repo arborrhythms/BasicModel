@@ -21,6 +21,9 @@ def force_requested_thought(model):
 
 
 def model_for(cs, store=None):
+    import torch
+    with torch.no_grad():
+        cs.similarity_codebook.W.sigmoid_()
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
@@ -39,6 +42,9 @@ def model_for(cs, store=None):
     object.__setattr__(model, 'symbolSpace', SimpleNamespace(
         grammatical_thoughts=registry, ltm_store=store,
         what_memory=WhatInteractionMemory(batch=1, capacity=128, detach_mode='episode')))
+    if store is not None:
+        from ClauseRow import attach_clause_index
+        attach_clause_index(model, store, cs)
     return force_requested_thought(model)
 
 

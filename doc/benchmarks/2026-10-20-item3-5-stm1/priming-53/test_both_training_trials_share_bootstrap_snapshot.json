@@ -1,0 +1,14 @@
+{
+  "test": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+  "events": 3,
+  "overlap_events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 8,
+  "max_sources": 0,
+  "max_part_reads": 0,
+  "max_candidates": 0,
+  "max_comparisons": 0,
+  "max_overlap_edges": 0,
+  "truncated_frontiers": 0,
+  "nonzero_overlap_transfers": 0
+}

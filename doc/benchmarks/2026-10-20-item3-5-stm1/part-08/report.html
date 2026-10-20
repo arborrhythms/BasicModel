@@ -1,0 +1,138 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 26/26 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.01307199988514185</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.008783834055066109</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.008075750200077891</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_part_store.py::test_taxonomy_and_nested_relations_share_symbol_rows</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0005793329328298569</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_part_store.py::test_pair_rewitnesses_both_lanes_without_a_relation_kind</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00028620800003409386</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_part_store.py::test_part_checkpoint_and_retention_keep_native_addresses</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00038920808583498</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0011400000657886267</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0006884168833494186</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0005755419842898846</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002355421893298626</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0001478339545428753</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00014291703701019287</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.10238341707736254</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.1886346668470651</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.40227299998514354</pre></td><td><pre>test/test_word_interpretation.py:27: in test_every_read_word_has_a_concept_and_symbol
+    _, symbols, _, _ = model(inputs)
+                       ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8214: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23884: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17107: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22436: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21988: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:21072: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20382: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:173: in _append_observed_meaning
+    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:439: in write_clause
+    closing.preflight()
+bin/PartClosing.py:134: in preflight
+    self.owner._preflight_concept_allocation(count, context=&#x27;complete Part closing&#x27;)
+bin/Spaces.py:14771: in _preflight_concept_allocation
+    raise RuntimeError(
+E   RuntimeError: ConceptualSpace concept inventory exhausted while allocating 21 id(s) for complete Part closing: next id 58, physical capacity 64. No concept was minted.</pre></td><td><pre>[BasicModel] Activated aligned codebook prefix 32 -&gt; 64 rows (physical capacity 64; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
+</pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00027374993078410625</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0030012920033186674</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0022135411854833364</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.002886833157390356</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0024439580738544464</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0019429998937994242</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0021159159950912</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.3115640420001</pre></td><td><pre>utSpace.prepInput([&#x27;the wug sat&#x27;]))
+bin/Models.py:8440: in understand
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8436: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8214: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23884: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17107: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22436: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21988: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20947: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20843: in compose
+    word_step(index, masked_payload(payload, rows), native)
+bin/Models.py:20804: in word_step
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21741: in stage_cs_lang
+    proposal = choose_operation(
+test/test_word_interpretation.py:203: in composition
+    return choose(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12473: in choose_operation
+    _, _, route = layer(window, **arguments)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6805: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7117: in _stacked_reduced
+    values = self._stacked_reduced(x, grammar_context, grouped, activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7147: in _stacked_reduced
+    value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:4766: in forward_with_grammar_context
+    return self.forward_with_context(left, right, slab)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:4751: in forward_with_context
+    return self.gl.compose_blocks(self.gl.compose, left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:2483: in compose_blocks
+    return kernel(*operands, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3324: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3191: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3286: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3131: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.010676000034436584</pre></td><td><pre>test/test_word_interpretation.py:270: in test_selected_generic_grammar_ends_the_interpreted_kinds
+    row = _append_observed_meaning(store, finish_reading(language, entry, registry=registry), trust=.9)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:173: in _append_observed_meaning
+    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:425: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:127: in prepare
+    assert_cube(value.point)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.008738875156268477</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0023441670928150415</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

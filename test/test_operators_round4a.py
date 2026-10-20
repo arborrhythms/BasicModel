@@ -54,6 +54,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
     configuration = 'XOR_grammar'
     from test_mm_xor import _fresh_model
     from MereologicalCodes import occurrence_memberships
+    from PartRead import occurrence_roots, occurrence_codes
     from MeaningCodes import defined_code, certificate
     model, _, _ = _fresh_model(f'data/{configuration}.xml')
     try:
@@ -64,15 +65,16 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
         assert derived.context_width == 128 and derived.meaning_pairs == 64 and derived.meaning_ones == 3
         assert not derived._context  # snapshot predates this first presentation
         store = owner._closed_clause_store()
-        rows = [r for r in range(len(store)) if int(store.rel_type[r]) == store.REL_NONE]
+        records = occurrence_roots(owner, store)
+        rows = list(range(len(records)))
         assert len(rows) == 4
-        codes = {r: store.identity_code(r,64,3) for r in rows}
+        codes = occurrence_codes(records, 64, 3, store.slots)
         context = derived.occurrence_terms()
         postings = occurrence_memberships(owner, store)
         extents, values = [], []
         for word, (n, value) in sorted(context.items()):
             containing = sorted(set(rows) & postings[word])
-            weights = store.recency_weights()[containing]
+            weights = torch.stack([records[r]['weight'] for r in containing])
             expected = (torch.stack([codes[r] for r in containing])*weights[:,None]).sum(0)/weights.sum()
             expected = defined_code(expected, len(containing))
             torch.testing.assert_close(value[:64],expected)
@@ -98,9 +100,9 @@ def test_composition_preserves_form_kernel_and_uses_bilattice_without_normalizat
     output = layer.compose(left,right)
     torch.testing.assert_close(output[:3],expected_form,rtol=0,atol=0)
     torch.testing.assert_close(output[3:],compose(name,left[3:],right[3:]),rtol=0,atol=0)
-    doubled = layer.compose(torch.cat((left[:3],left[3:]*2)),torch.cat((right[:3],right[3:]*2)))
-    torch.testing.assert_close(doubled[:3],output[:3],rtol=0,atol=0)
-    torch.testing.assert_close(doubled[3:],output[3:]*2,rtol=0,atol=0)
+    attenuated = layer.compose(torch.cat((left[:3],left[3:]*.5)),torch.cat((right[:3],right[3:]*.5)))
+    torch.testing.assert_close(attenuated[:3],output[:3],rtol=0,atol=0)
+    torch.testing.assert_close(attenuated[3:],output[3:]*.5,rtol=0,atol=0)
 
 
 def test_not_exchanges_poles_and_interpretation_keeps_the_pair():
@@ -214,28 +216,38 @@ def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
         model.End();model.symbolSpace.soft_reset()
 
 
-def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved():
+def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(monkeypatch):
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     from MereologicalCodes import MereologicalCodes
     from MeaningCodes import defined_code
-    store=TernaryTruthStore(20,capacity=8);store.image_form_width=4
-    owner=SimpleNamespace(_closed_clause_store=lambda:store,
-        _csw_row_of=lambda cid:{11:0,12:1}.get(cid),_definition_index=lambda:None)
+    from dataclasses import replace
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    owner, store = f.cs, f.store
+    a, b = f.noun('a'), f.noun('b')
+    first = store.parts.add(a, b, truth_plus=1.)
+    second = store.parts.add(b, a, truth_plus=1.)
     derived=MereologicalCodes(owner,torch.zeros(2,20),percept_width=4,percept_event_width=4)
-    for i,kind in enumerate([store.REL_NONE,store.REL_NONE,store.REL_DEF,store.REL_OPERATOR]):
+    # Two absolute occurrences and a three-role pending description. A DEF
+    # is a Part edge and cannot enter the LTM1 occurrence bootstrap.
+    for i in range(3):
         from Occurrence import sentence_key
-        row=store.append_meaning(ConceptualMeaning.from_description(torch.full((20,),float(i))),rel_type=kind,
+        meaning = (replace(ConceptualMeaning.from_description(torch.full((8,), i/3)),
+                role_refs=(('sym', (first, second)[i]), None, None))
+            if i < 2 else ConceptualMeaning(torch.full((3,8), .5), torch.ones(3,dtype=torch.bool)))
+        row=store.append_meaning(meaning,
             content_key=sentence_key([str(i).encode()]), document_key='fixture', sentence_index=i)
-        store._append_leaf_terms(row,((0,),(),()),(True,True,True))
-    # The second row is witnessed by a reference alone; membership is still one row.
-    store._leaf_postings[(0,0)].remove(1);store.refs[1,0]=11
-    terms=derived.occurrence_terms();assert set(terms)=={0} and terms[0][0]==2
+    # Neither inverse postings nor the composed slot supply membership.
+    store._leaf_postings.clear()
+    terms=derived.occurrence_terms()
+    arow, brow = owner._csw_row_of(a), owner._csw_row_of(b)
+    assert set(terms)=={arow,brow} and terms[arow][0]==2
     codes=torch.stack([store.identity_code(r,8,derived.meaning_ones) for r in [0,1]])
     assert not torch.equal(codes[0],codes[1])
     weights=store.recency_weights()[:2]
     expected=(codes*weights[:,None]).sum(0)/weights.sum()
     expected=defined_code(expected, 2)
-    torch.testing.assert_close(terms[0][1],torch.cat((expected,torch.zeros(8))))
+    torch.testing.assert_close(terms[arow][1],torch.cat((expected,torch.zeros(8))))
     store.slots[:,0,4:]=99. # composed meanings cannot feed their own bootstrap
-    torch.testing.assert_close(derived.occurrence_terms()[0][1],terms[0][1])
+    torch.testing.assert_close(derived.occurrence_terms()[arow][1],terms[arow][1])

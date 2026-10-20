@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_priming_overlap.py::test_graph_and_meet_share_outflow_without_code_feedback_or_cross_streams",
+    "test/test_priming_overlap.py::test_meet_reads_reach_bank_through_bounded_part_walk_not_full_scan",
+    "test/test_priming_overlap.py::test_overlap_reads_recent_stm_symbols_in_their_own_stream",
+    "test/test_priming_overlap.py::test_part_neighbour_index_rebuilds_after_forgetting_and_load",
+    "test/test_priming_overlap.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor"
+  ],
+  "completed": [
+    "test/test_priming_overlap.py::test_graph_and_meet_share_outflow_without_code_feedback_or_cross_streams",
+    "test/test_priming_overlap.py::test_meet_reads_reach_bank_through_bounded_part_walk_not_full_scan",
+    "test/test_priming_overlap.py::test_overlap_reads_recent_stm_symbols_in_their_own_stream",
+    "test/test_priming_overlap.py::test_part_neighbour_index_rebuilds_after_forgetting_and_load",
+    "test/test_priming_overlap.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_priming_overlap.py::test_graph_and_meet_share_outflow_without_code_feedback_or_cross_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0017829579301178455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_overlap.py::test_meet_reads_reach_bank_through_bounded_part_walk_not_full_scan",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005444169510155916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_overlap.py::test_overlap_reads_recent_stm_symbols_in_their_own_stream",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00036858278326690197,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_overlap.py::test_part_neighbour_index_rebuilds_after_forgetting_and_load",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038370885886251926,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_overlap.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00045495806261897087,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

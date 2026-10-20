@@ -21,8 +21,8 @@ def _sentence(supplied):
             return SimpleNamespace(materialize=lambda: value[:, None])
     head = Head()
     slots = torch.cat((root[:, None], root.new_zeros(2, 2, 2)), 1)
-    lang = [None] * 15
-    lang[9], lang[13], lang[14] = root[:, None], slots.flatten(1)[:, None], torch.ones(2, 1, dtype=torch.long)
+    lang = [None] * 12
+    lang[6], lang[10], lang[11] = root[:, None], slots.flatten(1)[:, None], torch.ones(2, 1, dtype=torch.long)
     model = SimpleNamespace(word_brackets=True, outputSpace=head,
         loss=ModelLoss(reconstruction_scale=1., what_scale=1., where_scale=1., when_scale=1.),
         normalizer=SimpleNamespace(denormalize=lambda value, **kw: value),
@@ -104,7 +104,7 @@ def test_native_trial_reads_the_completed_point_without_state_credit():
     from Models import BasicModel
     from What import What, WhatAnswer
     model, state, parameters = _sentence(True)
-    root = state[1][9][:, 0]
+    root = state[1][6][:, 0]
     meanings = [ConceptualMeaning(torch.stack((row, row, torch.zeros_like(row))),
                                   torch.tensor([True, True, False])) for row in root]
     clauses = [SimpleNamespace(point=row, relation=None, meaning=meaning)

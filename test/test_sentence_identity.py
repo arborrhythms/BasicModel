@@ -16,29 +16,27 @@ def inventory(cs):
                 keys=copy.deepcopy(alloc.relate_idx))
 
 
-def test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record(monkeypatch):
+def test_closing_idea_is_narrow_and_the_operation_has_a_native_part(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', 'cat', 'runs'))
     before = inventory(f.cs)
     row = f.store.write_clause(clause)
     assert row >= 0
-    assert inventory(f.cs) == before
+    assert inventory(f.cs)['next_id'] == before['next_id'] + 1
+    assert f.store.parts.find(f.noun('cat'), f.noun('runs')) is not None
     assert int(f.store.row_ids[row]) not in _concept_alloc_of(f.cs).placement
     torch.testing.assert_close(f.store.point_of_row(int(f.store.row_ids[row])), clause.point)
 
 
-def test_referenced_phrase_is_read_from_ltm_without_an_inventory_row(monkeypatch):
+def test_referenced_phrase_is_minted_as_a_part_argument(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
-    before = inventory(f.cs)
     row = f.store.write_clause(clause)
-    assert row >= 0
-    assert inventory(f.cs) == before
-    reference = int(f.store.refs[row, 2])
-    phrase = f.store.index_of_row(reference)
-    assert phrase is not None and phrase != row
-    assert f.store.rel_type[phrase] == f.store.REL_NONE
-    torch.testing.assert_close(f.store.point_of_row(reference), f.store.slots[phrase, 0])
+    reference = int(f.store.row(row)['refs'][1])
+    assert f.cs._csw_row_of(reference) is not None
+    assert f.store.parts.refs[reference].tolist() == [f.noun('chases'), f.noun('mouse')]
+    torch.testing.assert_close(f.store._concept_point(reference), clause.children[0].point)
+    assert len(f.store) == 1  # the narrowed constituent occurrence also survives
 
 
 def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
@@ -50,15 +48,14 @@ def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
     before = dict(f.cs._csw_rows)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause)
-    assert f.store.rel_type[row] == f.store.REL_IMPLIES
-    assert f.store.relations(f.store.REL_PARTOF).numel() == 1
-    # A testified taxonomy may symbolize a parent when room exists; the
-    # predicates themselves must not occupy a newly allocated native row.
-    for index in f.store.relations().tolist():
-        assert f.cs._csw_row_of(int(f.store.refs[index, 1])) is None
+    assert f.store.row(row)['readings'] == ('conditional',)
+    assert f.store.parts.find(f.noun('cat'), f.noun('animal')) is not None
+    assert f.store.parts.refs.shape[-1] == 2
+    assert all('predicate' not in f.cs._concept_allocator.symbol_types.get(cid, ())
+               for cid in set(f.cs._csw_rows) - set(before))
 
 
-def test_mm_grammar_part_under_disjunction_closes_at_full_inventory(monkeypatch):
+def test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically(monkeypatch):
     import Language
     from test_mm_xor import _fresh_model, _PROJECT
     from pathlib import Path
@@ -90,22 +87,17 @@ def test_mm_grammar_part_under_disjunction_closes_at_full_inventory(monkeypatch)
             layer._row_next[base] = capacity
         before = inventory(f.cs)
         clause = finish_reading(f.language, entry, registry=f.registry)
-        row = f.store.write_clause(clause)
-        assert row >= 0 and f.store.rel_type[row] == f.store.REL_OPERATOR
+        rows, edges = len(f.store), len(f.store.parts)
+        with pytest.raises(RuntimeError, match='concept row pool'):
+            f.store.write_clause(clause)
         assert inventory(f.cs) == before
-        assert ((f.store.refs[row] != 0) & (f.store.refs[row] != -1)).all()
-        predicate = int(f.store.refs[row, 1])
-        assert f.cs._csw_row_of(predicate) is None
-        assert predicate not in _concept_alloc_of(f.cs).placement
-        second = f.store.write_clause(clause)
-        assert second == row
-        assert inventory(f.cs) == before
+        assert len(f.store) == rows and len(f.store.parts) == edges
     finally:
         model.End()
         model.symbolSpace.soft_reset()
 
 
-def test_full_inventory_refuses_symbolization_and_still_writes_the_part_row(monkeypatch):
+def test_full_inventory_can_record_part_of_already_seated_arguments(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'cat', 'animal'))
     alloc = _concept_alloc_of(f.cs)
@@ -115,6 +107,7 @@ def test_full_inventory_refuses_symbolization_and_still_writes_the_part_row(monk
     alloc.layer(0)._row_next[sum(caps)] = f.cs.nVectors - sum(caps)
     before = inventory(f.cs)
     row = f.store.write_clause(clause)
-    assert row >= 0 and f.store.rel_type[row] == f.store.REL_PARTOF
-    assert inventory(f.cs) == before
-    assert tuple(f.store.refs[row, [0, 2]].tolist()) == (f.noun('cat'), f.noun('animal'))
+    assert f.store.row(row)['refs'].tolist() == [f.noun('cat'), f.noun('animal')]
+    after = inventory(f.cs)
+    assert after['rows'] == before['rows']  # no new physical seat is needed
+    assert after['next_id'] == before['next_id'] + 1  # the native edge handle

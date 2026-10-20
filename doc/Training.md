@@ -206,6 +206,43 @@ work, whose inverse will clean up against the primed words *and* STM's composed
 wholes.
 
 
+### The generated math suite: what it exercises and what it cannot (2026-10-20)
+
+Alec: "mathematical equations written as English sentences offer one of
+the best automatically-generated testbeds for helping a model learn stage
+by stage." Every sentence has a checkable meaning, the difficulty is a
+dial, and the corpus is free — which is what the Viterbi order needs. It
+runs under `RUN_SLOW` ([Testing](Testing.md#fast-regression-and-slow-experiments))
+and doubles as the compiler test at scale. Its coverage:
+
+| exercised, often better than anywhere else | consumed by |
+|---|---|
+| identity by name: variables as proper nouns, re-mention, equality as singleton membership, definitions, substitution of equals | 3.5 `bind` step 1 |
+| composition and roles: `NP VP`, `VP → VP NP` twice, nesting, "x minus one" ≠ "one minus x" | the catalogue; 3.5 |
+| the verb as a group element with exact ground truth: plus/minus inverses, plus commutes, times/divided-by a second group; translation along the successor chain of opaque numerals is diagonal in the chain's Fourier basis, so the additive and multiplicative bases are an exact target for joint diagonalization | 3.5 verb groups (occurrence §14.1) |
+| relations and chaining: conditionals, premises in either order, one- and two-step decomposition, sub-questions | thinking spec; item 0's deferred measurement |
+| questions, answers, binding: `what` opened and bound, the answer line as supervision, yes/no on the truth lanes | `bind`, `R + A` |
+| modality and counterfactuals: a world differing in one restriction with a computable consequent | the second difference (occurrence §14.3) |
+| ellipsis and coordination: "x is three and y four"; "x and y are three"; "x or y" in the both/neither corners | the elided site; the lanes |
+| generics against particulars; quantifier scope | two truths §1; LTM2 |
+| attribution with conflicting sources and known truth | LTM2 attribution; trust in the lanes |
+| surface variety under one meaning: "equals", "is", "sums to", the marker as word or affix | occurrence §13's carrier gates |
+| perceptual identity of word forms: letters and letter-wholes are percepts (PartSpace, WholeSpace), so nested admission, marker minting and the meet over letter-wholes are exercised; the referent's quantity has no percept, and under textual grounding (parts-of-speech §8) it needs none — object-concepts are minted and learned through the definitions and kind statements the corpus supplies | the identity staircase steps 1–2 |
+
+| not reached | why |
+|---|---|
+| space, motion, prepositions, and most verb classes | arithmetic yields two or three of the two dozen verb groups |
+| aspect: activities, progressive, perfect, durations | the corpus has states and instantaneous changes only |
+| lexical ambiguity, garden paths, pragmatics, metaphor | math English is unambiguous by construction |
+| vocabulary growth and morphology beyond ordinals and plurals | a closed vocabulary |
+| desire and the social channel | nothing wants anything |
+
+Two cautions: the model can learn the sublanguage's template distribution
+rather than English, so the graded math corpus is interleaved with the
+age-appropriate natural corpus of item 3 rather than run alone; and since
+numerals are opaque words it tests the mechanisms, never arithmetic
+competence, which is what it is for.
+
 ### Examples by stage, and the construction each introduces
 
 Every example uses only the constructions of its own stage and the stages

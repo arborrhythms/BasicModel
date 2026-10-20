@@ -49,25 +49,31 @@ def test_adjacent_wholes_rewitness_compact_and_checkpoint():
 
 def test_membership_priming_shares_degree_budget_and_is_detached(monkeypatch):
     import MereologicalCodes
+    from Priming import diffuse
     from util import TheXMLConfig
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     store = TernaryTruthStore(4, capacity=4)
     store.append_meaning(ConceptualMeaning.from_description(torch.ones(4)))
     owner = SimpleNamespace(_closed_clause_store=lambda: store)
-    monkeypatch.setattr(MereologicalCodes, 'occurrence_memberships', lambda *_: {0: {0}, 2: {0}})
+    import PartRead
+    monkeypatch.setattr(PartRead, 'occurrence_roots',
+        lambda *_: [dict(address=store.occurrence_of(0))])
+    monkeypatch.setattr(MereologicalCodes, 'occurrence_memberships', lambda *_, **kw: {0: {0}, 2: {0}})
     monkeypatch.setitem(TheXMLConfig.data.setdefault('ConceptualSpace', {}), 'membershipPriming', True)
     surface = torch.tensor([[4., 1., 1.]])
     before = torch.get_rng_state().clone()
     edges = (torch.tensor([0]), torch.tensor([1]), torch.tensor([2.]))
-    assert MereologicalCodes.diffuse_memberships(owner, surface, edges, .3, torch.tensor([True]))
+    diffuse(owner, surface, edges, .3, torch.tensor([True]))
     torch.testing.assert_close(surface, torch.tensor([[3.25, 1.6, 1.15]]))
     assert torch.equal(before, torch.get_rng_state()) and not surface.requires_grad
     assert surface.sum() == pytest.approx(6.)
     monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'membershipPriming', False)
     old = surface.clone()
-    assert not MereologicalCodes.diffuse_memberships(owner, surface, edges, .3, torch.tensor([True]))
-    torch.testing.assert_close(old, surface)
+    diffuse(owner, surface, edges, .3, torch.tensor([True]))
+    assert owner._last_occurrence_priming['edges'] == 0
+    assert surface[0, 1] > old[0, 1]  # recorded Part still conducts
+    assert surface.sum() == pytest.approx(old.sum())
 
 
 def test_bilattice_rule_survives_operator_rename():
@@ -130,12 +136,12 @@ def test_determiner_mints_distinct_occurrence_and_universal_stays_high(monkeypat
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', ('lower', 'a', 'cat'), 'sleeps'))
-    a = f.store.write_clause(clause, document_key='first', sentence_index=1)
-    b = f.store.write_clause(clause, document_key='second', sentence_index=1)
-    assert f.store.refs[a, 0] != f.store.refs[b, 0]
-    first = f.store.index_of_row(int(f.store.refs[a, 0]))
-    second = f.store.index_of_row(int(f.store.refs[b, 0]))
-    assert first is not None and second is not None
+    writes_a, writes_b = {}, {}
+    a = f.store.write_clause(clause, document_key='first', sentence_index=1, written_rows=writes_a)
+    b = f.store.write_clause(clause, document_key='second', sentence_index=1, written_rows=writes_b)
+    first, second = writes_a[id(clause.children[0])], writes_b[id(clause.children[0])]
+    assert f.store.occurrence_of(first) != f.store.occurrence_of(second)
+    assert f.store.occurrence_of(a) != f.store.occurrence_of(b)
     torch.testing.assert_close(f.store.slots[first], f.store.slots[second])
     universal = next(r for r in f.grammar.rules_upward if r.determiner_mode == 'kind')
     from ReferenceContext import binding_spec
@@ -144,25 +150,15 @@ def test_determiner_mints_distinct_occurrence_and_universal_stays_high(monkeypat
     assert renamed.determiner_mode == 'kind'
 
 
-def test_relative_slot_names_its_row_instead_of_an_operand():
-    from ClauseScope import ClauseScope
-    from References import address_code
-    buffer = torch.ones(1, 2, 8)
-    scope = torch.tensor([[[ClauseScope.RELATIVE | ClauseScope.LOCAL, -26], [0, -1]]])
-    result = ClauseScope.publish_name((buffer, torch.tensor([1])), scope, torch.tensor([3]))
-    torch.testing.assert_close(result[0][0, 0], address_code(torch.tensor(-26), 8, like=buffer))
-    assert not torch.equal(result[0][0, 0], buffer[0, 0])
-    torch.testing.assert_close(result[0][0, 1], buffer[0, 1])
-
-
 def test_definition_sentence_joins_identities_beside_the_interpret_definition(monkeypatch):
     from test_clause_acceptance import SentenceFixture
-    from ClauseRow import predicate_identity
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
     first = f.store.write_clause(clause, document_key='definition', sentence_index=1)
-    assert len(f.store) == 2 and f.store.refs[0].tolist() == f.store.refs[1, [2, 1, 0]].tolist()
-    assert int(f.store.refs[first, 1]) == predicate_identity('part')
+    assert len(f.store) == 0 and first[0] == 'sym'
+    row = f.store.row(first)
+    assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]
+    assert row['readings'] == ('equality',)
     assert f.noun('bachelor') != f.noun('unmarried-man')
     assert f.cs.definitions.objects(f.words['bachelor'][0]) == (f.noun('bachelor'),)
     assert f.registry.operation_spec('equal').predicate_identity == 'operation:equal'
@@ -182,9 +178,9 @@ def test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement(
     expected = layer.compose(*padded)[:, :4]
     torch.testing.assert_close(actual[:, :4], expected)
     torch.testing.assert_close(actual[:, 4:], a[:, 4:])
-    changed = op(torch.cat((a[:, :4], a[:, 4:] * 7), -1), b)
+    changed = op(torch.cat((a[:, :4], a[:, 4:] * .7), -1), b)
     torch.testing.assert_close(changed[:, :4], actual[:, :4])
-    torch.testing.assert_close(changed[:, 4:], a[:, 4:] * 7)
+    torch.testing.assert_close(changed[:, 4:], a[:, 4:] * .7)
 
 
 def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
@@ -205,8 +201,13 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
                       leaf_orders=torch.tensor([0, 2, 0]))
     clause = finish_reading(f.language, reading, registry=f.registry)
     assert clause.order == clause.children[0].order == 1
-    row = f.store.write_clause(clause, document_key='determiner', sentence_index=1)
-    assert f.store.index_of_row(int(f.store.refs[row, 0])) is not None
+    written = {}
+    row = f.store.write_clause(clause, document_key='determiner', sentence_index=1,
+                               written_rows=written)
+    child = written[id(clause.children[0])]
+    assert isinstance(child, int) and f.store.row(child)['order'] == 1
+    root = f.store.raw_meaning_of(row).role_refs[0]
+    assert root[0] == 'sym' and f.store.parts.contains(root[1])
 
 
 def test_determiner_reverse_uses_a_marker_witness():

@@ -1,0 +1,16 @@
+..F..                                                                    [100%]
+=================================== FAILURES ===================================
+____ test_substitution_requires_the_returned_premise_and_keeps_its_witness _____
+test/test_thought_binding.py:56: in test_substitution_requires_the_returned_premise_and_keeps_its_witness
+    assert integrate(goal, wrong, (first, read(operand, value, binding))) is goal
+E   AssertionError: assert ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 4), ('sym', 99), ('sym', 1)), bindings=(('_b..., ('_thought_witnesses', (('ltm', 'test', 8), ('ltm', 'test', 9), ('ltm', 'test', 10)))), scope=(), sentence_kind=None) is ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'test', 6), ('sym', 99), ('sym', 1)), bindin...uery'), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', (('ltm', 'test', 8),))), scope=(), sentence_kind=None)
+E    +  where ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 4), ('sym', 99), ('sym', 1)), bindings=(('_b..., ('_thought_witnesses', (('ltm', 'test', 8), ('ltm', 'test', 9), ('ltm', 'test', 10)))), scope=(), sentence_kind=None) = integrate(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'test', 6), ('sym', 99), ('sym', 1)), bindin...uery'), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', (('ltm', 'test', 8),))), scope=(), sentence_kind=None), namespace(evidence={'frames': ({'meaning': ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', 'test...lift', True)}, ('ltm', 'test', 7): {'kind': 0, 'operands': (('sym', 3), ('sym', 5)), 'constructor': ('other', True)}}}), (namespace(evidence={'frames': ({'meaning': ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 1), ..., ())), scope=(), sentence_kind=None), 'occurrence': ('ltm', 'test', 9), 'evidence': (0.8, 0.0)},), 'components': {}})))
+=============================== warnings summary ===============================
+test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness
+1 failed, 4 passed, 1 warning in 2.11s

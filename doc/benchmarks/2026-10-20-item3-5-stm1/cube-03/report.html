@@ -1,0 +1,134 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 31/31 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.034442750038579106</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.003297792049124837</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0012618328910320997</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.002329082926735282</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00023191701620817184</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00017787492834031582</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_flag_off_is_noop</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0007697911933064461</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_flag_on_builds_projection</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0004795838613063097</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_untrained_is_identity</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0008095419034361839</pre></td><td><pre>test/test_verb_spectrum.py:82: in test_untrained_is_identity
+    assert torch.allclose(lyr.apply_verb(np_, verb), np_, atol=1e-5)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0007812499534338713</pre></td><td><pre>test/test_verb_spectrum.py:94: in test_roundtrip_exact_and_nontrivial
+    vp = lyr.apply_verb(np_, verb)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_per_verb_differentiation</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0008106669411063194</pre></td><td><pre>test/test_verb_spectrum.py:110: in test_per_verb_differentiation
+    lyr.apply_verb(np_, verb_a), lyr.apply_verb(np_, verb_b), atol=1e-4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_spectrum_is_sparse</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0006904168985784054</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0005750420968979597</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.01526745897717774</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0013113331515341997</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0004823750350624323</pre></td><td><pre>test/test_verb_spectrum.py:228: in test_low_precision_exact_rails_have_finite_forward_and_backward
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0006842499133199453</pre></td><td><pre>test/test_verb_spectrum.py:228: in test_low_precision_exact_rails_have_finite_forward_and_backward
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0006584171205759048</pre></td><td><pre>test/test_verb_spectrum.py:257: in test_low_precision_roundtrip_is_accurate_to_output_quantization
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0007682500872761011</pre></td><td><pre>test/test_verb_spectrum.py:257: in test_low_precision_roundtrip_is_accurate_to_output_quantization
+    vp_what = layer.apply_verb(np_what, verb_what)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3267: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3250: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004667417146265507</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0055252499878406525</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004683458944782615</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_bilattice_rule_survives_operator_rename</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.001823666039854288</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>8.632497041020542</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0004894579760730267</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.014932583086192608</pre></td><td><pre>test/test_operators_final.py:132: in test_determiner_mints_distinct_occurrence_and_universal_stays_high
+    clause = f.clause((&#x27;lift&#x27;, (&#x27;lower&#x27;, &#x27;a&#x27;, &#x27;cat&#x27;), &#x27;sleeps&#x27;))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:98: in clause
+    return finish_reading(self.language, self.program(tree, **kwargs), registry=self.registry)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3485: in compose
+    return self.forward(marker, description, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3482: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003622081130743027</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.008577957982197404</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0009413338266313076</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.006769082974642515</pre></td><td><pre>test/test_operators_final.py:195: in test_determiner_kept_closing_is_the_only_mint_and_lowers_once
+    program = f.program((&#x27;lift&#x27;, (&#x27;lower&#x27;, &#x27;a&#x27;, &#x27;cat&#x27;), &#x27;sleeps&#x27;))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in &lt;genexpr&gt;
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:84: in visit
+    return self.operation(catalog[local]).compose(*(v.reshape(1, 1, -1) for v in values)).reshape(-1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3485: in compose
+    return self.forward(marker, description, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3482: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003099162131547928</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

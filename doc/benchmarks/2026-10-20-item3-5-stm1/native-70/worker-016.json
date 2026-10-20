@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_priming_diffusion.py::test_part_outflow_preserves_energy_codes_rng_and_inactive_streams",
+    "test/test_priming_diffusion.py::test_part_graph_follows_native_addresses_after_forgetting_and_load",
+    "test/test_priming_diffusion.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor"
+  ],
+  "completed": [
+    "test/test_priming_diffusion.py::test_part_outflow_preserves_energy_codes_rng_and_inactive_streams",
+    "test/test_priming_diffusion.py::test_part_graph_follows_native_addresses_after_forgetting_and_load",
+    "test/test_priming_diffusion.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_priming_diffusion.py::test_part_outflow_preserves_energy_codes_rng_and_inactive_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001491999952122569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_diffusion.py::test_part_graph_follows_native_addresses_after_forgetting_and_load",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005813748575747013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_diffusion.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003778750542551279,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

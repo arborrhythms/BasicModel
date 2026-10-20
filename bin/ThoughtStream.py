@@ -155,9 +155,13 @@ def integrate(registry, goal, result, records):
     frames = [frame for item in results for frame in item.evidence.get('frames', ())]
     left, target = goal.role_refs[0], goal.role_refs[2]
     edges = {}
-    kinds = {'part': 1, 'equal': 4, 'implies': 2}
     for frame in frames:
-        if frame.get('rel_type') != kinds[kind]:
+        readings = frame.get('readings', ())
+        if kind == 'equal' and 'equality' not in readings:
+            continue
+        if kind == 'implies' and 'conditional' not in readings:
+            continue
+        if len(frame.get('refs', ())) != 2:
             continue
         meaning = frame['meaning']
         a, b = meaning.role_refs[0], meaning.role_refs[2]
@@ -192,13 +196,78 @@ def integrate(registry, goal, result, records):
     return goal
 
 
-def write(model, meaning, *, row, _active=None, _bound=None, replace_row=None):
+def write(model, meaning, *, row, _active=None, _bound=None):
     """The thought writer admits only conclusions and unresolved questions."""
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
     if store is None:
         return None
     if not needs_episode(meaning) and evidence_pair(meaning) == (0., 0.):
         return None
+    registry = getattr(model, 'grammatical_thoughts', None)
+    def operation(value):
+        name = relation(registry, value) if registry is not None else None
+        if name is None and registry is not None:
+            try:
+                name = registry.signature_for(value, verify_reference=False).operation.semantic_id
+            except (ValueError, TypeError):
+                pass
+        return name
+    # A kept relational derivation is admitted as a whole. In particular, an
+    # exhausted, source-supported variable is still a trial-local constituent
+    # here. Its use as a Part argument mints it in the same preflighted close;
+    # writing it first as an LTM1 occurrence would lose its native identity.
+    # A query/bind conclusion records its witnessed proof occurrence. The
+    # relation it read is not a newly selected composing operation, and its
+    # working binding must not mint another Part or grammatical occupation.
+    read_binding = bindings(meaning).get('_producing_operation') in ('query', 'bind')
+    if (not needs_episode(meaning) and not read_binding
+            and operation(meaning) in ('part', 'equal', 'implies')):
+        from ClauseRow import Clause, Composition, predicate_identity
+        active, clauses = set(), {}
+        def clause(value):
+            if id(value) in active:
+                raise ValueError('thought constituent cycle or depth limit')
+            if id(value) in clauses:
+                return clauses[id(value)]
+            if len(active) > 64:
+                raise ValueError('thought constituent cycle or depth limit')
+            active.add(id(value))
+            store._validate_local_references(value)
+            children = tuple(clause(child) for child in value.constituents)
+            name = operation(value)
+            if name in ('part', 'equal', 'implies'):
+                refs = []
+                for role in (0, 2):
+                    reference = value.role_refs[role]
+                    if reference is not None and reference[0] == 'sym':
+                        refs.append(int(reference[1]))
+                    elif reference is not None and reference[0] == 'constituent':
+                        refs.append(('clause', reference[1]))
+                    else:
+                        raise ValueError('a concluded Part argument requires a symbol or its derivation')
+                result = Clause(value, relation=name,
+                    refs=(refs[0], predicate_identity(name), refs[1]), children=children,
+                    evidence=evidence_pair(value))
+            else:
+                point = value.roles[0]
+                minted = bindings(value).get('_producing_operation') == 'mint'
+                result = Clause(value, point=point, children=children, minted=minted,
+                    order=1 if minted else 0, evidence=evidence_pair(value),
+                    composition=Composition(point, order=1 if minted else 0))
+            active.remove(id(value))
+            clauses[id(value)] = result
+            return result
+        from Occurrence import source_at
+        slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
+        document, sentence = source_at(model, row, slot)
+        turn = ('thought', document, sentence)
+        ordinals = model.__dict__.setdefault('_thought_ordinals', {})
+        ordinal = ordinals.get(turn, 0)
+        result = store.write_clause(clause(meaning), kind='inference',
+            evidence=evidence_pair(meaning), stream=row, document_key=turn,
+            sentence_index=ordinal)
+        ordinals[turn] = ordinal + 1
+        return result
     if _active is None:
         visited, checking = set(), set()
         def check(value):
@@ -221,13 +290,24 @@ def write(model, meaning, *, row, _active=None, _bound=None, replace_row=None):
         raise ValueError('thought constituent cycle or depth limit')
     active.add(id(meaning))
     if meaning.constituents:
-        references = []
-        for child in meaning.constituents:
+        needed = set()
+        def referenced(item):
+            if isinstance(item, tuple):
+                if item and item[0] == 'constituent':
+                    needed.add(item[1])
+                else:
+                    for value in item:
+                        referenced(value)
+        for value in meaning.metadata().values():
+            referenced(value)
+        references = {}
+        for position in sorted(needed):
+            child = meaning.constituents[position]
             if id(child) not in bound:
                 value = child if needs_episode(child) or evidence_pair(child) != (0., 0.) else question(child)
                 index = write(model, value, row=row, _active=active, _bound=bound)
                 bound[id(child)] = store.occurrence_of(index)
-            references.append(bound[id(child)])
+            references[position] = bound[id(child)]
         def remap(item):
             if isinstance(item, tuple):
                 if item and item[0] == 'constituent':
@@ -244,27 +324,15 @@ def write(model, meaning, *, row, _active=None, _bound=None, replace_row=None):
     kind = 'question' if needs_episode(meaning) else 'inference'
     if kind == 'inference' and evidence_pair(meaning) == (0., 0.):
         return None
-    if replace_row is not None:
-        store.upsert_resolved(replace_row, meaning)
-        return replace_row
     from Occurrence import source_at
     slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
     document, sentence = source_at(model, row, slot)
     turn = ('thought', document, sentence)
     ordinals = model.__dict__.setdefault('_thought_ordinals', {})
     ordinal = ordinals.get(turn, 0)
-    registry = getattr(model, 'grammatical_thoughts', None)
-    kind_name = relation(registry, meaning) if registry is not None else None
-    if kind_name is None and registry is not None:
-        try:
-            kind_name = registry.signature_for(meaning, verify_reference=False).operation.semantic_id
-        except (ValueError, TypeError):
-            pass
-    relation_type = {'part': store.REL_PARTOF, 'equal': store.REL_DEF,
-                     'implies': store.REL_IMPLIES}.get(kind_name)
     result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),
-        stream=row, document_key=turn, sentence_index=ordinal, trust=0., rel_type=relation_type)
-    if result >= 0:
+        stream=row, document_key=turn, sentence_index=ordinal, trust=0.)
+    if result is not None and result != -1:
         ordinals[turn] = ordinal+1
     return result
 
@@ -273,7 +341,6 @@ def commit(model, result, *, row):
     """Publish only the kept walk, after both complete trials were compared."""
     components = getattr(model._concept_owner(), 'components', None)
     if components is not None:
-        components.reference_close.commit_bindings(result)
         if model.training and torch.is_grad_enabled():
             components.reference_close.train_thought(result, model.errors)
     derived = {}
@@ -297,38 +364,15 @@ def commit(model, result, *, row):
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
     occurrence = bindings(result.meaning).get('_query_occurrence')
     prior = None if store is None else store._index_occurrences.get(occurrence)
-    if prior is not None:
-        # This episode owns the variable in the already committed source
-        # row. An exhausted search must not create a second independent
-        # variable for later copulas to fill.
-        original = store.meaning_of(prior)
-        positive, negative = evidence_pair(result.meaning)
-        resolved = fill(original, dict(meaning=result.meaning,
-            support_true=positive, support_false=negative),
-            witnesses=bindings(result.meaning).get('_thought_witnesses', ()),
-            operation=bindings(result.meaning).get('_producing_operation'))
-        data = bindings(resolved)
-        data['_pending'] = bool(open_slots(resolved))
-        data['_forward_references'] = tuple(item for item in data.get('_forward_references', ())
-                                             if resolved.role_refs[item[0]] is None)
-        resolved = replace(resolved, bindings=data)
-        if needs_episode(result.meaning):
-            return write(model, resolved, row=row, replace_row=prior)
-        index = write(model, result.meaning, row=row)
-        if index is not None:
-            # Rebase any newly minted local children through the concluded
-            # row before filling the original region, without replacing its
-            # already-bound roles with an unrelated serial result.
-            resolved = fill(original, dict(meaning=store.meaning_of(index),
-                support_true=positive, support_false=negative),
-                witnesses=bindings(result.meaning).get('_thought_witnesses', ()),
-                operation=bindings(result.meaning).get('_producing_operation'))
-            data = bindings(resolved)
-            data['_pending'] = bool(open_slots(resolved))
-            data['_forward_references'] = tuple(item for item in data.get('_forward_references', ())
-                                                 if resolved.role_refs[item[0]] is None)
-            store.upsert_resolved(prior, replace(resolved, bindings=data))
-        return index
+    if prior is not None and needs_episode(result.meaning):
+        # An unresolved working read does not rewrite its source or create
+        # another copy of the same question.
+        return prior
+    if prior is not None and components is not None and model.training:
+        for kind, role in bindings(result.meaning).get('_bound_roles', ()):
+            reference = result.meaning.role_refs[role]
+            if kind == 'referent' and reference is not None:
+                components.reference_close.resolved(prior, role, reference, model.errors)
     index = None
     # A zero-work closing already persisted this exact open row. Reuse its
     # occurrence rather than manufacturing a duplicate exhausted question.
@@ -342,7 +386,7 @@ def commit(model, result, *, row):
             index = prior
     if index is None:
         index = write(model, result.meaning, row=row)
-    if index is None or index < 0:
+    if index is None or index == -1:
         return index
     # Pending questions are already LTM rows. Address upserts, not a second
     # row-keyed question cache, fill them when their referenced occurrence arrives.

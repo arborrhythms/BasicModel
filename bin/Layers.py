@@ -97,6 +97,44 @@ def bounded_atanh(x, eps=None, bounded=True):
         return torch.atanh(x.clamp(-1 + eps, 1 - eps))
     return _BoundedAtanh.apply(x, float(eps), 1.0)
 
+
+def assert_cube(value):
+    """Identity maps consume finite membership coordinates, including rails."""
+    torch._assert_async(
+        (torch.isfinite(value) & (value >= 0) & (value <= 1)).all(),
+        'identity map requires finite coordinates in [0, 1]')
+    return value
+
+
+def cube_chart(value, *, bounded=True):
+    """The unit cube's centered atanh chart, with finite numerical rails.
+
+    The existing atanh rail convention applies at entry only. No map result
+    is clipped into the cube: cube_unchart maps its entire real domain there.
+    Low precision inputs are charted in float32 so rails remain finite.
+    """
+    assert_cube(value)
+    work = value.float() if value.dtype in (torch.float16, torch.bfloat16) else value
+    return bounded_atanh(2 * work - 1, bounded=bounded)
+
+
+def cube_unchart(value):
+    """Map chart coordinates into the cube by construction."""
+    return assert_cube((torch.tanh(value) + 1) * .5)
+
+def cube_translate(value, delta):
+    """Translate a cube value through its chart, with exact zero-init identity.
+
+    At numerical rails the finite chart moves to its interior. A zero
+    translation returns the source exactly while retaining the chart's
+    gradient for the initially neutral learned map.
+    """
+    delta = torch.as_tensor(delta, device=value.device, dtype=value.dtype)
+    mapped = cube_unchart(cube_chart(value) + delta)
+    neutral = value.detach() + (mapped - mapped.detach())
+    return torch.where(delta == 0, neutral, mapped)
+
+
 # Device used by all layers.
 import util
 from util import TheXMLConfig, TheDevice
@@ -2470,7 +2508,7 @@ class GrammarLayer(Layer):
         from MeaningCodes import compose
         meaning = (meanings[self.meaning_head_role] if self.meaning_rule is None else
                    compose(self.meaning_rule, *meanings))
-        return torch.cat((form, meaning), -1)
+        return assert_cube(torch.cat((form, meaning), -1))
 
     def compose_from_grammar_context(self, operands, *, context):
         """Adapt this legacy tensor layer to the public structural-face call.
@@ -3060,7 +3098,7 @@ class SigmaLayer(GrammarLayer):
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
-                 monotonic=False, butterfly=False, N=None):
+                 monotonic=False, butterfly=False, N=None, unit_interval=False):
         """Initialize SigmaLayer; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -3078,6 +3116,9 @@ class SigmaLayer(GrammarLayer):
         self.invertible = invertible
         self.ergodic    = ergodic
         self.nonlinear  = nonlinear
+        self.unit_interval = bool(unit_interval)
+        if self.unit_interval and not nonlinear:
+            raise ValueError("cube maps require their coordinate chart")
         self.stable     = stable
         self.monotonic  = monotonic
         self.activation = torch.zeros(1, nOutput, 1)
@@ -3098,6 +3139,14 @@ class SigmaLayer(GrammarLayer):
                 self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
             self.layers.append(self.layer)
 
+    def _chart(self, value):
+        if self.unit_interval:
+            return cube_chart(value, bounded=self._bounded_backward)
+        return bounded_atanh(value, bounded=self._bounded_backward)
+
+    def _unchart(self, value):
+        return cube_unchart(value) if self.unit_interval else torch.tanh(value)
+
     @property
     def bias(self): return self.layer.bias
     @property
@@ -3109,11 +3158,11 @@ class SigmaLayer(GrammarLayer):
         if binary:
             packed = Ops.top2_select_ste(packed)
         if self.nonlinear:
-            packed = bounded_atanh(packed, bounded=self._bounded_backward)
+            packed = self._chart(packed)
         out = (self.layer.forward(packed, gate=gate) if gate is not None
                else self.layer.forward(packed))
         if self.nonlinear:
-            out = torch.tanh(out)
+            out = self._unchart(out)
         self.activation = out.detach()
         return out
 
@@ -3126,37 +3175,37 @@ class SigmaLayer(GrammarLayer):
         packed pair axis).
         """
         if self.nonlinear:
-            x_pair = bounded_atanh(x_pair, bounded=self._bounded_backward)
+            x_pair = self._chart(x_pair)
         out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
         if self.nonlinear:
-            out = torch.tanh(out)
+            out = self._unchart(out)
         return out
 
     def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
         """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
         if self.nonlinear:
-            y_pair = bounded_atanh(y_pair, bounded=self._bounded_backward)
+            y_pair = self._chart(y_pair)
         out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
         if self.nonlinear:
-            out = torch.tanh(out)
+            out = self._unchart(out)
         return out
 
     def compute_forward(self, x, binary=False):
         """Pure ungated Sigma computation for a recurrent HOP body."""
         if self.butterfly:
             if self.nonlinear:
-                x = bounded_atanh(x, bounded=self._bounded_backward)
+                x = self._chart(x)
             y = self._butterfly_forward(x)
-            return torch.tanh(y) if self.nonlinear else y
+            return self._unchart(y) if self.nonlinear else y
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
-            x = bounded_atanh(x, bounded=self._bounded_backward)
+            x = self._chart(x)
         if hasattr(self.layer, "functional_forward"):
             y = self.layer.functional_forward(x)
         else:
             y = self.layer.forward(x)
-        return torch.tanh(y) if self.nonlinear else y
+        return self._unchart(y) if self.nonlinear else y
 
     def forward(self, x, binary=False, gate=None):
         """Apply the additive OR fold.
@@ -3181,19 +3230,19 @@ class SigmaLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                x = bounded_atanh(x, bounded=self._bounded_backward)
+                x = self._chart(x)
             y = self._butterfly_forward(x)
             if self.nonlinear:
-                y = torch.tanh(y)
+                y = self._unchart(y)
             self.activation = y.detach()
             return y
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
-            x = bounded_atanh(x, bounded=self._bounded_backward)
+            x = self._chart(x)
         y = self.layer.forward(x, gate=gate) if gate is not None else self.layer.forward(x)
         if self.nonlinear:
-            y = torch.tanh(y)
+            y = self._unchart(y)
         self.activation = y.detach()
         return y
 
@@ -3209,17 +3258,17 @@ class SigmaLayer(GrammarLayer):
         """
         if self.butterfly:
             if self.nonlinear:
-                y = bounded_atanh(y, bounded=self._bounded_backward)
+                y = self._chart(y)
             x = self._butterfly_reverse(y)
             if self.nonlinear:
-                x = torch.tanh(x)
+                x = self._unchart(x)
             self.activation = x.detach()
             return x
         if self.nonlinear:
-            y = bounded_atanh(y, bounded=self._bounded_backward)
+            y = self._chart(y)
         x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
         if self.nonlinear:
-            x = torch.tanh(x)
+            x = self._unchart(x)
         self.activation = x.detach()
         return x
 
@@ -3247,8 +3296,8 @@ class SigmaLayer(GrammarLayer):
             ``[..., nOutput]`` in [-1, 1].
         """
         if self.nonlinear:
-            a_l = bounded_atanh(left, bounded=self._bounded_backward)
-            a_r = bounded_atanh(right, bounded=self._bounded_backward)
+            a_l = self._chart(left)
+            a_r = self._chart(right)
         else:
             a_l = left
             a_r = right
@@ -3256,7 +3305,7 @@ class SigmaLayer(GrammarLayer):
         out = (self.layer.forward(a_sum, gate=gate) if gate is not None
                else self.layer.forward(a_sum))
         if self.nonlinear:
-            out = torch.tanh(out)
+            out = self._unchart(out)
         if not torch.compiler.is_compiling():
             self.activation = out.detach()
         return out
@@ -3274,19 +3323,14 @@ class SigmaLayer(GrammarLayer):
         balanced split in :meth:`generate` inverts it (each constituent
         ``= tanh(s / M)``) when the inner layer is invertible -- the explicit
         ``part_chain`` provenance is the fallback when it is not."""
+        a = self._chart(part_codes) if self.nonlinear else part_codes
         if mask is not None:
             valid = mask.to(device=part_codes.device, dtype=torch.bool)
-            part_codes = torch.where(
-                valid.unsqueeze(-1), part_codes,
-                torch.zeros_like(part_codes))
-        if self.nonlinear:
-            a = bounded_atanh(part_codes, bounded=self._bounded_backward)
-        else:
-            a = part_codes
+            a = torch.where(valid.unsqueeze(-1), a, torch.zeros_like(a))
         a_sum = a.sum(dim=-2)
         out = self.layer.forward(a_sum)
         if self.nonlinear:
-            out = torch.tanh(out)
+            out = self._unchart(out)
         return out
 
     def generate(self, parent, gate=None):
@@ -3309,14 +3353,14 @@ class SigmaLayer(GrammarLayer):
         Requires ``invertible=True`` on the inner LinearLayer.
         """
         if self.nonlinear:
-            a_y = bounded_atanh(parent, bounded=self._bounded_backward)
+            a_y = self._chart(parent)
         else:
             a_y = parent
         a_sum = (self.layer.reverse(a_y, gate=gate) if gate is not None
                  else self.layer.reverse(a_y))
         half = a_sum * 0.5
         if self.nonlinear:
-            op = torch.tanh(half)
+            op = self._unchart(half)
         else:
             op = half
         return op, op
@@ -3325,18 +3369,18 @@ class SigmaLayer(GrammarLayer):
                             reference_side=None):
         """``generate`` without module mutation (compiled reverse loops);
         ``W_inv`` is the inner layer's precomputed inverse (optional)."""
-        a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
+        a_y = self._chart(parent) if self.nonlinear else parent
         a_sum = self.layer.functional_reverse(
             a_y - self.layer._effective_bias(), gate=gate, W_inv=W_inv)
         half = a_sum * 0.5
-        op = torch.tanh(half) if self.nonlinear else half
+        op = self._unchart(half) if self.nonlinear else half
         if reference is None:
             return op, op
         right, known = reference_side
-        ref_chart = (bounded_atanh(reference, bounded=self._bounded_backward)
+        ref_chart = (self._chart(reference)
                      if self.nonlinear else reference)
         remainder = a_sum - ref_chart
-        remainder = torch.tanh(remainder) if self.nonlinear else remainder
+        remainder = self._unchart(remainder) if self.nonlinear else remainder
         left = torch.where(right[:, None], remainder, reference)
         right_value = torch.where(right[:, None], reference, remainder)
         return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
@@ -5751,7 +5795,13 @@ class ConceptAllocator:
         self.reference_orders = {}       # grammar-resolved object order
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
-        self.ltm_edges = {}              # (parent, part) -> supporting LTM occurrences
+        from PartStore import PartStore
+        self.parts = PartStore()         # LTM2 and the symbol taxonomy, one owner
+        self.parts.allocate = self._allocate_part_symbol
+        self.symbol_types = {}           # types of bank arguments, never edge kinds
+        self.word_descriptions = {}      # native form definitions, keyed by word symbol
+        from Definitions import DefinitionIndex
+        self.definitions = DefinitionIndex(self.parts, self)
         self.individuals = set()         # native concept seats holding occurrence folds
         self.form_regions = {}          # native form -> native learned-region concept
         self._layers = {}                # {0: THE shared square layer}
@@ -5778,6 +5828,11 @@ class ConceptAllocator:
             self._layers[0] = got
         return got
 
+    def _allocate_part_symbol(self):
+        if self.next_id >= self.parts.capacity:
+            raise OverflowError('LTM2 symbol capacity exhausted before allocation')
+        return self.new_concept()
+
     def new_concept(self):
         """Allocate a fresh global concept id (stable handle, no vector)."""
         cid = int(self.next_id)
@@ -5799,7 +5854,10 @@ class ConceptAllocator:
         return self.layer(self.placement.get(int(cid), 0))
 
     def records(self, cid):
-        return self.store_of(cid).constituents(cid)
+        raw = self.store_of(cid).constituents(cid)
+        return list(dict.fromkeys((*raw,
+                *(('part', ('sym', part)) for part in self.parts.parts(cid)),
+                *(('whole', ('sym', whole)) for whole in self.parts.wholes(cid)))))
 
     def refs(self, cid, role):
         """``role``-tagged refs of ``cid`` in record (insertion) order."""
@@ -5821,8 +5879,7 @@ class ConceptAllocator:
             return 0
         _seen.add(cid)
         subs = []
-        for x in (sorted(self.refs(cid, "part"), key=repr)
-                  + sorted(self.refs(cid, "whole"), key=repr)):
+        for x in sorted(self.refs(cid, "part"), key=repr):
             if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
                 subs.append(self.order_of(x[1], _seen))
         return 0 if not subs else 1 + max(subs)
@@ -5835,28 +5892,36 @@ class ConceptAllocator:
         self.placement[cid] = new
         return new
 
-    def add(self, cid, role, ref, *, ltm=False):
+    def add(self, cid, role, ref):
         cid = self.touch(cid)
-        if not ltm and role == 'part' and isinstance(ref, tuple) and ref[0] == 'sym':
-            # Independent native evidence makes this edge permanent with
-            # respect to LTM pruning, even if testimony first introduced it.
-            self.ltm_edges.pop((cid, int(ref[1])), None)
-        self.store_of(cid).add_constituent(cid, role, ref)
+        if role in ('part', 'whole') and isinstance(ref, tuple) and ref[0] == 'sym':
+            part, whole = (int(ref[1]), cid) if role == 'part' else (cid, int(ref[1]))
+            self.parts.add(part, whole, truth_plus=1.)
+        else:
+            self.store_of(cid).add_constituent(cid, role, ref)
         self.settle(cid)
 
     def remove(self, cid, role, ref):
         cid = self.touch(cid)
-        self.store_of(cid).remove_constituent(cid, role, ref)
+        if role in ('part', 'whole') and isinstance(ref, tuple) and ref[0] == 'sym':
+            part, whole = (int(ref[1]), cid) if role == 'part' else (cid, int(ref[1]))
+            self.parts.remove(part, whole)
+        else:
+            self.store_of(cid).remove_constituent(cid, role, ref)
         self.settle(cid)
 
     def set_role(self, cid, role, refs):
         cid = self.touch(cid)
-        self.store_of(cid).set_role_constituents(cid, role, refs)
+        for ref in tuple(self.refs(cid, role)):
+            self.remove(cid, role, ref)
+        for ref in refs:
+            self.add(cid, role, ref)
         self.settle(cid)
 
     def clear(self, cid):
         cid = self.touch(cid)
         self.store_of(cid).clear_constituents(cid)
+        self.parts.remove_symbol(cid)
         self.settle(cid)
 
     def drop(self, cid):
@@ -5872,7 +5937,9 @@ class ConceptAllocator:
             ids.discard(cid)
         for k in [k for k, v in self.relate_idx.items() if int(v) == cid]:
             self.relate_idx.pop(k, None)
-        self.ltm_edges = {edge: refs for edge, refs in self.ltm_edges.items() if cid not in edge}
+        self.parts.remove_symbol(cid)
+        self.symbol_types.pop(cid, None)
+        self.word_descriptions.pop(cid, None)
 
 
 class MeronymicFoldAdapter(Layer):
@@ -7375,7 +7442,7 @@ class TruthLayer(Layer):
 
     def _flatten_ltm_row(self, store, idx: int) -> torch.Tensor:
         """Read an idea's fused point, conformed to the content width."""
-        if int(store.rel_type[idx]) != store.REL_NONE:
+        if int(store.role_mask[idx].sum()) != 1:
             raise ValueError("a relation has no luminosity point")
         cw = max(1, min(int(getattr(store, 'content_width', store.nDim)),
                         int(store.nDim)))
@@ -7413,7 +7480,7 @@ class TruthLayer(Layer):
         fact_kind = store.KINDS.index('fact')
         idx_list = [i for i in idxs.tolist()
                     if int(store.record_kind[i]) == fact_kind
-                    and int(store.rel_type[i]) == store.REL_NONE][:self.max_truths]
+                    and int(store.role_mask[i].sum()) == 1][:self.max_truths]
         self.truths.zero_()
         sources, trusts = [], []
         for row_i in idx_list:
@@ -8694,12 +8761,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     with state_dict; semantic_extras holds reference and provenance metadata.
     """
 
-    REL_NONE = 0
-    REL_PARTOF = 1
-    REL_IMPLIES = 2
-    REL_OPERATOR = 3
-    REL_DEF = 4
-
     ORIGIN_CONVERSATION = 0
     ORIGIN_PROVISIONED = 1
     ORIGIN_USER = 2
@@ -8717,8 +8778,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.content_width = int(content_width) if content_width else self.nDim
         # ONE tensor: [capacity, 3, nDim] -- slot 0 = NP1, 1 = VP, 2 = NP2.
         self.register_buffer('slots', torch.zeros(capacity, 3, nDim))
-        self.register_buffer('rel_type',
-                             torch.zeros(capacity, dtype=torch.long))
         self.register_buffer('stream', torch.zeros(capacity, 0, dtype=torch.bool))
         self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('c_plus', torch.zeros(capacity))
@@ -8732,7 +8791,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('where', torch.zeros(capacity, 4))
         self.register_buffer('when', torch.zeros(capacity, 4))
         self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
-        self.register_buffer('truth_schema', torch.tensor(9, dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(10, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
@@ -8762,13 +8821,12 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # rows themselves. It is sidecar data, not a second LTM: occurrence
         # IDs, role vectors and evidence kind remain in the buffers above.
         self._expectation_rows = {}
-        self._definition_rows = {}
-        from Definitions import DefinitionIndex
-        self.definitions = DefinitionIndex(self)
         self._init_leaf_index()
+        from PartStore import PartStore
+        object.__setattr__(self, 'parts', PartStore())
 
     @staticmethod
-    def _context_fingerprint(context, text, expectation=None, definition=None):
+    def _context_fingerprint(context, text, expectation=None):
         """Bind sidecar content to its tensor-owned occurrence without duplicating it."""
         context = context or {}
         content = {"role_refs": context.get("role_refs", (None, None, None)),
@@ -8778,8 +8836,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # actually carry expectation provenance add this key.
         if expectation is not None:
             content["expectation"] = expectation
-        if definition is not None:
-            content["definition"] = definition
         return TernaryTruthStore._fingerprint_payload(content)
 
     @staticmethod
@@ -8810,6 +8866,9 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     def _validated_expectation_reference(value, namespace, *, optional=False):
         if value is None and optional:
             return None
+        if (isinstance(value, tuple) and len(value) == 2 and value[0] == 'sym'
+                and type(value[1]) is int and value[1] > 0):
+            return value
         if (not isinstance(value, tuple) or len(value) != 3
                 or value[0] != "ltm" or value[1] != namespace
                 or type(value[2]) is not int or value[2] in (-1, 0)):
@@ -8880,12 +8939,17 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 raise ValueError("expectation provenance names an unavailable occurrence")
             for reference in self._expectation_references(provenance):
                 self._validated_expectation_reference(reference, namespace)
-                if reference[2] not in identifiers:
+                if (not self.parts.contains(reference[1]) if reference[0] == 'sym'
+                        else reference[2] not in identifiers):
                     raise ValueError("expectation provenance occurrence is unavailable")
             if provenance["kind"] != "estimate":
                 continue
             target = provenance["intended_occurrence"]
             if target is None:
+                continue
+            if target[0] == 'sym':
+                # LTM2 has only its six columns. Its inverse expectation
+                # link is a query over these retained estimate records.
                 continue
             inverse = records.get(target[2])
             if (inverse is None or inverse["kind"] != "observation"
@@ -8899,10 +8963,14 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.semantic_fingerprint[i] = self.semantic_fingerprint.new_tensor(
             self._context_fingerprint(
                 self._semantic_rows.get(identifier, {}), self.text_of(i),
-                self._expectation_rows.get(identifier), self._definition_rows.get(identifier)))
+                self._expectation_rows.get(identifier)))
 
     def occurrence_of(self, idx):
         """Stable identity; compaction changes a row index, not its occurrence."""
+        if isinstance(idx, tuple) and idx[:1] == ('sym',):
+            if not self.parts.contains(idx[1]):
+                raise IndexError('unavailable Part symbol')
+            return idx
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
@@ -8965,43 +9033,22 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
         All local references must resolve among the proposed records.  Only
         role references create structural edges; bindings and scopes are roots
-        for retention but do not turn into hidden syntax.  The iterative DFS
-        rejects cycles before the caller mutates durable state.
+        for retention but do not turn into hidden syntax. Cyclic references
+        are legal. Readers terminate at repeated occurrences; neither a cycle
+        nor a successful binding grants evidence to the referenced row.
         """
-        edges = {}
-        for identifier, context in contexts.items():
+        for context in contexts.values():
             references = TernaryTruthStore._context_occurrence_references(context)
             if any(ref[2] not in contexts
                    for ref in references
                    if ref[:2] == ('ltm', namespace)):
                 raise ValueError("semantic context occurrence is unavailable")
-            children = []
             for _, reference in TernaryTruthStore._role_occurrence_references(
                     context.get("role_refs", (None, None, None))):
                 if reference[:2] == ('ltm', namespace):
                     if reference[2] not in contexts:
                         raise ValueError(
                             "semantic constituent occurrence is unavailable")
-                    children.append(reference[2])
-            edges[identifier] = tuple(children)
-
-        state = {}
-        for root in edges:
-            pending = [(root, False)]
-            while pending:
-                identifier, exiting = pending.pop()
-                if exiting:
-                    state[identifier] = 2
-                    continue
-                if state.get(identifier) == 1:
-                    raise ValueError("semantic constituent cycle")
-                if state.get(identifier) == 2:
-                    continue
-                state[identifier] = 1
-                pending.append((identifier, True))
-                pending.extend((child, False)
-                               for child in reversed(edges[identifier]))
-
     def _validate_local_references(self, meaning):
         """Reject dangling local references before append mutates any buffer."""
         namespace = self.address_domain
@@ -9097,6 +9144,13 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     def meaning_of(self, idx):
         """An owned detached value, or None when required context is missing."""
+        value = self.raw_meaning_of(idx)
+        return None if value is None else self.read_reference_bindings(idx, value)
+
+    def raw_meaning_of(self, idx):
+        """The retained concept and metadata, before working interpretation."""
+        if isinstance(idx, tuple) and idx[:1] == ('sym',):
+            return self.part_row(idx[1])['meaning']
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
@@ -9111,7 +9165,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             mode=self.MODES[int(self.grammatical_mode[i])],
             polarity=bool(self.polarity[i]),
             sentence_kind=(None if self.KINDS[int(self.record_kind[i])] == 'estimate' else
-                           'idea' if int(self.rel_type[i]) == self.REL_NONE else 'relation'),
+                           'idea' if int(self.role_mask[i].sum()) == 1 else 'relation'),
             **(context or {}))
 
     def semantic_extras(self):
@@ -9128,9 +9182,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 raise ValueError("cannot checkpoint evidence with missing semantic metadata")
             records.append({"id": identifier, "context": dict(context or {}),
                             "text": self.text_of(i),
-                            "expectation": self.expectation_of(i),
-                            **({"definition": self._definition_rows[identifier]}
-                               if identifier in self._definition_rows else {})})
+                            "expectation": self.expectation_of(i)})
         return {"version": 6,
                 "namespace": self.address_domain,
                 "records": records}
@@ -9218,7 +9270,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         rows = {int(self.address_keys[i]): i for i in range(len(self))}
         if len(rows) != len(self):
             raise ValueError("duplicate truth occurrence identity")
-        incoming, texts, expectation_rows, definitions = {}, [None] * len(self), {}, {}
+        incoming, texts, expectation_rows = {}, [None] * len(self), {}
         for record in extras.get("records", ()):
             identifier = int(record["id"])
             if identifier in getattr(self, '_discarded_occurrences', ()):
@@ -9261,15 +9313,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 expectation_rows[identifier] = expectation
             if (meaning.has_context or text is not None or expectation is not None) and not bool(self.metadata_required[i]):
                 raise ValueError("truth context disagrees with its required-metadata flag")
-            definition = record.get("definition")
-            if definition is not None:
-                if (int(self.rel_type[i]) != self.REL_DEF
-                        or not {"forms", "parts", "wholes"} <= set(definition)
-                        or set(definition) - {"forms", "parts", "wholes", "identity_key"}):
-                    raise ValueError("invalid definition row metadata")
-                definitions[identifier] = definition
+            if record.get('definition') is not None:
+                raise ValueError('retired definition rows cannot be loaded as LTM1')
             fingerprint_values = self._context_fingerprint(incoming[identifier], text,
-                record.get('expectation') if version < 6 else expectation, definition)
+                record.get('expectation') if version < 6 else expectation)
             fingerprint = self.semantic_fingerprint.new_tensor(fingerprint_values)
             if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
                 raise ValueError("truth semantic content differs from its checkpoint fingerprint")
@@ -9286,10 +9333,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._semantic_rows = incoming
         self._texts = texts
         self._expectation_rows = expectation_rows
-        self._definition_rows = definitions
         for identifier in migrated:
             self._update_semantic_fingerprint(rows[identifier])
-        self.definitions.rebuild()
         if getattr(self, "_leaf_index_missing", False):
             for row in range(len(self)):
                 meaning = self.meaning_of(row)
@@ -9297,11 +9342,14 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                     terms, complete = self._meaning_leaf_terms(meaning, order=int(self.order[row]))
                     self._append_leaf_terms(row, terms, complete)
             self._leaf_index_missing = False
-            self._leaf_needs_owner_reindex = self._index_unfold is None
+            self._leaf_needs_owner_reindex = True
         self.rebuild_leaf_postings()
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        retired = state_dict.pop(prefix + 'rel_type', None)
+        if retired is not None and bool(retired[:int(state_dict.get(prefix + 'count', 0))].any()):
+            raise ValueError('retired three-position relations require regeneration; no LTM2 conversion is defined')
         stream = state_dict.get(prefix + 'stream')
         if stream is not None:
             self.stream = self.stream.new_zeros(self.capacity, stream.shape[1])
@@ -9309,8 +9357,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         if legacy_trust is not None:
             state_dict.setdefault(prefix + 'source_trust', legacy_trust)
         self._resize_checkpoint_rows(state_dict, prefix)
-        self._definition_rows = {}
-        self.definitions.rebuild()
         # Legacy checkpoints retain their recorded pair. The retired scalar
         # was provenance, so it must not silently overwrite that evidence.
         state_dict.setdefault(prefix + 'source_trust', torch.zeros_like(self.source_trust))
@@ -9356,10 +9402,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             mask = torch.zeros(self.role_mask.shape, dtype=torch.bool, device=slots.device)
             mask[:count] = slots[:count].ne(0).any(-1)
             mask[:count, 0] = True
-            rel = state_dict.get(prefix + "rel_type", self.rel_type).to(slots.device)
-            # A legacy relation without a VP has no recoverable full description.
-            incomplete = (rel[:count] != self.REL_NONE) & ~mask[:count, 1]
-            kinds[:count] = torch.where(incomplete, self.KINDS.index("unverified"), kinds[:count])
             migrations = {
                 "record_kind": kinds, "grammatical_mode": modes, "role_mask": mask,
                 "polarity": torch.ones_like(self.polarity),
@@ -9377,29 +9419,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._texts = []
         self._expectation_rows = {}
         self._discarded_occurrences = set()
-        if old_schema:
-            count = int(state_dict.get(prefix + 'count', self.count))
-            kinds = state_dict.get(prefix + 'rel_type', self.rel_type)[:count]
-            origins = state_dict.get(prefix + 'origin', self.origin)[:count]
-            discard = (kinds == 3) | (origins == self.ORIGIN_PROVISIONED)
-            discarded = discard.nonzero().flatten()
-            if discarded.numel():
-                import warnings
-                warnings.warn('Dropping legacy REL_OTHER rows; provisioned truths must be re-provisioned from XML.',
-                              UserWarning, stacklevel=2)
-                self._discarded_occurrences = set(state_dict[
-                    prefix + 'address_keys'][discarded].tolist())
-                keep = (~discard).nonzero().flatten()
-                for name, default in self._buffers.items():
-                    key = prefix + name
-                    value = state_dict.get(key)
-                    if (name in ('posting_codes', 'posting_roles', 'posting_rows') or value is None or value.ndim == 0
-                            or value.shape[0] != self.capacity):
-                        continue
-                    compact = default.clone().to(value)
-                    compact[:len(keep)] = value[keep]
-                    state_dict[key] = compact
-                state_dict[prefix + 'count'] = self.count.new_tensor(len(keep))
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
         self.rebuild_leaf_postings()
@@ -9484,7 +9503,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         return bound[id(meaning)]
 
     @torch.no_grad()
-    def append_meaning(self, meaning, *, kind="fact", rel_type=None,
+    def append_meaning(self, meaning, *, kind="fact",
                        trust=0.0, stream=-1, surprise=-1., evidence=None, order=0,
                        document_key=None, sentence_index=0, content_key=None, address=None):
         """Commit a complete description with explicit evidential provenance."""
@@ -9534,9 +9553,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             self._drop_row_postings(n)
         self.slots[n].copy_(meaning.roles)
         self.role_mask[n].copy_(meaning.role_mask)
-        if rel_type is None:
-            rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
-        self.rel_type[n] = int(rel_type)
         self.c_plus[n], self.c_minus[n] = evidence
         if previous is None or abs(float(trust)) >= abs(float(self.source_trust[n])):
             self.source_trust[n] = max(-1., min(1., float(trust)))
@@ -9600,11 +9616,12 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         }, namespace)
         identifiers = set(int(identifier)
                           for identifier in self.address_keys[:len(self)].tolist())
-        if any(reference[2] not in identifiers
+        if any((not self.parts.contains(reference[1]) if reference[0] == 'sym'
+                else reference[2] not in identifiers)
                for reference in self._expectation_references(provenance)):
             raise ValueError("estimate source occurrence is unavailable")
         index = self.append_meaning(
-            meaning, kind="estimate", rel_type=self.REL_NONE, trust=trust,
+            meaning, kind="estimate", trust=trust,
             **self._estimate_write_address(meaning, document=document, stream=stream))
         identifier = int(self.address_keys[index])
         self._expectation_rows[identifier] = provenance
@@ -9619,6 +9636,19 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         Only the relationship changes here; neither row's predicted nor
         observed meaning is rewritten after the target arrives.
         """
+        if isinstance(observation, tuple) and observation[:1] == ('sym',):
+            if not self.parts.contains(observation[1]):
+                raise IndexError('expectation Part observation is unavailable')
+            estimate_id = int(self.address_keys[int(estimate)])
+            previous = self._expectation_rows.get(estimate_id)
+            if previous is None or previous['kind'] != 'estimate':
+                raise ValueError('expectation link must start at an estimate')
+            if previous['intended_occurrence'] is not None:
+                raise ValueError('estimate is already linked to an observation')
+            self._expectation_rows[estimate_id] = dict(previous, intended_occurrence=observation)
+            self._update_semantic_fingerprint(estimate)
+            self._validate_expectation_links()
+            return
         estimate, observation = int(estimate), int(observation)
         if not 0 <= estimate < len(self) or not 0 <= observation < len(self):
             raise IndexError("expectation link row is unavailable")
@@ -9708,6 +9738,14 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     def expectation_of(self, idx):
         """Return an owned immutable-value copy of a row's expectation link."""
+        if isinstance(idx, tuple) and idx[:1] == ('sym',):
+            if not self.parts.contains(idx[1]):
+                raise IndexError('unavailable Part observation')
+            refs = tuple(('ltm', self.address_domain, identifier)
+                for identifier, value in self._expectation_rows.items()
+                if value['kind'] == 'estimate' and value['intended_occurrence'] == idx)
+            return (None if not refs else dict(kind='observation',
+                estimate_occurrence=refs[-1], previous_estimates=refs[:-1]))
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
@@ -9722,7 +9760,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         delta.  This keeps the estimate and actual observation authoritative
         and makes any mismatch auditable after replay.
         """
-        i = int(idx)
+        i = idx if isinstance(idx, tuple) else int(idx)
         provenance = self.expectation_of(i)
         if provenance is None:
             raise ValueError("row has no retained expectation provenance")
@@ -9739,13 +9777,19 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 raise ValueError("observation estimate counterpart is unavailable")
         # Stable occurrence -> physical row is maintained by the existing
         # leaf index on append, restore and compaction; pair reads stay O(1).
-        observation_index = self._index_occurrences.get(observation_ref, -1)
-        if observation_index < 0:
+        observation_index = self.location(observation_ref)
+        if observation_index is None:
             raise ValueError("estimate observation counterpart is unavailable")
-        estimate = self.meaning_of(estimate_index)
-        observation = self.meaning_of(observation_index)
+        estimate = self.raw_meaning_of(estimate_index)
+        observation = self.raw_meaning_of(observation_index)
         if estimate is None or observation is None:
             raise ValueError("expectation pair has unavailable semantic metadata")
+        if observation_ref[0] == 'sym':
+            from dataclasses import replace
+            recorded = dict(estimate.bindings).get('_expectation_observation')
+            if recorded is None:
+                raise ValueError('Part estimate lacks its frozen observation target')
+            observation = replace(observation, bindings=dict(recorded))
         estimate_provenance = self.expectation_of(estimate_index)
         if estimate_provenance is None or estimate_provenance["kind"] != "estimate":
             raise ValueError("expectation pair lacks estimate provenance")
@@ -9777,7 +9821,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             "gain": view.gain, "expected_activation": view.expected,
             "excess": view.excess, "omission": view.omission, "identities": view.identities,
             "content": conceived,
-            "surprise": float(self.surprise[observation_index]),
+            "surprise": float(self.parts.surprise[observation_index[1]]
+                if isinstance(observation_index, tuple) else self.surprise[observation_index]),
         }
 
     def __len__(self):
@@ -9797,31 +9842,14 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         return out
 
     @torch.no_grad()
-    def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
-               trust=0.0, kind="fact", evidence=None, order=0, **address) -> int:
-        """Append one ternary row. ``Null`` slots (``None``) store the zero
-        vector. ``trust`` is clamped to ``[-1, 1]``.
-        the next monotonic tick. Returns the row index, or ``-1`` when the
-        store is full."""
-        meaning = ConceptualMeaning(
-            torch.stack([self._fit(value) for value in (np1, vp, np2)]),
-            torch.tensor([value is not None for value in (np1, vp, np2)],
-                         dtype=torch.bool, device=self.slots.device),
-            mode="interrogative" if kind == "question" else "assertive")
-        return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
-                                   trust=trust, evidence=evidence, order=order, **address)
+    def append_idea(self, point, *, trust=0.0, kind="fact", evidence=None, order=0, **address):
+        return self.append_meaning(ConceptualMeaning.from_description(self._fit(point)),
+            trust=trust, kind=kind, evidence=evidence, order=order, **address)
 
-    def append_idea(self, np1, *, trust=0.0, kind="fact", evidence=None, order=0, **address) -> int:
-        """Append a one-role description; legacy callers explicitly write facts."""
-        return self.append(np1, None, None, rel_type=self.REL_NONE,
-                           trust=trust, kind=kind, evidence=evidence, order=order, **address)
-
-    def append_relation(self, np1, vp, np2, *, rel_type=REL_OPERATOR,
-                        trust=0.0, kind="fact", evidence=None, order=0, **address) -> int:
-        """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
-        ``NP VP .``."""
-        return self.append(np1, vp, np2, rel_type=rel_type,
-                           trust=trust, kind=kind, evidence=evidence, order=order, **address)
+    @torch.no_grad()
+    def append_relation(self, part, whole, *, truth_plus=0., truth_minus=0., when=None, surprise=-1.):
+        return ('sym', self.parts.add(part, whole, truth_plus=truth_plus,
+            truth_minus=truth_minus, when=when, surprise=surprise))
 
     def row(self, idx: int) -> dict:
         """Read slots, evidence, stable provenance and an owned meaning.
@@ -9829,13 +9857,15 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         Legacy np1/vp/np2 tensors remain views; ``meaning`` is an owned detached
         value, or None when required semantic metadata is unavailable.
         """
+        if isinstance(idx, tuple) and idx[:1] == ('sym',):
+            return self.part_row(idx[1])
         n = int(self.count.item())
         if not (0 <= int(idx) < n):
             raise IndexError(f"row {idx} of {n}")
         i = int(idx)
         return {
             'np1': self.slots[i, 0], 'vp': self.slots[i, 1],
-            'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
+            'np2': self.slots[i, 2],
             'stream': tuple(self.stream[i].nonzero().flatten().tolist()),
             'trust': float(self.trust[i].item()),
             'source_trust': float(self.source_trust[i].item()),
@@ -9859,22 +9889,19 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                                   or int(self.address_keys[i]) in self._semantic_rows),
         }
 
-    def relations(self, rel_type=None):
-        """Row indices of RELATION rows (``rel_type != REL_NONE``), optionally
-        filtered to a single ``rel_type`` -- the reasoning scan."""
-        c = int(self.count.item())
-        if c == 0:
-            return self.count.new_zeros(0)
-        rt = self.rel_type[:c]
-        mask = rt != self.REL_NONE if rel_type is None else rt == int(rel_type)
-        return mask.nonzero(as_tuple=True)[0]
+    def relations(self, reading=None):
+        """Native Part symbols, optionally selected by their arguments' types."""
+        rows = self.parts.indices()
+        if reading is None or reading == 'part':
+            return rows
+        required = {'implies': 'conditional', 'equal': 'equality',
+                    'definition': 'definition', 'attribution': 'attribution',
+                    'subsumption': 'subsumption'}[reading]
+        return rows.new_tensor([row for row in rows.tolist()
+                                if required in self.part_row(row)['readings']])
 
     def ideas(self):
-        """Row indices of ABSOLUTE-idea rows (``rel_type == REL_NONE``)."""
-        c = int(self.count.item())
-        if c == 0:
-            return self.count.new_zeros(0)
-        return (self.rel_type[:c] == self.REL_NONE).nonzero(as_tuple=True)[0]
+        return (self.role_mask[:len(self)].sum(-1) == 1).nonzero().flatten()
 
     @property
     def trust(self):
@@ -9896,12 +9923,18 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     @torch.no_grad()
     def set_evidence(self, idx, positive, negative):
         """Replace the two independent evidence poles, retaining provenance."""
-        i = int(idx)
-        if not 0 <= i < len(self):
-            raise IndexError(f"row {i} of {len(self)}")
         values = (float(positive), float(negative))
         if any(not math.isfinite(x) or not 0. <= x <= 1. for x in values):
             raise ValueError("evidence poles must be finite and in [0, 1]")
+        if isinstance(idx, tuple) and idx[:1] == ('sym',):
+            i = int(idx[1])
+            if not self.parts.contains(i):
+                raise IndexError(f"unavailable Part {i}")
+            self.parts.truth_plus[i], self.parts.truth_minus[i] = values
+            return
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
         self.c_plus[i], self.c_minus[i] = values
 
     def corners(self, idx):
@@ -10073,7 +10106,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._ensure_texts(count)
         texts = [self._texts[i] for i in rows]
         self.compact_leaf_rows(keep)
-        columns = ('slots', 'rel_type', 'surprise', 'origin', 'role_mask', 'record_kind',
+        columns = ('slots', 'surprise', 'origin', 'role_mask', 'record_kind',
                    'grammatical_mode', 'polarity', 'address_keys', 'document_keys',
                    'sentence_content_keys', 'sentence_index', 'witness_count',
                    'metadata_required', 'semantic_fingerprint', 'c_plus', 'c_minus',
@@ -10085,11 +10118,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             values[:size] = values[keep]
             values[size:count].fill_(-1 if name in minus_one else name == 'polarity')
         alive = set(map(int, self.address_keys[:size].tolist()))
-        for name in ('_semantic_rows', '_expectation_rows', '_definition_rows'):
+        for name in ('_semantic_rows', '_expectation_rows'):
             setattr(self, name, {key: value for key, value in getattr(self, name).items() if key in alive})
         self._texts = texts + [None] * (len(self._texts) - size)
         self.count.fill_(size)
-        self.definitions.rebuild()
         self.rebuild_leaf_postings()
         self.retain_adjacency()
         self._validate_expectation_links()
@@ -10101,7 +10133,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     def reset(self):
         """Clear the store (idempotent)."""
         self.slots.zero_()
-        self.rel_type.zero_()
         self.stream.zero_()
         self.surprise.fill_(-1.)
         self.count.zero_()
@@ -10120,8 +10151,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
         self._expectation_rows = {}
-        self._definition_rows = {}
-        self.definitions.rebuild()
         self.source_trust.zero_()
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
             getattr(self, name).zero_()
@@ -10921,10 +10950,10 @@ class SymbolExpectation(Layer):
     def _address_frame(self, frame):
         from ReferenceContext import SituationAddress
         store = self._ltm_store
-        index = None if store is None else store.index_of_row(frame.row_id)
+        index = None if store is None else store.location(frame.row_id)
         if index is None:
             raise ValueError('STM reference must name a retained LTM occurrence')
-        return SituationAddress(store.occurrence_of(index))
+        return SituationAddress(store.occurrence_of(index), frame.symbol_ids, frame.activations)
 
     def _read_context(self, b):
         from ReferenceContext import SituationAddress
@@ -10937,9 +10966,9 @@ class SymbolExpectation(Layer):
                 frame = value.read(self._ltm_store)
                 if frame is None:
                     continue
-                index = self._ltm_store._index_occurrences[value.occurrence]
-                meaning = self._ltm_store.meaning_of(index)
-                pair = (float(self._ltm_store.c_plus[index]), float(self._ltm_store.c_minus[index]))
+                index = self._ltm_store.location(value.occurrence)
+                retained = self._ltm_store.row(index)
+                meaning, pair = retained['meaning'], retained['evidence']
                 value, lane, ids = frame, pair, symbol_identities(meaning)
             chain.append(value)
             lanes.append(lane)
@@ -10970,7 +10999,7 @@ class SymbolExpectation(Layer):
 
 
     @torch.compiler.disable
-    def bind_observation_occurrence(self, b, occurrence):
+    def bind_observation_occurrence(self, b, occurrence, *, symbols=(), activations=()):
         """Attach the just-written external LTM row to this stream's view.
 
         This is deliberately a post-observation host boundary.  The predictor
@@ -10981,10 +11010,8 @@ class SymbolExpectation(Layer):
         b = int(b)
         if not 0 <= b < len(self._inter_context):
             raise IndexError("expectation stream row is unavailable")
-        if (not isinstance(occurrence, tuple) or len(occurrence) != 3
-                or occurrence[0] != "ltm" or not isinstance(occurrence[1], str)
-                or type(occurrence[2]) is not int or occurrence[2] in (-1, 0)):
-            raise ValueError("observation occurrence must be a typed LTM reference")
+        if self._ltm_store is None or self._ltm_store.location(occurrence) is None:
+            raise ValueError("observation must name a retained LTM1 occurrence or LTM2 symbol")
         context = self._inter_context[b]
         occurrences = self._inter_context_occurrences[b]
         if len(context) != len(occurrences):
@@ -10995,10 +11022,10 @@ class SymbolExpectation(Layer):
             raise ValueError("external observation occurrence is already bound")
         occurrences[-1] = occurrence
         store = self._ltm_store
-        index = None if store is None else store._index_occurrences.get(occurrence)
-        if index is not None and int(store.row_ids[index]) not in (-1, 0):
+        index = None if store is None else store.location(occurrence)
+        if index is not None:
             from ReferenceContext import SituationAddress
-            context[-1] = SituationAddress(occurrence)
+            context[-1] = SituationAddress(occurrence, tuple(symbols), tuple(activations))
             self._inter_context_lanes[b][-1] = None
             self._inter_context_ids[b][-1] = None
             self._inter_last_meaning[b] = None
@@ -11067,10 +11094,8 @@ class SymbolExpectation(Layer):
         Returns a live scalar tensor (mean over the scored sentences)
         carrying grad to ``_inter_predictor`` and live source encodings,
         or ``None`` when nothing was accumulated this batch (eval-time,
-        weight off, or no
-        sentence was both predicted-for and observed). Mirrors
-        ``ConceptualSpace.consume_intra_loss`` — ``runBatch`` consumes it
-        once, post-body / pre-backward, next to the ARMA + intra terms.
+        weight off, or no sentence was both predicted-for and observed).
+        ``runBatch`` consumes it once, after the body and before backward.
         """
         self.detach_prediction_context()
         self._consumed_inter_errors = getattr(self, '_inter_errors', Error())
@@ -11120,247 +11145,6 @@ class SymbolExpectation(Layer):
 
 
 
-class IntraSentenceLayer(Layer):
-    """In-STM autoregressive predictor: STM[1:end] -> predicted STM[0]
-    (serial) / STM_prev[0:end] -> predicted STM_new[0:end] (parallel).
-    Combined PI-then-Sigma, no intermediate tanh; the routing
-    distribution from SymbolSubSpace.current_rules conditions the
-    Sigma collapse (rule-aware predictor).
-
-    Architecture (PI first, per the design note):
-
-        pi:    PiLayer(concept_dim -> working_dim), invertible, nonlinear
-               (log-domain multiplicative boundary fold). The PI body
-               lifts low-rank STM slots into the working width.
-        sigma: SigmaLayer(working_dim -> concept_dim), invertible,
-               **nonlinear=False** (raw linear W @ x + b). Sigma
-               collapses the lifted slots into the predicted idea.
-
-    The defining requirement of this layer is that there is NO
-    intermediate activation between the PI body and the Sigma body:
-    ``sigma`` is built ``nonlinear=False`` so the two linear cores fuse
-    cleanly (PI's log-domain exp/tanh boundary still bounds PI's own
-    output, but no extra tanh is interposed before Sigma's matmul).
-
-    ``working_dim`` defaults to ``concept_dim`` so both sublayers are
-    square isomorphisms and the per-slot (parallel) round trip
-    ``reverse(forward(x, parallel=True)) ~= x`` is exact up to the LDU
-    inverse tolerance. The serial path's cross-slot Sigma collapse is
-    many-to-one and therefore only **approximately** invertible (see
-    ``reverse``).
-
-    Routing conditioning: when ``routing`` is not None it is projected
-    ``[B, routing_dim] -> [B, concept_dim]`` by ``self.routing_proj`` and
-    added as a bias to the Sigma output. This makes the predictor
-    rule-aware without a separate attention block. ``routing=None``
-    skips the bias entirely so the layer is usable before the per-word
-    router is wired (Task 4 of the STM serial/parallel plan).
-
-    Subclasses ``Layer`` (not ``Space``): no SubSpace, no tensor-map
-    contract. ``self.pi`` / ``self.sigma`` are appended to
-    ``self.layers`` (an ``nn.ModuleList``) so the Layer ergodic /
-    paramUpdate cascade and the Space's Start/Reset walk reach their
-    parameters. ``self.routing_proj`` is a plain ``nn.Linear`` (no
-    ergodic interface) and registers via attribute assignment.
-    """
-
-    name = "IntraSentence"
-
-    def __init__(self, concept_dim, stm_capacity, routing_dim,
-                 working_dim=None, naive=True, ergodic=False,
-                 stable=True, monotonic=False, batch=1):
-        """Build the combined PI-then-Sigma in-STM predictor.
-
-        ``concept_dim``: per-slot C-space_role feature width D (the input and
-        output width of the predictor).
-        ``stm_capacity``: STM slot count; the default fan-out ``k`` for
-        the serial ``reverse`` (``k = stm_capacity - 1``: the predictor
-        consumes STM[1:end], i.e. all but the freshly-predicted slot 0).
-        ``routing_dim``: width of the soft routing distribution injected
-        as the Sigma bias. Not yet populated (Task 4); the
-        ``routing_proj`` is built so the conditioning path exists, but
-        ``forward``/``reverse`` accept ``routing=None`` and skip it.
-        ``working_dim``: PI lift width (Sigma input width). Defaults to
-        ``concept_dim`` to keep both sublayers square (exact per-slot
-        inverse).
-
-        ``naive`` / ``ergodic`` / ``stable`` / ``monotonic`` follow the
-        C-space_role substrate pi/sigma construction convention (see
-        ``ConceptualSpace.sigma_in`` / ``sigma_cs``).
-        """
-        concept_dim = int(concept_dim)
-        working_dim = int(working_dim) if working_dim is not None else concept_dim
-        super().__init__(concept_dim, concept_dim)
-
-        self.concept_dim = concept_dim
-        self.working_dim = working_dim
-        self.stm_capacity = int(stm_capacity)
-        self.routing_dim = int(routing_dim)
-        self._batch = int(batch)
-
-        # PI first: lift each STM slot from concept_dim into the working
-        # width. Log-domain multiplicative boundary fold (nonlinear=True,
-        # the PiLayer default) bounds the lifted slots to [-1, 1] so the
-        # downstream raw-linear Sigma sees a well-scaled operand.
-        self.pi = PiLayer(
-            concept_dim, working_dim,
-            naive=naive, ergodic=ergodic, invertible=True,
-            hasBias=True, stable=stable, monotonic=monotonic,
-            nonlinear=True)
-        # Sigma SECOND with nonlinear=False: raw linear W @ x + b, so NO
-        # extra tanh is interposed between the PI body and the Sigma body.
-        # NOTE: this is NOT a linear fusion -- the PI body above is
-        # nonlinear=True (its symmetric log-domain (1+x)/(1-x) embedding is
-        # an intrinsic nonlinearity), so the composite is pi(nonlinear)
-        # followed by a raw-linear Sigma, not two fusable linear cores. The
-        # only guarantee is "no interposed activation between the two".
-        self.sigma = SigmaLayer(
-            working_dim, concept_dim,
-            naive=naive, ergodic=ergodic, invertible=True,
-            nonlinear=False, stable=stable, monotonic=monotonic)
-
-        # Expose the sublayers' params to the Layer ergodic / paramUpdate
-        # cascade AND the Space Start/Reset walk via the ModuleList.
-        self.layers = nn.ModuleList([self.pi, self.sigma])
-
-        # Routing conditioning: project the soft rule distribution into
-        # concept_dim and add to the Sigma output. Built unconditionally
-        # so the conditioning path exists; only applied when a non-None
-        # routing tensor is supplied (Task 4 wires the producer).
-        self.routing_proj = nn.Linear(self.routing_dim, concept_dim)
-
-    # -- core PI->Sigma transform ------------------------------------
-    def _pi_sigma(self, x):
-        """Apply ``sigma(pi(x))`` on a ``[..., concept_dim]`` operand
-        (no routing bias, no cross-slot collapse). Returns
-        ``[..., concept_dim]``. Used per-slot by both the serial and
-        parallel forward paths.
-        """
-        return self.sigma.forward(self.pi.forward(x))
-
-    def _apply_routing_bias(self, y, routing, sign=1):
-        """Add (``sign=+1``, forward) or subtract (``sign=-1``, reverse)
-        the projected routing bias on a Sigma output ``y``.
-
-        ``y``: ``[B, D]`` (serial) or ``[B, N, D]`` (parallel).
-        ``routing``: ``[B, routing_dim]`` or None. When None this is a
-        no-op (keeps the layer usable before the router is wired). When
-        present the bias is projected to ``[B, D]`` and broadcast over
-        the slot axis in the parallel case. The reverse path passes
-        ``sign=-1`` to exactly undo the additive forward bias before
-        inverting the Sigma body.
-        """
-        if routing is None:
-            return y
-        bias = self.routing_proj(routing.detach())            # [B, D]
-        if y.dim() == 3:
-            bias = bias.unsqueeze(1)                 # [B, 1, D] -> broadcast over N
-        return y + sign * bias
-
-    def forward(self, prior_slots, routing=None, parallel=False):
-        """Predict the next idea(s) from prior STM slots.
-
-        ``prior_slots``: ``[B, K, D]`` (K prior slots).
-        ``routing``: ``[B, routing_dim]`` soft rule distribution, or
-            None to skip the rule-aware bias.
-
-        Serial (``parallel=False``, the primary regime): PI-lift each of
-        the K slots, then Sigma-**collapse across the K slots** (sum-fold
-        over the slot axis) into ONE predicted idea ``[B, D]``. This is
-        the "Sigma collapses the lifted slots into the predicted idea".
-
-        Parallel (``parallel=True``): apply PI->Sigma **per slot** (no
-        cross-slot collapse), returning ``[B, N, D]`` with the same N as
-        the input.
-
-        The routing bias (if any) is added to the Sigma output in both
-        regimes (broadcast over the slot axis when parallel).
-        """
-        prior_slots = prior_slots.detach()
-        if prior_slots.dim() != 3:
-            raise ValueError(
-                f"IntraSentenceLayer.forward expects [B, K, D]; got "
-                f"shape {tuple(prior_slots.shape)}")
-
-        if parallel:
-            # Per-slot PI->Sigma; no cross-slot mixing. [B, N, D].
-            y = self._pi_sigma(prior_slots)
-            return self._apply_routing_bias(y, routing)
-
-        # Serial: PI-lift every slot, then fold (sum) the lifted slots
-        # over the slot axis BEFORE the Sigma collapse -> one idea.
-        lifted = self.pi.forward(prior_slots)        # [B, K, W]
-        folded = lifted.sum(dim=1)                    # [B, W]  (raw slot-axis sum)
-        y = self.sigma.forward(folded)                # [B, D]
-        return self._apply_routing_bias(y, routing)
-
-    def reverse(self, predicted, routing=None, parallel=False, k=None):
-        """Approximate inverse of ``forward`` (recon roundtrip helper).
-
-        Both paths first subtract the routing bias (exactly, since the
-        bias was an additive term), then invert the Sigma and PI bodies.
-
-        Parallel / per-slot path (``parallel=True``): the sublayers are
-        invertible and width-preserving, so
-        ``reverse(forward(x, parallel=True), parallel=True) ~= x`` up to
-        the LDU inverse tolerance (tight).
-
-        Serial / collapse path (``parallel=False``): the Sigma collapse
-        sums over the K lifted slots, which is **many-to-one**, so the
-        inverse is necessarily approximate. We reconstruct by
-        ``sigma.reverse`` to the working width, dividing the recovered
-        fold equally across the ``k`` slots, then ``pi.reverse`` each
-        slot back to concept width. ``k`` defaults to
-        ``stm_capacity - 1`` (the STM[1:end] fan-out the predictor
-        consumes). Returns ``[B, k, D]``.
-        """
-        if parallel:
-            if predicted.dim() != 3:
-                raise ValueError(
-                    f"IntraSentenceLayer.reverse(parallel=True) expects "
-                    f"[B, N, D]; got {tuple(predicted.shape)}")
-            y = self._apply_routing_bias(predicted, routing, sign=-1)
-            return self.pi.reverse(self.sigma.reverse(y))
-
-        # Serial collapse inverse (approximate).
-        if predicted.dim() != 2:
-            raise ValueError(
-                f"IntraSentenceLayer.reverse(parallel=False) expects "
-                f"[B, D]; got {tuple(predicted.shape)}")
-        if k is None:
-            k = max(1, self.stm_capacity - 1)
-        k = int(k)
-        y = self._apply_routing_bias(predicted, routing, sign=-1)
-        folded = self.sigma.reverse(y)               # [B, W]  (recovered slot-sum)
-        per_slot = (folded / float(k)).unsqueeze(1)  # [B, 1, W]
-        per_slot = per_slot.expand(-1, k, -1)        # [B, k, W]
-        return self.pi.reverse(per_slot)             # [B, k, D]
-
-    # -- loss helper (wired into training by a later task) -----------
-    def intra_loss(self, pred, target):
-        """L_intra = MSE(pred, target).
-
-        ``pred`` / ``target``: matching shapes (``[B, D]`` serial or
-        ``[B, N, D]`` parallel). Returns the scalar mean-squared error.
-        The actual accumulation into the training backward path is wired
-        by a later task (Task 3); this helper exists so that wiring is a
-        one-liner and the loss math lives next to the layer that defines
-        it.
-        """
-        return F.mse_loss(pred, target)
-
-    def Reset(self, batch=None, hard=True):
-        """Per-sentence / per-document state reset.
-
-        ``IntraSentenceLayer`` holds no per-call recurrent buffers (the
-        STM substrate it reads lives on ``ConceptualSpace``), so Reset
-        is a structural no-op beyond honoring an optional batch resize
-        hint. The PI / Sigma sublayers carry no per-call state to clear.
-        Present so the Space's Start/Reset cascade reaches the layer
-        without error (mirrors ``SymbolExpectation.Reset``).
-        """
-        if batch is not None:
-            self._batch = int(batch)
 
 
 class ChunkLayer(Layer):
@@ -15437,8 +15221,7 @@ class Ops:
     @staticmethod
     def union(x, y, monotonic=False):
         """The independent lattice join."""
-        return Ops._lift_kernel(x, y, mode='OR',
-                                kind='strict' if monotonic else 'soft')
+        return Ops._lift_kernel(x, y, mode='OR', kind='strict', monotonic=monotonic)
 
     @staticmethod
     def _negation_kernel(x, monotonic=False):
@@ -17895,7 +17678,7 @@ class VectorQuantize(nn.Module):
         elif self.learnable_codebook:
             quantized = quantized_raw + (x - x.detach())
         else:
-            quantized = x + (quantized_raw - x).detach()
+            quantized = quantized_raw.detach() + (x - x.detach())
         indices = indices.reshape(original_shape[:-1])
         if return_all_codes:
             return quantized, indices, commit_loss, quantized.unsqueeze(0)

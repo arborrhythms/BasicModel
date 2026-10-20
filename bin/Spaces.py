@@ -217,7 +217,7 @@ def asserted_dominance_loss(child, parent):
 
 
 
-from Layers import SortingLayer, TruthLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 from workarounds import Workarounds
 
@@ -3915,7 +3915,7 @@ class Codebook(Tensor):
         # row reads need no selection STE; they use ordinary gather gradients.
         if (self.STE and torch.is_tensor(input) and torch.is_tensor(x)
                 and input.shape == x.shape and input.requires_grad):
-            x = input + (x - input).detach()
+            x = self.apply_gradient_estimator(input, x, mode='ste')
         # Persist per-batch results onto the SubSpace.
         #
         # Spec doc/specs/2026-05-21-subspace-slot-architecture.md
@@ -3993,7 +3993,7 @@ class Codebook(Tensor):
                 and y.shape[-1] >= content.shape[-1]
                 and y.requires_grad):
             y_slice = y[..., :content.shape[-1]]
-            content = y_slice + (content - y_slice).detach()
+            content = self.apply_gradient_estimator(y_slice, content, mode='ste')
         return content
 
     def replace(self, new_vectors):
@@ -7984,13 +7984,13 @@ class Space(SpaceCarrierMixin, nn.Module):
     def _priming_edges(self):
         """``(src, dst, |w|)`` diffusion graph over this Space's priming
         rows, or None. Base Spaces carry no row graph; ConceptualSpace
-        overrides with the concept store's untyped edges."""
+        overrides with the common Part store."""
         return None
 
     def _priming_target(self):
         """The canonical priming holder (Alec 2026-07-12): per-stage towers
         delegate to the ONE order-indexed codebook surface -- the terminal
-        WholeSpace / stage-0 ConceptualSpace -- so priming lives on THE
+        WholeSpace / native ConceptualSpace owner -- so priming lives on THE
         codebook, not on per-stage quantizer copies."""
         return getattr(self, "_priming_canonical_ref", None) or self
 
@@ -8031,21 +8031,8 @@ class Space(SpaceCarrierMixin, nn.Module):
         surface.copy_(torch.where(active[:, None], surface * d + 1 - d, surface))
         spread = float(getattr(self, '_priming_spread', 0.) or 0.)
         edges = self._priming_edges() if spread > 0 else None
-        from MereologicalCodes import diffuse_memberships
-        shared_wholes = diffuse_memberships(self, surface, edges, spread, active)
-        if edges is not None and not shared_wholes:
-            src, dst, weight = (value.to(surface.device) for value in edges)
-            valid = (src >= 0) & (src < V) & (dst >= 0) & (dst < V)
-            src, dst, weight = src[valid], dst[valid], weight[valid].to(surface.dtype)
-            # Keep all outgoing edges of each energetic source, so source
-            # normalization is identical to diffusion over the full graph.
-            energetic = ((surface[:, src] != 1) & active[:, None]).any(0)
-            src, dst, weight = src[energetic], dst[energetic], weight[energetic]
-            degree = surface.new_zeros(V).index_add_(0, src, weight)
-            flow = spread * (surface[:, src] - 1) * (weight / degree[src])
-            flow = flow * active[:, None].to(flow)
-            surface.index_add_(1, dst, flow)
-            surface.index_add_(1, src, -flow)
+        from Priming import diffuse
+        diffuse(self, surface, edges, spread, active)
         valid = (rows >= 0) & (rows < V) & active[:, None]
         surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
         surface.clamp_(min=0.)
@@ -12823,52 +12810,6 @@ class ConceptualSpace(Space):
         # reverse read-back), so its forward and reverse are symmetric by
         # construction with no parameterised fold to invert.
 
-        # In-STM autoregressive predictor (Task 2, STM serial/parallel
-        # modes plan). Combined PI-then-Sigma with NO intermediate tanh:
-        # the PI body lifts the low-rank STM slots into the working width
-        # and the raw-linear Sigma collapses them into the predicted
-        # idea (serial) or maps them per-slot (parallel). Owned here so
-        # the Start/Reset cascade reaches it via ``self.layers``; its
-        # ``forward`` is NOT called from ``ConceptualSpace.forward`` yet
-        # (Task 3 wires predict-then-perceive) and ``routing`` is left
-        # unpopulated (Task 4 wires the per-word router). ``intra_loss``
-        # is exposed on the layer for the later training-path wiring.
-        #
-        # ``routing_dim`` is the grammar's rule-vocabulary width: the
-        # per-word router emits a dense ``[B, n_rules]`` ``rule_probs``
-        # (``SymbolSubSpace.routing_state``) and ``routing_proj`` projects
-        # it ``[B, n_rules] -> [B, concept_dim]`` to bias the predicted
-        # idea. ``n_rules == len(TheGrammar.rule_table)`` (== num_rules();
-        # == len(TheGrammar.rules) -- verified equal). The grammar is
-        # configured at the model's configuration boundary, before these
-        # predictors and the later SymbolSpace are built; we still guard with
-        # ``_ensure_configured`` and fall back to ``concept_dim`` if the
-        # rule table is somehow empty so ``routing_proj`` is never a
-        # degenerate ``nn.Linear(0, ...)``. ``naive`` / ``ergodic`` /
-        # ``stable`` / ``monotonic`` follow the sigma_in / sigma_cs
-        # construction convention above.
-        from Language import TheGrammar as _TheGrammar
-        try:
-            _TheGrammar._ensure_configured()
-            _n_rules = int(len(_TheGrammar.rule_table))
-        except Exception:
-            _n_rules = 0
-        self._intra_routing_dim = _n_rules if _n_rules > 0 else int(concept_dim)
-        self.intraSentenceLayer = IntraSentenceLayer(
-            concept_dim=concept_dim,
-            stm_capacity=self.stm_capacity,
-            routing_dim=self._intra_routing_dim,
-            naive=naive, ergodic=ergodic,
-            stable=True, monotonic=monotonic)
-        self.params += self.intraSentenceLayer.getParameters()
-        self.layers.append(self.intraSentenceLayer)
-
-        # L_intra loss weight (new knob under <architecture><training>).
-        # Read once at construction; consumed by the later training-path
-        # wiring (Task 3). Defaults to 0.1 when the knob is absent.
-        self.intra_loss_weight = float(
-            TheXMLConfig.training("intraLossWeight", 0.1))
-
         # Parts use presence charts. Discovery is a finite pool of rows;
         # its gate is measured use, independent of sentence truth learning.
         self._mereology_raise = bool(TheXMLConfig.get(
@@ -12904,35 +12845,6 @@ class ConceptualSpace(Space):
                 and 0 <= self.concept_part_floor < 1
                 and 0 < self.concept_match_cos <= 1):
             raise ValueError("invalid conceptual pool parameters")
-
-        # Task 3 (STM serial/parallel modes): explicit predict-then-
-        # perceive state. ``forward`` now runs the intra-sentence
-        # predictor from the RETAINED STM context BEFORE writing the
-        # freshly-perceived event into the STM, stashing the held
-        # prediction here so the training-error path can consume it as
-        # the next-idea predictor target (``L_intra``).
-        #   * ``_stm_predicted_idea``  -- serial held prediction [B, D].
-        #   * ``_stm_predicted_slab``  -- parallel held prediction [B, N, D].
-        #   * ``_intra_loss_accum``    -- live (grad-carrying) running sum
-        #       of per-step MSE(prediction, perceived); ``None`` until the
-        #       first accumulated step.
-        #   * ``_intra_loss_count``    -- number of accumulated steps (the
-        #       mean denominator in ``consume_intra_loss``).
-        # Accumulation is gated on ``torch.is_grad_enabled()`` and a
-        # positive ``intra_loss_weight`` so eval-time forwards never grow
-        # the graph. ``consume_intra_loss`` returns the per-batch mean and
-        # resets accum/count; ``Reset`` clears all four at document/
-        # sentence boundaries.
-        self._stm_predicted_idea = None
-        self._stm_predicted_slab = None
-        self._intra_loss_accum = None
-        self._intra_errors = Error()
-        self._intra_loss_weight_accum = None
-        self._intra_loss_count = 0
-        # Optional, evaluation-only capture.  ``None`` is the zero-overhead
-        # training default; :meth:`capture_intra_predictions` installs a list
-        # that receives detached prediction/target/gate snapshots.
-        self._intra_capture = None
 
         # Stage 10 PARALLEL reverse-roundtrip cache (doc/plans/
         # 2026-05-27-perceptstore-meta-taxonomy-reentrancy.md):
@@ -13548,372 +13460,14 @@ class ConceptualSpace(Space):
             # nothing falls off, depth unchanged.
         stm._depth = new_depth
 
-    def _intra_routing_for_predict(self, batch=None):
-        """Resolve the dense rule distribution for the intra-sentence
-        predictor, or ``None``.
 
-        Reads the first-class ``routing_state.rule_probs`` off the owning
-        ``symbolSpace`` (built in ``SymbolSubSpace.compose``, ADDITIVE to
-        the unchanged ``current_rules`` dict). Returns it ONLY when it is
-        a tensor whose last dim matches ``self._intra_routing_dim``
-        (``n_rules`` -- the width ``IntraSentenceLayer.routing_proj``
-        expects), after aligning its batch dim to the predictor's
-        context B. Otherwise returns ``None`` and the predictor still
-        runs un-biased (the documented None-safe fallback). This keeps
-        the predict-then-perceive path independent of how routing is
-        produced.
 
-        Batch alignment (care item)
-        ----------------------------
-        ``rule_probs`` is ``[B_rp, n_rules]``; the predictor's context is
-        ``[B_ctx, K, D]`` (from the STM snapshot). The two B's CAN differ
-        when the per-word ``compose`` fired over a snapshot taken at a
-        slightly different time than the predict step's snapshot:
-          * ``B_rp == B_ctx``: pass through.
-          * ``B_rp == 1`` and ``B_ctx > 1``: broadcast (expand) the one
-            shared distribution across the context rows (matches the
-            "row 0 is the canonical sequence" convention).
-          * ``B_ctx == 1`` and ``B_rp > 1``: take row 0 (the canonical
-            row) so the single context row gets a defined distribution.
-          * any other mismatch: return ``None`` (do not fabricate an
-            alignment; the predictor runs un-biased -- documented).
 
-        FAIL LOUD: a non-finite ``rule_probs`` raises (no silent gating
-        beyond the documented None-fallback).
-        """
-        # In the peer scheduler LanguageSpace returns an immutable plan and
-        # CS explicitly latches it before this B-stage predictor runs.  Prefer
-        # that hand-off over peeking through the SymbolSpace runtime object;
-        # the latter remains the legacy/non-pipelined fallback.
-        plan = getattr(self, "_language_feedback_plan", None)
-        rstate = (plan.get("routing") if isinstance(plan, dict) else None)
-        if rstate is None:
-            ss = getattr(self, 'symbolSpace', None)
-            if ss is None:
-                return None
-            rstate = getattr(ss, 'routing_state', None)
-        routing = getattr(rstate, 'rule_probs', None) if rstate is not None else None
-        if routing is None or not torch.is_tensor(routing):
-            return None
-        if int(routing.shape[-1]) != int(self._intra_routing_dim):
-            return None
-        if not torch.compiler.is_compiling():
-            if not torch.isfinite(routing).all():
-                raise ValueError(
-                    "ConceptualSpace._intra_routing_for_predict: rule_probs "
-                    "is non-finite (fail-loud per numerical policy).")
-        if routing.dim() != 2:
-            return None
-        # Resolve the predictor's context batch from the STM snapshot
-        # (the same source both predict-then-perceive callers consume).  The
-        # reusable compiled word cell supplies the already-static live batch:
-        # asking ``snapshot`` there would make its Python-trimmed slot width a
-        # guard and specialize one graph per word depth.
-        if batch is None:
-            snap = self.stm.snapshot()
-            b_ctx = (int(snap.shape[0])
-                     if (snap is not None and snap.dim() == 3) else None)
-        else:
-            b_ctx = int(batch)
-        b_rp = int(routing.shape[0])
-        if b_ctx is None or b_rp == b_ctx:
-            return routing
-        if b_rp == 1 and b_ctx > 1:
-            return routing.expand(b_ctx, -1)
-        if b_ctx == 1 and b_rp > 1:
-            return routing[0:1]
-        # Incompatible batch mismatch: skip the bias (documented).
-        return None
 
-    def validate_intra_routing(self):
-        """Eager preflight for routing tensors consumed by a compiled step."""
-        plan = getattr(self, "_language_feedback_plan", None)
-        state = plan.get("routing") if isinstance(plan, dict) else None
-        if state is None:
-            ss = getattr(self, "symbolSpace", None)
-            state = getattr(ss, "routing_state", None) if ss is not None else None
-        routing = getattr(state, "rule_probs", None) if state is not None else None
-        if torch.is_tensor(routing) and not torch.isfinite(routing).all():
-            raise ValueError(
-                "ConceptualSpace intra routing is non-finite before compiled "
-                "forward (fail-loud per numerical policy).")
 
-    def _stm_run_intra_predict(self, context, routing, parallel=False):
-        """Invoke the intra-sentence predictor on ``context`` and stash
-        the held prediction. Does NOT mutate the STM buffer or depth.
 
-        ``context``: ``[B, K, D]`` prior STM slots (the retained
-        predictive context). ``routing``: ``[B, routing_dim]`` or None.
-        ``parallel``: when True stash ``[B, N, D]`` on
-        ``self._stm_predicted_slab``; when False stash the collapsed
-        ``[B, D]`` on ``self._stm_predicted_idea``.
 
-        Returns the stashed prediction tensor.
-        """
-        pred = self.intraSentenceLayer.forward(
-            context, routing=routing, parallel=parallel)
-        if parallel:
-            self._stm_predicted_slab = pred
-        else:
-            self._stm_predicted_idea = pred
-        return pred
 
-    def _accumulate_intra_loss(self, prediction, target, row_gate=None):
-        """Accumulate one step of ``L_intra = MSE(prediction, target)``
-        into the live running sum, gated on grad-enabled + positive
-        weight.
-
-        Keeps the accumulator a live (grad-carrying) tensor so the term
-        backprops into the predictor's params. No-op when grad is
-        disabled (eval) or ``intra_loss_weight <= 0`` -- this avoids
-        eval-time graph growth and a wasted MSE when the term is off. The
-        first-word degenerate case (no retained context) is handled by
-        the caller skipping this entirely.
-        """
-        capture = getattr(self, "_intra_capture", None)
-        if capture is not None:
-            capture.append({
-                "prediction": prediction.detach().clone(),
-                "target": target.detach().clone(),
-                "row_gate": (None if row_gate is None
-                             else row_gate.detach().clone()),
-            })
-        # Inference benchmarks keep grad enabled solely to select the compiled
-        # callable, but do not consume this training-only loss. Do not let that
-        # create a Python ``None -> list`` state transition inside a fullgraph.
-        if not bool(getattr(self, "training", False)) or not torch.is_grad_enabled():
-            return
-        if float(self.intra_loss_weight) <= 0.0:
-            return
-        target = target.detach()
-        squared = (prediction - target).square()
-        self._intra_errors.squared('intra', prediction, target, mask=row_gate,
-                                   category='expectation')
-        if row_gate is None:
-            step_loss = squared.sum()
-            step_weight = squared.new_tensor(float(squared.numel()))
-        else:
-            mask = row_gate.reshape(
-                int(row_gate.shape[0]), *([1] * (squared.dim() - 1)))
-            mask = mask.to(dtype=squared.dtype, device=squared.device)
-            step_loss = (squared * mask).sum()
-            per_row = squared.numel() // max(1, int(squared.shape[0]))
-            step_weight = mask.sum() * float(per_row)
-        # Per-step losses are kept as a LIST and summed lazily in
-        # ``consume_intra_loss`` (2026-07-08): the old running
-        # ``accum + step_loss`` built a per-WORD add-chain INSIDE the
-        # compiled forward (the serial loop calls this once per word), which
-        # inductor inlines transitively into ONE kernel with a buffer
-        # argument per step -- over Metal's 31-buffer kernel-arg limit on
-        # wide configs (N=64: a 34-arg scalar-sum kernel; the fullgraph
-        # blocker, immune to fusion caps). As a list, each step's scalar
-        # stays an independent graph output; the chunked sum runs in the
-        # eager consume (post-body, pre-backward).
-        if self._intra_loss_accum is None:
-            self._intra_loss_accum = [step_loss]
-            self._intra_loss_weight_accum = [step_weight]
-        else:
-            self._intra_loss_accum.append(step_loss)
-            self._intra_loss_weight_accum.append(step_weight)
-        self._intra_loss_count += 1
-
-    @contextmanager
-    def capture_intra_predictions(self):
-        """Capture word/percept prediction targets without enabling grads.
-
-        Yields a list of dictionaries with ``prediction``, ``target``, and
-        ``row_gate`` tensors in forward order.  The capture is deliberately
-        opt-in and nest-safe; ordinary training pays only one ``None`` check.
-        The NanoChat grammar evaluator uses the last gated entry in each row
-        as the candidate-word score.
-        """
-        previous = getattr(self, "_intra_capture", None)
-        entries = []
-        self._intra_capture = entries
-        try:
-            yield entries
-        finally:
-            self._intra_capture = previous
-
-    def consume_intra_loss(self):
-        """Return the per-step MEAN of the accumulated intra-sentence
-        prediction loss and RESET the accumulator.
-
-        Returns a live scalar tensor (mean over the accumulated per-word
-        steps) carrying grad to the predictor's params, or ``None`` when
-        nothing was accumulated this batch (eval-time, weight off, or an
-        all-degenerate sentence). The reset makes the term per-batch:
-        ``BasicModel.runBatch`` consumes it once, post-body / pre-
-        backward, mirroring the ARMA term.
-        """
-        self._consumed_intra_errors = self._intra_errors
-        self._intra_errors = Error()
-        if self._intra_loss_accum is None:
-            self._intra_loss_weight_accum = None
-            self._intra_loss_count = 0
-            return None
-        # Chunked eager sum of the per-step list (<=8 per torch.stack; see
-        # the accumulation note above -- keeps every Metal kernel under the
-        # 31-buffer arg limit). Value identical to the old running sum up
-        # to float-add reordering.
-        vals = self._intra_loss_accum
-        total = None
-        for i in range(0, len(vals), 8):
-            chunk = vals[i:i + 8]
-            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
-            total = part if total is None else total + part
-        weights = self._intra_loss_weight_accum or []
-        total_weight = None
-        for i in range(0, len(weights), 8):
-            chunk = weights[i:i + 8]
-            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
-            total_weight = (part if total_weight is None
-                            else total_weight + part)
-        if total_weight is None:
-            total_weight = total.new_tensor(1.0)
-        mean_loss = total / total_weight.clamp_min(1.0)
-        self._intra_loss_accum = None
-        self._intra_loss_weight_accum = None
-        self._intra_loss_count = 0
-        return mean_loss
-
-    def _stm_predict_then_perceive_serial(self, idea, row_gate=None):
-        """SERIAL predict step (single-position call). Snapshot the
-        current slots, run the intra-sentence predictor from the RETAINED
-        context, stash the held prediction on ``self._stm_predicted_idea``,
-        and accumulate ``L_intra`` against ``idea`` (the about-to-be-
-        perceived event). Does NOT perceive -- the caller invokes the
-        existing ``_stm_shift_and_push(idea)`` immediately after.
-
-        ``idea``: ``[B, D]`` the materialised event about to be pushed.
-
-        Retained-context rule (per the newest-at-slot-0 / shift-RIGHT
-        convention -- the oldest is the LAST occupied slot, which is the
-        one that falls off at capacity):
-          * snapshot depth >= 2: context = ``snap[:, :-1]`` (drop oldest,
-            the last slot).
-          * snapshot depth == 1: context = ``snap`` (nothing falls off
-            yet; STM is below capacity).
-          * snapshot empty (first word): the prediction degenerates --
-            stash ``torch.zeros_like(idea)`` and SKIP loss accumulation
-            for this step (no prior context to predict from).
-        """
-        if float(self.intra_loss_weight) <= 0.0:
-            self._stm_predicted_idea = torch.zeros_like(idea)
-            return
-        snap = self.stm.snapshot()
-        if snap is None or snap.dim() != 3 or int(snap.shape[1]) == 0:
-            # First word / empty STM: degenerate prediction, no loss.
-            self._stm_predicted_idea = torch.zeros_like(idea)
-            return
-        if int(snap.shape[1]) >= 2:
-            context = snap[:, :-1]                    # drop oldest [B, K-1, D]
-        else:
-            context = snap                            # single slot [B, 1, D]
-        routing = self._intra_routing_for_predict()
-        prediction = self._stm_run_intra_predict(
-            context, routing, parallel=False)         # [B, D]
-        self._accumulate_intra_loss(prediction, idea, row_gate=row_gate)
-
-    def _stm_predict_then_perceive_serial_fixed(self, idea, row_gate=None):
-        """Fixed-capacity equivalent of the serial predictor for chunk replay.
-
-        ``ShortTermMemory.snapshot`` trims its slot axis with the Python
-        ``_max_depth_host`` mirror.  That is harmless inside one statically
-        unrolled sentence graph, but a reusable compiled word/chunk callable
-        would guard on every successive width.  Compute the same PI-over-live-
-        prefix/Sigma-collapse on the full capacity slab, masking *after* PI so
-        PI's bias on excluded zero slots cannot leak into the fold.
-
-        The first-word case remains a zero held prediction with zero loss
-        weight.  A zero-weight term is still appended so every two-word chunk
-        has the same Python accumulator structure; ``consume_intra_loss``
-        divides by the accumulated tensor weight, so this is numerically
-        identical to omitting that first term.
-        """
-        if float(self.intra_loss_weight) <= 0.0:
-            self._stm_predicted_idea = torch.zeros_like(idea)
-            return
-        stm = self.stm
-        buf = stm._buffer
-        if buf is None or buf.dim() != 3:
-            self._stm_predicted_idea = torch.zeros_like(idea)
-            return
-        B, cap = int(buf.shape[0]), int(buf.shape[1])
-        max_depth = stm._depth.max()
-        context_len = torch.where(
-            max_depth >= 2, max_depth - 1, max_depth)
-        slots = torch.arange(
-            cap, dtype=stm._depth.dtype,
-            device=stm._depth.device)
-        keep = slots < context_len
-
-        layer = self.intraSentenceLayer
-        lifted = layer.pi.forward(buf.detach())
-        folded = (
-            lifted * keep.view(1, cap, 1).to(dtype=lifted.dtype)
-        ).sum(dim=1)
-        prediction = layer.sigma.forward(folded)
-        routing = self._intra_routing_for_predict(batch=B)
-        prediction = layer._apply_routing_bias(prediction, routing)
-        has_context = (max_depth > 0).reshape(1, 1)
-        prediction = torch.where(
-            has_context, prediction, torch.zeros_like(prediction))
-        self._stm_predicted_idea = prediction
-
-        if row_gate is None:
-            loss_gate = has_context.expand(B, 1)
-        else:
-            loss_gate = torch.logical_and(
-                row_gate.to(device=idea.device, dtype=torch.bool),
-                has_context.expand(B, 1))
-        self._accumulate_intra_loss(
-            prediction, idea, row_gate=loss_gate)
-
-    def _stm_predict_then_perceive_parallel(self, folded):
-        """PARALLEL predict step (whole-slab call). Snapshot the prev STM,
-        run the intra-sentence predictor per-slot, stash the held slab
-        prediction on ``self._stm_predicted_slab``, and accumulate
-        ``L_intra`` against ``folded`` ONLY when the prediction shape
-        matches. Does NOT perceive -- the caller invokes the existing
-        ``_stm_set_all_slots(folded)`` immediately after.
-
-        ``folded``: ``[B, N, D]`` the slab about to be written as the slot
-        stack.
-
-        Degenerate / shape-mismatch handling (pinned):
-          * prev STM empty (first pass): stash ``torch.zeros_like(folded)``
-            and SKIP loss (the predictor has no prior slab to map).
-          * prev STM slot count != N: the per-slot prediction over
-            ``prev`` has shape ``[B, prev_N, D]`` which does not align
-            with the target ``[B, N, D]``. Per the pinned decision, stash
-            the prediction as-is but SKIP loss accumulation this pass
-            (we do not fabricate an overlap). Loss resumes once the STM
-            steady-state slot count matches the slab width.
-        """
-        if float(self.intra_loss_weight) <= 0.0:
-            self._stm_predicted_slab = torch.zeros_like(folded)
-            return
-        prev = self.stm.snapshot()
-        if prev is None or prev.dim() != 3 or int(prev.shape[1]) == 0:
-            # First pass / empty STM: degenerate prediction, no loss.
-            self._stm_predicted_slab = torch.zeros_like(folded)
-            return
-        routing = self._intra_routing_for_predict()
-        prediction = self._stm_run_intra_predict(
-            prev, routing, parallel=True)             # [B, prev_N, D]
-        # Newest-at-slot-0 alignment: ``prev`` (the STM snapshot) is stored
-        # NEWEST-FIRST, while ``folded`` is the raw slab in reading order
-        # (position 0 = OLDEST). The per-slot L_intra needs both operands in
-        # the SAME slot order (slot i of the prediction <-> slot i of the
-        # target), exactly as the old oldest-first code compared the
-        # oldest-first snapshot against the oldest-first slab. So reverse
-        # the slab to newest-first before scoring. (The prediction is
-        # already newest-first since it is computed over ``prev``.)
-        target = torch.flip(folded, dims=[1])
-        # Only accumulate loss when shapes align (pinned: skip otherwise).
-        if prediction.shape == target.shape:
-            self._accumulate_intra_loss(prediction, target)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -13976,9 +13530,6 @@ class ConceptualSpace(Space):
     def Start(self):
         super().Start()
         self._clear_percept_field()
-        # This eager boundary also serves callers of the fullgraph forward
-        # that do not consume training losses between successive reads.
-        self._intra_errors = Error()
 
     def End(self):
         super().End()
@@ -14260,17 +13811,6 @@ class ConceptualSpace(Space):
             self._maybe_rebuild_optimizer_for_csw()
         super().Reset(batch=batch, hard=hard)
         self._clear_percept_field(batch=batch)
-        # Clear the predict-then-perceive held predictions and the
-        # intra-loss accumulator on EVERY reset (hard or soft) so neither a
-        # stale prediction nor a dangling grad-bearing loss tensor leaks
-        # across a sentence/document boundary. Hoisted above the soft-reset
-        # early return below; safe there because these stashes are None-able.
-        self._stm_predicted_idea = None
-        self._stm_predicted_slab = None
-        self._intra_loss_accum = None
-        self._intra_errors = Error()
-        self._intra_loss_weight_accum = None
-        self._intra_loss_count = 0
         if not hard:
             stm = getattr(self, 'stm', None)
             if stm is not None:
@@ -14869,6 +14409,16 @@ class ConceptualSpace(Space):
         (idempotent per ``(part, whole)``). The symbol accumulates more parts /
         wholes as it evolves (use :meth:`add_part` / :meth:`add_whole`)."""
         alloc = _concept_alloc_of(self)
+        if (isinstance(part, tuple) and part[:1] == ('sym',)
+                and isinstance(whole, tuple) and whole[:1] == ('sym',)):
+            existing = alloc.parts.find(part[1], whole[1])
+            if existing is not None:
+                return existing
+            if alloc.next_id >= alloc.parts.capacity:
+                raise OverflowError("LTM2 symbol capacity exhausted before allocation")
+            sid = ConceptualSpace.new_concept(self)
+            alloc.parts.add(part[1], whole[1], symbol=sid, truth_plus=1.)
+            return sid
         key = (part, whole)
         existing = alloc.relate_idx.get(key)
         if existing is not None:
@@ -14881,10 +14431,7 @@ class ConceptualSpace(Space):
         return sid
 
     def reify_concept(self, a_sym, b_sym):
-        """Reify ``a <= b`` between two symbols as a new symbol C with
-        Parts(C)={a}, Wholes(C)={b} -- the taxonomy edge (word<->object META is
-        the special case). Sub-symbol refs are tagged ``('sym', id)`` so they
-        never collide with raw part/whole codes."""
+        """Name the common Part(a, b) edge by its native symbol."""
         return self.relate(("sym", int(a_sym)), ("sym", int(b_sym)))
 
     def concept_is_identity(self, sym):
@@ -15089,27 +14636,9 @@ class ConceptualSpace(Space):
         return self._order_caps_cache[1]
 
     def _priming_edges(self):
-        """Undirected concept/constituent edges, on device, without a cap."""
-        allocator = getattr(self, '_concept_allocator', None)
-        if allocator is None:
-            return None
-        sources, destinations, weights = [], [], []
-        for store in allocator._layers.values():
-            for layer in store.part_matrices():
-                values = getattr(layer, 'values', None)
-                if values is None or not layer.nnz:
-                    continue
-                rows, columns = layer._indices(values.device)
-                columns = columns.remainder(int(layer.nOutput) + 1)
-                magnitude = values.detach().abs()
-                valid = (columns != int(layer.nOutput)) & (magnitude > 0)
-                row, column, weight = rows[valid], columns[valid], magnitude[valid]
-                sources.extend((row, column))
-                destinations.extend((column, row))
-                weights.extend((weight, weight))
-        if not sources:
-            return None
-        return torch.cat(sources), torch.cat(destinations), torch.cat(weights)
+        """All retained Part pairs between existing native bank seats."""
+        from Priming import part_edges
+        return part_edges(self)
 
     def order_slice(self, order):
         """The ``(start, end)`` row range of ramsified ``order`` in the stacked
@@ -17186,15 +16715,17 @@ class ConceptualSpace(Space):
         surface = self.priming_weights(batch=batch)
         if surface is None:
             return
-        # DEF carries the native surface references. Resolve them here rather
-        # than maintaining a second word/META identity map.
+        # A symbol's admitted form carries its surface references even before
+        # it has an object. Defined objects read the same form through Part.
         bridge = {}
-        for word in self.definitions.word_ids:
-            description = self.definitions.description(word)
+        allocator = _concept_alloc_of(self)
+        for word in self._word_definition_ids():
+            description = allocator.word_descriptions.get(word) or self.interpret._pending.get(word)
             if description is None:
                 continue
             parts = tuple(dict.fromkeys(p for group in description['parts'] for p in group))
-            for obj in self.definitions.objects(word):
+            for obj in (*self.definitions.objects(word),
+                        *((word,) if self.interpret.no_object(word) else ())):
                 bridge[obj] = (parts, description['wholes'])
         sources = [[], []]
         destinations = [[], []]
@@ -17243,12 +16774,7 @@ class ConceptualSpace(Space):
         return None if reference is None else reference()
 
     def _definition_index(self):
-        model = getattr(self, '_model', None)
-        symbol = getattr(model, 'symbolSpace', None) or getattr(self, 'symbolSpace', None)
-        store = getattr(symbol, 'ltm_store', None)
-        if store is None:
-            store = self.__dict__.get('_definition_store')
-        return None if store is None else store.definitions
+        return _concept_alloc_of(self).definitions
 
     @property
     def definitions(self):
@@ -17296,44 +16822,44 @@ class ConceptualSpace(Space):
         return store if store is not None else self._ltm_store_for_reasoning()
 
     @staticmethod
-    def _iter_relation_rows(store, rel_type=None):
+    def _iter_relation_rows(store, reading=None):
         """Yield unscaled content and provenance from the shared clause owner."""
         if store is None:
             return
         width = max(1, min(int(store.content_width), int(store.nDim)))
-        for index in store.relations(rel_type).tolist():
-            row = store.row(index)
-            yield (index, row['np1'][:width], row['vp'][:width],
-                   row['np2'][:width], float(row['trust']))
+        for index in store.relations(reading).tolist():
+            row = store.part_row(index)
+            roles = row['meaning'].roles
+            yield (index, roles[0, :width], roles[2, :width], float(row['trust']))
 
     # -- Canonical parthood-climb primitives (shared by reason() and the
     #    truth-grounded reasoner; doc/plans/2026-06-23-truth-grounded-
     #    reasoning.md). wholes/parts ARE the grammar <queries> ops.
     @staticmethod
-    def wholes(X, store, *, theta=0.7, trust_threshold=0.0, rel_type=None):
+    def wholes(X, store, *, theta=0.7, trust_threshold=0.0, reading=None):
         """``wholes(X)``: the proximal containing wholes of X -- ``{np2}`` of the
         stored relation rows whose antecedent covers X (``_idea_parthood(X, np1)
         >= theta``), each with its row trust. One hop of the parthood climb; the
-        transitive closure is reached by chaining. ``rel_type`` (REL_PARTOF)
+        transitive closure is reached by chaining. ``reading``
         restricts to parthood on a tagged store. Returns ``[{idea, trust, row}]``.
         """
         out = []
-        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
-                store, rel_type):
+        for (idx, np1, np2, t1) in ConceptualSpace._iter_relation_rows(
+                store, reading):
             if (t1 > float(trust_threshold)
                     and ConceptualSpace._idea_parthood(X, np1) >= float(theta)):
                 out.append({'idea': np2, 'trust': float(t1), 'row': int(idx)})
         return out
 
     @staticmethod
-    def parts(X, store, *, theta=0.7, trust_threshold=0.0, rel_type=None):
+    def parts(X, store, *, theta=0.7, trust_threshold=0.0, reading=None):
         """``parts(X)``: the proximal contained parts of X -- ``{np1}`` of the
         stored relation rows whose consequent is within X (``_idea_parthood(np2,
         X) >= theta``). Inverse of :meth:`wholes`. Returns ``[{idea, trust,
         row}]``."""
         out = []
-        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
-                store, rel_type):
+        for (idx, np1, np2, t1) in ConceptualSpace._iter_relation_rows(
+                store, reading):
             if (t1 > float(trust_threshold)
                     and ConceptualSpace._idea_parthood(np2, X) >= float(theta)):
                 out.append({'idea': np1, 'trust': float(t1), 'row': int(idx)})
@@ -17342,7 +16868,7 @@ class ConceptualSpace(Space):
     @staticmethod
     def _chain_to_target(query, target, store, *, parthood_threshold=0.7,
                          max_steps=8, beam=8, trust_combine='min',
-                         rel_type=None, trust_threshold=0.0):
+                         reading=None, trust_threshold=0.0):
         """The single canonical chain search: a beam-limited, depth-bounded
         climb from ``query`` toward ``target`` via :meth:`wholes`. Succeeds when
         a whole reaches the target (``_idea_parthood(whole, target) >= thr``).
@@ -17362,7 +16888,7 @@ class ConceptualSpace(Space):
                 used = {p[0] for p in path}
                 for w in ConceptualSpace.wholes(
                         cur, store, theta=thr,
-                        trust_threshold=trust_threshold, rel_type=rel_type):
+                        trust_threshold=trust_threshold, reading=reading):
                     if w['row'] in used:
                         continue
                     nt = (min(ctrust, w['trust']) if trust_combine == 'min'
@@ -17465,7 +16991,7 @@ class ConceptualSpace(Space):
     @torch.no_grad()
     def reason(self, query, query_trust=1.0, *, parthood_threshold=0.7,
                max_steps=1, store=None, target=None, beam=None,
-               trust_combine='product', rel_type=None):
+               trust_combine='product', reading=None):
         """Forward modus-ponens inference over the relative store (Truth /
         Ideas stage 4; expands the area of luminosity).
 
@@ -17494,14 +17020,14 @@ class ConceptualSpace(Space):
         (:meth:`_chain_to_target`): a beam-limited (``beam``) climb toward the
         target via :meth:`wholes`, also returning ranked ``chains``.
         ``trust_combine`` ('product' default, or 'min' = weakest hop) sets how
-        hop trusts compose; ``rel_type`` (e.g. REL_PARTOF) restricts the
+        hop trusts compose; ``reading``  restricts the
         relations climbed. At the defaults this is byte-identical to the
         original open product expansion."""
         # An explicit fixture or the model's shared durable clause owner.
         store = self._reasoning_store(store)
         if store is None:
             return {'derived': [], 'luminosity_gain': 0.0}
-        if int(len(store)) == 0:
+        if not len(store.parts):
             return {'derived': [], 'luminosity_gain': 0.0}
         sd = max(1, min(int(store.content_width), int(store.nDim)))
         thr = float(parthood_threshold)
@@ -17513,7 +17039,7 @@ class ConceptualSpace(Space):
                 qc0, target, store, parthood_threshold=thr,
                 max_steps=max(1, int(max_steps)),
                 beam=(int(beam) if beam else 8),
-                trust_combine=trust_combine, rel_type=rel_type)
+                trust_combine=trust_combine, reading=reading)
             derived = [{'concept': c['idea'], 'trust': c['score'],
                         'source': (c['chain'][-1][0] if c['chain'] else -1),
                         'parthood': 1.0, 'step': c['steps']} for c in chains]
@@ -17524,8 +17050,8 @@ class ConceptualSpace(Space):
         # whole search. ``A``/``B`` are the antecedent/consequent at content
         # width (the iterator abstracts the two store types).
         rows = [(idx, np1, np2, t1)
-                for (idx, np1, _vp, np2, t1)
-                in ConceptualSpace._iter_relation_rows(store, rel_type)]
+                for (idx, np1, np2, t1)
+                in ConceptualSpace._iter_relation_rows(store, reading)]
         derived = []
         used = set()
         frontier = [(qc0, float(query_trust))]
@@ -17568,16 +17094,13 @@ class ConceptualSpace(Space):
         store = self._reasoning_store(store)
         if store is None:
             return None
-        n = int(len(store))
-        idx = int(relation_idx)
-        if not (0 <= idx < n):
+        idx = int(relation_idx[1] if isinstance(relation_idx, tuple) else relation_idx)
+        if not store.parts.contains(idx):
             return None
-        row = store.row(idx)
-        if int(row['rel_type']) == store.REL_NONE:
-            return float(row['trust'])
+        row = store.part_row(idx)
         old = float(row['trust'])
         sd = max(1, min(int(store.content_width), int(store.nDim)))
-        a_unscaled, b_unscaled = row['np1'][:sd], row['np2'][:sd]
+        a_unscaled, b_unscaled = row['meaning'].roles[0, :sd], row['meaning'].roles[2, :sd]
         thr = float(parthood_threshold)
         relevant = 0
         supporting = 0
@@ -17599,9 +17122,10 @@ class ConceptualSpace(Space):
         w = float(support_weight)
         if not math.isfinite(w) or not 0. <= w <= 1.:
             raise ValueError('verification evidence weight must be in [0, 1]')
-        positive = max(float(store.c_plus[idx]), w if supporting else 0.)
-        negative = max(float(store.c_minus[idx]), w if supporting < relevant else 0.)
-        store.set_evidence(idx, positive, negative)
+        positive = max(float(store.parts.truth_plus[idx]), w if supporting else 0.)
+        negative = max(float(store.parts.truth_minus[idx]), w if supporting < relevant else 0.)
+        store.parts.add(*store.parts.refs[idx].tolist(), truth_plus=positive,
+                        truth_minus=negative, witness=False)
         return positive - negative
 
 
@@ -18894,6 +18418,14 @@ class ConceptualSpace(Space):
         # but for a positional CS it is wider (keeping the where/when
         # columns the reverse needs).
         primary = subspace.materialize()
+        identity_codes = getattr(self.similarity_codebook, 'mereology', None)
+        if primary is not None and identity_codes is not None:
+            # Percept location is carried separately from concept content.
+            # A positional percept must not seed signed coordinates in STM1,
+            # including when the eager peer path has no indexed decode.
+            source_width = int(getattr(subspace, 'nWhat', primary.shape[-1]))
+            primary = F.pad(primary[..., :source_width],
+                            (0, max(0, primary.shape[-1] - source_width)))
         _stm_dim = int(self.concept_dim)
         _aligned_serial = bool(
             getattr(self, "_concept_binding", "mixing") == "aligned"
@@ -18953,6 +18485,10 @@ class ConceptualSpace(Space):
         sym = None
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
+            if sym is not None and identity_codes is not None:
+                source_width = int(getattr(word_subspace, 'nWhat', sym.shape[-1]))
+                sym = F.pad(sym[..., :source_width],
+                            (0, max(0, sym.shape[-1] - source_width)))
             if (_aligned_serial and sym is not None
                     and int(sym.shape[-1]) != _stm_dim):
                 raise RuntimeError(
@@ -19023,37 +18559,25 @@ class ConceptualSpace(Space):
         # identity in parallel mode, causing the reverse pipeline to
         # produce identical recon vectors per slot (and the
         # reconstruction report to show the same word in every slot).
-        # Task 3: explicit PREDICT-then-PERCEIVE. BEFORE writing the
-        # freshly-materialised event into the STM (the "perceive" step,
-        # which is the existing ``_stm_shift_and_push`` /
-        # ``_stm_set_all_slots`` call below, byte-for-byte unchanged), run
-        # the intra-sentence predictor from the RETAINED STM context and
-        # stash the held prediction. The prediction reads the PRE-perceive
-        # ``snapshot()`` so no separate physical shift is needed for
-        # correctness (see ``_stm_shift_for_predict`` docstring). The held
-        # prediction feeds ``L_intra = MSE(prediction, perceived)`` with
-        # the just-now event as the target.
         if defer_serial_push:
             # Serial word tick: PS/WS expose their full instantaneous field
             # (normally eight slots), but that field is NOT eight new STM
             # entries. BasicModel binds both fields into a concept carrying its
-            # actual fold order, selects the current word concept, runs the
-            # serial predictor, and commits exactly one idea after this call.
+            # actual fold order, selects the current word concept and commits
+            # exactly one idea after this call.
             # Treating N>1 as the
             # parallel path here used to refill STM to capacity on every word,
             # forcing emergency folds and hiding whether grammar reduced.
             event_for_carrier = folded
         elif folded.dim() == 3:
             if folded.shape[1] > 1:
-                # PARALLEL: predict the whole slab from prev STM, then
-                # perceive (write the slab as the slot stack).
-                self._stm_predict_then_perceive_parallel(folded)
+                # Commit the slab as the slot stack.
+
                 self._stm_set_all_slots(folded)
             else:
                 # N == 1: serial per-word call.
                 idea = folded.squeeze(1)              # [B, D]
-                self._stm_predict_then_perceive_serial(
-                    idea, row_gate=row_gate)
+
                 if not defer_serial_push:
                     if row_gate is None:
                         self._stm_shift_and_push(idea)
@@ -19063,8 +18587,7 @@ class ConceptualSpace(Space):
         elif folded.dim() == 2:
             idea = folded                            # [B, D]
             event_for_carrier = folded.unsqueeze(1)   # [B, 1, D]
-            self._stm_predict_then_perceive_serial(
-                idea, row_gate=row_gate)
+
             if not defer_serial_push:
                 if row_gate is None:
                     self._stm_shift_and_push(idea)

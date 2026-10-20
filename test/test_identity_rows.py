@@ -3,7 +3,7 @@ from dataclasses import replace
 import torch
 import pytest
 
-from IdentityRows import meet_ratios, point, witness_count, refold
+from IdentityRows import meet_ratios, point, witness_count
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
 from test_reference_close import fixture, close, form_exposure
@@ -24,10 +24,52 @@ def test_meet_ties_kind_requests_and_excludes_missing_defining_content():
         resolver.coordinates(-q)
 
 
+def test_content_meet_cannot_read_form_while_form_can_identify_its_region():
+    from types import SimpleNamespace
+    resolver, _, atoms = fixture()
+    owner = resolver.components.owner
+    # The same paired layout as the production owner: form, band, meaning.
+    object.__setattr__(owner.similarity_codebook, 'mereology',
+                       SimpleNamespace(percept_width=4, percept_event_width=6))
+    q = atoms[0] + atoms[6]
+    candidates = {1: dict(content=atoms[0]+atoms[7], role=0, position=(0,0)),
+                  2: dict(content=atoms[1]+atoms[6], role=0, position=(0,0))}
+    _, phi, logits = resolver.score(q, q*0, q*0, 0, candidates)
+    assert phi[:, :2].tolist() == [[0., 0.], [1., 1.]]
+    assert logits[1] > logits[0]
+    changed_form = atoms[1] + atoms[6]
+    _, changed, _ = resolver.score(changed_form, q*0, q*0, 0, candidates)
+    torch.testing.assert_close(changed[:, :2], phi[:, :2], rtol=0, atol=0)
+    torch.testing.assert_close(resolver.cue(q), q, rtol=0, atol=0)
+    torch.testing.assert_close(resolver.coordinates(q), atoms[6], rtol=0, atol=0)
+    # A narrowed value keeps its address and never borrows form as meaning.
+    assert not resolver.coordinates(q[:4]).any()
+
+
+def test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient():
+    from types import SimpleNamespace
+    resolver, _, atoms = fixture()
+    close(resolver, atoms[0]+atoms[6], atoms[7], 'mint', (),
+          document='separate-metrics', sentence=0)
+    owner = resolver.components.owner
+    object.__setattr__(owner.similarity_codebook, 'mereology',
+                       SimpleNamespace(percept_width=4, percept_event_width=6))
+    observation = (.25*atoms[6]).expand(3, -1).clone().requires_grad_()
+    prediction = torch.zeros_like(observation)
+    residual = resolver.components.innovation(observation, prediction)
+    changed_form = resolver.components.innovation(observation+.5*atoms[1], prediction)
+    torch.testing.assert_close(changed_form, residual, rtol=0, atol=0)
+    assert not torch.equal(
+        resolver.components.innovation(observation+.5*atoms[6], prediction), residual)
+    residual.sum().backward()
+    assert not observation.grad[:, :6].any()
+    assert observation.grad[:, 6].abs().sum() > 0
+
+
 def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
     resolver, store, a = fixture()
     frame, address, _ = close(resolver,a[0],a[6],'mint',(),document='one',sentence=0)
-    cid = int(store.refs[store.index_of_row(address),0])
+    cid = resolver.last_audit[0]['reference']
     assert witness_count(resolver.components.owner,cid) == 1
     owner = resolver.components.owner
     assert not hasattr(resolver.components,'nouns')
@@ -36,22 +78,24 @@ def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
     resolver.components._ready = lambda: (_ for _ in ()).throw(AssertionError('identity chart'))
     with torch.no_grad(): owner.similarity_codebook.W[owner._csw_row_of(cid)].copy_(a[1])
     candidates = resolver.individuals(resolver.accessible((frame,)))
-    torch.testing.assert_close(candidates[cid]['content'],a[1],rtol=0,atol=0)
-    store.refs[store.index_of_row(address),0] = -1
+    torch.testing.assert_close(point(owner,cid),a[1],rtol=0,atol=0)
+    torch.testing.assert_close(candidates[cid]['content'],a[0]+a[1],rtol=0,atol=0)
+    store.parts.remove_symbol(cid)
     assert witness_count(owner,cid) == 0
 
 
-def test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows():
+def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
     resolver, store, a = fixture()
     first, address, _ = close(resolver,a[0]+a[1],a[6],'mint',(),document='fold',sentence=0)
+    cid = resolver.last_audit[0]['reference']
     second, address2, _ = close(resolver,a[0],a[6],'bind',(first,),document='fold',sentence=1)
-    cid = int(store.refs[store.index_of_row(address2),0])
-    # Remove the first occurrence from the binding query, as forgetting does.
-    store.refs[store.index_of_row(address),0] = -1
-    resolver.revise(resolver.accessible((second,)))
+    # Read only the surviving occurrence, as after forgetting. Its working
+    # interpretation must leave the original native code intact.
+    original = store.slots.clone(), store.refs.clone()
+    resolver.individuals(resolver.accessible((second,)))
     torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])
-    refold(resolver.components.owner,cid)
-    torch.testing.assert_close(point(resolver.components.owner,cid),a[0])
+    torch.testing.assert_close(store.slots,original[0],rtol=0,atol=0)
+    torch.testing.assert_close(store.refs,original[1],rtol=0,atol=0)
 
 
 def test_form_region_is_a_concept_and_known_exposure_changes_containment():
@@ -112,13 +156,11 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     state['components.reference_close.policy']=old
     state['components.reference_close.cue_policy']=torch.ones(12,5)
     state['components.reference_close._extra_state']=_pack_state(dict(version=2,seen={1:20}))
-    state['components.nouns.directions.27']=torch.randn(1024)
     drift,transforms={},{}
     migrate_checkpoint(host,state,host.state_dict(),drift,transforms)
     assert not any('nouns' in k or 'cue_policy' in k for k in state)
     assert _unpack_state(state['components.reference_close._extra_state']) == {'version':3}
     assert state['components.reference_close.policy'].tolist() == [0,0,1,1,0,2,3,4]
-    assert resolver.components._migrating_individuals == (27,)
     stable={};migrate_checkpoint(host,state,host.state_dict(),stable,{})
     assert not stable
     store.append_idea(a[0])
@@ -126,6 +168,41 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     target=TernaryTruthStore(12,capacity=512);target.load_state_dict(saved)
     assert not target.when.any()
     torch.testing.assert_close(target.slots,store.slots,rtol=0,atol=0)
+
+
+@pytest.mark.parametrize('native_bank', (False, True))
+def test_loader_permanently_rejects_signed_identity_without_modifying_the_row(native_bank):
+    resolver, store, atoms = fixture()
+    frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (),
+                          document='strict-load', sentence=0)
+    row = store.index_of_row(address)
+    identity = resolver.last_audit[0]['reference']
+    owner = resolver.components.owner
+    if native_bank:
+        with torch.no_grad():
+            owner.similarity_codebook.W[owner._csw_row_of(identity),0] = -.125
+    else:
+        store.slots[row, 0, 0] = -.125
+    held = store.slots.clone()
+    native = point(resolver.components.owner, identity).clone()
+    with pytest.raises(ValueError, match='native concept coordinates'):
+        resolver.components.migrate_identity_rows()
+    torch.testing.assert_close(store.slots, held, rtol=0, atol=0)
+    torch.testing.assert_close(point(resolver.components.owner, identity), native, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize('value', (-.125, .5))
+def test_retired_chart_checkpoint_is_rejected_before_keys_are_removed(value):
+    from IdentityRows import migrate_checkpoint
+    from torch import nn
+    resolver, _, _ = fixture()
+    host=nn.Module();host.add_module('components',resolver.components)
+    state=host.state_dict()
+    state['components.nouns.directions.27']=torch.full((12,),value)
+    keys, drift, transforms = set(state), {}, {}
+    with pytest.raises(ValueError, match='retired signed-chart'):
+        migrate_checkpoint(host,state,host.state_dict(),drift,transforms)
+    assert set(state) == keys and not drift and not transforms
 
 
 def test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address(monkeypatch):

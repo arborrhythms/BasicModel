@@ -343,8 +343,7 @@ class IndependentComponents(nn.Module):
         retained = set()
         if store is not None:
             retained = {int(store.row_ids[row]) for row in range(len(store))
-                        if int(store.rel_type[row]) != store.REL_DEF
-                        and store.KINDS[int(store.record_kind[row])] == 'observation'}
+                        if store.KINDS[int(store.record_kind[row])] == 'observation'}
         # Innovations are observations of the same retained chain. Discard
         # an orphan when its LTM occurrence leaves; this neither removes nor
         # prunes an identity/change column (item 5 owns that decision).
@@ -363,22 +362,13 @@ class IndependentComponents(nn.Module):
 
     def column_point(self, identity):
         from IdentityRows import point
-        from MeaningCodes import defined_code
-        if identity in self.individual_ids:
-            return point(self.owner, identity)
-        key = str(int(identity))
-        if key in self.verbs.directions and self.individual_ids:
-            rows = torch.tensor([self.owner._csw_row_of(cid) for cid in self.individual_ids],
-                                device=self.owner.similarity_codebook.W.device, dtype=torch.long)
-            changes = self.verbs.directions[key].reshape(3, self.capacity).index_select(-1, rows)
-            axes = torch.stack([point(self.owner, cid) for cid in self.individual_ids])
-            return defined_code(changes.sum(0) @ axes, self.verbs.witness_count(identity))
-        return None
+        return point(self.owner, identity)
 
     def innovation(self, observation, prediction):
         """Legacy B's residual against native individual rows; no identity chart."""
-        from IdentityRows import point
-        axes = F.normalize(torch.stack([point(self.owner, cid) for cid in self.individual_ids]), dim=-1)
+        from IdentityRows import coordinates, point
+        axes = F.normalize(torch.stack([coordinates(self.owner, point(self.owner, cid))
+                                        for cid in self.individual_ids]), dim=-1)
         values = (observation - prediction) @ axes.T.to(observation)
         rows = [self.owner._csw_row_of(cid) for cid in self.individual_ids]
         if any(row is None for row in rows):
@@ -432,8 +422,10 @@ class IndependentComponents(nn.Module):
         if not len(chart.rows):
             return
         store = self.owner._closed_clause_store()
-        identity = int(store.row_ids[row])
-        witness = (identity, int(store.witness_count[row]))
+        retained = store.row(row)
+        identity = retained['row_id']
+        witness = (identity, int(store.witness_count[row]) if isinstance(row, int)
+                   else int(retained['access_count']))
         before = {id(p) for p in self.parameters()}
         # A's individuals were admitted from the kept NP occurrences at this
         # close. Whole-row residual recurrence is not individual identity.
@@ -449,74 +441,32 @@ class IndependentComponents(nn.Module):
                 p for p in self.parameters() if id(p) not in before)
 
     def candidate_frames(self, frames):
-        """Columns and their latest situated witness, without reading more LTM."""
-        if not self.individual_ids:
-            return ()
+        """Working identities over the retained addresses, computed on read."""
+        from dataclasses import replace
         result = {}
-        store = self.owner._closed_clause_store()
-        for frame in frames:
-            row = store.index_of_row(frame.row_id) if store is not None else None
-            if row is None:
+        records = self.reference_close.accessible(frames)
+        for identity, value in self.reference_close.individuals(records).items():
+            address = self.reference_close.address(identity)
+            if address is None:
                 continue
-            for reference in self.reference_close.occurrences(row):
-                address = self.reference_close.address(reference)
-                if address is None:
-                    continue
-                index = store.index_of_row(address)
-                if index is not None and int(store.order[index]) == 1:
-                    identity = int(store.refs[index, 0])
-                    if identity in self.individual_ids:
-                        result.pop(identity, None)
-                        result[identity] = frame
+            frame = frames[value['position'][0]]
+            result[address] = replace(frame, point=value['content'])
         return tuple(result.items())[-self.source_capacity:]
 
     def candidates(self, frames):
         return tuple(identity for identity, _ in self.candidate_frames(frames))
-
-    def situated_point(self, identity, frame):
-        """A column's content beside its witness's continuity evidence.
-
-        The reserved reference band is available to the same operation
-        scorer. It never enters A, B or the independence chart.
-        """
-        point = self.column_point(identity)
-        if point is None:
-            return None
-        derived = getattr(getattr(self.owner, 'similarity_codebook', None), 'mereology', None)
-        if derived is not None:
-            start, end = derived.percept_width, derived.percept_event_width
-            # The stored model-time column is provenance, never a compose
-            # operand. Only spatial continuity can enter this reserved band.
-            bands = [value.detach().to(point).flatten() for value in (frame.where,)
-                     if value is not None]
-            if bands:
-                evidence = torch.cat(bands)
-                if len(evidence) > end - start:
-                    raise ValueError('situated identity evidence exceeds its reserved reference band')
-                point = point.clone()
-                point[start:start + len(evidence)] = evidence
-        return point
 
     def pruning_candidates(self):
         return dict(verbs=self.verbs.pruning_candidates())
 
     @torch.no_grad()
     def migrate_identity_rows(self):
-        """One-time checkpoint conversion after native rows have been restored."""
-        from IdentityRows import allocator, coordinates, refold, witnesses
-        identities = self.__dict__.pop('_migrating_individuals', ())
-        alloc = allocator(self.owner)
-        for identity in identities:
-            row = self.owner._csw_row_of(identity)
-            if row is None:
-                raise ValueError('retained individual has no native concept seat')
-            alloc.individuals.add(identity)
-            if witnesses(self.owner, identity):
-                refold(self.owner, identity)
-            else:
-                # Forgotten observations leave the last native fold intact.
-                coordinates(self.owner, self.owner.similarity_codebook.W[row])
-        self.reference_close._participant_cache = None
+        """Validate native identity content after every checkpoint restore."""
+        from IdentityRows import validate_retained
+        validate_retained(self.owner)
+        store = self.owner._closed_clause_store()
+        if store is not None:
+            store._participant_cache = None
 
     def get_extra_state(self):
         return _pack_state(dict(version=1, innovations=self._innovations, admission_drops=self.admission_drops))

@@ -1,0 +1,11 @@
+{
+  "test": "test/test_priming_diffusion.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor",
+  "events": 0,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": []
+}

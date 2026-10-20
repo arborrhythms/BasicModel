@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate"
+  ],
+  "completed": [
+    "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 9.368525500176474,
+      "message": "test/test_operators_round4a.py:82: in test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate\n    assert report['exact'] and report['distinct_meanings'] == report['words'] == 4\nE   assert (True and 1 == 4)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

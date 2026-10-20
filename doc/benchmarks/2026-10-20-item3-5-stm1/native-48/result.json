@@ -1,0 +1,1396 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+    "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
+    "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[conjunction]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[disjunction]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[intersection]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[union]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
+    "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
+    "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
+    "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+    "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[XOR_grammar]",
+    "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
+    "test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step",
+    "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved",
+    "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+    "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+    "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+    "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+    "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+    "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+    "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+    "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+    "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+    "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+    "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+    "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+    "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+    "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+    "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+    "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+    "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+    "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "completed": [
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+    "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+    "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+    "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+    "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+    "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+    "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+    "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+    "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
+    "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[conjunction]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[disjunction]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[intersection]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[union]",
+    "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
+    "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
+    "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
+    "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+    "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[XOR_grammar]",
+    "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
+    "test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step",
+    "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved",
+    "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+    "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+    "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+    "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+    "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+    "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+    "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+    "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+    "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+    "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+    "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row",
+    "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+    "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-002.json"
+      ],
+      "pid": 62142,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436225344,
+      "elapsed_seconds": 4.282269416144118,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix"
+      ],
+      "completed": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014851124957203865,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007344875019043684,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009334624977782369,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009408208075910807,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-003.json"
+      ],
+      "pid": 62161,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437847360,
+      "elapsed_seconds": 4.200038707815111,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+        "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves"
+      ],
+      "completed": [
+        "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+        "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.017100375145673752,
+          "message": "test/test_part_read.py:27: in test_postings_rebuild_from_part_without_inverting_the_narrowed_point\n    assert set(f.store.leaf_terms(row, 0)) == expected\nE   assert set() == {12, 14, 16}\nE     \nE     Extra items in the right set:\nE     16\nE     12\nE     14\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00039858301170170307,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-004.json"
+      ],
+      "pid": 62214,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430523712,
+      "elapsed_seconds": 4.1402356249745935,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+        "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "completed": [
+        "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+        "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0015931250527501106,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017682500183582306,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000661417143419385,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-005.json"
+      ],
+      "pid": 62246,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 796149896,
+      "elapsed_seconds": 30.56676729116589,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+        "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+        "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+        "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+        "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+        "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence"
+      ],
+      "completed": [
+        "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+        "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+        "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+        "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+        "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+        "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.022271540947258472,
+          "message": "test/test_derived_concept_codes.py:32: in test_rows_conduct_to_other_words_without_crossing_batch_streams\n    assert surface[0,b] > 1 and surface[1,b] == 1\nE   assert (tensor(1.) > 1)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002342917025089264,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 16.78892433294095,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00033483305014669895,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004837500164285302,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 9.068142167059705,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-000.json"
+      ],
+      "pid": 62140,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 836962392,
+      "elapsed_seconds": 50.430359666002914,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+        "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
+        "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[conjunction]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[disjunction]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[intersection]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[union]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
+        "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
+        "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
+        "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+        "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[XOR_grammar]",
+        "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
+        "test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step",
+        "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved"
+      ],
+      "completed": [
+        "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+        "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
+        "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[conjunction]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[disjunction]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[intersection]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[union]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
+        "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
+        "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
+        "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+        "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[XOR_grammar]",
+        "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
+        "test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step",
+        "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.6467119581066072,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003155999816954136,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 9.9542896670755,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[conjunction]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004455840680748224,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[disjunction]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00036254082806408405,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[intersection]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00030937488190829754,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[union]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00029250001534819603,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002300830092281103,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003536669537425041,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014112910721451044,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017946658190339804,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[XOR_grammar]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0012764581479132175,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0029079169034957886,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 34.61172725004144,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 34.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0176341668702662,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-001.json"
+      ],
+      "pid": 62141,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 874498184,
+      "elapsed_seconds": 51.400980999926105,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+        "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+        "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+        "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+        "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [
+        "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+        "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+        "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+        "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+        "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.015715249814093113,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004170830361545086,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00017324998043477535,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00014283391647040844,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00013224990107119083,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012724986299872398,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012516696006059647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003819169942289591,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002099159173667431,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 10.250803084112704,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.244s)\r\n"
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 35.19665249995887,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 34.408s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.380s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.379s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.384s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.383s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-008.json"
+      ],
+      "pid": 62429,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437011776,
+      "elapsed_seconds": 4.260003125062212,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "completed": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.004343999782577157,
+          "message": "test/test_query_work_budget.py:41: in test_taxonomy_capture_and_expansion_share_one_meter\n    assert view.nodes_scanned == 1 and view.records_scanned == 1 and len(read) == 1\nE   AssertionError: assert (1 == 1 and 1 == 1 and 0 == 1)\nE    +  where 1 = ConceptualTaxonomyView(concepts=frozenset({('sym', 1), ('sym', 2)}), edges=(TaxonomyEdge(part=('sym', 1), whole=('sym'...owner=('sym', 4), role='part', evidence=(1.0, 0.0)),), nodes_scanned=1, records_scanned=1, incomplete=('work_budget',)).nodes_scanned\nE    +  and   1 = ConceptualTaxonomyView(concepts=frozenset({('sym', 1), ('sym', 2)}), edges=(TaxonomyEdge(part=('sym', 1), whole=('sym'...owner=('sym', 4), role='part', evidence=(1.0, 0.0)),), nodes_scanned=1, records_scanned=1, incomplete=('work_budget',)).records_scanned\nE    +  and   0 = len([])",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002201375085860491,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0018400829285383224,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0034796250984072685,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021799160167574883,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012083305045962334,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-007.json"
+      ],
+      "pid": 62428,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 439977280,
+      "elapsed_seconds": 5.357080792076886,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+        "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation"
+      ],
+      "completed": [
+        "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+        "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007319582859054208,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0036713338922709227,
+          "message": "test/test_query_executors.py:66: in test_part_and_converse_executor_read_native_taxonomy_without_writes\n    assert result.evidence[\"path\"][0].owner == (\"sym\", a)\nE   AssertionError: assert ('sym', 3) == ('sym', 1)\nE     \nE     At index 1 diff: 3 != 1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002070666989311576,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003600124968215823,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017514580395072699,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0018889580387622118,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007669417187571526,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-009.json"
+      ],
+      "pid": 62454,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 666961432,
+      "elapsed_seconds": 5.220384999876842,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+        "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+        "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+        "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+        "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+        "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+        "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+        "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+        "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row"
+      ],
+      "completed": [
+        "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+        "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+        "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+        "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+        "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+        "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+        "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+        "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+        "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0011547908652573824,
+          "message": "test/test_identification_evidence.py:23: in test_source_trust_enters_the_positive_pole\n    row = store.write_clause(clause, trust=.8)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0003319170791655779,
+          "message": "test/test_identification_evidence.py:31: in test_pair_retains_both_and_neither_until_explicit_signed_reassertion\n    both = store.write_clause(clause, trust=.8, evidence=(.6, .6))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.00035645789466798306,
+          "message": "test/test_identification_evidence.py:47: in test_clause_order_and_evidence_are_stored_without_a_program\n    row = store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0003120000474154949,
+          "message": "test/test_identification_evidence.py:60: in test_row_compaction_preserves_each_order_and_pole\n    first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0003813330549746752,
+          "message": "test/test_identification_evidence.py:76: in test_embedded_identification_does_not_grant_source_authority\n    row = store.write_clause(parent, trust=.7)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.026845499873161316,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0004199170507490635,
+          "message": "test/test_identification_evidence.py:104: in test_index_reading_reads_the_stored_order\n    row = store.write_clause(replace(clause, order=3), trust=.8)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006163339130580425,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.00027570920065045357,
+          "message": "test/test_identification_evidence.py:129: in test_old_scalar_checkpoint_does_not_invent_evidence_or_order\n    store.write_clause(clause, trust=.8)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00030595785938203335,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0003269580192863941,
+          "message": "test/test_identification_evidence.py:155: in test_withdrawing_testimony_clears_its_pair\n    row = store.write_clause(replace(clause, evidence=(.8, .6)), trust=.9,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.00037216697819530964,
+          "message": "test/test_identification_evidence.py:165: in test_luminosity_view_reads_signed_testimony_from_the_pair\n    store.write_clause(replace(clause, evidence=(.8, .6)), trust=-.3,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:392: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.8083763748873025,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-006.json"
+      ],
+      "pid": 62386,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 787368072,
+      "elapsed_seconds": 18.519813042134047,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+        "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+        "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+        "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+        "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+        "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+      ],
+      "completed": [
+        "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+        "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+        "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+        "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+        "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+        "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0013500000350177288,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003871541004627943,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017265831120312214,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010269579943269491,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 12.452148332959041,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00048620812594890594,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.019032665994018316,
+          "message": "test/test_operators_final.py:138: in test_determiner_mints_distinct_occurrence_and_universal_stays_high\n    assert f.store.refs[a, 0] != f.store.refs[b, 0]\nE   assert tensor(-1) != tensor(-1)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0002669580280780792,
+          "message": "test/test_operators_final.py:152: in test_relative_slot_names_its_row_instead_of_an_operand\n    from References import address_code\nE   ImportError: cannot import name 'address_code' from 'References' (/Users/arogers/github/WikiOracle/basicmodel/bin/References.py)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.008846125099807978,
+          "message": "test/test_operators_final.py:167: in test_definition_sentence_joins_identities_beside_the_interpret_definition\n    assert len(f.store) == 2 and f.store.refs[0].tolist() == f.store.refs[1, [2, 1, 0]].tolist()\nE   assert (0 == 2)\nE    +  where 0 = len(TernaryTruthStore())\nE    +    where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x130cbd6a0>.store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.001066915923729539,
+          "message": "test/test_operators_final.py:188: in test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement\n    changed = op(torch.cat((a[:, :4], a[:, 4:] * 7), -1), b)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:4755: in forward\n    return self.gl.compose_blocks(self.gl.compose, left, right)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:2511: in compose_blocks\n    return assert_cube(torch.cat((form, meaning), -1))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.011113166809082031,
+          "message": "test/test_operators_final.py:212: in test_determiner_kept_closing_is_the_only_mint_and_lowers_once\n    assert f.store.index_of_row(int(f.store.refs[row, 0])) is not None\nE   assert None is not None\nE    +  where None = index_of_row(-1)\nE    +    where index_of_row = TernaryTruthStore().index_of_row\nE    +      where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x130d529c0>.store\nE    +    and   -1 = int(tensor(-1))",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004066668916493654,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48",
+  "elapsed_seconds": 67.15771012497135,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2457016656,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/collect.json"
+    ],
+    "pid": 62124,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 469992696,
+    "elapsed_seconds": 4.366318041924387,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-48/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+        "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
+        "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[conjunction]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[disjunction]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[intersection]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[union]",
+        "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
+        "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
+        "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
+        "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+        "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[XOR_grammar]",
+        "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
+        "test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step",
+        "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved",
+        "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+        "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+        "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+        "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+        "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+        "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+        "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+        "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+        "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+        "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+        "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+        "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+        "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+        "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+        "test/test_operators_final.py::test_centroid_moves_without_losing_identity_and_caps_containment",
+        "test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint",
+        "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+        "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+        "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+        "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+        "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+        "test/test_operators_final.py::test_relative_slot_names_its_row_instead_of_an_operand",
+        "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+        "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+        "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+        "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+        "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+        "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+        "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+        "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+        "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+        "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+        "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+        "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+        "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+        "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+        "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+        "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+        "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+        "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

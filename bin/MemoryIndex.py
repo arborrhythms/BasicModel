@@ -14,6 +14,23 @@ from Occurrence import AddressIndex
 from torch.nn import functional as F
 
 
+class RowRemapObserver:
+    """A weak callback whose copied owner follows the copied store."""
+
+    def __init__(self, store):
+        import weakref
+        self.store = weakref.ref(store)
+
+    def __call__(self):
+        store = self.store()
+        return None if store is None else store.remap_leaf_codes
+
+    def __deepcopy__(self, memo):
+        import copy
+        store = self.store()
+        return type(self)(copy.deepcopy(store, memo)) if store is not None else self
+
+
 class LeafCodeIndex:
     """The row writer owns one derived inverted index, without forward lists."""
 
@@ -31,15 +48,15 @@ class LeafCodeIndex:
             self.register_buffer(name, torch.empty(0, dtype=torch.long))
         self._index_occurrences = AddressIndex()
         self._index_code_row = None
-        self._index_unfold = None
+        self._index_read = None
         self._index_order_of = None
         self._leaf_needs_owner_reindex = False
 
-    def configure_leaf_index(self, *, code_row=None, unfold=None, order_of=None, contextual=False):
+    def configure_leaf_index(self, *, code_row=None, read=None, order_of=None, contextual=False):
         """Bind the current grammar owner. Code addresses do not supply terms."""
-        if any(value is not None and not callable(value) for value in (code_row, unfold, order_of)):
+        if any(value is not None and not callable(value) for value in (code_row, read, order_of)):
             raise TypeError('leaf index adapters must be callable')
-        self._index_code_row, self._index_unfold = code_row, unfold
+        self._index_code_row, self._index_read = code_row, read
         self._index_order_of = order_of
         self._index_contextual = bool(contextual)
 
@@ -53,7 +70,7 @@ class LeafCodeIndex:
 
     def _meaning_leaf_terms(self, meaning, *, order=0, max_nodes=1024, work=None, stream=None,
                             role_mask=None):
-        """Unfold the actual occupied values, following only structural refs."""
+        """Read retained Part arguments and explicit structural references."""
         remaining, active = [int(max_nodes)], set()
         def visit(value, field_order):
             if id(value) in active or remaining[0] <= 0:
@@ -75,15 +92,15 @@ class LeafCodeIndex:
                 if not known and child is not None:
                     recovered, status = visit(child, child_order)
                     codes, known = tuple(itertools.chain.from_iterable(recovered)), all(status)
-                elif not known and field_order >= 0 and self._index_unfold is not None and remaining[0] > 0:
+                elif not known and field_order >= 0 and self._index_read is not None and remaining[0] > 0:
                     allowance = min(remaining[0], work.remaining) if work is not None else remaining[0]
-                    recovered = self._index_unfold(value.roles[role].detach(), allowance,
+                    recovered = self._index_read(value.roles[role].detach(), allowance,
                         order=field_order, work=work, **({} if stream is None else {'stream': stream}),
                         **({'meaning': value, 'role': role} if getattr(self, '_index_contextual', False) else {}))
                     if recovered is not None:
                         codes, spent, known = recovered
                         if type(spent) is not int or not 0 <= spent <= remaining[0]:
-                            raise ValueError('unfold exceeded its node allowance')
+                            raise ValueError('Part read exceeded its node allowance')
                         remaining[0] -= spent
                         codes = tuple(codes)
                 terms.append(codes)
@@ -136,7 +153,9 @@ class LeafCodeIndex:
             error_msgs.append(prefix + 'incomplete inverted retrieval index')
             return
         self._leaf_index_missing = not all(present) or legacy
-        self._leaf_needs_owner_reindex = self._leaf_index_missing
+        # Postings are a cache, never a second authority for membership.
+        # Rebuild from references/Part after the complete owner has loaded.
+        self._leaf_needs_owner_reindex = True
         for name in names:
             value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
             if value.ndim != 1 or value.dtype != torch.long:
@@ -221,7 +240,7 @@ class LeafCodeIndex:
     @torch.no_grad()
     def _append_leaf_terms(self, row, terms, complete, stream=-1):
         terms = self._checked_leaf_terms(terms)
-        if self._index_unfold is None and not all(complete):
+        if self._index_read is None and not all(complete):
             self._leaf_needs_owner_reindex = True
         for role, codes in enumerate(terms):
             self.leaf_complete[row, role] = bool(complete[role])
@@ -247,7 +266,7 @@ class LeafCodeIndex:
             meaning = self.meaning_of(row)
             terms, complete = (((), (), ()), (False, False, False)) if meaning is None else self._meaning_leaf_terms(meaning, order=int(self.order[row]))
             self._append_leaf_terms(row, terms, complete)
-        self._leaf_needs_owner_reindex = self._index_unfold is None
+        self._leaf_needs_owner_reindex = self._index_read is None
 
     @torch.no_grad()
     def compact_leaf_rows(self, keep):
@@ -499,7 +518,11 @@ def stored_binding(meaning, role):
 
 def configure_model_index(model, store):
     """Bind the existing CS and generate owners before a closing or reader call."""
-    if store is None or getattr(store, '_index_owner_bound', False):
+    if store is None:
+        return
+    if getattr(store, '_index_owner_bound', False):
+        if getattr(store, '_leaf_needs_owner_reindex', False):
+            store.reindex_meanings()
         return
     from Queries import _existing_row, _basis
     registry = getattr(model, 'grammatical_thoughts', None) or getattr(getattr(model, 'symbolSpace', None), 'grammatical_thoughts', None)
@@ -512,47 +535,43 @@ def configure_model_index(model, store):
             return _existing_row(space, reference)
         except ValueError:
             return None
-    def sigma_inverse(code, order):
-        # Use the existing sigma inverse's learned case choice. The stamp
-        # determines how many rungs must be decoded before a terminal read.
-        from Spaces import _concept_alloc_of
-        sigma = _concept_alloc_of(space).layer(0)
-        basis = _basis(space)
-        request = basis.new_zeros(sigma.nOutput, 1)
-        if not 0 <= code < len(request):
-            return ()
-        request[code] = 1.
-        attributed = sigma.attribute_presence(request, start=code, end=code + 1)[:, 0]
-        width = sigma.nOutput
-        signed = attributed[:width] - attributed[width + 1:2 * width + 1]
-        chosen = (signed != 0).nonzero().flatten().tolist()
-        if not chosen or any(space._row_order(row) != order - 1 for row in chosen):
-            return ()
-        return tuple(basis[row] * signed[row] for row in chosen)
-    def unfold(value, limit, *, order=0, work=None, stream=None, meaning=None, role=None):
-        from Generative import primed_type_families
-        heat = space.priming_weights(batch=(
-            model._priming_batch_size() if hasattr(model, '_priming_batch_size') else None))
-        if not torch.is_tensor(heat):
-            return (), 0, False  # Definitions can precede a current priming snapshot.
-        candidate_limit = int(getattr(model, 'reconstruction_basis_limit', 16))
-        types = primed_type_families(space, heat, limit=candidate_limit)
-        if heat.ndim == 2:
-            if stream is None and len(heat) != 1:
+    def read(value, limit, *, order=0, work=None, stream=None, meaning=None, role=None):
+        # A retained reference supplies the derivation. An unreferenced cue
+        # can identify an exact bank point, but it cannot invert a fused value.
+        reference = None if meaning is None else meaning.role_refs[role]
+        if reference is None:
+            basis = _basis(space).detach()
+            if value.shape[-1] > basis.shape[-1] or limit <= 0:
                 return (), 0, False
-            row = 0 if stream is None else stream
-        else:
-            row = 0
-        result = unfold_idea(language, _basis(space), value, limit, work=work,
-                             activation=heat, candidate_limit=candidate_limit,
-                             constituents=types.codes[row:row+1],
-                             constituent_valid=types.valid[row:row+1],
-                             constituent_families=types.families[None],
-                             order=order, stream=stream,
-                             binding=stored_binding(meaning, role),
-                             order_of=space._row_order, sigma_inverse=sigma_inverse)
-        return result['codes'], result['spent'], result['complete']
-    store.configure_leaf_index(code_row=code_row, unfold=unfold if language is not None else None,
+            distances = (basis[:, :value.shape[-1]] - value.to(basis)).abs().amax(-1)
+            matches = (distances <= 1e-5).nonzero().flatten()
+            if len(matches) != 1:
+                return (), 0, False
+            if work is not None and not work.consume('record'):
+                return (), 0, False
+            return (int(matches[0]),), 1, True
+        if reference[0] != 'sym':
+            return (), 0, False
+        pending, seen, codes, spent, complete = [reference[1]], set(), [], 0, True
+        while pending:
+            symbol = pending.pop()
+            if symbol in seen:
+                continue
+            if spent >= limit or (work is not None and not work.consume('record')):
+                complete = False
+                break
+            spent += 1
+            seen.add(symbol)
+            if store.parts.contains(symbol):
+                pending.extend(reversed(store.parts.refs[symbol].tolist()))
+            else:
+                code = code_row(('sym', symbol))
+                if code is None:
+                    complete = False
+                else:
+                    codes.append(code)
+        return tuple(codes), spent, complete and not pending
+    store.configure_leaf_index(code_row=code_row, read=read,
                                order_of=space._row_order, contextual=True)
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, space)
@@ -562,7 +581,7 @@ def configure_model_index(model, store):
     if callbacks is None:
         callbacks = []
         object.__setattr__(book, '_row_remap_observers', callbacks)
-    callbacks.append(weakref.WeakMethod(store.remap_leaf_codes))
+    callbacks.append(RowRemapObserver(store))
     store._index_owner_bound = True
     if getattr(store, "_leaf_needs_owner_reindex", False):
         store.reindex_meanings()

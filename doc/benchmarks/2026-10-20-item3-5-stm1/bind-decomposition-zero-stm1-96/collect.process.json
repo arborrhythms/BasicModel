@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-96/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-96/collect.json"
+  ],
+  "pid": 83129,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 437699808,
+  "elapsed_seconds": 4.019873833982274,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-96/collect.log"
+}

@@ -24,16 +24,16 @@ def test_taxonomy_capture_and_expansion_share_one_meter(monkeypatch):
     cs, (a, b, c) = _world()
     cs.add_whole(a, _ref(b))
     cs.add_whole(b, _ref(c))
-    owner = cs._concept_allocator.store_of(a)
-    original = owner.iter_constituents
+    owner = cs._concept_allocator.parts
+    original = owner.row
     read = []
 
     def tracked(cid):
-        for item in original(cid):
-            read.append(item)
-            yield item
+        item = original(cid)
+        read.append(item)
+        return item
 
-    monkeypatch.setattr(owner, "iter_constituents", tracked)
+    monkeypatch.setattr(owner, "row", tracked)
     meter = budget(2)
     view = capture_taxonomy(
         cs, max_nodes=50, max_records=50, focus=(_ref(a),), work=meter)

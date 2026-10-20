@@ -94,7 +94,6 @@ def test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age():
     for stream, surprise in enumerate((.9, .05)):
         store.append_meaning(meaning, trust=.5, surprise=surprise, stream=stream,
                              document_key=f'document-{stream}')
-    assert store.rel_type[:2].tolist() == [store.REL_OPERATOR] * 2
     assert store.role_mask[:2].all()
     terms = retention_values(store, config())
     torch.testing.assert_close(terms['age'], torch.zeros(2))
@@ -130,9 +129,9 @@ def test_protected_and_live_roots_survive_and_block_unsafe_target():
 
 def linked_store(*, child_is_relation=False):
     store = TernaryTruthStore(4, capacity=4)
-    child = append(store, 0, trust=0.)
-    if child_is_relation:
-        store.rel_type[child] = store.REL_OPERATOR
+    child = (store.append_meaning(ConceptualMeaning(torch.eye(4)[:3],
+        torch.ones(3, dtype=torch.bool)), trust=0., sentence_index=0)
+        if child_is_relation else append(store, 0, trust=0.))
     ref = store.occurrence_of(child)
     roles = torch.tensor([[1., 0., 0., 0.], [0., 1., 0., 0.], [1., 0., 0., 0.]])
     parent = store.append_meaning(ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool),
@@ -209,19 +208,17 @@ def test_pair_unlinking_preserves_observation_and_restores_cleanly():
 
 
 def test_transitive_row_is_expendable_but_its_proof_survives():
-    store = TernaryTruthStore(4, capacity=5)
-    rows = []
-    for i, (left, right) in enumerate(((10, 20), (20, 30), (10, 30))):
-        row = append(store, i, trust=1, evidence=(1, 0))
-        store.rel_type[row] = store.REL_PARTOF
-        store.refs[row] = torch.tensor([left, 777, right])
-        rows.append(int(store.address_keys[row]))
-    append(store, 3, trust=.5)
+    from PartStore import PartStore
+    from Forgetting import part_supports, forget_parts
+    store = PartStore(capacity=5)
+    rows = [store.add(left, right, truth_plus=1)
+            for left, right in ((10, 20), (20, 30), (10, 30))]
+    store.add(40, 50, truth_plus=.5)
     cfg = config(trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
-    assert retention_values(store, cfg)['utility'].tolist() == [1, 1, 0, 1]
-    forget(store, cfg, document_boundary=True)
-    assert store.index_of_row(rows[2]) is None
-    assert all(store.index_of_row(ref) is not None for ref in rows[:2])
+    assert part_supports(store) == {rows[2]: [frozenset(rows[:2])]}
+    forget_parts(store, cfg)
+    assert not store.contains(rows[2])
+    assert all(store.contains(ref) for ref in rows[:2])
 
 
 def test_epoch_trigger_and_disabled_setting():
@@ -259,8 +256,7 @@ def test_boundary_rebuilds_truth_and_preserves_predictor_tensors(monkeypatch):
     torch.testing.assert_close(tensor, before)
 
 
-@pytest.mark.parametrize('independent', [False, True])
-def test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony(independent):
+def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     from test_word_interpretation import _operator
     from ClauseRow import Clause, attach_clause_index
     cs, interpret = _operator()
@@ -268,22 +264,24 @@ def test_taxonomy_retracts_only_edges_owned_by_forgotten_testimony(independent):
     right = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
     store = TernaryTruthStore(8, capacity=4)
     attach_clause_index(SimpleNamespace(), store, cs)
+    with torch.no_grad():
+        cs.similarity_codebook.W[cs._csw_row_of(left)].fill_(.25)
+        cs.similarity_codebook.W[cs._csw_row_of(right)].fill_(.5)
     store._predicate_kind = lambda ref: 'part'
     clause = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(left, left, right))
     row = store.write_clause(clause, trust=0.)
     assert store.write_clause(clause, trust=0.) == row  # dedup keeps its support
-    alloc = cs._concept_allocator
-    parent = alloc.relate_idx['part-kind', right, cs._concept_source_order(left) + 1]
-    assert (parent, left) in alloc.ltm_edges
-    if independent:
-        cs.add_part(parent, ('sym', left))
+    assert store.parts is cs._concept_allocator.parts
+    edge = store.parts.find(left, right)
+    assert row == ('sym', edge)
     for i in range(1, 4):
         store.append_idea(torch.ones(8), trust=1., sentence_index=i)
     forget(store, config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0),
            document_boundary=True)
-    assert (left in cs.taxonomy_children(parent)) == independent
-    assert not alloc.ltm_edges
+    assert store.parts.contains(edge)
+    store.parts.retain([i for i in store.parts.indices().tolist() if i != edge])
+    assert store.parts.find(left, right) is None
 
 
 @pytest.mark.parametrize('training,stateless,deleted', [(True, True, True), (False, False, True), (False, True, False)])
@@ -311,10 +309,13 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     from What import What
     from test_compiled_word_chunk import _tiny_canonical_model
     restore = BaseModel.load_weights
-    settings = dict(forgetHighWater=.5, forgetLowWater=.375,
+    # Eight closings now retain prediction/observation pairs plus conceived
+    # absences. Allow three rows per closing while keeping the original
+    # absolute forgetting thresholds: start at eight, retain six.
+    settings = dict(forgetHighWater=8/24, forgetLowWater=6/24,
                     forgetMinInterval=256, forgetting=True)
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1,
-        word_buckets='16', ltm_capacity=16, architecture_overrides=settings)
+        word_buckets='16', ltm_capacity=24, architecture_overrides=settings)
     assert type(model) is BasicModel
     model._tensor_peer_while_eager = True
     model.stateless = False
@@ -324,7 +325,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     data = model.inputSpace.data
     monkeypatch.setattr(data, 'has_supervised_outputs', False)
     store = model.symbolSpace.ltm_store
-    assert store.capacity == 16
+    assert store.capacity == 24
     counters = ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff')
     def document(name, sentences):
         data.source_addresses = {'validation': [dict(document=name, document_key=name,
@@ -366,7 +367,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     fresh = tmp_path/'fresh'
     fresh.mkdir()
     restored = _tiny_canonical_model(fresh, monkeypatch, batch_size=1,
-        word_buckets='16', ltm_capacity=16, architecture_overrides=settings)
+        word_buckets='16', ltm_capacity=24, architecture_overrides=settings)
     try:
         assert restore(restored, str(checkpoint))
         loaded = restored.symbolSpace.ltm_store
@@ -381,12 +382,13 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
 
 def test_scope_prevents_false_deduction_or_dissonance():
     store = full_store()
-    for row, refs in enumerate(((10, 20), (20, 30), (10, 30))):
-        store.rel_type[row] = store.REL_PARTOF
-        store.refs[row] = torch.tensor([refs[0], 777, refs[1]])
-        store.set_evidence(row, 1., 0.)
-    store._semantic_rows[int(store.address_keys[1])]['scope'] = ('quoted',)
-    assert retention_values(store, config())['utility'][2] == 1
+    from Forgetting import part_supports
+    # A quoted situation has its own symbol; its edge does not give the
+    # unquoted middle argument a second outgoing hop.
+    store.parts.add(10, 20, truth_plus=1)
+    store.parts.add(200, 30, truth_plus=1)
+    conclusion = store.parts.add(10, 30, truth_plus=1)
+    assert conclusion not in part_supports(store.parts)
     store.set_evidence(3, 1., 0.)
     store.set_evidence(4, 0., 1.)
     store.source_trust[3:5] = torch.tensor([1., .5])
@@ -438,18 +440,21 @@ def test_legacy_source_trust_can_load_into_a_larger_inventory():
 
 
 def test_losing_a_proof_raises_pending_conclusions_utility():
-    store = TernaryTruthStore(4, capacity=5)
-    for i, (left, right, trust, pair) in enumerate(((10, 20, .5, (1, 0)),
-            (10, 20, 1., (0, 1)), (20, 30, .5, (1, 0)), (10, 30, .5, (1, 0)))):
-        row = append(store, i, trust=trust, evidence=pair)
-        store.rel_type[row] = store.REL_PARTOF
-        store.refs[row] = torch.tensor([left, 777, right])
-    append(store, 4)
-    proof, conclusion = int(store.address_keys[0]), int(store.address_keys[3])
-    cfg = config(low_water=.6, trust_weight=0, utility_weight=1, luminosity_weight=1, age_weight=0)
-    assert retention_values(store, cfg)['utility'][3] == 0
-    forget(store, cfg, document_boundary=True)
-    assert store.index_of_row(proof) is None and store.index_of_row(conclusion) is not None
+    from Forgetting import part_supports, forget_parts
+    from PartStore import PartStore
+    store = PartStore(capacity=5)
+    proof = store.add(10, 20, truth_plus=1)
+    store.add(20, 30, truth_plus=1)
+    conclusion = store.add(10, 30, truth_plus=1)
+    low = store.add(40, 50, surprise=0.)
+    assert conclusion in part_supports(store)
+    # Conflicting evidence joins the same edge, rather than a second row.
+    store.add(10, 20, truth_minus=1, witness=False)
+    assert conclusion not in part_supports(store)
+    cfg = config(low_water=.6, trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
+    forget_parts(store, cfg)
+    assert store.contains(proof) and store.contains(conclusion)
+    assert not store.contains(low)
 
 
 def test_stateful_infer_runs_the_host_boundary_after_the_request(monkeypatch):

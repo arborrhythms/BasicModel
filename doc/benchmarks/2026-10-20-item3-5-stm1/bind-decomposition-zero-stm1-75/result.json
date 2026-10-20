@@ -1,0 +1,114 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75/worker-000.json"
+      ],
+      "pid": 78264,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2029652680,
+      "elapsed_seconds": 120.24349691695534,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 46.361917375121266,
+          "message": "test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver\n    assert proved, questions\nE   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]\nE   assert []",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 2 (\u0394=8.090s)\r\nbatch = 4 (\u0394=11.497s)\r\nbatch = 6 (\u0394=19.942s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 1], \"question_source\": 3, \"episode\": true, \"work\": 251, \"answer\": \"four\", \"bound_correct\": false, \"committed_binding\": [\"ltm\", \"address-v1\", -6977365727309672298], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": false, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -6977365727309672298], \"refs\": [[\"sym\", 56], [\"sym\", 4010033338316264258], [\"sym\", 43]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 57]], \"known_witnesses\": false, \"witness_texts\": [null], \"bound_words\": []}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 1], \"question_source\": 7, \"episode\": true, \"work\": 251, \"answer\": \"four\", \"bound_correct\": false, \"committed_binding\": [\"ltm\", \"address-v1\", -4534566070423698849], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": false, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -4534566070423698849], \"refs\": [[\"sym\", 71], [\"sym\", 4010033338316264258], [\"sym\", 58]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 72]], \"known_witnesses\": false, \"witness_texts\": [null], \"bound_words\": []}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 69.73961637495086,
+          "message": "test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver\n    assert proved, questions\nE   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]\nE   assert []",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 2 (\u0394=8.167s)\r\nbatch = 4 (\u0394=12.755s)\r\nbatch = 6 (\u0394=10.459s)\r\nbatch = 8 (\u0394=11.293s)\r\nbatch = 10 (\u0394=20.580s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 2], \"question_source\": 5, \"episode\": true, \"work\": 84, \"answer\": \"five\", \"bound_correct\": false, \"committed_binding\": null, \"open\": [[\"referent\", 0]], \"expected_chain_length\": 2, \"inference_count\": 0, \"chain_correct\": false, \"inferences\": [], \"operations\": [\"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 2], \"question_source\": 11, \"episode\": true, \"work\": 84, \"answer\": \"five\", \"bound_correct\": false, \"committed_binding\": null, \"open\": [[\"referent\", 0]], \"expected_chain_length\": 2, \"inference_count\": 0, \"chain_correct\": false, \"inferences\": [], \"operations\": [\"query\", \"conclude\"]}\n\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1100.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75",
+  "elapsed_seconds": 124.7460369169712,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2029652680,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75/collect.json"
+    ],
+    "pid": 78242,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434816248,
+    "elapsed_seconds": 3.6824617499951273,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-zero-stm1-75/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

@@ -17,9 +17,14 @@ from test_cs_sparse_weights import _cs
 
 
 class SentenceFixture:
-    def __init__(self, monkeypatch, *, native_cube=False):
+    def __init__(self, monkeypatch, *, native_cube=True):
         self.native_cube = native_cube
         self.cs = _cs(nS=512, order=5)
+        if native_cube:
+            # These are native concept fixtures; signed event charts are not
+            # valid identity inputs, including newly admitted objectless forms.
+            with torch.no_grad():
+                self.cs.similarity_codebook.W.copy_(self.cs.similarity_codebook.W.sigmoid())
         self.grammar = Language.Grammar()
         self.grammar.load_from_grammar_file('complete.grammar')
         monkeypatch.setattr(Language, 'TheGrammar', self.grammar)
@@ -46,6 +51,8 @@ class SentenceFixture:
                 a[:, None], b[:, None]).reshape_as(a),
             forward_unary_step=lambda a, op, _: operation(self.unary[int(op[0])]).compose(a).reshape_as(a))
         self.words = {}
+        from PartsOfSpeech import PartsOfSpeech, formal_arguments
+        self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
         self.store = TernaryTruthStore(8, capacity=64)
         self.model = SimpleNamespace(languageSpace=self.language, grammatical_thoughts=self.registry)
         attach_clause_index(self.model, self.store, self.cs)
@@ -102,8 +109,9 @@ def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))
     row = f.store.write_clause(clause, trust=.7)
-    assert len(f.store) == 3 and f.store.rel_type[row] == f.store.REL_NONE
-    assert f.store.refs[row, 0] == f.store.row_ids[0]
+    assert len(f.store) == 3 and f.store.ideas().tolist() == [0, 1, 2]
+    assert f.store.refs[row].tolist() == [-1, -1, -1]
+    assert len(f.store.parts) == 10  # four definitions, four operations, two named mints
     # The factored target belongs to the open reading; only the fused point
     # survives. Its numeric operands are the actual compound NP/VP fields.
     assert clause.subject_word_id == f.words['cat'][0]
@@ -111,14 +119,14 @@ def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
     assert not f.store.meaning_of(row).roles[1:].any()
 
 
-def test_04_absolute_clauses_closing_bottom_up_without_relation_rows(monkeypatch):
+def test_04_absolute_clauses_close_bottom_up_with_their_part_edges(monkeypatch):
     f = SentenceFixture(monkeypatch)
     inner = ('lift', 'it', ('verb', 'is', ('surface', 'so', 'beautiful')))
     middle = ('lift', 'she', ('verb', 'said', inner))
     clause = f.clause(('lift', 'he', ('verb', 'said', middle)))
     row = f.store.write_clause(clause, trust=.8)
     assert row == 2 and f.store.ideas().tolist() == [0, 1, 2]
-    assert f.store.relations().numel() == 0
+    assert len(f.store.parts) == 14  # seven lexical definitions and seven operations
     torch.testing.assert_close(f.store.meaning_of(0).roles[0], clause.children[0].children[0].point)
     assert not hasattr(f.store, 'clause_derivation')
 
@@ -128,10 +136,13 @@ def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch
     inner = ('part', 'cats', 'animals')
     clause = f.clause(('lift', 'he', ('verb', 'said', inner)))
     row = f.store.write_clause(clause, trust=.6)
-    assert row == 1 and f.store.rel_type[:2].tolist() == [f.store.REL_PARTOF, f.store.REL_OPERATOR]
-    assert f.store.refs[row, 2] == f.store.row_ids[0]
-    assert not bool(f.store.slots[row, 2].any())
-    assert f.store.trust[:2].tolist() == pytest.approx([0., .6])
+    child = f.store.parts.find(f.noun('cats'), f.noun('animals'))
+    outer = f.store.row(row)
+    verb = int(outer['refs'][1])
+    assert f.store.parts.refs[verb, 1] == child
+    assert not len(f.store)
+    assert f.store.row(('sym', child))['evidence'] == (0., 0.)
+    assert outer['evidence'] == pytest.approx((.6, 0.))
 
 
 def test_12_generic_subject_is_a_relation_with_either_predicate(monkeypatch):
@@ -146,42 +157,53 @@ def test_02_part_uses_object_concepts_and_reassertion_joins_evidence(monkeypatch
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'cats', 'animals'))
     row = f.store.write_clause(clause, trust=.6)
-    assert f.store.refs[row, 0] == f.noun('cats')
-    assert f.store.refs[row, 2] in f.cs.word_concepts('animals')
-    assert f.store.write_clause(clause, trust=.8) == row and len(f.store) == 1
-    assert [ref for _, ref, _ in f.store.consequents_by_row(f.noun('cats'))] == [int(f.store.refs[row, 2])]
+    assert f.store.row(row)['refs'].tolist() == [f.noun('cats'), f.noun('animals')]
+    count = len(f.store.parts)
+    assert f.store.write_clause(clause, trust=.8) == row and len(f.store.parts) == count
+    assert f.store.row(row)['evidence'] == pytest.approx((.8, 0.))
+    assert f.noun('animals') in [ref for _, ref, _ in f.store.consequents_by_row(f.noun('cats'))]
 
 
 @pytest.mark.parametrize('predicate', ['black', ('verb', 'is', 'animal')])
 def test_03_particular_subject_ends_an_idea(monkeypatch, predicate):
     f = SentenceFixture(monkeypatch)
     row = f.store.write_clause(f.clause(('lift', ('lower', 'the', 'cat'), predicate)))
-    assert f.store.ideas().tolist() == [0, row] and not len(f.store.relations())
+    assert f.store.ideas().tolist() == [0, row]
+    assert len(f.store.parts) >= len(f.words) + 2
 
 
 def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('implies', ('part', 'cats', 'animals'), ('part', 'cats', 'breathers')))
     row = f.store.write_clause(clause, trust=.7)
-    assert f.store.rel_type[:3].tolist() == [1, 1, 2]
-    assert row == 2 and f.store.trust[:2].tolist() == [0., 0.]
-    assert not f.store.slots[row, [0, 2]].any()
-    assert tuple(r['row_id'] for r in f.store.relation_operands(row)) == tuple(f.store.row_ids[:2].tolist())
+    left, right = f.store.relation_operands(row)
+    assert left['refs'].tolist() == [f.noun('cats'), f.noun('animals')]
+    assert right['refs'].tolist() == [f.noun('cats'), f.noun('breathers')]
+    assert left['evidence'] == right['evidence'] == (0., 0.)
+    assert f.store.row(row)['readings'] == ('conditional',)
+    assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
+    assert not len(f.store)
 
 
 def test_implication_closes_bare_np_arguments_as_idea_clauses(monkeypatch):
     f = SentenceFixture(monkeypatch)
     row = f.store.write_clause(f.clause(('implies', 'rain', 'wet')))
-    assert row == 2 and f.store.rel_type[:3].tolist() == [0, 0, 2]
+    assert f.store.ideas().tolist() == [0, 1]
+    assert f.store.row(row)['refs'].tolist() == [f.noun('rain'), f.noun('wet')]
 
 
-def test_07_equality_writes_two_independent_part_rows(monkeypatch):
+def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    first = f.store.write_clause(f.clause(('equal', 'morning-star', 'evening-star')), trust=.7, evidence=(.7, 0.))
-    assert len(f.store) == 2
-    assert f.store.refs[0].tolist() == f.store.refs[1, [2, 1, 0]].tolist()
+    clause = f.clause(('equal', 'morning-star', 'evening-star'))
+    count = len(f.store.parts)
+    first = f.store.write_clause(clause, trust=.7, evidence=(.7, 0.))
+    a, b = f.noun('morning-star'), f.noun('evening-star')
+    assert len(f.store.parts) == count + 1 and not len(f.store)
+    assert f.store.row(first)['refs'].tolist() == [a, b]
+    assert 'equality' in f.store.row(first)['readings']
+    assert f.store.parts.find(b, a) is None
     f.store.set_evidence(first, .2, .4)
-    assert f.store.row(1)['evidence'] == pytest.approx((.7, 0.))
+    assert f.store.row(first)['evidence'] == pytest.approx((.2, .4))
 
 
 def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
@@ -198,9 +220,10 @@ def test_09_attribution_cannot_assert_its_child_and_negation_is_content(monkeypa
     inner = ('part', 'cats', 'animals')
     for attitude in ('certain', 'doubtful'):
         f.store.write_clause(f.clause(('lift', 'it', ('verb', attitude, inner))), trust=.8)
-    assert f.store.row(0)['evidence'] == (0., 0.)
+    edge = ('sym', f.store.parts.find(f.noun('cats'), f.noun('animals')))
+    assert f.store.row(edge)['evidence'] == (0., 0.)
     f.store.write_clause(f.clause(('not', inner)), trust=.6, evidence=(0., .6))
-    assert f.store.row(0)['evidence'] == pytest.approx((0., .6))
+    assert f.store.row(edge)['evidence'] == pytest.approx((0., .6))
 
 
 def test_end_clause_survives_a_later_head_projection(monkeypatch):

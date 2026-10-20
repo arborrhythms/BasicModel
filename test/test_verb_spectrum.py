@@ -38,8 +38,8 @@ def _set_flag(value):
 
 def _np_and_verb(seed=0):
     g = torch.Generator().manual_seed(seed)
-    np_ = torch.randn(2, 5, _D, generator=g).tanh() * 0.6      # moderate (atanh-safe)
-    verb = torch.randn(2, 5, _D, generator=g).tanh() * 0.6
+    np_ = .5 + torch.randn(2, 5, _D, generator=g).tanh() * 0.3      # moderate (atanh-safe)
+    verb = .5 + torch.randn(2, 5, _D, generator=g).tanh() * 0.3
     return np_, verb
 
 
@@ -221,7 +221,7 @@ def test_low_precision_exact_rails_have_finite_forward_and_backward(dtype):
     _require_cpu_low_precision(dtype)
     layer = _low_precision_spectrum_layer()
     np_what = torch.tensor(
-        [[-1.0, 1.0, -0.5, 0.5, -0.25, 0.25, 0.0, 0.75]],
+        [[0.0, 1.0, 0.25, 0.75, 0.375, 0.625, 0.5, 0.875]],
         dtype=dtype, requires_grad=True)
     verb_what = torch.zeros_like(np_what, requires_grad=True)
 
@@ -250,8 +250,8 @@ def test_low_precision_roundtrip_is_accurate_to_output_quantization(dtype):
     _require_cpu_low_precision(dtype)
     layer = _low_precision_spectrum_layer()
     np_what = torch.tensor(
-        [[-0.25, -0.125, -0.0625, 0.0625,
-          0.125, 0.25, 0.375, -0.375]], dtype=dtype)
+        [[0.375, 0.4375, 0.46875, 0.53125,
+          0.5625, 0.625, 0.6875, 0.3125]], dtype=dtype)
     verb_what = torch.zeros_like(np_what)
 
     vp_what = layer.apply_verb(np_what, verb_what)

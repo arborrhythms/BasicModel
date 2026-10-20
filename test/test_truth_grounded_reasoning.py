@@ -71,8 +71,10 @@ def _store(rows_ideas=(), rows_partof=()):
     for vec, trust in rows_ideas:
         s.append_idea(vec, trust=trust)
     for np1, np2, trust in rows_partof:
-        s.append_relation(np1, torch.zeros(8), np2,
-                          rel_type=s.REL_PARTOF, trust=trust)
+        from Meaning import ConceptualMeaning
+        s.append_meaning(ConceptualMeaning.from_payload(
+            torch.stack((np1, torch.zeros(8), np2)), depth=3, layout='infix'),
+            kind='fact', trust=trust, sentence_index=len(s))
     return s
 
 
@@ -109,9 +111,13 @@ def _taxonomy(*links):
     from test_cs_symbol_table import _cs
     cs = _cs()
     refs = tuple(("sym", cs.new_concept()) for _ in range(4))
+    from ClauseRow import attach_clause_index
+    store = _store()
+    model = SimpleNamespace(conceptualSpace=cs)
+    attach_clause_index(model, store, cs)
     for left, right in links:
         cs.add_whole(refs[left][1], refs[right])
-    return TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=_store()), refs
+    return TruthGroundedReasoner(model, store=store), refs
 
 
 class TestEvaluate(unittest.TestCase):
@@ -176,9 +182,11 @@ class TestGrammarOps(unittest.TestCase):
 
 
     def test_query_idea_and_relation(self):
-        r = TruthGroundedReasoner(store=_store(
-            rows_ideas=[(IDEA_A, 0.9)],
-            rows_partof=[(SOCRATES, MAN, 0.7)]))
+        from part_fixtures import native_store, part
+        store, _ = native_store(width=8)
+        store.append_idea(IDEA_A, trust=.9)
+        part(store, SOCRATES, MAN, evidence=(.7, 0.))
+        r = TruthGroundedReasoner(store=store)
         hit = r.query(IDEA_A)
         self.assertEqual(hit["kind"], "idea")
         self.assertAlmostEqual(hit["trust"], 0.9, places=5)
@@ -222,7 +230,8 @@ class TestPostureAndTrace(unittest.TestCase):
         r, (a, b, _c, _d) = _taxonomy((0, 1))
         res = r.evaluate(QuerySpec.from_surface("isPart", a, b))
         self.assertIn("1 links", res["trace"])
-        self.assertEqual(res["path"][0].owner, a)
+        self.assertEqual(res["path"][0].owner, ('sym',
+            r.reasoning_store().parts.find(a[1], b[1])))
 
 
 class TestLegacyConsolidation(unittest.TestCase):
@@ -233,9 +242,10 @@ class TestLegacyConsolidation(unittest.TestCase):
     def test_reason_open_mode_unchanged_shape(self):
         # Default (no target) still returns the derived/luminosity_gain shape.
         from Spaces import ConceptualSpace
-        rows = ConceptualSpace._iter_relation_rows(
-            _store(rows_partof=[(SOCRATES, MAN, 0.9)]),
-            TernaryTruthStore.REL_PARTOF)
+        from part_fixtures import native_store, part
+        store, _ = native_store(width=8)
+        part(store, SOCRATES, MAN, evidence=(.9, 0.))
+        rows = ConceptualSpace._iter_relation_rows(store)
         self.assertEqual(len(list(rows)), 1)
 
 

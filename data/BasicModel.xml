@@ -180,7 +180,6 @@
       <expectationPrime>true</expectationPrime>
       <explorationUniformFraction>0.5</explorationUniformFraction>
       <explorationTemperature>1.0</explorationTemperature>
-      <intraLossWeight>0.0</intraLossWeight>
       <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
 
       <autoload>false</autoload>

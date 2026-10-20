@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders",
+    "test/test_part_read.py",
+    "test/test_part_closing.py",
+    "test/test_clause_acceptance.py",
+    "test/test_parts_of_speech.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

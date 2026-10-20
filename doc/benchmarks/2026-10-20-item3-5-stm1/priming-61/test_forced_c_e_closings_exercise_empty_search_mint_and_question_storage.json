@@ -1,0 +1,89 @@
+{
+  "test": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+  "events": 1,
+  "max_energy_error": 0.0,
+  "max_graph_edges": 0,
+  "membership_events": 0,
+  "max_membership_edges": 0,
+  "max_membership_rows": 0,
+  "budget_limited_streams": 0,
+  "projections": [
+    {
+      "shape": [
+        2,
+        4096
+      ],
+      "heat": 2.0,
+      "words": [
+        {
+          "word": 12,
+          "row": 11,
+          "objects": [
+            21,
+            30
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 13,
+          "row": 12,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 14,
+          "row": 13,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 15,
+          "row": 14,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 16,
+          "row": 15,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 17,
+          "row": 16,
+          "objects": [
+            25
+          ],
+          "objectless": false,
+          "pending": false
+        },
+        {
+          "word": 18,
+          "row": 17,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 19,
+          "row": 18,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        },
+        {
+          "word": 20,
+          "row": 19,
+          "objects": [],
+          "objectless": true,
+          "pending": false
+        }
+      ]
+    }
+  ]
+}

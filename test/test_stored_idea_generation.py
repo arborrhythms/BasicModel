@@ -97,7 +97,7 @@ def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
         unfolded.append((value.clone(), kw['order']))
         return (), 0, False
     store.configure_leaf_index(code_row=code_row, order_of=lambda _: 2,
-        unfold=unfold)
+        read=unfold)
     cue = ConceptualMeaning(torch.ones(3, 4), torch.tensor([True, False, False]),
                             role_refs=(reference, None, None))
     result = store.cued_rows(cue)
@@ -386,8 +386,8 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
         _reconstruct_trial=lambda rec: result,
         _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
     owner.inputSpace._reconstruction_sentence_available = torch.ones(1, 1, dtype=torch.bool)
-    lang = [None] * 15
-    lang[9], lang[13], lang[14] = root[:, None], end.flatten(1)[:, None], record.depths
+    lang = [None] * 12
+    lang[6], lang[10], lang[11] = root[:, None], end.flatten(1)[:, None], record.depths
     cost, *_ = BasicModel._sentence_path_cost(owner, ((end,), lang, None), 0, torch.tensor([True]))
     assert cost.tolist() == [.5]
     terms = owner._sentence_cost_registry.breakdown()
@@ -421,8 +421,8 @@ def test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf(available
         _tensor_pushed_ideas=words, _sentence_field=None,
         _reconstruct_trial=lambda rec: (returned, root.new_zeros(1), root.new_zeros(1)),
         _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
-    lang = [None] * 15
-    lang[9], lang[13], lang[14] = root[:, None], record.roots, record.depths
+    lang = [None] * 12
+    lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
     state = ((end,), lang, None)
     erased, *_ = BasicModel._sentence_path_cost(owner, state, 0, torch.tensor([True]))
     returned = words.flip(1)

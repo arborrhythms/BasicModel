@@ -1,0 +1,17 @@
+.......F                                                                 [100%]
+=================================== FAILURES ===================================
+___ test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows ___
+test/test_relation_closing.py:94: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+    assert definitions.numel() > 0
+E   assert 0 > 0
+E    +  where 0 = <built-in method numel of Tensor object at 0x11f3bc280>()
+E    +    where <built-in method numel of Tensor object at 0x11f3bc280> = tensor([], dtype=torch.int64).numel
+=============================== warnings summary ===============================
+test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+1 failed, 7 passed, 1 warning in 2.82s

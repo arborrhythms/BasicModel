@@ -21,7 +21,7 @@ _BIN = _ROOT / "bin"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Layers import Error, IntraSentenceLayer, ShortTermMemory  # noqa: E402
+from Layers import Error, ShortTermMemory  # noqa: E402
 import Language  # noqa: E402
 import Models  # noqa: E402
 import util  # noqa: E402
@@ -46,15 +46,6 @@ def _concept_space(batch, capacity, dim):
     nn.Module.__init__(cs)
     cs.stm = ShortTermMemory(
         batch=batch, capacity=capacity, concept_dim=dim)
-    cs.intraSentenceLayer = IntraSentenceLayer(
-        concept_dim=dim, stm_capacity=capacity, routing_dim=2,
-        working_dim=dim, naive=True)
-    cs.intra_loss_weight = 1.0
-    cs._intra_loss_accum = None
-    cs._intra_errors = Error()
-    cs._intra_loss_weight_accum = None
-    cs._intra_loss_count = 0
-    cs._stm_predicted_idea = None
     cs.symbolSpace = None
     cs.subspace = types.SimpleNamespace(name="test-cs")
     return cs
@@ -71,13 +62,6 @@ def _fake_word_body(self, word, p, gate_b_1, out_slot, active_host=True):
     cs = self.conceptualSpace
     stm = cs.stm
     idea = word[:, 0, :]
-    if self._compiled_word_chunk_replaying:
-        cs._stm_predict_then_perceive_serial_fixed(
-            idea, row_gate=gate_b_1)
-    else:
-        cs._stm_predict_then_perceive_serial(
-            idea, row_gate=gate_b_1)
-
     isp = self.inputSpace
     order = isp._ar_word_concept_orders[:, p]
     concept_row = isp._ar_word_concept_rows[:, p]
@@ -98,13 +82,11 @@ def _fake_word_body(self, word, p, gate_b_1, out_slot, active_host=True):
     return cs.subspace, idea
 
 
-def _harness(words, gates, *, chunk, predictor_state=None):
+def _harness(words, gates, *, chunk):
     batch, width, dim = words.shape
     model = BasicModel.__new__(BasicModel)
     nn.Module.__init__(model)
     cs = _concept_space(batch, capacity=3, dim=dim)
-    if predictor_state is not None:
-        cs.intraSentenceLayer.load_state_dict(predictor_state)
     model.conceptualSpace = cs
 
     part_ids = torch.arange(width).view(1, width, 1).expand(
@@ -141,18 +123,17 @@ def _harness(words, gates, *, chunk, predictor_state=None):
 
 
 def test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients():
-    """K=2 replay is parity-exact for all six STM tensors and L_intra."""
+    """K=2 replay is parity-exact for all six STM tensors and their input gradients."""
     torch.manual_seed(71)
-    words = torch.randn(2, 4, 5)
+    words = torch.rand(2, 4, 5, requires_grad=True)
     gates = torch.tensor([
         [True, True, True, True],
         [True, True, False, False],
     ])
 
     legacy = _harness(words, gates, chunk=False)
-    predictor_state = legacy.conceptualSpace.intraSentenceLayer.state_dict()
-    chunked = _harness(
-        words, gates, chunk=True, predictor_state=predictor_state)
+    other_words = words.detach().clone().requires_grad_()
+    chunked = _harness(other_words, gates, chunk=True)
 
     for p in range(words.shape[1]):
         legacy._per_word_body_step(
@@ -183,29 +164,12 @@ def test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients():
             legacy._per_word_percept_contributions):
         torch.testing.assert_close(got, expected, rtol=0, atol=0)
 
-    legacy_loss = legacy.conceptualSpace.consume_intra_loss()
-    chunk_loss = chunked.conceptualSpace.consume_intra_loss()
-    torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
-    # The trained relative cost must preserve all chunks as well as the raw
-    # fidelity metric retained by this original parity check.
-    legacy_relative = legacy.conceptualSpace._consumed_intra_errors.total()
-    chunk_relative = chunked.conceptualSpace._consumed_intra_errors.total()
-    torch.testing.assert_close(chunk_relative, legacy_relative, rtol=1e-6, atol=1e-7)
-    legacy_gradient = torch.autograd.grad(legacy_relative,
-        tuple(legacy.conceptualSpace.intraSentenceLayer.parameters()),
-        retain_graph=True, allow_unused=True)
-    chunk_gradient = torch.autograd.grad(chunk_relative,
-        tuple(chunked.conceptualSpace.intraSentenceLayer.parameters()),
-        retain_graph=True, allow_unused=True)
-    for got, expected in zip(chunk_gradient, legacy_gradient):
-        torch.testing.assert_close(got, expected, rtol=2e-5, atol=2e-6)
+    legacy_loss = legacy.conceptualSpace.stm._buffer.square().sum()
+    chunk_loss = chunked.conceptualSpace.stm._buffer.square().sum()
+    torch.testing.assert_close(chunk_loss, legacy_loss, rtol=0, atol=0)
     legacy_loss.backward()
     chunk_loss.backward()
-    for legacy_param, chunk_param in zip(
-            legacy.conceptualSpace.intraSentenceLayer.parameters(),
-            chunked.conceptualSpace.intraSentenceLayer.parameters()):
-        torch.testing.assert_close(
-            chunk_param.grad, legacy_param.grad, rtol=2e-5, atol=2e-6)
+    torch.testing.assert_close(other_words.grad, words.grad, rtol=0, atol=0)
 
 
 def test_k2_adapter_maps_local_choice_trace_into_sentence_slots():
@@ -382,9 +346,8 @@ def _tiny_canonical_model(
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
     # BasicModel's production Teacher configuration deliberately disables the
-    # independent intra-sentence predictor. This fixture tests predictor/HOP
+    # retired prediction head. This fixture tests the production HOP
     # parity, so opt that auxiliary back in explicitly.
-    _set("./architecture/training/intraLossWeight", 1.0)
     _set(
         "./architecture/serialWordCapacity",
         max(int(value) for value in str(word_buckets).split(",")))
@@ -448,8 +411,7 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     monkeypatch.setattr(util, "TheCompileBackend", "inductor")
     torch.manual_seed(83)
     legacy = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets="8",
-        stm_capacity=3, chooser_depth=1,
-        architecture_overrides={"symbolicOrder": 1})
+        stm_capacity=3, chooser_depth=1)
     chunked = copy.deepcopy(legacy)
     legacy._chart_compose_per_word = lambda: None
     chunked._chart_compose_per_word = lambda: None
@@ -477,9 +439,6 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     assert (chunked.conceptualSpace.stm._max_depth_host
             == legacy.conceptualSpace.stm._max_depth_host)
 
-    legacy_loss = legacy.conceptualSpace.consume_intra_loss()
-    chunk_loss = chunked.conceptualSpace.consume_intra_loss()
-    torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
     lookup_rows = chunked.inputSpace._ar_concept_lookup_rows
     capacity = int(chunked.serial_word_capacity)
     assert int(lookup_rows.shape[1]) == 2 * capacity
@@ -526,7 +485,9 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
         "CSLang" in key for key in tensor_loop.state_dict())
     assert int(tensor_loop._tensor_peer_trip_count) == 4
     assert capacity_calls == 0
-    assert tensor_loop._tensor_symbolic_iterations == tensor_loop.concept_order_limit
+    # The word-to-symbol handoff occurs once. The allowed concept order
+    # controls the bank's types, not repeated symbolic interpretation.
+    assert tensor_loop._tensor_symbolic_iterations == 1
     assert all(
         value is None or not torch.is_tensor(value)
         or bool(torch.isfinite(value).all())
@@ -550,11 +511,8 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
     assert bool((symbol_activations[~active] == 0).all())
     assert bool(torch.isfinite(symbol_activations).all())
 
-    actual_intra = tensor_loop.conceptualSpace.consume_intra_loss().mean()
-    assert torch.isfinite(actual_intra)
     (actual[0].square().mean()
-     + actual[2].square().mean()
-     + actual_intra).backward()
+     + actual[2].square().mean()).backward()
     for parameter in tensor_loop.parameters():
         grad = parameter.grad
         if grad is None:
@@ -967,6 +925,14 @@ def test_no_grad_fallback_retains_eager_stm_depth_semantics(
     chunked._compiled_word_chunk_active = True
     chunked._compiled_word_chunk_step = chunked._aligned_word_chunk2
 
+    closing = [[], []]
+    end = BasicModel._clause_end_state
+    for model, seen in zip((legacy, chunked), closing):
+        def capture(state, sid, clauses, row_ids, seen=seen):
+            seen.append(tuple(value.detach().clone() for value in state[0]))
+            return end(state, sid, clauses, row_ids)
+        monkeypatch.setattr(model, '_clause_end_state', capture)
+
     with torch.no_grad():
         torch.manual_seed(733)
         legacy_result = legacy.forward(legacy_input)
@@ -984,4 +950,12 @@ def test_no_grad_fallback_retains_eager_stm_depth_semantics(
             getattr(legacy.conceptualSpace.stm, name), rtol=0, atol=0)
     assert (chunked.conceptualSpace.stm._max_depth_host
             == legacy.conceptualSpace.stm._max_depth_host)
-    assert chunked.conceptualSpace.stm._max_depth_host > 0
+    # Compare the live STM before it dissolves; an ended sentence must not
+    # leave a working identity for the next sentence to inherit.
+    assert closing[0] and len(closing[0]) == len(closing[1])
+    assert any(bool(state[1].gt(0).any()) for state in closing[1])
+    for got, expected in zip(closing[1], closing[0]):
+        for value, target in zip(got, expected):
+            torch.testing.assert_close(value, target, rtol=0, atol=0)
+    assert chunked.conceptualSpace.stm._max_depth_host == 0
+    assert not chunked.conceptualSpace.stm._buffer.any()

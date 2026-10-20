@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from ClauseRow import Clause
+from ClauseRow import Clause, Composition
 from Meaning import ConceptualMeaning
 from ReferenceContext import SituationFrame, reference_requests
 from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
@@ -34,6 +34,7 @@ def native(monkeypatch):
     f.model = model
     f.frames = frames
     f.next_sentence = 0
+    f.identities = {}
     f.atoms = torch.eye(8)
     f.resolver = f.cs.components.reference_close
     return f
@@ -50,16 +51,29 @@ def keep(f, clause, *, training=False):
     f.resolver.commit(plan, row, written, document='bind-corpus', position=sentence,
                       training=training)
     plan['written'] = written
-    f.frames.append(SituationFrame.from_row(f.store.row(row)))
+    f.frames.append(replace(SituationFrame.from_row(f.store.row(row)),
+        symbol_ids=written.get(('symbols', id(kept)), ()),
+        activations=written.get(('activations', id(kept)), ())))
+    for item in plan['items']:
+        target = written[id(item['written_node'])]
+        f.identities[target] = item['reference']
     return row, plan
 
 
 def occurrence(f, content, predicate, *, mode='mint', role=0, training=False):
     request = dict(mode=mode, role=role, leaves=(0, 1), cue=f.atoms[7],
                    predicate=predicate, content=content)
-    clause = Clause(ConceptualMeaning.from_description(content), point=content, order=1,
-                    reference_request=request)
-    return keep(f, clause, training=training)
+    term = Composition(content, order=1)
+    constituent = Clause(ConceptualMeaning.from_description(content), point=content, order=1,
+                         reference_request=request, composition=term)
+    verb = Composition(predicate, order=0)
+    point = torch.maximum(content, predicate)
+    tree = Composition(point, (term, verb) if role == 0 else (verb, term),
+                       operation='lift' if role == 0 else 'verb', order=1)
+    clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
+                    children=(constituent,), composition=tree)
+    row, plan = keep(f, clause, training=training)
+    return plan['written'][id(plan['items'][0]['written_node'])], plan
 
 
 def site(f, content, *, role=0, predicate=None, leaves=(0, 1), cue=None, occurrence=None):
@@ -107,7 +121,7 @@ def test_g1_definite_generator_referent_with_distractor(monkeypatch, kind, other
     f = native(monkeypatch)
     target, _ = occurrence(f, f.atoms[kind], f.atoms[4])
     occurrence(f, f.atoms[other], f.atoms[5])
-    expected = int(f.store.refs[target, 0])
+    expected = f.identities[target]
     # The same unary definite rule emits the close request. An unresolved
     # instance becomes the identical bind site in a thought episode.
     program = f.program(('lift', ('definite_unary', KINDS[kind]), VERBS[0]))
@@ -136,7 +150,7 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     f = native(monkeypatch)
     target, _ = occurrence(f, f.atoms[kind], f.atoms[4])
     occurrence(f, f.atoms[other], f.atoms[5])
-    expected = int(f.store.refs[target, 0])
+    expected = f.identities[target]
     marker = f'm{kind}{other}'
     word = f.cs.interpret.lookup_word([100+kind*4+other], (), form=marker)
     assert f.cs.interpret.forward(word) == word and f.cs.interpret.no_object(word)
@@ -185,7 +199,7 @@ def test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open(monkeypatc
         target, _ = occurrence(f, f.atoms[kind], f.atoms[4], role=2,
                               mode='mint' if witness == 0 else 'bind', training=True)
     assert 2 in f.resolver.expected_roles(f.atoms[4])
-    expected = int(f.store.refs[target, 0]) if accessible else None
+    expected = f.identities[target] if accessible else None
     program = f.program(('lift', KINDS[(kind+1) % len(KINDS)], VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[(kind+1) % 4], f.atoms[4])),
                       leaf_orders=torch.zeros(2, dtype=torch.long))
@@ -228,8 +242,9 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
     monkeypatch.setattr(f.model, '_choose_selected_thought_action', choose)
     result = run(f.model, meaning, work_budget=128)
     assert len(selected) == 1
-    assert f.store.refs[missing, 0] == f.store.refs[target, 0]
-    assert not open_slots(f.store.meaning_of(missing))
+    assert result.meaning.role_refs[0] == ('sym', f.identities[target])
+    assert not open_slots(result.meaning)
+    assert open_slots(f.store.meaning_of(missing)) == (('referent', 0),)
     torch.testing.assert_close(f.store.slots[missing], before, rtol=0, atol=0)
     assert not [a for a in candidates(f.registry, meaning, result.meaning, result.meaning,
                                     result.records) if a.semantic_id == 'bind']
@@ -241,21 +256,22 @@ def test_participant_cache_rebuilds_from_retained_identity_rows(monkeypatch):
         occurrence(f, f.atoms[0], f.atoms[4], role=2)
     assert f.resolver.expected_roles(f.atoms[4]) == (2,)
     saved = f.resolver._participants()
-    f.resolver._participant_cache = None
+    f.store._participant_cache = None
     assert f.resolver._participants() == saved
-    for row in range(len(f.store)):
-        f.store.refs[row, 0] = -1
+    f.store.parts.retain([])
     assert f.resolver.expected_roles(f.atoms[4]) == ()
 
 
 @pytest.mark.parametrize('has_antecedent', (False, True))
-def test_bind_rejects_self_and_containing_occurrences_before_selection(monkeypatch, has_antecedent):
+def test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences(monkeypatch, has_antecedent):
     f = native(monkeypatch)
     missing, _ = occurrence(f, f.atoms[0], f.atoms[4], mode='bind')
     target = f.store.occurrence_of(missing)
     before = f.store.slots[missing].clone()
-    # These unminted candidates have perfect content coverage, but each
-    # would make the kept NP part of itself through typed role edges.
+    # Self-reference is legal. Every candidate has a finite content point;
+    # reading an identity must not recursively expand its own reference.
+    # Both the open NP and its containing sentence are retained concepts.
+    expected = {target, f.store.occurrence_of(f.store.location(f.frames[-1].row_id))}
     child = target
     for position in range(2):
         meaning = replace(ConceptualMeaning.from_description(f.atoms[0]),
@@ -263,26 +279,24 @@ def test_bind_rejects_self_and_containing_occurrences_before_selection(monkeypat
         row = f.store.append_meaning(meaning, order=1, document_key='ancestors',
                                     sentence_index=position)
         child = f.store.occurrence_of(row)
+        expected.add(child)
         f.frames.append(SituationFrame.from_row(f.store.row(row)))
-    expected = None
     if has_antecedent:
         row = f.store.append_meaning(ConceptualMeaning.from_description(f.atoms[0]*.5),
                                     order=1, document_key='independent')
-        expected = f.store.occurrence_of(row)
+        expected.add(f.store.occurrence_of(row))
         f.frames.append(SituationFrame.from_row(f.store.row(row)))
     query = f.store.meaning_of(missing)
     query = replace(query,bindings=dict(bindings(query),_query_occurrence=target))
     result = execute(f,query)
-    assert result.evidence['binding_candidates'] == (() if expected is None else (expected,))
-    if expected is None:
-        assert open_slots(result.value) == (('referent',0),)
-        assert (result.support_true,result.support_false) == (0.,0.)
-    else:
-        assert result.value.role_refs[0] == expected
-        f.resolver.commit_bindings(SimpleNamespace(
-            records=(SimpleNamespace(kind='thought',result=result),)))
-        assert f.store.meaning_of(missing).role_refs[0] == expected
-        assert not open_slots(f.store.meaning_of(missing))
+    assert set(result.evidence['binding_candidates']) == expected
+    assert result.value.role_refs[0] in expected
+    # The selected, potentially cyclic identity is a working interpretation.
+    # It never changes the retained occurrence, even after thought completes.
+    assert f.store.meaning_of(missing).role_refs[0] is None
+    assert open_slots(f.store.meaning_of(missing)) == (('referent', 0),)
+    view = f.store.read_structure(target, max_nodes=4, max_depth=4, max_records=len(f.store))
+    assert len(view['rows']) <= 3
     torch.testing.assert_close(f.store.slots[missing],before,rtol=0,atol=0)
 
 
@@ -435,6 +449,7 @@ def test_objectless_predicate_keeps_its_identity_in_the_ended_compound(monkeypat
     row = f.store.write_clause(clause)
     # The relative parent ends the complete subject and its VP. A later
     # decomposition must be able to read the shared predicate's identity.
-    subject = f.store.index_of_row(int(f.store.refs[row, 0]))
-    vp = f.store.index_of_row(int(f.store.refs[subject, 1]))
-    assert int(f.store.refs[vp, 0]) == word
+    subject = int(f.store.row(row)['refs'][0])
+    vp = int(f.store.parts.refs[subject, 1])
+    head = next(rule.head_role for rule in f.binary if rule.method_name == 'verb')
+    assert int(f.store.parts.refs[vp, head - 1]) == word

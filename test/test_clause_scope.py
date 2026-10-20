@@ -62,22 +62,23 @@ def test_clause_scope_is_fullgraph_and_keeps_other_batch_rows():
         torch.testing.assert_close(left, right, rtol=0, atol=0)
 
 
-def test_committed_stm_uses_one_idea_slot_or_three_relative_slots():
+def test_committed_close_dissolves_stm_and_keeps_only_the_output_field():
     from Models import BasicModel
     from test_clause_storage import idea_clause, part_clause
     buffer = torch.randn(2, 8, 4)
     stm = (buffer, torch.ones(2, dtype=torch.long),
            torch.zeros(2, 8, dtype=torch.long), torch.zeros(2, 8, dtype=torch.long),
            torch.full((2, 8), -1, dtype=torch.long), torch.ones(2, 8))
-    lang = [torch.zeros(2)] * 22
-    lang[9] = torch.zeros(2, 1, 4)
-    lang[13] = torch.zeros(2, 1, 12)
-    lang[14] = torch.ones(2, 1, dtype=torch.long)
-    lang[20] = torch.zeros(2, 8, 2, dtype=torch.long)
+    lang = [torch.zeros(2)] * 19
+    lang[6] = torch.zeros(2, 1, 4)
+    lang[10] = torch.zeros(2, 1, 12)
+    lang[11] = torch.ones(2, 1, dtype=torch.long)
+    lang[17] = torch.zeros(2, 8, 2, dtype=torch.long)
     idea, relation = idea_clause(), part_clause()
     state = BasicModel._clause_end_state((stm, tuple(lang), ()), 0, (idea, relation), (10, 11))
-    assert state[0][1].tolist() == [1, 3]
-    torch.testing.assert_close(state[0][0][0, 0], idea.point)
-    torch.testing.assert_close(state[0][0][1, :3], relation.meaning.roles[[2, 0, 1]])
-    assert not state[0][0][0, 1:].any()
-    assert state[1][14].tolist() == [[1], [3]]
+    assert state[0][1].tolist() == [0, 0]
+    assert not state[0][0].any() and not state[0][5].any()
+    assert state[0][4].eq(-1).all()
+    torch.testing.assert_close(state[1][10][0, 0, :4], idea.point)
+    torch.testing.assert_close(state[1][10][1, 0].reshape(3,4), relation.meaning.roles[[2, 0, 1]])
+    assert state[1][11].tolist() == [[1], [3]]

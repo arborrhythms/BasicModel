@@ -10,6 +10,8 @@ import unittest
 import warnings
 
 import torch
+from Meaning import ConceptualMeaning
+from part_fixtures import part
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -137,12 +139,12 @@ class TestProvisioning(unittest.TestCase):
         # This numerical fixture's grammar composes absolute scenes. XML
         # labels cannot turn its selected scenes into relation assertions.
         asserted = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
-        definitions = store.relations(T.REL_DEF).tolist()
+        definitions = store.relations('definition').tolist()
         self.assertEqual(len(asserted), 3)
         self.assertFalse(definitions)  # No supplied object definitions.
-        self.assertEqual(len(store), len(asserted) + len(definitions))
+        self.assertEqual(len(store), len(asserted))
         self.assertEqual(store.ideas().tolist(), asserted)
-        self.assertEqual(store.relations().tolist(), definitions)
+        self.assertTrue((store.parts.refs[store.relations()] > 0).all())
 
     @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_trust_and_store_order(self):
@@ -209,9 +211,8 @@ class TestObserveWrites(unittest.TestCase):
             tet = tetralemmas[b] if tetralemmas is not None else None
             trust = float(tet) if tet is not None else 0.0
             if d >= 3:
-                store.append_relation(payload[d - 2], payload[d - 1],
-                                      payload[0], rel_type=T.REL_OPERATOR,
-                                      trust=trust)
+                store.append_meaning(ConceptualMeaning.from_payload(
+                    payload, depth=d, layout='stm'), kind='observation', trust=trust)
             else:
                 store.append_idea(payload[0], trust=trust)
         return store
@@ -222,13 +223,13 @@ class TestObserveWrites(unittest.TestCase):
         m.symbolSpace.ltm_store.reset()
         D = m.symbolSpace.ltm_store.nDim
         p = torch.zeros(1, D)
-        p[0, 0] = 3.0
+        p[0, 0] = .3
         store = self._drive_observe(m, [1], [p], [0.5])
         self.assertEqual(len(store), 1)
         r = store.row(0)
-        self.assertEqual(r["rel_type"], T.REL_NONE)
+        self.assertEqual(r['meaning'].role_mask.tolist(), [True, False, False])
         self.assertAlmostEqual(r["trust"], 0.5, places=5)
-        self.assertAlmostEqual(float(r["np1"][0]), 3.0, places=5)
+        self.assertAlmostEqual(float(r["np1"][0]), .3, places=5)
 
     def test_relative_depth3_slot_mapping(self):
         from Layers import TernaryTruthStore as T
@@ -243,7 +244,7 @@ class TestObserveWrites(unittest.TestCase):
         store = self._drive_observe(m, [3], [p], [0.9])
         self.assertEqual(len(store), 1)
         r = store.row(0)
-        self.assertEqual(r["rel_type"], T.REL_OPERATOR)
+        self.assertTrue(r['meaning'].role_mask.all())
         self.assertAlmostEqual(r["trust"], 0.9, places=5)
         # NP1=idea1, VP=predicate, NP2=idea2.
         self.assertAlmostEqual(float(r["np1"][1]), 1.0, places=5)
@@ -278,13 +279,13 @@ class TestReasonOverLtm(unittest.TestCase):
         A = torch.zeros(D); A[0] = 1.0
         P = torch.zeros(D); P[2] = 1.0
         B = torch.zeros(D); B[1] = 1.0
-        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8, evidence=(.8, 0.))
+        idx = part(store, A, B, evidence=(.8, 0.), types=('situation',))
         # No explicit store= -> the consolidation path picks the ltm_store.
         q = torch.zeros(cw); q[0] = 1.0
         res = cs.reason(q, 0.5, parthood_threshold=0.5)
         self.assertEqual(len(res["derived"]), 1)
         d = res["derived"][0]
-        self.assertEqual(d["source"], idx)
+        self.assertEqual(d["source"], idx[1])
         self.assertAlmostEqual(d["trust"], 0.4, places=5)   # t1*t2 = 0.8*0.5
         self.assertAlmostEqual(res["luminosity_gain"], 0.4, places=5)
 
@@ -315,8 +316,8 @@ class TestReasonOverLtm(unittest.TestCase):
         A = torch.zeros(D); A[0] = 1.0
         P = torch.zeros(D); P[2] = 1.0
         B = torch.zeros(D); B[1] = 1.0
-        idx = store.append_relation(A, P, B, rel_type=T.REL_IMPLIES, trust=0.8, evidence=(.8, 0.))
-        np1_before = store.row(idx)["np1"].clone()
+        idx = part(store, A, B, evidence=(.8, 0.), types=('situation',))
+        np1_before = store.meaning_of(idx).roles[0].clone()
         ante = torch.zeros(cw); ante[0] = 1.0
         cons = torch.zeros(cw); cons[1] = 1.0
         new = cs.verify_relation(idx, [(ante, cons)], support_weight=0.5)
@@ -325,7 +326,7 @@ class TestReasonOverLtm(unittest.TestCase):
         self.assertAlmostEqual(store.row(idx)["trust"], 0.8, places=5)
         self.assertAlmostEqual(store.row(idx)["evidence"][0], 0.8, places=5)
         # The stored vector is UNCHANGED (no magnitude re-bake -- unscaled).
-        self.assertTrue(torch.allclose(store.row(idx)["np1"], np1_before,
+        self.assertTrue(torch.allclose(store.meaning_of(idx).roles[0], np1_before,
                                        atol=1e-6))
 
     def test_verify_absolute_row_is_noop(self):
@@ -337,7 +338,7 @@ class TestReasonOverLtm(unittest.TestCase):
         idea = torch.zeros(D); idea[0] = 1.0
         idx = store.append_idea(idea, trust=0.6)
         out = cs.verify_relation(idx, [(idea, idea)], support_weight=0.5)
-        self.assertAlmostEqual(out, 0.6, places=5)
+        self.assertIsNone(out)
         self.assertAlmostEqual(store.row(idx)["trust"], 0.6, places=5)
 
 
@@ -350,8 +351,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         # Provisioning is lazy now, so seed a couple of rows directly to have
         # something the Reset cascade could (wrongly) clear.
         store.append_idea(torch.ones(store.nDim), trust=0.5)
-        store.append_relation(torch.ones(store.nDim), torch.ones(store.nDim),
-                              torch.ones(store.nDim), trust=0.3)
+        edge = part(store, torch.ones(store.nDim), torch.ones(store.nDim), evidence=(.3, 0.))
         n0 = len(store)
         self.assertGreater(n0, 0)
         m.symbolSpace.Reset(hard=True)
@@ -365,11 +365,13 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         if m.symbolSpace.expectation is not None:
             m.symbolSpace.expectation.reset()
             self.assertEqual(len(store), n0, "discourse.reset must not clear")
+        self.assertTrue(store.parts.contains(edge[1]))
+        self.assertAlmostEqual(float(store.parts.truth_plus[edge[1]]), .3, places=5)
 
     def test_state_dict_keys_present(self):
         m = _make_model(_ON_CONFIG)
         sd = m.state_dict()
-        for suffix in ("slots", "rel_type", "stream", "c_plus", "c_minus", "count"):
+        for suffix in ("slots", "role_mask", "stream", "c_plus", "c_minus", "count"):
             self.assertIn(
                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,
                 f"ltm_store.{suffix} must ride the state_dict")
@@ -382,17 +384,19 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         D = store.nDim
         A = torch.zeros(D); A[0] = 1.0
         store.append_idea(A, trust=0.3)
-        store.append_relation(A, A, A, rel_type=T.REL_IMPLIES, trust=-0.4)
+        edge = part(store, A, A, evidence=(0., .4), types=('situation',))
         sd = m.state_dict()
+        structural = m._collect_structural_extras()
         # Build a fresh model with the same config and load.
         m2 = _make_model(_ON_CONFIG)
         m2.load_state_dict(sd, strict=False)
+        m2._restore_structural_extras(structural)
         s2 = m2.symbolSpace.ltm_store
-        self.assertEqual(len(s2), 2)
-        self.assertEqual(s2.row(0)["rel_type"], T.REL_NONE)
+        self.assertEqual(len(s2), 1)
+        self.assertEqual(s2.row(0)['meaning'].role_mask.tolist(), [True, False, False])
         self.assertAlmostEqual(s2.row(0)["trust"], 0.3, places=5)
-        self.assertEqual(s2.row(1)["rel_type"], T.REL_IMPLIES)
-        self.assertAlmostEqual(s2.row(1)["trust"], -0.4, places=5)
+        self.assertIn('conditional', s2.row(edge)['readings'])
+        self.assertAlmostEqual(s2.row(edge)["trust"], -0.4, places=5)
 
 
 # -- Change 1 + Change 2 (FU3): discourse + consolidation, store-backed AR --
@@ -467,7 +471,9 @@ class TestStoreBackedChain(unittest.TestCase):
         np1 = torch.zeros(D); np1[0] = 1.0       # idea1
         vp = torch.zeros(D); vp[1] = 1.0         # predicate
         np2 = torch.zeros(D); np2[2] = 1.0       # idea2
-        store.append_relation(np1, vp, np2, rel_type=T.REL_IMPLIES, trust=0.7, stream=0)
+        store.append_meaning(ConceptualMeaning.from_payload(
+            torch.stack((np1, vp, np2)), depth=3, layout='infix'),
+            kind='observation', trust=.7, stream=0)
         chain = disc.get_stm_chain()
         self.assertEqual(len(chain), 1)
         d, p, t = chain[0]
@@ -594,9 +600,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
         np1 = torch.zeros(D); np1[0] = 1.0
         vp = torch.zeros(D); vp[1] = 1.0
         np2 = torch.zeros(D); np2[2] = 1.0
-        i = store.append_relation(np1, vp, np2, rel_type=T.REL_IMPLIES,
-                                  trust=0.6)
-        store.set_origin(i, T.ORIGIN_USER, text="rel")
+        part(store, np1, np2, evidence=(.6, 0.), types=('situation',))
         tl.sync_from_ltm()
         self.assertEqual(int(tl.count), 0)
         self.assertFalse(bool(tl.truths.any()))
@@ -681,7 +685,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view covers provisioned + user rows; sources carry the texts
         # clarifications reference.
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.rel_type[i]) == store.REL_NONE for i in range(len(store))))
+            int(store.role_mask[i].sum()) == 1 for i in range(len(store))))
         self.assertIn("hello world", tl._sources)
         self.assertIn("loving there", tl._sources)
         self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
@@ -715,7 +719,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov,
             "provisioned rows persist across user resubmits")
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.rel_type[i]) == store.REL_NONE for i in range(len(store))))
+            int(store.role_mask[i].sum()) == 1 for i in range(len(store))))
         self.assertIn("hello there", tl._sources)
         self.assertNotIn("hello world", tl._sources)
 
@@ -765,7 +769,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view keeps reading only the user TruthSet surface.
         tl.sync_from_ltm()
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.rel_type[i]) == store.REL_NONE for i in user + prov))
+            int(store.role_mask[i].sum()) == 1 for i in user + prov))
 
 
 # -- load-time LTM revive, gated by <stateless> ----------------------------

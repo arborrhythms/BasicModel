@@ -37,13 +37,16 @@ def exclude_replaced_occurrences(store, identities, valid, document, position):
 class SituationAddress:
     """STM retains an occurrence address; its current region lives in LTM."""
     occurrence: tuple
+    symbols: tuple = ()
+    activations: tuple = ()
 
     def detached(self):
         return self
 
     def read(self, store):
-        index = None if store is None else store._index_occurrences.get(self.occurrence)
-        return None if index is None else SituationFrame.from_row(store.row(index))
+        index = None if store is None else store.location(self.occurrence)
+        return None if index is None else replace(SituationFrame.from_row(store.row(index)),
+            symbol_ids=self.symbols, activations=self.activations)
 
 
 @dataclass(frozen=True)
@@ -56,6 +59,8 @@ class SituationFrame:
     order: int = 1
     where: object = None
     when: object = None
+    symbol_ids: tuple = ()
+    activations: tuple = ()
 
     def __iter__(self):
         # The existing predictor reads its three-role context unchanged.
@@ -74,7 +79,7 @@ class SituationFrame:
             return None
         return cls(int(meaning.role_mask.sum()), meaning.roles.detach().clone(),
                    meaning.role_mask, row['row_id'],
-                   row['np1'].detach().clone() if row['rel_type'] == 0 else None,
+                   meaning.roles[0].detach().clone() if meaning.sentence_kind == 'idea' else None,
                    order=int(row.get('order', -1)),
                    where=row.get('where'), when=row.get('when'))
 
@@ -191,6 +196,8 @@ class ReferenceBank(NamedTuple):
     associations: object = None
     orders: object = None
     close_references: bool = False
+    lexical_capacity: int = 0
+    literal_ids: object = None
 
     def detached(self):
         """Freeze the rebuilt situation at a compose fork, retaining its API."""
@@ -338,6 +345,26 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     def propose(value, ids, scope, pos, stamp, rule, role, valid):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
         if order is None:
+            if interpreter is not None and bank.associations is not None and bank.associations.numel():
+                from ClauseScope import ClauseScope
+                # At a non-reference argument, disambiguate only the word's
+                # already-admitted definitions in this bounded situation.
+                # Do not manufacture the full bind/mint menu at every role.
+                associated = ((ids[..., None, None] == bank.associations[:, 0]) &
+                    (bank.ids[:, None, :, None] == bank.associations[:, 1])).any(-1)
+                eligible = (scope.bitwise_and(ClauseScope.LOCAL | ClauseScope.DETERMINED) == 0)
+                available = associated & bank.valid[:, None] & (eligible & valid)[..., None]
+                count = min(bank.ids.shape[1], bank.lexical_capacity or bank.ids.shape[1])
+                priority = available * torch.arange(bank.ids.shape[1], 0, -1, device=ids.device)
+                selected = priority.topk(count, dim=-1).indices
+                choices = []
+                for c in range(count):
+                    at = selected[..., c]
+                    choices.append((bank.values.gather(1, at[..., None].expand(*at.shape, D)),
+                        bank.ids.gather(1, at), bank.relations.gather(1, at),
+                        available.gather(-1, at[..., None]).squeeze(-1)))
+                choices.append((value, ids, scope.bitwise_and(1) != 0, valid & ~available.any(-1)))
+                return choices
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         source_ids = ids
         typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
@@ -354,6 +381,14 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             # Compose selects the operation, not an individual. Its operands
             # retain their content until the completed predicate is visible.
             deferred = order == 1
+            if mode is None and bank.associations is not None and bank.associations.numel():
+                # An ambiguous WORD has no object at the requested order.
+                # Its already-retained definitions are ordinary candidates,
+                # even when their conceptual order differs from this use.
+                # Deferring this case would carry the WORD itself through
+                # the implicit reference, with no later binding request.
+                defined = (source_ids[..., None] == bank.associations[:, 0]).any(-1)
+                deferred = deferred & ~defined
             refs = (torch.full_like(ids, -1 if mode == 'mint' else 0)
                     if mode in ('mint', 'bind', 'pronoun') else ids)
             closing = (value, refs, scope.bitwise_and(1) != 0, valid & deferred)
@@ -363,6 +398,11 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         # The operation offers references at the operand's actual order.
         # Only dictionary admission is specific to order-one individuals.
         binding = order >= 0
+        if mode is None and bank.literal_ids is not None:
+            # An admitted objectless marker is a literal symbol. An
+            # implicit participant read cannot silently replace it with
+            # an object. Explicit mint/bind operations keep their contracts.
+            binding = binding & ~torch.isin(source_ids, bank.literal_ids)
         original_valid = valid
         def alternatives(options):
             # The first variant carries non-binding typed operands. Keep
@@ -395,7 +435,11 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         P, C = value.shape[1], bank.ids.shape[1]
         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
         live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
-        earlier = (live_positions[:, None] < pos[:, :, None]) & (live_orders[:, None] == order[:, :, None])
+        # A referent is an individual use, not a conceptual-order stamp.
+        # LTM1 and live constituents retain their actual, unrestricted order.
+        member = order == 1
+        earlier = (live_positions[:, None] < pos[:, :, None]) & (
+            member[:, :, None] | (live_orders[:, None] == order[:, :, None]))
         earlier = earlier & ~live_local[:, None]
         if inventory is not None:
             earlier = earlier & torch.isin(live_ids, inventory)[:, None]
@@ -404,7 +448,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         own = torch.isin(ids, own_inventory) & (scope.bitwise_and(ClauseScope.LOCAL) == 0)
         # A lowering cannot reuse the higher-order source as its own
         # target. A changed association was selected at the requested order.
-        own = own & ((stamp == order) | (ids != source_ids))
+        own = own & (member | (stamp == order) | (ids != source_ids))
         # Only a native column can be its own candidate. A word's dictionary
         # type is never silently promoted to an individual.
         candidate_ids = torch.cat((ids[:, :, None], bank.ids.flip(1)[:, None].expand(B, P, C),
@@ -417,7 +461,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         held = bank.valid.flip(1)[:, None].expand(B, P, C)
         if bank.orders is not None:
             held_orders = bank.orders.flip(1)[:, None]
-            held = held & ((held_orders < 0) | (held_orders == order[:, :, None]))
+            held = held & (member[:, :, None] | (held_orders < 0) | (held_orders == order[:, :, None]))
         available = torch.cat((own[:, :, None], held, earlier), -1)
         size = candidate_ids.shape[-1]
         preceding = torch.arange(size, device=ids.device)[None] < torch.arange(size, device=ids.device)[:, None]
@@ -453,12 +497,19 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                                 valid & ~available.any(-1)))
         return alternatives(options)
 
-    def choice_tag(refs, rule, role, stamp):
+    def choice_tag(refs, rule, role, stamp, source):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
-        if order is None or mode in ('kind', 'generic'):
+        if order is None:
+            if interpreter is not None and bank.associations is not None and bank.associations.numel():
+                defined = (source[..., None] == bank.associations[:, 0]).any(-1)
+                return torch.where(defined, refs, -1)
+            return torch.full_like(refs, -1)
+        if mode in ('kind', 'generic'):
             return torch.full_like(refs, -1)
         # -2 is a comparison-only tag for mint, never a native reference.
         binding = order >= 0
+        if mode is None and bank.literal_ids is not None:
+            binding = binding & ~torch.isin(source, bank.literal_ids)
         if bank.close_references and mode not in ('mint', 'bind', 'pronoun'):
             binding = binding & (order != 1)
         return torch.where(binding, torch.where(refs == -1, -2, refs), -1)
@@ -481,8 +532,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 lefts.append(left[0])
                 rights.append(right[0])
                 brefs.append(torch.stack((left[1], right[1]), -1))
-                bchoices.append(torch.stack((choice_tag(left[1], rule, 'argin1', orders[:, :-1]),
-                                             choice_tag(right[1], rule, 'argin2', orders[:, 1:])), -1))
+                bchoices.append(torch.stack((choice_tag(left[1], rule, 'argin1', orders[:, :-1], identities[:, :-1]),
+                                             choice_tag(right[1], rule, 'argin2', orders[:, 1:], identities[:, 1:])), -1))
                 bfound.append(torch.stack((found(left), found(right)), -1))
                 brels.append(torch.stack((left[2], right[2]), -1))
                 valid = left[3] & right[3]
@@ -505,7 +556,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             unary_ops.append(operation)
             values.append(operand[0])
             urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
-            uchoices.append(torch.stack((choice_tag(operand[1], rule, 'argin1', orders),
+            uchoices.append(torch.stack((choice_tag(operand[1], rule, 'argin1', orders, identities),
                                          torch.full_like(operand[1], -1)), -1))
             ufound.append(torch.stack((found(operand), torch.zeros_like(operand[3])), -1))
             urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))

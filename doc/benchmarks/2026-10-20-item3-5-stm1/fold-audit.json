@@ -1,0 +1,57 @@
+{
+  "training_steps": 0,
+  "seed_selection": "none",
+  "bank_capacity": 4096,
+  "native_identities": [
+    12,
+    13
+  ],
+  "result": "existing_fold_not_injective_at_any_width",
+  "explanation": "Coordinatewise intersection commutes and is idempotent. Bank cleanup cannot choose uniquely between inputs with identical outputs.",
+  "questions": [
+    {
+      "width": 232,
+      "native_width": 232,
+      "widening": "repeated coordinates for a diagnostic, not an STM1 implementation",
+      "ordered_inputs_distinct": true,
+      "swap_outputs_equal": true,
+      "duplicate_inputs_distinct": true,
+      "duplicate_outputs_equal": true,
+      "swap_max_error": 0.0,
+      "duplicate_max_error": 0.0
+    },
+    {
+      "width": 464,
+      "native_width": 232,
+      "widening": "repeated coordinates for a diagnostic, not an STM1 implementation",
+      "ordered_inputs_distinct": true,
+      "swap_outputs_equal": true,
+      "duplicate_inputs_distinct": true,
+      "duplicate_outputs_equal": true,
+      "swap_max_error": 0.0,
+      "duplicate_max_error": 0.0
+    },
+    {
+      "width": 1856,
+      "native_width": 232,
+      "widening": "repeated coordinates for a diagnostic, not an STM1 implementation",
+      "ordered_inputs_distinct": true,
+      "swap_outputs_equal": true,
+      "duplicate_inputs_distinct": true,
+      "duplicate_outputs_equal": true,
+      "swap_max_error": 0.0,
+      "duplicate_max_error": 0.0
+    },
+    {
+      "width": 7424,
+      "native_width": 232,
+      "widening": "repeated coordinates for a diagnostic, not an STM1 implementation",
+      "ordered_inputs_distinct": true,
+      "swap_outputs_equal": true,
+      "duplicate_inputs_distinct": true,
+      "duplicate_outputs_equal": true,
+      "swap_max_error": 0.0,
+      "duplicate_max_error": 0.0
+    }
+  ]
+}

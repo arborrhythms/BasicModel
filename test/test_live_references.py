@@ -13,15 +13,15 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
     from test_sentence_references import language_and_program
     store, _ = clause_store()
     prior = store.write_clause(part_clause())
-    identity = int(store.row_ids[prior])
-    head_row = store.write_clause(idea_clause(point=torch.eye(4)[0]))
-    head_identity = int(store.row_ids[head_row])
+    identity = prior[1]
+    head_identity = 3
     language, entry = language_and_program()
     language._compose_binary_rules = (SimpleNamespace(method_name='verb',
         clause_form='VP', head_role=1, predicate_identity='verb'),)
     language._compose_unary_rules = (SimpleNamespace(method_name='surface_unary',
         scope_transparent=True, head_role=1),)
-    point, other = entry.leaves
+    point, other = torch.eye(4)[2], torch.eye(4)[1]
+    combined = (point + other) * .5
     # The numerical journal says the verb's right operand is the earlier
     # relation. Its head's point-valued identity survives the unary suffix.
     entry = replace(entry, reference_ids=torch.tensor([head_identity, identity]), word_ids=torch.tensor([1,3]),
@@ -30,9 +30,9 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
         operation_relations=torch.tensor([[False,False],[False,False],
                                            [False,True],[True,False]]),
         operation_values=torch.stack((torch.zeros(3,4),torch.zeros(3,4),
-            torch.stack((point,other,point+other)),
-            torch.stack((point+other,point*0,point+other)))),
-        end_state=torch.stack((point+other,point*0,point*0)))
+            torch.stack((point,other,combined)),
+            torch.stack((combined,point*0,combined)))),
+        end_state=torch.stack((combined,point*0,point*0)))
     registry = SimpleNamespace(space=SimpleNamespace(_clause_store_ref=weakref.ref(store)))
     field = finish_clause(language, entry, registry=registry)
     assert field.relation == 'operator' and field.point is None
@@ -40,9 +40,9 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
     assert field.refs[0] == head_identity and field.refs[2] == identity
     assert field.refs[1].identity == predicate_identity('verb')
     row = store.write_clause(field)
-    assert int(store.rel_type[row]) == store.REL_OPERATOR
-    child = store.index_of_row(int(store.refs[row,2]))
-    assert child == prior and int(store.rel_type[child]) == store.REL_PARTOF
+    assert set(store.row(row)['refs'].tolist()) == {head_identity, identity}
+    assert store.location(identity) == prior
+    assert store.parts.contains(identity)
 
 
 def test_grammar_order_resolution_survives_the_numerical_journal():

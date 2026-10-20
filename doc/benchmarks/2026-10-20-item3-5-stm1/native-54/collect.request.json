@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

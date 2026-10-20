@@ -1,0 +1,236 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+    "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+    "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "completed": [
+    "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+    "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+    "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-001.json"
+      ],
+      "pid": 64299,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 444220712,
+      "elapsed_seconds": 4.011300249956548,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows"
+      ],
+      "completed": [
+        "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01857512490823865,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-002.json"
+      ],
+      "pid": 64309,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 433866048,
+      "elapsed_seconds": 3.783432084135711,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+        "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "completed": [
+        "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+        "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0013160000089555979,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0015741251409053802,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006155420560389757,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-000.json"
+      ],
+      "pid": 64298,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1433978920,
+      "elapsed_seconds": 11.17616608296521,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 6.964030707953498,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-003.json"
+      ],
+      "pid": 64333,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1787644232,
+      "elapsed_seconds": 5.8068687920458615,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "completed": [
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 2.0244872090406716,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51",
+  "elapsed_seconds": 17.147572666872293,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 1787644232,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/collect.json"
+    ],
+    "pid": 64291,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 264471440,
+    "elapsed_seconds": 2.6663576669525355,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-51/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+        "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+        "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+        "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

@@ -186,7 +186,7 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
     actions = torch.tensor([[1, 0]])
     logp = logits.log_softmax(-1).gather(1, actions)
     path = [None, [None] * 28]
-    path[1][18], path[1][27] = actions, logp
+    path[1][15], path[1][24] = actions, logp
     registry = Error(row_mask=torch.tensor([True]))
     model = SimpleNamespace(_compose_forced_slots=torch.tensor([[True, False]]),
                             _sentence_cost_registry=registry,

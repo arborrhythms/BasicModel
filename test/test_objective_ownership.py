@@ -3,11 +3,11 @@ import torch
 
 
 def test_expectation_does_not_write_its_context_or_routing():
-    from Layers import IntraSentenceLayer
-    layer = IntraSentenceLayer(4, 3, routing_dim=2)
-    source = torch.randn(2, 3, 4, requires_grad=True)
-    routing = torch.randn(2, 2, requires_grad=True)
-    layer(source, routing=routing).square().sum().backward()
+    from Expectation import ActivationPredictor
+    layer = ActivationPredictor(4, 8)
+    source = torch.rand(2, 3, 4, requires_grad=True)
+    routing = torch.rand(2, 8, requires_grad=True)
+    layer(source, routing).square().sum().backward()
     assert source.grad is None
     assert routing.grad is None
     assert any(p.grad is not None and torch.count_nonzero(p.grad) for p in layer.parameters())

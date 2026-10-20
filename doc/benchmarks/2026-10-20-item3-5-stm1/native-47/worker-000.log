@@ -1,0 +1,19 @@
+.....F.                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_absolute_close_keeps_only_the_concept_and_derivation_pairs ________
+test/test_part_closing.py:41: in test_absolute_close_keeps_only_the_concept_and_derivation_pairs
+    assert f.store.parts.contains(root) and f.store.refs[row, 1:].eq(-1).all()
+E   assert (False)
+E    +  where False = contains(-1)
+E    +    where contains = PartStore().contains
+E    +      where PartStore() = TernaryTruthStore().parts
+E    +        where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x14ded42f0>.store
+=============================== warnings summary ===============================
+test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs
+1 failed, 6 passed, 1 warning in 44.14s

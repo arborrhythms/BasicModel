@@ -1,0 +1,97 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads"
+  ],
+  "completed": [
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45/worker-000.json"
+      ],
+      "pid": 58019,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 525452680,
+      "elapsed_seconds": 5.776975916931406,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads"
+      ],
+      "completed": [
+        "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 2.0121043340768665,
+          "message": "",
+          "stdout": "[LTM forgetting] {'before': 22, 'after': 6, 'target': 6, 'cutoff': 2.2237889766693115, 'deleted_by_origin': {0: 16, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7867/test_real_model_forgets_at_doc0/after-forgetting.ckpt\r\nbatch = 0 (\u0394=0.353s)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7867/test_real_model_forgets_at_doc0/after-forgetting.ckpt\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 900.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45",
+  "elapsed_seconds": 8.746644084108993,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 525452680,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45/collect.json"
+    ],
+    "pid": 58010,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263308152,
+    "elapsed_seconds": 2.2892586661037058,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-45/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

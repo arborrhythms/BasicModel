@@ -1,0 +1,96 @@
+{
+  "seed": 2012462406162999760,
+  "caps": [
+    4,
+    2
+  ],
+  "nVectors": 8,
+  "plan": [
+    {
+      "symbol": 7,
+      "seat": false,
+      "pair": null,
+      "order": 0,
+      "reference": 7,
+      "operation": null,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 8,
+      "seat": true,
+      "pair": null,
+      "order": 0,
+      "reference": -1,
+      "operation": null,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 9,
+      "seat": true,
+      "pair": null,
+      "order": 0,
+      "reference": -1,
+      "operation": null,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 10,
+      "seat": true,
+      "pair": null,
+      "order": 0,
+      "reference": -1,
+      "operation": null,
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 11,
+      "seat": true,
+      "pair": [
+        9,
+        10
+      ],
+      "order": 0,
+      "reference": -1,
+      "operation": "union",
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 12,
+      "seat": true,
+      "pair": [
+        8,
+        11
+      ],
+      "order": 0,
+      "reference": -1,
+      "operation": "union",
+      "types": [
+        "object"
+      ]
+    },
+    {
+      "symbol": 13,
+      "seat": false,
+      "pair": [
+        7,
+        12
+      ],
+      "order": 0,
+      "reference": -1,
+      "operation": "union",
+      "types": [
+        "object"
+      ]
+    }
+  ]
+}

@@ -29,8 +29,9 @@ def test_public_evaluate_follows_taxonomy_and_retains_record_provenance():
     assert result["posture"] == TRUE
     assert result["domain"] == "conceptual-taxonomy"
     assert result["support_true"] == 1 and result["support_false"] == 0
-    assert {edge.owner for edge in result["path"]} == {("sym", relation), b}
-    assert result["edges_expanded"] == 3
+    assert {edge.owner for edge in result["path"]} == {
+        ("sym", relation), ("sym", cs._concept_allocator.parts.find(b[1], c[1]))}
+    assert result["edges_expanded"] == 2
     assert len(cs._ltm_store) == 0
     cs.retire_concept(relation)
     assert reasoner.evaluate(QuerySpec.from_surface("isPart", a, c))["posture"] == UNKNOWN
@@ -62,8 +63,9 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     result = reasoner.model.reason_about(QuerySpec.from_surface("isPart", a, b))
     assert result.posture == TRUE
     assert result.result.domain == "conceptual-taxonomy"
-    assert len(cs._ltm_store) == 1
-    assert cs._ltm_store.row(0)['kind'] == 'inference'
+    edge = cs._ltm_store.parts.find(a[1], b[1])
+    assert not len(cs._ltm_store) and cs._ltm_store.parts.contains(edge)
+    assert cs._ltm_store.parts.truth_plus[edge] == 1
     with pytest.raises((ValueError, TypeError), match='reference|concept'):
         reasoner.model.reason_about(
             QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
@@ -71,8 +73,10 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
 
 def test_normal_controller_does_not_certify_a_world_row_as_taxonomy():
     cs, (a, b, _), reasoner = _world()
-    cs._ltm_store.append_relation(torch.eye(8)[0], torch.eye(8)[2], torch.eye(8)[1],
-                                 rel_type=cs._ltm_store.REL_PARTOF, trust=1)
+    from Meaning import ConceptualMeaning
+    cs._ltm_store.append_meaning(ConceptualMeaning.from_payload(
+        torch.stack((torch.eye(8)[0], torch.eye(8)[2], torch.eye(8)[1])),
+        depth=3, layout='infix'), kind='fact', trust=1)
     result = reasoner.model.reason_about(QuerySpec.from_surface("part", a, b))
     assert result.posture == UNKNOWN and result.support_true == 0
 
@@ -100,6 +104,7 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
     try:
         source.reasoning_iterations = source.attention_budget = 128
         cs = source.conceptualSpace
+        assert source.symbolSpace.ltm_store.parts is cs._concept_allocator.parts
         a, b = (('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
                 for _ in range(2))
         for ref in (a, b):
@@ -114,14 +119,15 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
         force_requested_thought(restored)
         restored.reasoning_iterations = restored.attention_budget = 128
         assert restored.load_weights(path, strict=True, require_match=True)
-        from ThoughtReferences import bindings
-        assert restored.symbolSpace.ltm_store.row(0)['kind'] == 'inference'
-        assert ('sym', relation) in bindings(restored.symbolSpace.ltm_store.meaning_of(0))['_thought_witnesses']
+        assert restored.symbolSpace.ltm_store.parts.contains(relation)
+        assert restored.symbolSpace.ltm_store.parts.truth_plus[relation] == 1
         # Probe the checkpoint's taxonomy independently of its saved conclusion.
         restored.symbolSpace.ltm_store.reset()
         after = restored.reason_about(spec, spaces=[])
         assert after.posture == TRUE
-        assert after.result.evidence["path"] == before.result.evidence["path"]
+        path = TruthGroundedReasoner(restored).evaluate(spec)["path"]
+        assert path == TruthGroundedReasoner(source).evaluate(spec)["path"]
+        assert path[0].owner == ('sym', relation)
         restored.symbolSpace.ltm_store.reset()
         restored.conceptualSpace.retire_concept(relation)
         assert restored.reason_about(spec, spaces=[]).posture == UNKNOWN

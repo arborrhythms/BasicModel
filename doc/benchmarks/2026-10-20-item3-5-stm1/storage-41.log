@@ -1,0 +1,10 @@
+[collect] 3 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.40 GiB
+[worker-000] 1 selectors; limit 900s, 8.0 GiB
+[worker-001] 1 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 1; 6.9s; peak 0.57 GiB
+[worker-002] 14 selectors; limit 900s, 8.0 GiB
+[worker-002] exit 1; 4.6s; peak 0.42 GiB
+[worker-001] exit 1; 13.7s; peak 0.67 GiB
+Result: test_failure, exit 1; 16/16 cases completed.
+doc/benchmarks/2026-10-20-item3-5-stm1/storage-41/result.json

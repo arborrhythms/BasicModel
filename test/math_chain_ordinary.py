@@ -1,4 +1,4 @@
-"""Real document presentation and the immutable measurement observer."""
+"""Real document presentation and the native-address measurement observer."""
 from pathlib import Path
 import importlib.util
 import json
@@ -9,11 +9,8 @@ from test_math_chain import ROOT, build_model
 
 
 def observer_class():
-    path = ROOT/'doc/benchmarks/2026-10-07-math-chain/math_observer.py'
-    spec = importlib.util.spec_from_file_location('frozen_math_observer', path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.Observer
+    from math_chain_observer import Observer
+    return Observer
 
 
 def episode_observer():
@@ -65,7 +62,7 @@ def train_documents(model, documents, folder, *, epochs=1, after=None, episode=N
             departures = draw['compose_round'].tolist()
             for row, source in enumerate(rows):
                 field = fields[row]
-                index = store.index_of_row(field.row_id)
+                index = store.location(field.row_id)
                 assert index is not None, 'ordinary closing was not committed'
                 value = store.meaning_of(index)
                 observations.append(dict(epoch=observer.context['epoch'], source=source,

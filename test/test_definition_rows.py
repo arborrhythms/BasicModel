@@ -28,19 +28,19 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
-    before = alloc.next_id, len(alloc.layer()._tensor_rows), len(store)
+    before = alloc.next_id, len(alloc.layer()._tensor_rows), len(store.parts)
     learned_at = m.present()
     word, obj = admit(m, 'hello')
     assert word != obj
-    assert (alloc.next_id, len(alloc.layer()._tensor_rows), len(store)) == (
-        before[0] + 2, before[1] + 2, before[2] + 1)
+    assert (alloc.next_id, len(alloc.layer()._tensor_rows), len(store.parts)) == (
+        before[0] + 3, before[1] + 2, before[2] + 1)
     assert cs._csw_row_of(word) is not None
     assert cs._csw_row_of(obj) is not None
     row = cs.definitions.row(word, obj)
-    assert int(store.rel_type[row]) == store.REL_DEF
-    assert store.refs[row, [0, 2]].tolist() == [word, obj]
+    assert 'definition' in store.part_row(row)['readings']
+    assert store.parts.refs[row].tolist() == [obj, word]
     from RowTime import encoder
-    assert int(encoder().decode_index(store.when[row])) == learned_at
+    assert int(encoder().decode_index(store.parts.when[row])) == learned_at
     assert ('sym', word) not in cs.concept_parts(obj)
     assert all(not hasattr(cs, name) for name in ('bind_meta', 'meta_members'))
     assert all(not hasattr(alloc, name) for name in ('interpretations', 'word_obj_meta'))
@@ -52,13 +52,13 @@ def test_24_index_is_bidirectional_and_rebuilds_from_saved_rows(monkeypatch):
     word, obj = admit(m, 'hello')
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     index = cs.definitions
-    saved = store.semantic_extras()
-    restored = TernaryTruthStore(store.nDim, capacity=store.capacity, content_width=store.content_width)
-    restored.load_state_dict(store.state_dict())
-    restored.load_semantic_extras(saved)
-    assert restored.definitions.word(form='hello') == word
-    assert restored.definitions.objects(word) == (obj,)
-    assert restored.definitions.words(obj) == (word,)
+    restored_model = model()
+    restored_model.load_state_dict(m.state_dict())
+    restored_model._restore_structural_extras(m._collect_structural_extras())
+    restored = restored_model._concept_owner().definitions
+    assert restored.word(form='hello') == word
+    assert restored.objects(word) == (obj,)
+    assert restored.words(obj) == (word,)
     def forbidden(*args, **kwargs):
         pytest.fail('a definition lookup scanned or rebuilt the store')
     monkeypatch.setattr(store, 'relations', forbidden)
@@ -84,10 +84,10 @@ def test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index():
 def test_26_full_store_refuses_the_whole_word_transaction():
     m = model()
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
-    while len(store) < store.capacity:
-        store.append_idea(torch.zeros(store.nDim), sentence_index=len(store))
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
+    # The next native symbol is outside this deliberately exhausted Part pool.
+    store.parts.capacity = alloc.next_id
     before = alloc.next_id, dict(alloc.placement), dict(alloc.layer()._tensor_rows), len(store)
     try:
         result = admit(m, 'hello')
@@ -103,18 +103,17 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     first = admit(m, 'hello')
     r0 = cs.definitions.row(*first)
-    when = store.when[r0].clone()
+    when = store.parts.when[r0].clone()
     m._advance_when_time()
     admit(m, 'there')
-    count = len(store)
-    witness = int(store.witness_count[r0])
-    address = int(store.address_keys[r0])
+    count = len(store.parts)
+    witness = int(store.parts.access_count[r0])
     m._advance_when_time()
     assert admit(m, 'hello') == first
-    assert len(store) == count
-    assert int(store.witness_count[r0]) == witness + 1
-    assert int(store.address_keys[r0]) == address
-    torch.testing.assert_close(store.when[r0], when, atol=0, rtol=0)
+    assert len(store.parts) == count
+    assert int(store.parts.access_count[r0]) == witness + 1
+    assert cs.definitions.row(*first) == r0
+    torch.testing.assert_close(store.parts.when[r0], when, atol=0, rtol=0)
     chain = m.symbolSpace.ensure_sentence_expectation().get_stm_chain(n=count)
     assert len(chain) == len(store.stream_rows(0))
 
@@ -124,8 +123,7 @@ def test_28_forgotten_definition_does_not_survive_in_any_lookup():
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     word, obj = admit(m, 'hello')
     row = cs.definitions.row(word, obj)
-    assert int(store.origin[row]) == store.ORIGIN_CONVERSATION
-    store.clear_origin(store.ORIGIN_CONVERSATION)
+    store.parts.retain([i for i in store.parts.indices().tolist() if i != row])
     assert cs.definitions.word(form='hello') is None
     assert cs.definitions.objects(word) == ()
     assert cs.definitions.words(obj) == ()
@@ -153,7 +151,7 @@ def test_31_read_forms_wait_for_object_testimony_without_changing_the_configurat
             assert cs._csw_row_of(word) is not None
         else:
             obj, = cs.definitions.objects(word)
-            assert int(store.rel_type[cs.definitions.row(word, obj)]) == store.REL_DEF
+            assert 'definition' in store.part_row(cs.definitions.row(word, obj))['readings']
             assert cs._csw_row_of(obj) is not None
     assert path.read_bytes() == before
 
@@ -163,16 +161,16 @@ def test_34_learning_codes_cannot_change_definition_identity():
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     word, obj = admit(m, 'hello')
     row = cs.definitions.row(word, obj)
-    stored = store.slots[row].clone()
+    stored = store.parts.refs[row].clone()
     with torch.no_grad():
-        cs.similarity_codebook.getW().add_(3.)
+        cs.similarity_codebook.getW().mul_(.5)
     assert cs.definitions.objects(word) == (obj,)
     assert cs.definitions.words(obj) == (word,)
     assert cs.interpret.forward(word) == obj
-    torch.testing.assert_close(store.slots[row], stored, atol=0, rtol=0)
+    torch.testing.assert_close(store.parts.refs[row], stored, atol=0, rtol=0)
 
 
-def test_32_head_meta_checkpoint_migrates_to_definitions():
+def test_32_retired_head_meta_checkpoint_is_rejected():
     from types import SimpleNamespace
     from Layers import TernaryTruthStore
     from test_cs_sparse_weights import _cs
@@ -182,12 +180,5 @@ def test_32_head_meta_checkpoint_migrates_to_definitions():
     target = _model_with(cs, SimpleNamespace())
     target.symbolSpace = SimpleNamespace(ltm_store=TernaryTruthStore(cs.nDim, capacity=32))
     object.__setattr__(cs, '_model', target)
-    target._restore_structural_extras(fixture['structural'])
-    word, obj, meta = (fixture[key] for key in ('word','obj','meta'))
-    assert cs.definitions.objects(word) == (obj,)
-    assert cs.definitions.words(obj) == (word,)
-    assert cs.definitions.word(form='legacy') == word
-    assert meta in cs._concept_allocator.retired
-    assert not hasattr(cs, 'meta_members')
-    store = target.symbolSpace.ltm_store
-    assert int(store.rel_type[cs.definitions.row(word, obj)]) == store.REL_DEF
+    with pytest.raises(ValueError, match='retired META'):
+        target._restore_structural_extras(fixture['structural'])
