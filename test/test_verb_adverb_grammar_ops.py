@@ -26,8 +26,8 @@ _D = 8
 
 def _np_and_word(seed=0):
     g = torch.Generator().manual_seed(seed)
-    np_ = torch.randn(2, 5, _D, generator=g).tanh() * 0.6
-    word = torch.randn(2, 5, _D, generator=g).tanh() * 0.6
+    np_ = torch.randn(2, 5, _D, generator=g).tanh() * 0.3 + 0.5
+    word = torch.randn(2, 5, _D, generator=g).tanh() * 0.3 + 0.5
     return np_, word
 
 

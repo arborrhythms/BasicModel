@@ -135,12 +135,12 @@ def test_modifier_can_write_silent_coordinate_and_reverse_with_witness(kind):
     from Language import VerbLayer, AdverbLayer
     op = (VerbLayer if kind == 'verb' else AdverbLayer)(nInput=3, nOutput=3)
     shift = op._verb_shift if kind == 'verb' else op._adv_shift
-    operand = torch.tensor([[.2, 0., -.3]], requires_grad=True)
+    operand = torch.tensor([[.6, .5, .35]], requires_grad=True)
     modifier = torch.tensor([[0., 1., 0.]])
     with torch.no_grad():
         shift[1, 1] = .25
     actual = op.compose(operand, modifier)
-    assert actual[0, 1] > 0
+    assert actual[0, 1] > .5
     recovered, _ = op.reverse(actual, **{('verb_what' if kind == 'verb' else 'adverb_what'): modifier})
     torch.testing.assert_close(recovered, operand, atol=1e-6, rtol=1e-6)
     actual.sum().backward()
@@ -182,7 +182,7 @@ def test_gain_only_checkpoint_loads_with_zero_translation(kind):
     old, restored = cls(nInput=3, nOutput=3), cls(nInput=3, nOutput=3)
     state = {k: v for k, v in old.state_dict().items() if not k.endswith('_shift')}
     restored.load_state_dict(state, strict=True)
-    x, y = torch.tensor([[.3, 0., -.2]]), torch.tensor([[.1, .8, .2]])
+    x, y = torch.tensor([[.65, .5, .4]]), torch.tensor([[.1, .8, .2]])
     torch.testing.assert_close(restored.compose(x, y), old.compose(x, y), atol=0, rtol=0)
 
 

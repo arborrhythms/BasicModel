@@ -20,7 +20,8 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-Step 1b's native identity candidate `027ce224d` is on
+Step 1b's native identity candidate `027ce224d` and STM1 candidate
+`dde893527` are on
 `codex/item3-5-first-pass`; its
 [original receipt](doc/benchmarks/2026-10-20-item3-5-identity/README.md)
 records the failed sweep and scoped repairs. **The migration decision is
@@ -33,9 +34,11 @@ coordinates is permanent. The
 the retirement and removal of the blanket cycle restriction.
 **Step 1b landing remains:** the §6.10 close/read repair and saved
 reverse-order replays pass. Both decomposition lengths pass in both arms
-in [attempt 100](doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-100.md),
-all eight companion questions correct. Run this round's one full sweep,
-repair its findings and publish both
+in [attempt 124](doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-124.md),
+all eight companion questions correct. The one full sweep completed 5,965 cases with 219 failures; the
+[sweep repair record](doc/benchmarks/2026-10-20-item3-5-stm1/landing.md) tracks
+218 passing scoped cases or declared ports and the unresolved capacity
+failure. Saved-state arrival and paired-reconstruction replays pass; resolve the [pool-capacity question](doc/plans/2026-10-19-bind-thought-operation.md#10-landing-follow-up-a-full-concept-row-pool-codex-2026-10-20), repair the native MM_grammar allocation failure, then publish both
 mains with the October 20 docs and a clean BasicModel tree. The
 [current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
 records completed scoped work: transient full-width STM1 and close
@@ -57,7 +60,11 @@ certificate. No producing artifact exists; the October 18 decision withdrew
 the proposed one-equality-hop reader patch in favor of this phase gate.
 Graded versus shuffled (§9.6), derivation-optimality, long-run collapse and
 the original failed native learning run remain at Item 0. Independent 5.5
-learning gates remain separate. No extra training or regrade closes them.
+learning gates remain separate. No extra training or regrade closes them. The
+optional cold-start boundary learning certificate is also incomplete:
+[native-117](doc/benchmarks/2026-10-20-item3-5-stm1/landing.md) hit its 901-second
+runner bound during the original six epochs. Carry it to Item 0's learning
+evidence with that budget unchanged; it is not a step-1b mechanism pass.
 
 **Active mechanism:** Item **3.5**, on a separate branch after Item 4 publication,
 in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
@@ -77,7 +84,8 @@ followed by scoped repairs of 11 failed cases. The three artifact failures
 remain in that historical result; their artifacts are now retired, not
 regraded as successful loads. The later STM1/Part round repairs the native
 cube, final §14 read failures and expression-type defects. Its scoped
-gates pass; the one landing sweep remains. The historical
+gates pass; the one landing sweep is complete and its capacity failure
+remains open before publication. The historical
 [disposition](doc/benchmarks/2026-10-20-item3-5-identity/landing-disposition.md)
 records each case. Its
 [row audit](doc/benchmarks/2026-10-20-item3-5-identity/row-audit.md) explicitly

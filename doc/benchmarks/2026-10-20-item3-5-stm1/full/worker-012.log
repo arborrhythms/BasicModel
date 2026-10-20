@@ -1,0 +1,36 @@
+..................ss.................................................... [ 48%]
+....................................................................F... [ 96%]
+.....                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_native_admission_optimizer_ownership_and_checkpoint ___________
+test/test_independent_components.py:354: in test_native_admission_optimizer_ownership_and_checkpoint
+    close(columns.reference_close, code[0], torch.zeros_like(code[0]), 'mint', (),
+test/test_reference_close.py:55: in close
+    row = resolver.store.write_clause(kept, document_key=document, sentence_index=sentence,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:383: in write_clause
+    return self.write_clause(clause, trust=trust, origin=origin, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:487: in write_clause
+    closing.preflight()
+bin/PartClosing.py:207: in preflight
+    raise ValueError(f'undeclared closing occupation: {argument}')
+E   ValueError: undeclared closing occupation: lift_argin1
+=============================== warnings summary ===============================
+test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15012: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    float(ly.values[i]))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+1 failed, 146 passed, 2 skipped, 2 warnings in 36.37s

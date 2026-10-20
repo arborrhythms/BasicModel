@@ -31,7 +31,7 @@ def test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence(monkeypat
                                     if whitespace_mask else None)
         model._prepare_reconstruction_choices(1, width, torch.device('cpu'))
         dimension = int(model.conceptualSpace.stm.concept_dim)
-        atoms = torch.arange(2 * dimension, dtype=torch.float32).reshape(1, 2, dimension) + 1
+        atoms = torch.arange(2 * dimension, dtype=torch.float32).reshape(1, 2, dimension).add(1).div(2 * dimension + 1)
         roots = atoms.new_zeros(1, 2, 3 * dimension)
         roots[:, :, :dimension] = atoms
         depths = torch.ones(1, 2, dtype=torch.long)

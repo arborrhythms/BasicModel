@@ -1,0 +1,145 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reverse_traversal.py::test_free_walk_reports_missing_leaves_without_underflow",
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+    "test/test_reverse_traversal.py::test_cleared_journal_cannot_change_the_free_reconstruction",
+    "test/test_reverse_traversal.py::test_native_identity_audit_accepts_bank_words_and_rejects_unknown_content",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_free_walk_reports_missing_leaves_without_underflow",
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+    "test/test_reverse_traversal.py::test_cleared_journal_cannot_change_the_free_reconstruction",
+    "test/test_reverse_traversal.py::test_native_identity_audit_accepts_bank_words_and_rejects_unknown_content",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+  ],
+  "slow_selected": [
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_free_walk_reports_missing_leaves_without_underflow",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.5881615420803428,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.18478508293628693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_cleared_journal_cannot_change_the_free_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.5641525839455426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_native_identity_audit_accepts_bank_words_and_rejects_unknown_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4223371250554919,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 3.3864998330827802,
+      "message": "test/test_reverse_traversal.py:261: in test_packed_trace_records_pre_fold_operand_rows_at_every_binary\n    expected = _replay_operand_rows(m)\n               ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_reverse_traversal.py:208: in _replay_operand_rows\n    assert len(stack) == 1, (b, sid, stack)\nE   AssertionError: (0, 0, [-1, 13, 11])\nE   assert 3 == 1\nE    +  where 3 = len([-1, 13, 11])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 32.516406416893005,
+      "message": "test/test_reverse_traversal.py:349: in test_packed_rows_reconstruct_each_sentence_separately\n    assert torch.allclose(compiled_costs, eager_costs, atol=1e-4)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10efd93a0>(tensor([[0.5000, 1.3333, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), tensor([[0.5000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10efd93a0> = torch.allclose",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 17.045011792099103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.6434250411111861,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001055500004440546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005413750186562538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.49044466693885624,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

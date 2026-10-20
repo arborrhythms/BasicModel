@@ -113,8 +113,8 @@ def _seed_stm(model, depths):
     buf = torch.zeros(B, int(stm.capacity), dim)
     for b, d in enumerate(depths):
         for s in range(d):
-            # Distinct, non-zero per (row, slot): base 1.0 + small ramp.
-            buf[b, s, :] = 1.0 + 0.1 * (b + 1) + 0.01 * (s + 1)
+            # Distinct, non-zero per (row, slot): base 0.5 + small ramp.
+            buf[b, s, :] = 0.5 + 0.1 * (b + 1) + 0.01 * (s + 1)
     stm._buffer = buf
     stm._depth = torch.tensor([int(d) for d in depths], dtype=torch.long)
     return B, dim
@@ -350,7 +350,7 @@ def test_protect_depth_floor_one_is_byte_identical_to_no_arg():
         buf = torch.zeros(B, int(stm.capacity), dim)
         for b in range(B):
             for s in range(5):
-                buf[b, s, :] = 1.0 + 0.1 * (b + 1) + 0.01 * (s + 1)
+                buf[b, s, :] = 0.5 + 0.1 * (b + 1) + 0.01 * (s + 1)
         stm._buffer = buf.clone()
         stm._depth = torch.tensor([5, 5], dtype=torch.long)
 

@@ -1,0 +1,67 @@
+.......................FF............................................... [ 63%]
+.........ssss.......ssssss.FFF...........                                [100%]
+=================================== FAILURES ===================================
+________ test_29_each_reading_publishes_only_its_words[MM_grammar.xml] _________
+test/test_word_admission.py:113: in test_29_each_reading_publishes_only_its_words
+    assert not torch.equal(symbols[left], symbols[right])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10e6253a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.]]), tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.]]))
+E    +    where <built-in method equal of type object at 0x10e6253a0> = torch.equal
+________ test_29_each_reading_publishes_only_its_words[XOR_grammar.xml] ________
+test/test_word_admission.py:113: in test_29_each_reading_publishes_only_its_words
+    assert not torch.equal(symbols[left], symbols[right])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10e6253a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.]]), tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [-0., -0., -0.,  ..., -0., -0., -0.]]))
+E    +    where <built-in method equal of type object at 0x10e6253a0> = torch.equal
+___ test_surface_bytes_belong_to_words_and_objects_follow_their_association ____
+test/test_word_store.py:788: in test_surface_bytes_belong_to_words_and_objects_follow_their_association
+    store.origin[old] = store.ORIGIN_USER
+                        ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartStore' object has no attribute 'ORIGIN_USER'
+_____ test_word_surface_and_reassociated_object_survive_strict_checkpoint ______
+test/test_word_store.py:823: in test_word_surface_and_reassociated_object_survive_strict_checkpoint
+    store.origin[old] = store.ORIGIN_USER
+                        ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartStore' object has no attribute 'ORIGIN_USER'
+___ test_missing_surface_snapshot_is_a_staging_error_without_input_fallback ____
+test/test_word_store.py:868: in test_missing_surface_snapshot_is_a_staging_error_without_input_fallback
+    owner.definitions._store().clear_origin(owner.definitions._store().ORIGIN_CONVERSATION)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartStore' object has no attribute 'clear_origin'
+=============================== warnings summary ===============================
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_word_admission.py::test_23_fuse_parts_before_word_admission
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:49: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    assert cs._csw_concept_row(0, 1000 + row) == row
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15012: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    float(ly.values[i]))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]
+FAILED test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association
+FAILED test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint
+FAILED test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback
+5 failed, 98 passed, 10 skipped, 9 warnings in 34.73s

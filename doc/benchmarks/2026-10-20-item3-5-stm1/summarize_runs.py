@@ -21,18 +21,19 @@ text = [
     'Each row is its own source snapshot. Passes from different snapshots are '
     'not combined into a landing result. These are mechanism certificates, '
     'not learning claims.', '',
-    '| Run | Completed/selected | Passed | Failed | Skipped | Result |',
-    '|---|---:|---:|---:|---:|---|',
+    '| Run | Completed/selected | Passed | Failed | Skipped | XFAIL | XPASS | Result |',
+    '|---|---:|---:|---:|---:|---:|---:|---|',
 ]
 for _, name, data, count in sorted(rows):
     text.append(f'| [{name}]({name}/report.html) | '
                 f'{len(data["completed"])}/{len(data["selected"])} | '
                 f'{count["passed"]} | {count["failed"]} | {count["skipped"]} | '
+                f'{count["xfailed"]} | {count["xpassed"]} | '
                 f'{data["reason"]} |')
 text += ['', '`math-12` changed source during execution and is diagnostic only. '
     '`decomposition-diagnostic-11-run` and `decomposition-diagnostic-12-run` '
     'failed in their diagnostic plugin because `CLOSING_TRACE` was absent; '
     'neither is a decomposition verdict. Attempt `stm1-13` used the complete '
     'runner and records both actual certificate failures.',
-    '', 'No full landing sweep or publication has occurred in this round.', '']
+    '', 'The one full landing sweep is the `full` row. Its failures and the later scoped repairs are recorded separately in [landing.md](landing.md). Publication status is in [status.md](status.md).', '']
 (root/'runs.md').write_text('\n'.join(text))

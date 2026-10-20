@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-118/worker-005.recycle.json"
+}

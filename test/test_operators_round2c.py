@@ -59,9 +59,14 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
         unary=tuple(range(module.r_apply)) if refs is None else refs['unary_ops']
         stop=(x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
         depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
-        op=torch.full_like(depth,binary.index(1))
+        # A sparse cube meet treats zero as unspecified, so meet and join
+        # coincide on these binary form codes. Force the declared product
+        # and probabilistic-sum faces to exercise a numerical departure.
+        product = module.op_names.index('conjunction')
+        disjoin = module.op_names.index('disjunction')
+        op=torch.full_like(depth,binary.index(disjoin))
         if walk=='compose' and kwargs.get('masked_action') is not None:
-            op=torch.where(kwargs['masked_action']>=0,binary.index(0),op)
+            op=torch.where(kwargs['masked_action']>=0,binary.index(product),op)
         from operation_fixtures import selected_action
         with selected_action(module, torch.where(depth>1,op,stop)):
             return original_forward(module,x,**kwargs)

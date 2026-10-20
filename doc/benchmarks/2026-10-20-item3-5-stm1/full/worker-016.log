@@ -1,0 +1,147 @@
+...FF......s...................ss.F...........F.sss..................... [ 37%]
+.....................F.....................................F..........s. [ 75%]
+.......s..s.ss.................................                          [100%]
+=================================== FAILURES ===================================
+______ test_pending_relation_fills_in_place_in_both_arrival_orders[True] _______
+test/test_math_chain_repair.py:110: in test_pending_relation_fills_in_place_in_both_arrival_orders
+    assert store.row(row)['pending'] and int(store.refs[row, 0]) == -1
+E   assert (False)
+______ test_pending_relation_fills_in_place_in_both_arrival_orders[False] ______
+test/test_math_chain_repair.py:123: in test_pending_relation_fills_in_place_in_both_arrival_orders
+    assert int(store.refs[row, 0]) == int(store.row_ids[occurrence])
+E   assert -1 == 2197281606984904200
+E    +  where -1 = int(tensor(-1))
+E    +  and   2197281606984904200 = int(tensor(2197281606984904200))
+__________ test_forced_ordinary_pending_premise_in_both_orders[False] __________
+test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:77: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:74: in record
+    after(model, split, rows, result, observations, observer)
+test/test_math_chain_section14.py:391: in after
+    assert correct, 'the arriving x is three must supply the bound referent'
+E   AssertionError: the arriving x is three must supply the bound referent
+E   assert False
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=23.018s)
+____________ test_iterations_one_is_byte_identical_to_a_plain_batch ____________
+test/test_math_thinking_training.py:80: in test_iterations_one_is_byte_identical_to_a_plain_batch
+    result, _ = m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13475: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13631: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14007: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10113: in ask
+    construction = self.reverseOutput(self._last_understanding, derivation,**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9382: in reverseOutput
+    value,audit=output_pair(realize,score)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:36: in output_pair
+    greedy,trace=realize(return_candidates=True)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9380: in realize
+    value=self.reverseOutput(understanding,derivation,_walk_options=options)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9482: in reverseOutput
+    concepts = cs.synthesize(
+bin/Spaces.py:18749: in synthesize
+    event = condition(event)
+            ^^^^^^^^^^^^^^^^
+bin/Models.py:9486: in <lambda>
+    condition=lambda idea: self._generation_read(self._condition_answer_on_question(
+bin/Models.py:9001: in _condition_answer_on_question
+    conditioned = cube_translate(answer, role[..., None] * delta[:, None])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:133: in cube_translate
+    mapped = cube_unchart(cube_chart(value) + delta)
+                          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___________ test_word_spelling_is_ordered_and_binding_is_idempotent ____________
+test/test_mereology_word_binding.py:15: in test_word_spelling_is_ordered_and_binding_is_idempotent
+    assert set(cs.concept_parts(word)) == {10, 11, 12}
+E   AssertionError: assert {('sym', 2), 10, 11, 12} == {10, 11, 12}
+E     
+E     Extra items in the left set:
+E     ('sym', 2)
+E     Use -v to get more diff
+________________ test_forward_equals_compose_on_a_live_snapshot ________________
+test/test_meronomy_ladder.py:100: in test_forward_equals_compose_on_a_live_snapshot
+    a = ls.forward(snap.clone())
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13695: in forward
+    self._symbol_space.forward(symbolic_snapshot)
+bin/Language.py:13930: in forward
+    self._compose_eager(snap)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13943: in _compose_eager
+    self.compose(snap)
+bin/Language.py:10541: in compose
+    self.current_rules = self.languageLayer.compose(
+bin/Language.py:4976: in compose
+    derivation = self.operation_layer.derive(
+bin/Language.py:7064: in derive
+    _, next_x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6823: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7180: in _stacked_reduced
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=============================== warnings summary ===============================
+test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:307: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert prior is not None and float(prior[0, 0, idx]) <= -1e3
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]
+FAILED test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+FAILED test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch
+FAILED test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent
+FAILED test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot
+6 failed, 174 passed, 11 skipped, 5 warnings in 111.88s (0:01:51)

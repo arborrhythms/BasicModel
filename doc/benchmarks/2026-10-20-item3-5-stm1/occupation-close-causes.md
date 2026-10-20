@@ -116,3 +116,21 @@ attempt 100 exercise that guard. These results are not combined into a
 full sweep. The one landing sweep and publication follow this record.
 Step 2, Item 3, step 4, step 5 and the separate Item 0/5.5 tracks retain
 their destinations in [status.md](status.md).
+
+## Follow-up after the one full sweep
+
+The sweep completed 5,965 cases with 219 failures. Its new arrival failure
+is captured, reproduced in native-101, repaired in native-102, and reproduced
+again by removing only the typed-DEF filter in native-104. Native-125 passes
+at that same saved state on the final source. Generic structural reads must
+exclude word-definition edges; sharing the physical Part store does not
+make a spelling an identity operand. The [landing receipt](landing.md)
+records this additional cause and all fixture migrations.
+
+Saved arrival states 32/75 pass in both orders in native-122/123; saved c/e
+state 61 passes in native-120. Saved paired state 43 and a fresh random case
+tie exactly at zero R. Both unchanged decomposition lengths pass in both
+arms in [attempt 124](decomposition-124.md), all eight companion questions
+correct at 234/512 and 557/768 work. This closes the §6.10/§8 mechanism gates,
+not publication: the unrelated but native pool-capacity failure remains
+open for the decision in bind-plan §10.

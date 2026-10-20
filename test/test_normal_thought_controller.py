@@ -29,6 +29,8 @@ def _world():
 def _catalog_world():
     """A normal-controller fixture with only the grammar-owned registry."""
     cs = _cs()
+    with torch.no_grad():
+        cs.similarity_codebook.W.copy_(cs.similarity_codebook.W.sigmoid())
     grammar = Grammar()
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(cs, grammar)

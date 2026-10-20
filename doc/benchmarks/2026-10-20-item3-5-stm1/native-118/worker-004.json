@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention"
+  ],
+  "completed": [
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 14.380278166849166,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=1.488s)\r\nbatch = 2 (\u0394=8.972s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

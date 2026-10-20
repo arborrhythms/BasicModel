@@ -507,9 +507,11 @@ required work in step 1b, not a deferral to step 4.
 ## 7. Decisions ledger for the current round (2026-10-20): what is carried, and where
 
 Each decision of 2026-10-19/20, with its current status on
-`codex/item3-5-first-pass`, uncommitted after `027ce224d`, and its landing
+`codex/item3-5-first-pass`, including candidate `dde893527` and its
+post-sweep repairs, and its landing
 destination. The [current receipt](../benchmarks/2026-10-20-item3-5-stm1/status.md)
-separates completed scoped checks from the pending full landing gate.
+separates the completed full sweep, later scoped checks and the unresolved
+capacity gate in §10. Publication is held for that decision and repair.
 
 | decision | record | status | lands in |
 |---|---|---|---|
@@ -518,9 +520,9 @@ separates completed scoped checks from the pending full landing gate.
 | content term = the meet; form = containment in a learned region; `cue_policy` gone | §6.1 | done in tree | step 1b |
 | STM1: one wide vector per entry at the concept space's full width; computed in STM, never written back; no inversion gate; no width derivation | §6.1, §6.6 | implemented in tree; native-width reads and close dissolution checked; full landing gate pending | step 1b |
 | three signed-chart artifacts retired; strict rejection permanent; regenerate when lessons need them | §6.4 | done in tree (registry nulls, archives) | step 1b |
-| LTM2: one relation `Part(x, y)`, two references + truth pair + access count + surprise + `.when`; same store as the taxonomy; DEF rows fold into edges; `rel_type` and the middle position gone; all of it in step 1b | §6.5, §6.6(4); two truths §1 | common six-column store, §6.10 close types and expression read implemented; both decomposition lengths/arms pass in attempt 100 | step 1b |
-| cube preservation: lift/lower act through the chart; assertion gate; no clipping | §6.6(3) | learned-map assertion and 35 inverse cases pass; whole §14 initialization read passes in native-70 | step 1b |
-| the read rule for expressions (§6.8) and the bootstrap from the Part derivation | §6.8 | bootstrap exactness, four meanings, saved `.1` replay and random paired certificate pass; §6.10 expression descent passes both decomposition lengths in both arms (attempt 100) | step 1b |
+| LTM2: one relation `Part(x, y)`, two references + truth pair + access count + surprise + `.when`; same store as the taxonomy; DEF rows fold into edges; `rel_type` and the middle position gone; all of it in step 1b | §6.5, §6.6(4); two truths §1 | common six-column store, §6.10 close types and expression read implemented; both decomposition lengths/arms pass in attempt 124 | step 1b |
+| cube preservation: lift/lower act through the chart; assertion gate; no clipping | §6.6(3) | learned-map assertion and 35 inverse cases pass; whole §14 initialization read passes in native-120 | step 1b |
+| the read rule for expressions (§6.8) and the bootstrap from the Part derivation | §6.8 | bootstrap exactness, four meanings, saved `.1` replay and random paired certificate pass; §6.10 expression descent passes both decomposition lengths in both arms (attempt 124) | step 1b |
 | priming diffusion on by default at `primingSpread` 0.05 (from 0.25); the surface read stratified by order (Orders §9): edge-based across and above order 0 through `PartStore`, geometric only at order 0; read points per consumer; no matrix | Architecture, priming; Orders §9; Params | default and shared-budget Part/membership graph implemented and measured; strata, order-0 channel and placement explicitly remain in item 3 | step 1b / item 3 |
 | supplied-answer judge keyed on the answer's kind | step 0 review note | done, published (`8b294b3ad`) | — |
 | `.when` = model time, sinusoidal, a column composition never reads; symbols situated, concepts keep extent | two truths §1 row table; occurrence §0 | done in tree ("RowTime", regression that `.when` cannot change an operand) | step 1b |
@@ -556,7 +558,7 @@ replay and both saved premise orders. Its four failures were the
 same-stream setup in the ported later-binding fixture; the whole
 thinking file then passes 26/26 in native-72. Cube/inverse, G1–G3,
 reference-close, exact bootstrap, the random paired invariant and the
-retired-name checks pass in native-70. These do not waive the four
+retired-name checks pass in native-120. These do not waive the four
 decomposition failures in attempt 71 or combine into a full sweep.
 The [receipt and carry table](../benchmarks/2026-10-20-item3-5-stm1/status.md)
 record the remaining step-1b blocker and every later destination.
@@ -682,5 +684,81 @@ paired reconstruction. Native-99 passes 46/46 after the proof-writer guard.
 Both decomposition lengths pass in both gain arms in attempt 100 with
 unchanged initial parameters, forced scopes, assertions and budgets:
 [one table per question](../benchmarks/2026-10-20-item3-5-stm1/decomposition-100.md).
-The one full landing sweep and publication are next; no learning result
-is promoted or rescued. The §7 deferred destinations remain explicit.
+The one full landing sweep is now complete (5,965 cases, 219 failures);
+218 failures have later passing scoped checks or declared fixture ports.
+The native capacity failure remains open under §10. Publication is held;
+no learning result is promoted or rescued. The §7 deferred destinations remain explicit.
+
+
+## 10. Landing follow-up: a full concept-row pool (Codex, 2026-10-20)
+
+The one full sweep on `dde893527` completed 5,965 cases, with 219 failures.
+The current failure index has 218 passing scoped cases or declared fixture ports and one unresolved capacity failure; the [landing receipt](../benchmarks/2026-10-20-item3-5-stm1/landing.md)
+keeps those results separate. The broader slow follow-up exposes a recurring
+capacity boundary before the `MM_grammar` convergence certificate can report
+a learning result. It is a mechanism error, not a failed convergence score.
+
+| Execution | Observed boundary |
+|---|---|
+| native-118, fresh unpinned initialization | `complete Part closing exceeds a concept row pool: order=0, pools=((0,4),(6,2)), occupied=6, planned=1` |
+| native-119, next fresh initialization captured before the test | Four word seats at 0–3 and two order-1 seats at 4–5; the selected `lower` result requests a new order-1 symbol, whose two-seat pool is full. The order-0 tail at 6–7 cannot satisfy that pool |
+| native-115, earlier inventory diagnostic | Two selected new operands in a Part close exceed the remaining order-0 seats; both request new identities (`reference=-1`), not nearest matches or existing unseated references |
+
+The captured [native-119 plan](../benchmarks/2026-10-20-item3-5-stm1/capacity-119.jsonl)
+and RNG state in `rng-119/` permit exact replay of that second initialization.
+The native-118 state was not captured and is not claimed as replayed.
+Seeds, fixed budgets, assertions and the R+A keep law are unchanged. No
+additional training budget or passing-seed selection is proposed.
+
+The close's atomic preflight correctly refuses an allocation it cannot seat.
+The chooser currently offers the mint before this whole-sentence allocation
+is known. A valid correction has to account for all selected mints in the
+sentence and all streams sharing the pool; masking only when a pool was
+already full at the beginning of the batch is insufficient.
+
+**Question for Alec / Claude:** should a new referent be offered as a mint
+only when the complete sentence can reserve the required seats in the
+existing order pools, or should it remain an unminted LTM1 occurrence when
+that reservation cannot be made? I recommend the former: keep open and
+existing referents eligible, and treat complete seat availability as mint
+legality before scoring. This is a proposed resource contract, not an
+implemented policy. The alternative is consistent with reading unminted
+LTM1 at concept width, but would need an explicit decision about the meaning
+of the selected mint operation and which Part edges can be retained.
+
+Step 1b's type/DEF writer, declared-head read, arrival replays and independent
+gates are being completed. Publication is held for this decision and the
+resulting native regression repair. The small inventory-only fixtures that
+supply existing/open bindings are explicitly scoped in the receipt; their
+passes do not close this native failure.
+
+The optional six-epoch cold-start boundary learning case timed out in
+native-117 (901-second worker bound), rather than reporting a learning result.
+It is recorded as incomplete and carried to Item 0 with its original budget,
+without extra training. The other seven uncompleted cases were run to
+completion in native-118. This does not change the earlier destinations:
+row cull, context wholes and recurrence minting in step 2; strata/placement
+in Item 3; verb groups in step 4; second difference in step 5; separate Item
+0 and 5.5 learning tracks.
+
+## 11. Final scoped §6.10/§8 evidence after the sweep (Codex, 2026-10-20)
+
+The repaired production source passes whole §14 (12 passed, one retired
+copular-artifact prerequisite skip), G1–G3, reference-close, cube/inverse,
+native word-store and compiled boundaries in native-120. Its three fixture
+failures are repaired and pass in native-121; [validation](../benchmarks/2026-10-20-item3-5-stm1/validation.json)
+records those two test-file differences and exact source matches for the
+subsequent checks. Saved arrival states 32 and 75 pass in both orders;
+the sweep's captured arrival failure passes on exact replay. Saved paired
+state 43 and a fresh random initialization both tie at zero R in every
+prescribed batch. Claude's unsaved initialization remains unavailable.
+
+Both original decomposition lengths pass in both arms in
+[attempt 124](../benchmarks/2026-10-20-item3-5-stm1/decomposition-124.md), all
+eight companion questions correct, at 234/512 and 557/768 work. Seeds,
+parameter snapshots, forced scopes, budgets, assertions and R+A keep are
+unchanged. The §6.10/§8 mechanism work is complete as scoped evidence.
+The one full sweep is not repeated or relabeled green: 218 failures now
+have passing scoped checks or explicit ports, while the native capacity
+failure remains open under §10. The candidate stays on the branch;
+publication to both mains awaits that allocation decision and repair.

@@ -20,13 +20,22 @@ cache and proof-writer side effect. Both saved arrival initializations
 pass in both orders. Claude's unsaved initialization is unavailable and
 is not claimed as replayed.
 
-Native-95 completes **231/231: 230 passed, one copular prerequisite skip**,
-including whole §14, G1–G3, cube/inverse and random paired reconstruction.
-The final proof-writer guard passes **46/46** in native-99. Both original
-decomposition lengths pass in both gain arms in
-[attempt 100](decomposition-100.md): **4/4 certificates, 8/8 companion
-questions**. No assertion, forced scope, seed, budget or keep law changed.
-The one full landing sweep and publication remain pending.
+The one full sweep completed **5,965/5,965: 5,420 passed, 219 failed,
+325 skipped and one XPASS**. The [failure index](sweep-failures.md) now has
+218 passing scoped cases or declared fixture ports and one unresolved native
+MM_grammar capacity failure. Publication is held for the allocation decision
+in bind-plan §10 and its repair; the failed sweep is not relabeled green.
+
+Native-120 completes **316/316: 309 passed, three fixture failures, four
+prerequisite skips**. Native-121 passes the four repaired fixture checks.
+Saved arrival states 32/75 pass in both orders (122/123), as does the new
+sweep failure at its exact state (125). Saved and random paired trials tie
+exactly at zero reconstruction cost. Both decomposition lengths pass in
+both gain arms in [attempt 124](decomposition-124.md): **4/4 certificates,
+8/8 companion questions**, at 234/512 and 557/768 work. No assertion, forced
+scope, seed, budget or keep law changed. [Landing repairs](landing.md),
+[validation](validation.json) and [arrival tables](arrival-replays.md) retain
+the source and replay limits.
 
 The [earlier read questions](read-boundary-questions.md),
 [regression history](regressions.md) and [run table](runs.md) preserve

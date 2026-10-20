@@ -1,0 +1,78 @@
+....s.........................sFF..................Fsssss...F........... [ 63%]
+..................sFsssssssssssss.......F                                [100%]
+=================================== FAILURES ===================================
+____ test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference _____
+test/test_relation_references.py:21: in test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference
+    torch.testing.assert_close(f.store._concept_point(predicate), entry.leaves[1])
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 8 (25.0%)
+E   Greatest absolute difference: 1.0 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (3,) (up to 1.3e-06 allowed)
+__________ test_nested_relation_forest_keeps_its_unindexed_predicate ___________
+test/test_relation_references.py:40: in test_nested_relation_forest_keeps_its_unindexed_predicate
+    torch.testing.assert_close(f.store._concept_point(identity), entry.leaves[1])
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 8 (25.0%)
+E   Greatest absolute difference: 1.0 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (3,) (up to 1.3e-06 allowed)
+_______ test_closing_reuses_relation_and_preserves_independent_evidence ________
+test/test_relative_sentence_codebook_insertion.py:15: in test_closing_reuses_relation_and_preserves_independent_evidence
+    assert len(store) == 1
+E   assert 0 == 1
+E    +  where 0 = len(TernaryTruthStore())
+________________________ test_symbol_history_projection ________________________
+test/test_relevance_bases.py:217: in test_symbol_history_projection
+    assert p is not None and float(p[row_object]) >= 5.0
+E   assert (None is not None)
+________________ test_tied_binary_reverse_recomposes_the_parent ________________
+test/test_reverse_traversal.py:73: in test_tied_binary_reverse_recomposes_the_parent
+    left, right = language.reverse_binary_step(
+bin/Language.py:13097: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13082: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13167: in _reverse_of_binary_op
+    left, right = inner.generate_functional(
+bin/Layers.py:3372: in generate_functional
+    a_y = self._chart(parent) if self.nonlinear else parent
+          ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+______ test_small_frozen_evaluator_keeps_definition_rows_and_reservations ______
+test/test_review10_contracts.py:129: in test_small_frozen_evaluator_keeps_definition_rows_and_reservations
+    before = inventory()
+             ^^^^^^^^^^^
+test/test_review10_contracts.py:125: in inventory
+    rows=deepcopy(cs.definitions._store()._definition_rows),
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartStore' object has no attribute '_definition_rows'
+=============================== warnings summary ===============================
+test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_mentions.py:42: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(all_correct) == 0.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relation_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference
+FAILED test/test_relation_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate
+FAILED test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence
+FAILED test/test_relevance_bases.py::test_symbol_history_projection - assert ...
+FAILED test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent
+FAILED test/test_review10_contracts.py::test_small_frozen_evaluator_keeps_definition_rows_and_reservations
+6 failed, 86 passed, 21 skipped, 2 warnings in 13.90s

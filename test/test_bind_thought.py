@@ -66,9 +66,19 @@ def occurrence(f, content, predicate, *, mode='mint', role=0, training=False):
     term = Composition(content, order=1)
     constituent = Clause(ConceptualMeaning.from_description(content), point=content, order=1,
                          reference_request=request, composition=term)
-    verb = Composition(predicate, order=0)
+    # The supplied predicate is an admitted native symbol, as it is in a
+    # recorded grammar program. A composed value alone does not mint it.
+    key = tuple(predicate.tolist())
+    predicates = f.__dict__.setdefault('predicates', {})
+    if key not in predicates:
+        symbol = f.cs.new_concept()
+        row = f.cs._csw_concept_row(0, symbol)
+        with torch.no_grad():
+            f.cs.similarity_codebook.W[row].copy_(predicate)
+        predicates[key] = symbol
+    verb = Composition(predicate, reference=predicates[key], order=0)
     point = torch.maximum(content, predicate)
-    tree = Composition(point, (term, verb) if role == 0 else (verb, term),
+    tree = Composition(point, (term, verb),
                        operation='lift' if role == 0 else 'verb', order=1)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
                     children=(constituent,), composition=tree)
@@ -256,7 +266,7 @@ def test_participant_cache_rebuilds_from_retained_identity_rows(monkeypatch):
         occurrence(f, f.atoms[0], f.atoms[4], role=2)
     assert f.resolver.expected_roles(f.atoms[4]) == (2,)
     saved = f.resolver._participants()
-    f.store._participant_cache = None
+    f.store.parts._participant_cache = None
     assert f.resolver._participants() == saved
     f.store.parts.retain([])
     assert f.resolver.expected_roles(f.atoms[4]) == ()

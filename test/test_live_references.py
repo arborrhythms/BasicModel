@@ -24,7 +24,7 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
     combined = (point + other) * .5
     # The numerical journal says the verb's right operand is the earlier
     # relation. Its head's point-valued identity survives the unary suffix.
-    entry = replace(entry, reference_ids=torch.tensor([head_identity, identity]), word_ids=torch.tensor([1,3]),
+    entry = replace(entry, reference_ids=torch.tensor([head_identity, identity]), word_ids=torch.tensor([-1,-1]),
         actions=torch.tensor([[0,-1,0], [0,-1,1], [1,0,-1], [2,0,-1]]),
         operation_refs=torch.tensor([[-1,-1],[-1,-1],[head_identity,identity],[head_identity,-1]]),
         operation_relations=torch.tensor([[False,False],[False,False],
@@ -241,10 +241,10 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         # differ by float32 accumulation order; it retains the same direction.
         torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=1e-6, atol=2e-7)
         assert entry.operation_refs[actions][-1, 0].item() == cid
-        assert clause.refs[0] == cid
-        torch.testing.assert_close(clause.point, frame[2], rtol=0, atol=0)
+        assert clause.composition.children[0].reference == cid
+        torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
         torch.testing.assert_close(
-            model._sentence_fields[0][0].end_state[0], frame[2], rtol=0, atol=0)
+            model._sentence_fields[0][0].end_state[0], clause.point, rtol=0, atol=0)
         assert not torch.equal(entry.leaves[0], prior)
         active = model.inputSpace._word_active_mask
         # This held referent has no lexical realization in the primed bank.
@@ -258,7 +258,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         changed = model._reconstruct_trial(replace(record, word_values=record.word_values+19))[0]
         torch.testing.assert_close(model._recon_ideas[active], expected[active], rtol=1e-4, atol=1e-4)
         torch.testing.assert_close(changed[active], expected[active], rtol=0, atol=0)
-        clause.point.sum().backward()
+        clause.composition.point.sum().backward()
         assert query.grad is None
         route = next(route for route in routes if bool((route['kind'] == 1).any()))
         credit = route['logits'].log_softmax(-1).gather(1, route['action'][:, None]).sum()

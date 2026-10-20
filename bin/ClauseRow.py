@@ -193,6 +193,7 @@ class ClauseRows:
         object.__setattr__(self, '_index_part_row', on_part)
         object.__setattr__(self, '_preflight_clause_rows', preflight)
 
+    @torch.no_grad()
     def part_row(self, symbol, *, reading=None):
         """Read an LTM2 edge into a temporary grammatical view.
 
@@ -457,6 +458,10 @@ class ClauseRows:
                 and any(value.refs[role] in (-1, 0) for role in (0, 2)))
         def incomplete(value):
             return pending(value) or any(incomplete(child) for child in value.children)
+        def retained_pair(value):
+            term = closing._terms.get(id(value))
+            return (value.relation is not None and term is not None
+                and closing._planned[id(term)]['edge'] is not None)
         for position, value in enumerate(nodes):
             asserted = value is clause or value in clause.companions
             pair = tuple(map(float, value.evidence if evidence is None or not asserted else evidence))
@@ -471,7 +476,7 @@ class ClauseRows:
             if not incomplete(value):
                 closing.prepare(value)
                 prepared.add(id(value))
-            if value.relation is not None and not incomplete(value):
+            if retained_pair(value):
                 continue
             from Occurrence import native_content_key
             kwargs = ({} if value is clause and context is not None else
@@ -501,7 +506,7 @@ class ClauseRows:
                                        surprise=surprise if asserted else -1.)
             else:
                 symbol = None
-            if value.relation is not None and not incomplete(value):
+            if retained_pair(value):
                 if symbol is None or not self.parts.contains(symbol):
                     raise RuntimeError('a completed relation did not produce a Part edge')
                 rows[id(value)] = ('sym', symbol)
@@ -528,7 +533,10 @@ class ClauseRows:
                     named.append(reference)
                 stored = replace(value.meaning, role_refs=tuple(named))
             else:
-                stored = ConceptualMeaning.from_description(self._fit(value.point))
+                point = value.point
+                if point is None:
+                    point = closing._terms[id(value)].point
+                stored = ConceptualMeaning.from_description(self._fit(point))
                 if symbol is not None:
                     # This is the address of the surviving derivation, not
                     # the dissolved working identity. Membership reads the
@@ -543,11 +551,13 @@ class ClauseRows:
             stored = with_slots(replace(stored, mode=value.meaning.mode,
                 sentence_kind=stored.sentence_kind if retain_open else 'idea',
                 bindings=retained), open_slots(stored), pair=pair)
+            before_count = len(self)
             row = self.append_meaning(stored, kind=kind if asserted else 'unverified',
                 trust=0. if trust is None or not asserted else float(trust), stream=stream,
                 surprise=surprise if asserted else -1., evidence=pair, order=value.order,
                 **addresses[id(value)])
-            self.when[row].copy_(closing.when)
+            if row >= before_count:
+                self.when[row].copy_(closing.when)
             if value.where is not None:
                 self.where[row].copy_(value.where.to(self.where))
             if origin is not None:

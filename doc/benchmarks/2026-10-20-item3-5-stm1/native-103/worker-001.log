@@ -1,0 +1,406 @@
+.FFF..........FFFFFFFFFFFF.F...                                          [100%]
+=================================== FAILURES ===================================
+_ test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal __
+test/test_grammar_reconstruction_gate.py:65: in test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal
+    model.forward(model.inputSpace.prepInput(list(data.test_input)))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23748: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17066: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22300: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21870: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20989: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grammar_reconstruction_gate.py:57: in observe
+    assert parents and not torch.equal(parents[0], before)
+E   assert ([tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.0...0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])] and not True)
+E    +  where True = <built-in method equal of type object at 0x10c3d93a0>(tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]))
+E    +    where <built-in method equal of type object at 0x10c3d93a0> = torch.equal
+__ test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False] ___
+test/test_grammar_sentence_scope.py:42: in test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence
+    recovered, idea_cost, byte_cost, unavailable, costs = model._reconstruct_sentences(
+bin/Models.py:12010: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+bin/Models.py:11929: in _decode_conceptual_sentence
+    return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+bin/Models.py:12884: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:397: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12835: in body
+    options, others, legal = inverse_menu(language, parent, live,
+bin/Generative.py:217: in inverse_menu
+    legal = (LanguageSpace.decoder_eligibility(parent, lefts, rights, available,
+bin/Language.py:13430: in decoder_eligibility
+    folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3723: in compose
+    return self.compose_blocks(self.kernel, left, right, **activation)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:2511: in compose_blocks
+    return assert_cube(torch.cat((form, meaning), -1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True] ___
+test/test_grammar_sentence_scope.py:42: in test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence
+    recovered, idea_cost, byte_cost, unavailable, costs = model._reconstruct_sentences(
+bin/Models.py:12010: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+bin/Models.py:11929: in _decode_conceptual_sentence
+    return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+bin/Models.py:12884: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:397: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12835: in body
+    options, others, legal = inverse_menu(language, parent, live,
+bin/Generative.py:217: in inverse_menu
+    legal = (LanguageSpace.decoder_eligibility(parent, lefts, rights, available,
+bin/Language.py:13430: in decoder_eligibility
+    folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3723: in compose
+    return self.compose_blocks(self.kernel, left, right, **activation)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:2511: in compose_blocks
+    return assert_cube(torch.cat((form, meaning), -1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0] _
+test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store
+    case(row_gain,document_gain,relation=True)
+test/test_item4_native.py:73: in case
+    retained = fixture.store.expectation_pair(index, gain=document_gain)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9771: in expectation_pair
+    i = idx if isinstance(idx, tuple) else int(idx)
+                                           ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+_ test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0] _
+test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store
+    case(row_gain,document_gain,relation=True)
+test/test_item4_native.py:73: in case
+    retained = fixture.store.expectation_pair(index, gain=document_gain)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9771: in expectation_pair
+    i = idx if isinstance(idx, tuple) else int(idx)
+                                           ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+_ test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5] _
+test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store
+    case(row_gain,document_gain,relation=True)
+test/test_item4_native.py:73: in case
+    retained = fixture.store.expectation_pair(index, gain=document_gain)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9771: in expectation_pair
+    i = idx if isinstance(idx, tuple) else int(idx)
+                                           ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+______________________________ test_stream_chain _______________________________
+test/test_item55_mechanisms.py:206: in test_stream_chain
+    assert torch.equal(getattr(live,key)[observations],value)
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10c3d93a0>(tensor([[1.8286e-09, 1.0000e+00, 1.9175e-03, 1.0000e+00],\n        [1.8286e-09, 1.0000e+00, 1.9175e-03, 1.0000e+00]]), tensor([[1.0972e-09, 1.0000e+00, 1.1505e-03, 1.0000e+00],\n        [1.0972e-09, 1.0000e+00, 1.1505e-03, 1.0000e+00]]))
+E    +    where <built-in method equal of type object at 0x10c3d93a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.372s)
+____________________________ test_surface_inverses _____________________________
+test/test_item55_mechanisms.py:305: in test_surface_inverses
+    _native_step_comparison(tmp_path, monkeypatch)
+test/test_item55_mechanisms.py:414: in _native_step_comparison
+    torch.testing.assert_close(recovered[record.word_valid],record.word_values[record.word_valid])
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 303 / 1248 (24.3%)
+E   Greatest absolute difference: 0.9997559189796448 at index (1, 1) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (1, 1) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (warm-up)
+batch = 0 (warm-up)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______ test_answer_credit_moves_shared_chooser_toward_the_completed_chain ______
+test/test_item6_2_thinking.py:287: in test_answer_credit_moves_shared_chooser_toward_the_completed_chain
+    assert chooser.thought_logits(goal,menu).softmax(-1)[0,1]>before
+E   assert tensor(0.5000, grad_fn=<SelectBackward0>) > tensor(0.5000)
+______________________ test_relate_x_x_merges_to_one_edge ______________________
+test/test_iterated_symbolic_wave.py:79: in test_relate_x_x_merges_to_one_edge
+    got = cs.concept_weights(c_row)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:15013: in concept_weights
+    r = int(row)
+        ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+_____ test_answer_path_operators_are_independently_owned_and_keep_learning _____
+test/test_joint_objectives.py:299: in test_answer_path_operators_are_independently_owned_and_keep_learning
+    model.ask((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10119: in ask
+    construction = self.reverseOutput(self._last_understanding, derivation,**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9488: in reverseOutput
+    concepts = cs.synthesize(
+bin/Spaces.py:18756: in synthesize
+    event = condition(event)
+            ^^^^^^^^^^^^^^^^
+bin/Models.py:9492: in <lambda>
+    condition=lambda idea: self._generation_read(self._condition_answer_on_question(
+bin/Models.py:22970: in _generation_read
+    return reader.consume(idea, None if observation is None else observation['content'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Attention.py:500: in consume
+    out[..., :d] = cube_translate(out[..., :d], add)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:133: in cube_translate
+    mapped = cube_unchart(cube_chart(value) + delta)
+                          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:182: in test_native_progress_and_trained_artifact_evaluation_path
+    report = read_validation(loaded, sentences=4, gain=0.)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_fineweb_learning.py:92: in read_validation
+    model.runBatch(train=False, split='validation', batchSize=1,
+bin/Models.py:13481: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13637: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14013: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10095: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23731: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13087: in _lex_embed_stem
+    self._stage_serial_concept_rows()
+bin/Models.py:11181: in _stage_serial_concept_rows
+    triple = owner.interpret_word(
+bin/Spaces.py:16534: in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:116: in lookup_word
+    self._sync_identity(identity)
+bin/Interpret.py:262: in _sync_identity
+    _concept_alloc_of(cs).word_descriptions[word] = value
+    ^^^^^^^^^^^^^^^^^
+E   NameError: name '_concept_alloc_of' is not defined
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.678s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7967/test_native_progress_and_train0/small-native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7967/test_native_progress_and_train0/small-native.ckpt
+______ test_pending_relation_fills_in_place_in_both_arrival_orders[True] _______
+test/test_math_chain_repair.py:110: in test_pending_relation_fills_in_place_in_both_arrival_orders
+    assert store.row(row)['pending'] and int(store.refs[row, 0]) == -1
+E   assert (False)
+______ test_pending_relation_fills_in_place_in_both_arrival_orders[False] ______
+test/test_math_chain_repair.py:123: in test_pending_relation_fills_in_place_in_both_arrival_orders
+    assert int(store.refs[row, 0]) == int(store.row_ids[occurrence])
+E   assert -1 == 2197281606984904200
+E    +  where -1 = int(tensor(-1))
+E    +  and   2197281606984904200 = int(tensor(2197281606984904200))
+____________ test_iterations_one_is_byte_identical_to_a_plain_batch ____________
+test/test_math_thinking_training.py:80: in test_iterations_one_is_byte_identical_to_a_plain_batch
+    result, _ = m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13481: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13637: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14013: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10119: in ask
+    construction = self.reverseOutput(self._last_understanding, derivation,**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9388: in reverseOutput
+    value,audit=output_pair(realize,score)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:36: in output_pair
+    greedy,trace=realize(return_candidates=True)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9386: in realize
+    value=self.reverseOutput(understanding,derivation,_walk_options=options)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9488: in reverseOutput
+    concepts = cs.synthesize(
+bin/Spaces.py:18756: in synthesize
+    event = condition(event)
+            ^^^^^^^^^^^^^^^^
+bin/Models.py:9492: in <lambda>
+    condition=lambda idea: self._generation_read(self._condition_answer_on_question(
+bin/Models.py:22970: in _generation_read
+    return reader.consume(idea, None if observation is None else observation['content'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Attention.py:500: in consume
+    out[..., :d] = cube_translate(out[..., :d], add)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:133: in cube_translate
+    mapped = cube_unchart(cube_chart(value) + delta)
+                          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________________ test_forward_equals_compose_on_a_live_snapshot ________________
+test/test_meronomy_ladder.py:100: in test_forward_equals_compose_on_a_live_snapshot
+    a = ls.forward(snap.clone())
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13695: in forward
+    self._symbol_space.forward(symbolic_snapshot)
+bin/Language.py:13930: in forward
+    self._compose_eager(snap)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13943: in _compose_eager
+    self.compose(snap)
+bin/Language.py:10541: in compose
+    self.current_rules = self.languageLayer.compose(
+bin/Language.py:4976: in compose
+    derivation = self.operation_layer.derive(
+bin/Language.py:7064: in derive
+    _, next_x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6823: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7180: in _stacked_reduced
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=============================== warnings summary ===============================
+test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal
+FAILED test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]
+FAILED test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]
+FAILED test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]
+FAILED test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]
+FAILED test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]
+FAILED test/test_item55_mechanisms.py::test_stream_chain - assert False
+FAILED test/test_item55_mechanisms.py::test_surface_inverses - AssertionError...
+FAILED test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain
+FAILED test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge
+FAILED test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+FAILED test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]
+FAILED test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]
+FAILED test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch
+FAILED test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot
+16 failed, 15 passed, 1 warning in 22.75s

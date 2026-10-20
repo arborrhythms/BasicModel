@@ -1,0 +1,11 @@
+{
+  "case": "0-1",
+  "text": "a cat ; a dog ; m01 chases",
+  "expected": 13,
+  "chosen": 13,
+  "pair": [
+    0.40460968017578125,
+    0.5953903198242188
+  ],
+  "emitted": 1
+}

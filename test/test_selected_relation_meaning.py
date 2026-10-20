@@ -390,13 +390,18 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     monkeypatch.setattr(
         registry, "execute",
         lambda *args, **kwargs: pytest.fail("query executed during observation"))
+    # This observation starts without the catalogue fixture's asserted pair.
+    cs._concept_allocator.parts.remove(_a[1], _b[1])
+    before_parts = set(cs._concept_allocator.parts.indices().tolist())
     commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
-    assert len(store) == 1 and len(calls) == 1
-    stored = store.meaning_of(0)
+    assert len(store) == 0 and len(calls) == 1
+    row = ('sym', store.parts.find(_a[1], _b[1]))
+    assert set(store.parts.indices().tolist()) == before_parts | {row[1]}
+    stored = store.meaning_of(row)
     assert stored.mode == "assertive"
     assert stored.role_refs == registry.form("part", _a, _b).role_refs
     assert stored.role_mask.tolist() == [True, True, True]
-    assert store.row(0)["kind"] == "observation"
+    assert store.row(row)["evidence"] == (0., 0.)
     assert calls[0][0] == [3]
     assert calls[0][2]["layout"] == "infix"
     torch.testing.assert_close(calls[0][1][0][0], leaves[0])

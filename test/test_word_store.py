@@ -7,6 +7,8 @@ used radial recommendation behavior; radialStmReduce remains supported.
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures('eager_reading')
+
 import os
 import sys
 import warnings
@@ -244,10 +246,10 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     assert "yak" not in reg          # multi-part: the trie has no word yet
     assert "quix" not in reg         # span mismatch: no WS property twin
     assert "zebry" not in reg        # letters-part does not FILL the word
-    # The in-model structure: A_zebra rides Parts(WORDS); A_yak does not.
-    index = cs.definitions
-    A_zebra = index.deref(index.word(form="zebra"))
-    A_yak = index.deref(index.word(form="yak"))
+    # Recognition classifies the form; no observed object was supplied.
+    # A_zebra rides Parts(WORDS); A_yak does not.
+    A_zebra = cs.interpret.word_for_form("zebra")
+    A_yak = cs.interpret.word_for_form("yak")
     words_cid = cs._words_concept_id
     parts = cs.concept_parts(words_cid)
     assert ("sym", A_zebra) in parts
@@ -257,6 +259,7 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
 
 
 @pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
     m = _build(tmp_path_factory)
     _train_forward(m)
@@ -275,6 +278,10 @@ def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
     try:
         ps.subspace.percept_store = RadixLayer(
             int(saved.dim), word_bounded=True, basis=ps.subspace.what)
+        from WordIdentity import WordIdentity
+        ps.percept_store.identity = WordIdentity(ps.percept_store,
+            pair_dim=saved.identity.pair_dim, ones=saved.identity.ones,
+            length_dim=saved.identity.length_dim)
         assert len(ps.percept_store) == 0
         m._restore_vocab_extras(blob)
         got = ps.percept_store
@@ -570,8 +577,11 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     m = _build(tmp_path_factory)
     cs = m.conceptualSpace
     store = m.perceptualSpace.percept_store
-    pid = store.insert(b'hello')
-    A, B = cs.interpret_word([pid], word_whole=None, key='hello')
+    store.identity.admit(b'hello')
+    pid = store.identity.word_rows[b'hello']
+    A, _ = cs.interpret_word([pid], word_whole=None, key='hello')
+    from definition_fixtures import witness_object
+    B = witness_object(cs, A)
     # The full native percept resolves to the unary word/object pair ...
     assert cs.concept_of_percept(pid) == A
     assert cs.object_concept_of_percept(pid) == B
@@ -592,12 +602,17 @@ def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
     """Resolve the exact, unconstrained object code; untied percepts are zero."""
     m = _build(tmp_path_factory)
     cs = m.conceptualSpace
-    A1, _ = cs.interpret_word([3], word_whole=None, key="hello")
-    content, mask = cs.concept_row_content(torch.tensor([3, 99]))
+    store = m.perceptualSpace.percept_store
+    store.identity.admit(b"hello")
+    pid = store.identity.word_rows[b"hello"]
+    A1, _ = cs.interpret_word([pid], word_whole=None, key="hello")
+    from definition_fixtures import witness_object
+    witness_object(cs, A1)
+    content, mask = cs.concept_row_content(torch.tensor([pid, len(store) + 1]))
     assert mask.tolist() == [True, False]
     assert not bool(content[1].detach().ne(0).any())       # untied -> zero row
     W = cs.similarity_codebook.getW()
-    r1 = cs.concept_codebook_row_of_percept(3)
+    r1 = cs.concept_codebook_row_of_percept(pid)
     assert torch.allclose(content[0], W[r1],
                           atol=1e-6)
 
@@ -785,9 +800,7 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         before = _surface_byte_cost(m, reference, target)
         store = owner.definitions._store()
         old = owner.definitions.row(word, obj)
-        store.origin[old] = store.ORIGIN_USER
-        store._update_semantic_fingerprint(old)
-        store.clear_origin(store.ORIGIN_USER)
+        store.remove(obj, word)
         owner.interpret.define(other_word, obj)
         m._stage_snapshot_bytes()
         bank = isp._ar_concept_lookup_rows[0]
@@ -800,7 +813,7 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         fresh_reference[0, 0] = owner.similarity_codebook.lookup_rows(row)
         assert _surface_byte_cost(m, fresh_reference, target)[0] == 0
         assert before[0] == 0
-        store.clear_origin(store.ORIGIN_CONVERSATION)
+        store.retain([])
         m._stage_snapshot_bytes()
         assert not bool(isp._ar_bank_valid[0, object_col].any())
     finally:
@@ -820,9 +833,7 @@ def test_word_surface_and_reassociated_object_survive_strict_checkpoint(tmp_path
         word = int(isp._ar_word_concept_ids[0, 0])
         store = owner.definitions._store()
         old = owner.definitions.row(word, obj)
-        store.origin[old] = store.ORIGIN_USER
-        store._update_semantic_fingerprint(old)
-        store.clear_origin(store.ORIGIN_USER)
+        store.remove(obj, word)
         owner.interpret.define(other_word, obj)
         m._stage_snapshot_bytes()
         expected_bytes = isp._ar_bank_bytes.clone()
@@ -865,7 +876,7 @@ def test_missing_surface_snapshot_is_a_staging_error_without_input_fallback():
         B, W = reference.shape[:2]
         target_ready, target_bytes, target_valid = m._byte_tables(B, W)
         assert target_ready and bool(target_valid[:, 0].any())
-        owner.definitions._store().clear_origin(owner.definitions._store().ORIGIN_CONVERSATION)
+        owner.definitions._store().retain([])
         m._stage_snapshot_bytes()
         ready, bank, values, valid = m._snapshot_tables(reference)
         assert ready and not bool(valid.any())

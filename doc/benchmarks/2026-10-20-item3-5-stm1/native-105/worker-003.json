@@ -1,0 +1,280 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]",
+    "test/test_verb_successor.py::test_successor_by_construction_on_the_real_verb_layer",
+    "test/test_verb_successor.py::test_readout_receives_gradient_at_zero_init",
+    "test/test_verb_successor.py::test_successor_is_learned_from_zero_init",
+    "test/test_what_episode_memory.py::test_default_has_one_memory_and_think_is_single_step",
+    "test/test_what_episode_memory.py::test_standalone_memory_serves_think_without_sentence_prediction",
+    "test/test_what_episode_memory.py::test_reset_clears_the_standalone_memory_at_epoch_start",
+    "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]"
+  ],
+  "completed": [
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+    "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]",
+    "test/test_verb_successor.py::test_successor_by_construction_on_the_real_verb_layer",
+    "test/test_verb_successor.py::test_readout_receives_gradient_at_zero_init",
+    "test/test_verb_successor.py::test_successor_is_learned_from_zero_init",
+    "test/test_what_episode_memory.py::test_default_has_one_memory_and_think_is_single_step",
+    "test/test_what_episode_memory.py::test_standalone_memory_serves_think_without_sentence_prediction",
+    "test/test_what_episode_memory.py::test_reset_clears_the_standalone_memory_at_epoch_start",
+    "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 7.386816875077784,
+      "message": "test/test_stm_recon_from_cleared_cache.py:222: in test_cache_clears_and_chart_generate_rederives_from_stm\n    assert fired[\"n\"] >= 1, (\nE   AssertionError: the reverse-leg cache re-derive (_chart_generate_from_stm) must re-fire symbolSpace.generate over the STM snapshot.\nE   assert 0 >= 1",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 27.26464429218322,
+      "message": "test/test_review14_addendum.py:55: in test_small_inventory_pairs_words_without_allocating_letter_rows\n    assert owner._concept_source_order(cid) > 0\nE   assert 0 > 0\nE    +  where 0 = _concept_source_order(8)\nE    +    where _concept_source_order = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n)._concept_source_order",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.20555204199627042,
+      "message": "test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:174: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8183: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23749: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17067: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22301: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21871: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20990: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:158: in _sweep_spy\n    return orig_sweep(*a, **k)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20282: in _commit_sentence\n    row = _append_observed_meaning(store, clause,\nbin/Models.py:173: in _append_observed_meaning\n    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:487: in write_clause\n    closing.preflight()\nbin/PartClosing.py:245: in preflight\n    raise RuntimeError(\nE   RuntimeError: complete Part closing exceeds a concept row pool: order=0, pools=((0, 4), (6, 2)), occupied=6, planned=5",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.2051117499358952,
+      "message": "test/test_router_fires_per_word.py:207: in test_serial_words_use_the_shared_operation_layer\n    probe = _run_forward_spying_fold(model)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:174: in _run_forward_spying_fold\n    model.forward(x)\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8183: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23749: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17067: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22301: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21871: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20990: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:158: in _sweep_spy\n    return orig_sweep(*a, **k)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20282: in _commit_sentence\n    row = _append_observed_meaning(store, clause,\nbin/Models.py:173: in _append_observed_meaning\n    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:487: in write_clause\n    closing.preflight()\nbin/PartClosing.py:245: in preflight\n    raise RuntimeError(\nE   RuntimeError: complete Part closing exceeds a concept row pool: order=0, pools=((0, 4), (6, 2)), occupied=6, planned=5",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.08674795785918832,
+      "message": "test/test_router_fires_per_word.py:276: in test_boundary_generate_gated_by_router_wire_serial\n    assert _generate_fires(\"both\") >= 1, (\nE   AssertionError: boundary generate must fire under routerWireSerial='both'\nE   assert 0 >= 1\nE    +  where 0 = <function test_boundary_generate_gated_by_router_wire_serial.<locals>._generate_fires at 0x12ad2f6a0>('both')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.010855250060558319,
+      "message": "test/test_selected_nested_meaning.py:55: in test_nested_observation_writers_retain_children_without_certifying_them\n    assert len(store) == 2\nE   assert 0 == 2\nE    +  where 0 = len(TernaryTruthStore())",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009582333033904433,
+      "message": "test/test_selected_nested_meaning.py:55: in test_nested_observation_writers_retain_children_without_certifying_them\n    assert len(store) == 2\nE   assert 0 == 2\nE    +  where 0 = len(TernaryTruthStore())",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009343292098492384,
+      "message": "test/test_selected_nested_meaning.py:55: in test_nested_observation_writers_retain_children_without_certifying_them\n    assert len(store) == 2\nE   assert 0 == 2\nE    +  where 0 = len(TernaryTruthStore())",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.01611925009638071,
+      "message": "test/test_selected_nested_meaning.py:79: in test_10_packed_pending_and_eager_ends_write_identical_rows\n    torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)\n                               ^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'TernaryTruthStore' object has no attribute 'rel_type'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009043666999787092,
+      "message": "test/test_selected_relation_meaning.py:394: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert len(store) == 1 and len(calls) == 1\nE   assert (0 == 1)\nE    +  where 0 = len(TernaryTruthStore())",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.008936249883845448,
+      "message": "test/test_selected_relation_meaning.py:394: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert len(store) == 1 and len(calls) == 1\nE   assert (0 == 1)\nE    +  where 0 = len(TernaryTruthStore())",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.19119641603901982,
+      "message": "test/test_trial_policy_ownership.py:38: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction\n    result = model.reverseOutput(understanding, held)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9435: in reverseOutput\n    idea = self._generation_read(idea,\nbin/Models.py:22971: in _generation_read\n    return reader.consume(idea, None if observation is None else observation['content'], identity=identity)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Attention.py:501: in consume\n    out[..., :d] = cube_translate(out[..., :d], add)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:133: in cube_translate\n    mapped = cube_unchart(cube_chart(value) + delta)\n                          ^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.28050508303567767,
+      "message": "test/test_trial_policy_ownership.py:38: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction\n    result = model.reverseOutput(understanding, held)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9435: in reverseOutput\n    idea = self._generation_read(idea,\nbin/Models.py:22971: in _generation_read\n    return reader.consume(idea, None if observation is None else observation['content'], identity=identity)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Attention.py:501: in consume\n    out[..., :d] = cube_translate(out[..., :d], add)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:133: in cube_translate\n    mapped = cube_unchart(cube_chart(value) + delta)\n                          ^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031251669861376286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002449790947139263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0023300000466406345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026669581420719624,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_successor.py::test_successor_by_construction_on_the_real_verb_layer",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0017452088650316,
+      "message": "test/test_verb_successor.py:58: in test_successor_by_construction_on_the_real_verb_layer\n    assert _nearest(out, codes).tolist() == list(range(1, N))\nE   assert [0, 0, 0, 0, 1, 2, ...] == [1, 2, 3, 4, 5, 6, ...]\nE     \nE     At index 0 diff: 0 != 1\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_successor.py::test_readout_receives_gradient_at_zero_init",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0005454581696540117,
+      "message": "test/test_verb_successor.py:70: in test_readout_receives_gradient_at_zero_init\n    out = layer.apply_verb(codes[:-1], v.unsqueeze(0).expand(N - 1, -1))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3281: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3264: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_successor.py::test_successor_is_learned_from_zero_init",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0015046659391373396,
+      "message": "test/test_verb_successor.py:84: in test_successor_is_learned_from_zero_init\n    out = layer.apply_verb(c[:-1], v_p.unsqueeze(0).expand(N - 1, -1))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3281: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3264: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_episode_memory.py::test_default_has_one_memory_and_think_is_single_step",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05088916700333357,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_episode_memory.py::test_standalone_memory_serves_think_without_sentence_prediction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.13128883414901793,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_episode_memory.py::test_reset_clears_the_standalone_memory_at_epoch_start",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.11078654206357896,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 0.060s; word units 100.0% of 4 words (letters-only 100.0% of 4).\r\n"
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.03292129095643759,
+      "message": "test/test_thought_answer_adapters.py:150: in test_typed_results_survive_resolve_and_reverse_without_execution\n    derivation = model.resolveAnswer(understanding, What.supervised(0))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8532: in resolveAnswer\n    return self._resolve_answer(understanding, questions, **({} if score is None else {'score':score}))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8627: in _resolve_answer\n    selected_thoughts = self._run_selected_sentence_thoughts(\nbin/Models.py:6398: in _run_selected_sentence_thoughts\n    results.append((row, self.run_selected_thought(question, row=row,\nbin/Models.py:5925: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:359: in commit\n    index = write(model, resolved_witnesses(record.meaning), row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:266: in write\n    result = store.write_clause(clause(meaning), kind='inference',\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:383: in write_clause\n    return self.write_clause(clause, trust=trust, origin=origin, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:472: in write_clause\n    closing.prepare(value)\nbin/PartClosing.py:183: in prepare\n    assert_cube(value.point)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

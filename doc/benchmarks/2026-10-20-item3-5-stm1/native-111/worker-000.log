@@ -1,0 +1,13 @@
+....F.....                                                               [100%]
+=================================== FAILURES ===================================
+___ test_surface_generation_learns_distinct_children_from_full_width_values ____
+test/test_surface_grammar.py:41: in test_surface_generation_learns_distinct_children_from_full_width_values
+    torch.testing.assert_close(layer.compose(a, b), parent, atol=1e-5, rtol=1e-5)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 24 (4.2%)
+E   Greatest absolute difference: 0.0023173391819000244 at index (1, 0) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.8252817392349243 at index (1, 0) (up to 1e-05 allowed)
+=========================== short test summary info ============================
+FAILED test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values
+1 failed, 9 passed in 10.25s

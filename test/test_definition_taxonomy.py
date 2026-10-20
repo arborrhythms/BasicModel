@@ -74,8 +74,8 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
-    first = interpret.forward(interpret.lookup_word([7], [1], form='cat'))
-    second = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
+    first = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
+    second = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
     predicate = interpret.forward(interpret.lookup_word([9], [1], form='part'))
     store = TernaryTruthStore(8, capacity=16)
     model = SimpleNamespace()
@@ -84,12 +84,11 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(first, predicate, second))
     row = store.write_clause(source)
-    assert int(store.refs[row, 2]) == second
-    parent = _concept_alloc_of(cs).relate_idx['part-kind', second, cs._concept_source_order(first) + 1]
-    assert cs._concept_source_order(parent) == cs._concept_source_order(first) + 1
-    assert first in cs.taxonomy_children(parent)
+    assert row == ('sym', store.parts.find(first, second))
+    assert store.parts.refs[row[1]].tolist() == [first, second]
+    assert first in cs.taxonomy_children(second)
     assert store.write_clause(source) == row
-    assert len(store) == 1
+    assert len(store) == 0
 
 
 def test_failed_closing_does_not_leave_a_taxonomy_prefix():
@@ -100,8 +99,8 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
-    left = interpret.forward(interpret.lookup_word([7], [1], form='cat'))
-    right = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
+    left = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
+    right = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
     store = TernaryTruthStore(8, capacity=1)
     attach_clause_index(SimpleNamespace(), store, cs)
     source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
@@ -126,16 +125,20 @@ def test_closing_binds_subject_form_to_particular_without_widening_compose_acces
                     leaf_orders=torch.tensor([0, 2, 0]))
     entry = resolve_reading_references(f.language, entry, forced={1: -1})
     clause = finish_reading(f.language, entry, registry=f.registry)
-    row = f.store.write_clause(clause)
-    cid = int(f.store.row_ids[row])
+    written = {}
+    f.store.write_clause(clause, written_rows=written)
+    cid, = (cid for cid in set(f.cs.word_concepts('cat')) - {f.noun('cat')}
+            if f.cs._concept_source_order(cid) == 1)
     assert cid in f.cs.word_concepts('cat')
     assert cid not in f.cs.word_concepts('the')
     assert cid not in f.cs.word_concepts('runs')
     assert f.cs._concept_source_order(cid) == 1
     assert f.cs.resolve_word_concept('cat', order=1, previous=cid) == cid
-    # The lexical tensor face has no situation: the initial object remains
-    # the source, and only bounded reference resolution may select the row.
-    assert f.cs.interpret.forward(f.words['cat'][0], order=1) == f.noun('cat')
+    # An unrestricted lexical lookup cannot choose among the admitted uses.
+    # A requested order has its own unique candidate; a situation supplies
+    # the bounded chooser when more than one use remains.
+    assert f.cs.interpret.forward(f.words['cat'][0]) is None
+    assert f.cs.interpret.forward(f.words['cat'][0], order=1) == cid
 
 
 @pytest.mark.parametrize('invalid', ['width', 'capacity'])
@@ -150,19 +153,20 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
         child = clause.children[0]
         child = replace(child, point=torch.zeros(9),
                         meaning=ConceptualMeaning.from_description(torch.zeros(9)))
-        clause = replace(clause, children=(child,))
+        bad_term = replace(clause.composition.children[1], point=torch.zeros(9))
+        clause = replace(clause, children=(child,), composition=replace(
+            clause.composition, children=(clause.composition.children[0], bad_term)))
     else:
-        # A phrase needs its own LTM occurrence, not an inventory seat.
-        # With only one store row the whole two-row transaction is refused.
-        f.store = TernaryTruthStore(f.store.nDim, capacity=1)
-        attach_clause_index(f.model, f.store, f.cs)
+        # Both relative clauses require native Part handles; exhaust that
+        # owner rather than the unrelated narrowed occurrence pool.
+        f.cs._concept_allocator.next_id = f.store.parts.capacity
     alloc = _concept_alloc_of(f.cs)
     before = alloc.next_id, copy.deepcopy(alloc.placement), copy.deepcopy(alloc.relate_idx)
     if invalid == 'width':
         with pytest.raises(ValueError):
             f.store.write_clause(clause)
     else:
-        with pytest.raises(OverflowError, match='forgetting'):
+        with pytest.raises(OverflowError, match='LTM2'):
             f.store.write_clause(clause)
     assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
     assert len(f.store) == 0
@@ -170,7 +174,7 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
 
 def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    prior = f.store.write_clause(f.clause(('lift', 'cat', 'runs')))
+    prior = f.store.write_clause(f.clause('cat'))
     entry = f.program(('lift', 'he', 'rests'))
     refs = entry.concept_ids.clone()
     refs[0] = f.store.row_ids[prior]
@@ -180,6 +184,8 @@ def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
                     reference_values=values)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause)
-    assert int(f.store.row_ids[row]) in f.cs.word_concepts('he')
-    assert int(f.store.row_ids[row]) not in f.cs.word_concepts('rests')
-    assert f.cs.interpret.forward(f.words['he'][0], order=1) == f.noun('he')
+    subject = int(f.store.parts.refs[f.store.meaning_of(row).role_refs[0][1], 0])
+    assert subject in f.cs.word_concepts('he')
+    assert subject not in f.cs.word_concepts('rests')
+    assert f.cs.interpret.forward(f.words['he'][0], order=1) is None
+    assert f.noun('he') in f.cs.word_concepts('he')

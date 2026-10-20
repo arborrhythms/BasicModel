@@ -8,7 +8,7 @@ from test_clause_acceptance import SentenceFixture
 
 def test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    entry = f.program(('lift', 'he', ('verb', 'said', ('part', 'cat', 'animal'))))
+    entry = f.program(('lift', 'he', ('verb', ('part', 'cat', 'animal'), 'said')))
     entry = replace(entry, concept_ids=torch.full_like(entry.concept_ids, -1))
     clause = finish_reading(f.language, entry, registry=f.registry)
     before = set(f.store.parts.indices().tolist())
@@ -18,16 +18,16 @@ def test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference(monkey
     state = int(f.store.row(row)['refs'][1])
     predicate = int(f.store.parts.refs[state, 1])
     assert f.store._concept_owner()._csw_row_of(predicate) is not None
-    torch.testing.assert_close(f.store._concept_point(predicate), entry.leaves[1])
+    torch.testing.assert_close(f.store._concept_point(predicate), entry.leaves[3])
     children = sorted(set(f.store.parts.indices().tolist()) - before - {row[1]})
     assert not f.store.parts.truth_plus[children].any()
 
 
 def test_nested_relation_forest_keeps_its_unindexed_predicate(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    entry = f.program(('lift', 'he', ('verb', 'said', ('part', 'cat', 'animal'))))
+    entry = f.program(('lift', 'he', ('verb', ('part', 'cat', 'animal'), 'said')))
     refs = entry.concept_ids.clone()
-    refs[1] = -1
+    refs[3] = -1
     entry = replace(entry, concept_ids=refs)
     clause = finish_reading(f.language, entry, registry=f.registry)
     before = set(f.store.parts.indices().tolist())
@@ -37,6 +37,6 @@ def test_nested_relation_forest_keeps_its_unindexed_predicate(monkeypatch):
     state = int(f.store.row(row)['refs'][1])
     identity = int(f.store.parts.refs[state, 1])
     assert f.store._concept_owner()._csw_row_of(identity) is not None
-    torch.testing.assert_close(f.store._concept_point(identity), entry.leaves[1])
+    torch.testing.assert_close(f.store._concept_point(identity), entry.leaves[3])
     children = sorted(set(f.store.parts.indices().tolist()) - before - {row[1]})
     assert not f.store.parts.truth_plus[children].any()

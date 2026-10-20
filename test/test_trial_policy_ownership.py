@@ -22,7 +22,7 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
     model = _model()
     model.train()
     width = model.conceptualSpace.stm.concept_dim
-    point = torch.randn(1, width, requires_grad=True)
+    point = torch.rand(1, width, requires_grad=True)
     meanings = tuple(ConceptualMeaning.from_description(row) for row in point)
     fields = tuple(SentenceEndState(meaning) for meaning in meanings)
     idea = torch.stack([meaning.roles for meaning in meanings])

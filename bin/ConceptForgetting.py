@@ -12,9 +12,9 @@ def warn_capacity(owner):
     capacity = getattr(owner, 'nVectors', None)
     if capacity is None:
         return False
+    _, reserved, limit = owner._concept_capacity_window(0)
     full = (len(layer._tensor_row_keys) >= int(capacity)
-            or (getattr(owner, '_concept_binding', None) != 'mixing'
-                and alloc.next_id - alloc.reclaimed_seats >= int(capacity)))
+            or (limit is not None and reserved >= limit))
     if full and not getattr(owner, '_concept_capacity_warned', False):
         warnings.warn(f'Concept inventory reached maximum preallocation ({owner.nVectors}); '
                       'a redundancy review is required at a closed document boundary', RuntimeWarning,
@@ -50,6 +50,11 @@ def protected_concepts(owner, store, retained=()):
     alloc, layer = _concept_alloc_of(owner), _concept_alloc_of(owner).layer()
     protected = set(retained) | set(getattr(owner, '_frozen_concepts', ()))
     protected.update(_integers(alloc.word_forms))
+    edges = alloc.parts.indices()
+    protected.update(edges.tolist())
+    protected.update(alloc.parts.refs[edges].flatten().tolist())
+    protected.update(alloc.definitions.word_ids)
+    protected.update(alloc.definitions.object_ids)
     protected.update(_integers(tuple(alloc.relate_idx)))
     for name in ('_recognized_words', '_words_concept_id', '_priming_bridge', '_frozen_named'):
         protected.update(_integers(getattr(owner, name, None)))
@@ -60,15 +65,6 @@ def protected_concepts(owner, store, retained=()):
     if store is not None:
         protected.update(_integers(store.refs[:len(store)].tolist()))
         protected.update(_integers(store._semantic_rows))
-        protected.update(store.definitions.word_ids)
-        protected.update(store.definitions.object_ids)
-        # Postings hold physical code rows. Even a detached field's retrieval
-        # identity must not acquire a different meaning after a seat is reused.
-        for (row, _role), postings in store._leaf_postings.items():
-            if postings:
-                cid = owner.concept_id_at_row(row)
-                if cid is not None:
-                    protected.add(cid)
     interpretation = owner.__dict__.get('_interpret_operator')
     if interpretation is not None:
         protected.update(_integers(interpretation._pending))
@@ -212,7 +208,7 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
     alloc = _concept_alloc_of(owner)
     layer = alloc.layer()
     if store is None:
-        store = getattr(owner, '_definition_store', None)
+        store = owner._closed_clause_store()
     protected = protected_concepts(owner, store, retained)
     components = getattr(owner, 'components', None)
     dictionaries = [] if components is None else [components.verbs]

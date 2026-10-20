@@ -159,6 +159,7 @@ class InterpretLayer(GrammarLayer):
             for candidate in index.objects(word):
                 row = index.row(word, candidate)
                 store = index._store()
+                from Spaces import _concept_alloc_of
                 _concept_alloc_of(cs).word_descriptions[word] = value
                 index.add(row)
             return word
@@ -185,6 +186,8 @@ class InterpretLayer(GrammarLayer):
             except RuntimeError:
                 return None
             word = alloc.new_concept()
+            alloc.symbol_types.setdefault(word, set()).add('word')
+            alloc.reference_orders[word] = 0
             for part in parts:
                 cs.add_part(word, part)
             for whole in wholes:
@@ -209,6 +212,8 @@ class InterpretLayer(GrammarLayer):
         # The form owns a row before it has an object. A later witnessed
         # definition may supply one; interpretation cannot invent it.
         word = alloc.new_concept()
+        alloc.symbol_types.setdefault(word, set()).add('word')
+        alloc.reference_orders[word] = 0
         for part in parts:
             cs.add_part(word, part)
         for whole in wholes:
@@ -225,6 +230,7 @@ class InterpretLayer(GrammarLayer):
 
     def _sync_identity(self, identity):
         """A collision extends the existing word's parts without changing its row."""
+        from Spaces import _concept_alloc_of
         if getattr(self, '_identity_revision', -1) == identity.revision:
             return
         from WordIdentity import bytes_of

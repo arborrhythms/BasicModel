@@ -87,42 +87,40 @@ def test_unfold_reads_the_readers_priming_row():
 
 @pytest.mark.parametrize('forward_first', [True, False])
 def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
-    from ClauseRow import Clause
     from Meaning import ConceptualMeaning
-    from ThoughtReferences import with_slots
-    from test_clause_storage import clause_store, idea_clause
+    from ThoughtReferences import with_slots, bindings, open_slots
+    from test_clause_storage import clause_store
     store, _ = clause_store()
-    meaning = with_slots(ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool)),
-                         (('referent', 0),), pair=(1., 0.))
-    data = dict(meaning.bindings)
-    data['_forward_references'] = ((0, 17),)
+    meaning = with_slots(ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool),
+        role_refs=(None, ('sym', 3), ('sym', 2))), (('referent', 0),), pair=(1., 0.))
+    data = dict(meaning.bindings, _forward_references=((0, 17),))
     meaning = replace(meaning, bindings=data)
-    occurrence = None
+    premise = replace(meaning, role_refs=(None, ('sym', 3), ('sym', 1)),
+        bindings=dict(data, _equality=True))
     if not forward_first:
-        occurrence = store.write_clause(idea_clause(), document_key='arrival', sentence_index=1)
-    refs = (-1 if occurrence is None else int(store.row_ids[occurrence]), 3, 2)
-    if occurrence is not None:
-        meaning = replace(meaning, role_refs=(store.occurrence_of(occurrence), ('sym', 3), ('sym', 2)))
-    row = store.write_clause(Clause(meaning, relation='part', refs=refs),
-                             document_key='pending', sentence_index=2)
-    address, document, position = store.occurrence_of(row), store.document_keys[row].clone(), store.sentence_index[row].clone()
+        store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+    row = store.append_meaning(meaning, document_key='pending', evidence=(1.,0.))
+    address = store.occurrence_of(row)
+    raw = store.raw_meaning_of(row)
+    document, position = store.document_keys[row].clone(), store.sentence_index[row].clone()
     if forward_first:
-        assert store.row(row)['pending'] and int(store.refs[row, 0]) == -1
+        assert ('referent', 0) in open_slots(store.meaning_of(row))
         assert store._forward_addresses((17,)) == {int(store.address_keys[row])}
-        # Checkpoint restore replaces the durable metadata owner. The
-        # derived postings must be rebuilt, with no row or stream registry.
+        # Loading invalidates only derived postings. The later occurrence is
+        # evidence for the working read, never a rewrite of the earlier row.
         extras = store.semantic_extras()
         store.load_state_dict(store.state_dict())
         store.load_semantic_extras(extras)
-        occurrence = store.write_clause(idea_clause(), document_key='arrival', sentence_index=1)
-        store.fill_forward_references((17,), int(store.row_ids[occurrence]), store.slots[occurrence, 0])
-    assert not store.row(row)['pending']
+        store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+    resolved = store.meaning_of(row)
+    assert ('referent', 0) not in open_slots(resolved)
+    assert not bindings(resolved).get('_forward_references')
+    assert resolved.role_refs[0] == ('sym', 1)
     assert store.occurrence_of(row) == address
     torch.testing.assert_close(store.document_keys[row], document, rtol=0, atol=0)
     torch.testing.assert_close(store.sentence_index[row], position, rtol=0, atol=0)
-    assert int(store.refs[row, 0]) == int(store.row_ids[occurrence])
-    if forward_first:
-        assert not store._forward_addresses((17,))
+    assert store.raw_meaning_of(row).metadata() == raw.metadata()
+    torch.testing.assert_close(store.raw_meaning_of(row).roles, raw.roles, rtol=0, atol=0)
 
 
 def test_configured_store_still_raises_when_full():

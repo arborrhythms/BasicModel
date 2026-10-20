@@ -1,0 +1,99 @@
+ssssss.............s.ss.......F..........sF....sFFsFFF.Fsss............. [ 50%]
+......................................................................   [100%]
+=================================== FAILURES ===================================
+_______ test_shared_training_group_survives_batch_and_recycle_boundaries _______
+test/test_bounded_test_runner.py:143: in test_shared_training_group_survives_batch_and_recycle_boundaries
+    assert len((tmp_path / "trainings").read_text().splitlines()) == 1
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7929/test_shared_training_group_sur0/trainings'
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 30s, 0.5 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+_____ test_aggregate_cap_terminates_parallel_workers_before_host_pressure ______
+test/test_bounded_test_runner.py:303: in test_aggregate_cap_terminates_parallel_workers_before_host_pressure
+    assert result["exit_code"] == 137
+E   assert 1 == 137
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 30s, 0.2 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+________________ test_xpass_respects_pytest_strictness[False-0] ________________
+test/test_bounded_test_runner.py:349: in test_xpass_respects_pytest_strictness
+    assert result['exit_code'] == expected_exit
+E   assert 1 == 0
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+________________ test_xpass_respects_pytest_strictness[True-1] _________________
+test/test_bounded_test_runner.py:350: in test_xpass_respects_pytest_strictness
+    assert len(result['completed']) == len(result['selected']) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+__________________ test_empty_selection_is_not_a_green_suite ___________________
+test/test_bounded_test_runner.py:380: in test_empty_selection_is_not_a_green_suite
+    assert result["exit_code"] == 5
+E   assert 1 == 5
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 60s, 0.5 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+____________ test_aborted_peer_preserves_completed_and_active_cases ____________
+test/test_bounded_test_runner.py:402: in test_aborted_peer_preserves_completed_and_active_cases
+    assert result["exit_code"] == 42
+E   assert 1 == 42
+----------------------------- Captured stdout call -----------------------------
+[collect] 2 selectors; limit 20s, 0.2 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+_____________ test_source_change_cannot_receive_a_passing_receipt ______________
+test/test_bounded_test_runner.py:420: in test_source_change_cannot_receive_a_passing_receipt
+    assert result["reason"] == "source_changed"
+E   AssertionError: assert 'collection_exit' == 'source_changed'
+E     
+E     - source_changed
+E     + collection_exit
+----------------------------- Captured stdout call -----------------------------
+[collect] 1 selectors; limit 15s, 0.5 GiB
+[collect] exit 1; 1.1s; peak 0.02 GiB
+______________ test_termination_persists_failure_and_cleans_child ______________
+test/test_bounded_test_runner.py:459: in test_termination_persists_failure_and_cleans_child
+    assert (tmp_path / "active.pid").exists()
+E   AssertionError: assert False
+E    +  where False = exists()
+E    +    where exists = (PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7929/test_termination_persists_fail0') / 'active.pid').exists
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries
+FAILED test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure
+FAILED test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]
+FAILED test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]
+FAILED test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite
+FAILED test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases
+FAILED test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt
+FAILED test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child
+8 failed, 119 passed, 15 skipped, 12 warnings in 61.70s (0:01:01)

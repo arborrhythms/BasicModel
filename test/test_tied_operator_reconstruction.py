@@ -128,8 +128,8 @@ def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
         width = int(model.conceptualSpace.stm.concept_dim)
         with torch.no_grad():
             inner.layer.biasWeight.fill_(.13)
-        left = torch.linspace(-.2, .3, width).reshape(1, width)
-        right = torch.linspace(.1, -.15, width).reshape(1, width)
+        left = torch.linspace(.4, .65, width).reshape(1, width)
+        right = torch.linspace(.55, .425, width).reshape(1, width)
         parent = op.compose(left, right).detach().requires_grad_()
         recovered = language.reverse_binary_step(
             parent, torch.tensor([index]), torch.tensor([True]),

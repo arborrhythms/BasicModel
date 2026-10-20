@@ -85,7 +85,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             ss._grammar_is_default_only,
             "MM_xor_loopback must be a FULL-ROUTER grammar (compose fires).")
         D = ss.languageLayer.feature_dim
-        x = torch.randn(2, 4, D, requires_grad=True)
+        x = torch.rand(2, 4, D, requires_grad=True)
         ss.compose(x)
         rp = ss.routing_state.rule_probs
         self.assertTrue(torch.is_tensor(rp))
@@ -146,7 +146,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             p.grad = None
         torch.manual_seed(0)
         D = ll.feature_dim
-        x = torch.randn(2, 4, D, requires_grad=True)
+        x = torch.rand(2, 4, D, requires_grad=True)
         ss.compose(x)
         rp = ss.routing_state.rule_probs
         self.assertTrue(rp.requires_grad and rp.grad_fn is not None)
@@ -218,7 +218,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             SymbolSubSpace._map_op_columns, stub)
 
         torch.manual_seed(1)
-        x = torch.randn(2, 4, 4, requires_grad=True)
+        x = torch.rand(2, 4, 4, requires_grad=True)
         router.compose(x, word_space=None)
         rp = stub._synthesize_rule_probs_soft(router._last_space_role_routings, 2)
         self.assertTrue(torch.is_tensor(rp) and rp.requires_grad)

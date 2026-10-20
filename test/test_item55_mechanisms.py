@@ -242,7 +242,7 @@ def test_surface_inverses(tmp_path, monkeypatch):
     from Language import (SurfaceLayer, LowerLayer, PrepositionLayer, MarkerUnaryLayer,
         LowerUnaryLayer, DefiniteUnaryLayer, PrepositionUnaryLayer, SurfaceUnaryLayer,
         TransposeLayer, OperationSelectionLayer, _BinaryGrammarOpAdapter)
-    left,right = torch.randn(2,8),torch.randn(2,8)
+    left,right = torch.rand(2,8),torch.rand(2,8)
     surface = SurfaceLayer(8,8)
     parent = surface.compose(left,right)
     for side,witness in (('left',left),('right',right)):

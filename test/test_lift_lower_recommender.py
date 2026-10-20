@@ -34,7 +34,7 @@ class TestLiftLowerRecommender(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(0)
         self.D = 8
-        self.W = torch.tanh(torch.randn(6, self.D))   # distinct codebook rows
+        self.W = (1 + torch.tanh(torch.randn(6, self.D))) / 2   # distinct codebook rows
 
     def _check(self, layer):
         basis = _StubBasis(self.W)

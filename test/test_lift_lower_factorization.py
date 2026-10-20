@@ -73,7 +73,7 @@ def _random_bivec(shape, seed=0):
     torch.manual_seed(seed)
     # Scale rand from [0, 1) into [-1, 1) with a slight inset so the
     # internal SigmaLayer / PiLayer's atanh entry stays finite.
-    return torch.rand(*shape) * 1.8 - 0.9
+    return torch.rand(*shape) * 0.9 + 0.05
 
 
 class TestRawGateRetired(unittest.TestCase):
@@ -247,9 +247,9 @@ class TestLiftLowerFactorization(unittest.TestCase):
         D = 10
         layer = LiftLayer(nInput=D, nOutput=D)
         torch.manual_seed(31)
-        NP = torch.rand(B, V_S, D) * 1.8 - 0.9
+        NP = torch.rand(B, V_S, D) * 0.9 + 0.05
         torch.manual_seed(32)
-        VP = torch.rand(B, V_S, D) * 1.8 - 0.9
+        VP = torch.rand(B, V_S, D) * 0.9 + 0.05
         with torch.no_grad():
             out = layer.forward(VP, NP)
         self.assertEqual(out.shape, NP.shape,
@@ -271,9 +271,9 @@ class TestLiftLowerFactorization(unittest.TestCase):
         D = 10
         layer = LowerLayer(nInput=D, nOutput=D)
         torch.manual_seed(41)
-        NP = torch.rand(B, V_S, D) * 1.8 - 0.9
+        NP = torch.rand(B, V_S, D) * 0.9 + 0.05
         torch.manual_seed(42)
-        ADJ = torch.rand(B, V_S, D) * 1.8 - 0.9
+        ADJ = torch.rand(B, V_S, D) * 0.9 + 0.05
         with torch.no_grad():
             out = layer.forward(ADJ, NP)
         self.assertEqual(out.shape, NP.shape)

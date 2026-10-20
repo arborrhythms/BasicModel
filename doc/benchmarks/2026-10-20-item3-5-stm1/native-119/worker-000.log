@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_reconstruction_uses_held_word_support_after_attention_changes ______
+test/test_reverse_traversal.py:130: in test_reconstruction_uses_held_word_support_after_attention_changes
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 1 / 1 (100.0%)
+E   Greatest absolute difference: 2.0 at index (0,)
+E   Greatest relative difference: 1.0 at index (0,)
+=============================== warnings summary ===============================
+test/test_reverse_traversal.py::test_reconstruction_uses_held_word_support_after_attention_changes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reverse_traversal.py::test_reconstruction_uses_held_word_support_after_attention_changes
+1 failed, 1 warning in 1.69s

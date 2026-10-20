@@ -184,7 +184,7 @@ Training loop and I/O.
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |
 | `whenScale` | float | `0.1` | Loss weight on the `.when` (temporal) channel in general event comparisons. Per-word reconstruction excludes the field's shared timestamp. |
 | `negSamples` | int | `64` | Negative samples per positive for CBOW / SBOW. Memory cost: $O(\text{batch} \cdot \text{negSamples} \cdot \text{dim})$ vs $O(\text{batch} \cdot \text{vocab})$ for full softmax. |
-| `TruthLoss` | float | `0.0` | Additive penalty for propositions that contradict the TruthSet (union-norm reduction via `Basis.disjunction()`). `0.0` disables. |
+| `TruthLoss` | float | `0.0` | Additive penalty for opposite-evidence overlap with the TruthSet: affirmed coordinates overlap denials, and denied coordinates overlap affirmations. `0.0` disables. |
 | `maskRate` | float | `0.15` | Within-sentence IR Bernoulli mask rate. BERT default 0.15. |
 | `trainEmbedding` | string | `"NONE"` | Embedding update mode: `NONE`, `CBOW`, `SBOW`, `BACKPROP`, `BOTH`, `JOINT`. See table below. |
 | `embeddingScale` | float | `0.25` | JOINT-mode embedding loss weight $\lambda$: $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{emb}}$. Ignored by other modes. (Older docs called this `trainEmbeddingRatio`.) |

@@ -3547,23 +3547,53 @@ class SurfaceLayer(GrammarLayer):
         # learned affine map may move chart coordinates either way without
         # sending the resulting concept outside its membership cube.
         marker = cube_chart(left)
-        return cube_unchart(self.marker_map(marker) + cube_chart(right))
+        delta = self.marker_map(marker)
+        return cube_unchart((delta + cube_chart(right)) / self.chart_scale(delta))
+
+    def chart_scale(self, delta):
+        # Keep the affine combination inside the finite chart's range by
+        # construction. An unscaled sum saturates tanh at native 0/1 codes
+        # and loses the content even with the other operand supplied.
+        rail = cube_chart(self.marker_map.weight.new_ones(()))
+        # One bit of chart headroom keeps float32 outputs away from tanh's
+        # numerical rails, including after a nested surface attachment.
+        return 2 * (1 + delta.abs() / rail)
 
     forward = compose
 
     def generate(self, parent):
-        marker = cube_unchart(self.marker_prior(parent))
+        proposed = cube_chart(cube_unchart(self.marker_prior(parent)))
+        delta = self.marker_map(proposed)
+        rail = cube_chart(parent.new_ones(()))
+        target = 2 * cube_chart(parent)
+        change = target * delta.abs() / rail - delta
+        # The prior proposes a marker. If its residual is outside the chart,
+        # move along the affine line toward zero translation until the
+        # content has a valid inverse. No content coordinate is clipped.
+        endpoint = torch.where(change > 0, rail - target, -rail - target)
+        fraction = torch.where(change != 0, endpoint / torch.where(
+            change != 0, change, 1.), torch.ones_like(change)).amin(-1, keepdim=True).clamp(0, 1)
+        neutral = torch.linalg.solve(self.marker_map.weight,
+                                     -self.marker_map.bias.unsqueeze(-1)).squeeze(-1)
+        marker = cube_unchart(neutral + fraction * (proposed - neutral))
         return marker, self.reconstruct(parent, marker, 'left')[1]
 
     reverse = generate
 
     def reconstruct(self, parent, reference, side):
         if side == "left":
-            return reference, cube_unchart(cube_chart(parent) -
-                self.marker_map(cube_chart(reference)))
+            delta = self.marker_map(cube_chart(reference))
+            return reference, cube_unchart(cube_chart(parent) * self.chart_scale(delta) - delta)
         if side != "right":
             raise ValueError("surface witness side must be left or right")
-        rhs = cube_chart(parent) - cube_chart(reference) - self.marker_map.bias
+        chart, known = 2 * cube_chart(parent), cube_chart(reference)
+        rail = cube_chart(parent.new_ones(()))
+        difference = chart - known
+        denominator = 1 - difference.sign() * chart / rail
+        # At a shared rail the marker is underdetermined: zero translation
+        # is a valid inverse choice. The occurrence inverse supplies the
+        # marker instead, retaining the uniquely determined content.
+        rhs = difference / torch.where(denominator != 0, denominator, 1.) - self.marker_map.bias
         marker_chart = torch.linalg.solve(self.marker_map.weight, rhs.unsqueeze(-1)).squeeze(-1)
         return cube_unchart(marker_chart), reference
 
@@ -6810,7 +6840,8 @@ class OperationSelectionLayer(nn.Module):
                 grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
                 previous_unary=None, stop_exact=None, operand_activations=None,
-                operand_content_activations=None, operand_identities=None, policy_grad=True):
+                operand_content_activations=None, operand_identities=None, policy_grad=True,
+                expectation_prime=None):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -6956,7 +6987,8 @@ class OperationSelectionLayer(nn.Module):
         alternative_logits = logits
         if score_delta is not None:
             logits = logits + score_delta
-        prime = getattr(self, '_expectation_prime', None)
+        prime = (getattr(self, '_expectation_prime', None) if expectation_prime is None
+                 else expectation_prime)
         if prime is not None:
             bias = self.prime_bias(candidates, prime)
             logits = logits + bias
@@ -13411,6 +13443,15 @@ class LanguageSpace(nn.Module):
         for index, wrapped in enumerate(binary_ops):
             op = getattr(wrapped, 'gl', wrapped)
             left, right = lefts[index].detach(), rights[index].detach()
+            # Inverses may propose an unavailable pair outside their domain.
+            # Reject it before asking the forward identity map to validate
+            # recomposition; an unselected proposal is not an observation.
+            in_domain = (torch.isfinite(left).all(-1) & torch.isfinite(right).all(-1)
+                         & ((left >= 0) & (left <= 1)).all(-1)
+                         & ((right >= 0) & (right <= 1)).all(-1))
+            admissible = available[:, index] & in_domain
+            left = torch.where(admissible[:, None], left, .5)
+            right = torch.where(admissible[:, None], right, .5)
             lf = left if form_width is None else left[..., :form_width]
             rf = right if form_width is None else right[..., :form_width]
             left_readable = (valid & (bank == lf[:, None]).all(-1)).any(-1)
@@ -13434,7 +13475,7 @@ class LanguageSpace(nn.Module):
                                          repeated_symbol(left, form_width), folded)
             folded = folded if form_width is None else folded[..., :form_width]
             pair_error = (folded.detach() - value).square().mean(-1)
-            pair_masks.append(available[:, index] & left_readable & right_readable
+            pair_masks.append(admissible & left_readable & right_readable
                               & progress & (pair_error <= best + tolerance)
                               & (pair_error <= tolerance))
         pairs = (torch.stack(pair_masks, -1) if pair_masks else

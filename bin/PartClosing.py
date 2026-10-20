@@ -24,6 +24,7 @@ class PartClosing:
         self._definitions = {}
         self._occupations = []
         self._individuals = set()
+        self._required_seats = set()
         self._next = int(self.alloc.next_id)
         self._ready = False
         self._committed = False
@@ -31,6 +32,8 @@ class PartClosing:
         self.when = None
 
     def _point(self, symbol):
+        if symbol is None:
+            return None
         row = self.owner._csw_row_of(int(symbol))
         return None if row is None else self.owner.similarity_codebook.lookup_rows(row).detach()
 
@@ -68,6 +71,9 @@ class PartClosing:
         self._next += 1
         return symbol
 
+    def _mint_terminal(self, value):
+        return id(value) in self._required_seats or self._native(value.word_id)
+
     def _plan_term(self, value, as_argument):
         pending, active = [(value, as_argument, False)], set()
         while pending:
@@ -83,24 +89,31 @@ class PartClosing:
                 raise ValueError('recursive composing object')
             active.add(id(term))
             pending.append((term, argument, True))
-            dependencies = (*term.children, *((term.binding,) if term.binding is not None else ()))
-            pending.extend((child, True, False) for child in reversed(dependencies))
+            dependencies = [(child, len(term.children) == 2) for child in term.children]
+            if term.binding is not None:
+                dependencies.append((term.binding, True))
+            pending.extend((child, needed, False) for child, needed in reversed(dependencies))
         return self._planned[id(value)]['symbol']
 
     def _plan_one(self, value, as_argument):
         if id(value) in self._planned:
             record = self._planned[id(value)]
-            if as_argument and record['symbol'] is None:
+            if as_argument and record['symbol'] is None and self._mint_terminal(value):
                 record['symbol'] = self._reserve()
             record['seat'] |= (as_argument and value.binding is None
+                               and record['symbol'] is not None and not self._native(record['symbol'])
+                               and (record['edge'] is None or id(value) in self._required_seats)
                                and self._point(record['symbol']) is None)
             return record['symbol']
-        children = tuple(self._plan_term(child, True) for child in value.children)
+        children = tuple(self._plan_term(child, len(value.children) == 2) for child in value.children)
         reference = (self._plan_term(value.binding, True) if value.binding is not None else
                      value.reference if self._native(value.reference) else None)
         edge, pair, types = None, None, ('object',)
         if not children:
-            if reference is None and as_argument:
+            if (reference is None and value.reference > 0
+                    and self.store.location(value.reference) is None):
+                raise ValueError('a closing argument names an unavailable native reference')
+            if reference is None and as_argument and self._mint_terminal(value):
                 reference = self._reserve()
         elif len(children) == 1:
             # A unary face changes the working concept/order. It supplies no
@@ -110,7 +123,7 @@ class PartClosing:
                 child = self._point(children[0])
                 if child is not None and torch.equal(child.to(value.point), value.point):
                     reference = children[0]
-                else:
+                elif self._mint_terminal(value):
                     reference = self._reserve()
                 types = ('kind',) if value.order > 1 else ('object',)
             child_record = self._planned[id(value.children[0])]
@@ -119,11 +132,15 @@ class PartClosing:
             part, whole = children
             if value.operation == 'whole':
                 part, whole = whole, part
-            pair = (part, whole)
-            edge = self._pairs.get(pair, self.parts.find(*pair))
-            if edge is None:
-                edge = self._reserve()
-                self._pairs[pair] = edge
+            # A derivation edge owns a native handle, not another copy of
+            # the dissolved wide value in the concept bank. An unminted
+            # argument does not acquire an identity merely by composition.
+            if part is not None and whole is not None:
+                pair = (part, whole)
+                edge = self._pairs.get(pair, self.parts.find(*pair))
+                if edge is None:
+                    edge = self._reserve()
+                    self._pairs[pair] = edge
             types = ('situation',) if value.operation in (
                 'lift', 'part', 'assertPart', 'whole', 'implies', 'equal') else ('object',)
             if value.operation == 'verb':
@@ -136,10 +153,14 @@ class PartClosing:
                     types = (*types, 'speech_individual')
             if reference is None:
                 reference = edge
+                if reference is None and id(value) in self._required_seats:
+                    reference = self._reserve()
         else:
             raise ValueError('a composition has one or two arguments')
         record = dict(value=value, symbol=reference, edge=edge, pair=pair, types=types,
                       seat=as_argument and value.binding is None and reference is not None
+                      and not self._native(reference)
+                      and (edge is None or id(value) in self._required_seats)
                       and self._point(reference) is None)
         self._planned[id(value)] = record
         self._plan.append(record)
@@ -180,6 +201,8 @@ class PartClosing:
             pending.extend(value.children)
         minted = clause.minted or bool(clause.reference_request and
                                       clause.reference_request.get('mode') == 'mint')
+        if minted:
+            self._required_seats.add(id(term))
         symbol = self._plan_term(term, minted)
         if minted:
             self._individuals.add(symbol)
@@ -196,7 +219,9 @@ class PartClosing:
         occupations = None if ref is None else ref()
         for record in self._plan:
             value = record['value']
-            name = value.formal_name or value.operation
+            # Only an admitted formal operation supplies distributional
+            # occupations. A direct semantic pair invents no grammar role.
+            name = value.formal_name
             if name is None or occupations is None:
                 continue
             for role, child in enumerate(value.children, 1):
@@ -210,10 +235,12 @@ class PartClosing:
                 argument = f'{name}_argout1'
                 if argument in occupations.index:
                     self._occupations.append((record['symbol'], argument))
-        count = self._next - int(self.alloc.next_id)
-        self.owner._preflight_concept_allocation(count, context='complete Part closing')
+        new_edges = set(self._pairs.values())
+        seats = {record['symbol'] for record in self._plan if record['seat']}
+        count = self._next - int(self.alloc.next_id) - len(new_edges - seats)
         if self._next > self.parts.capacity:
             raise OverflowError('LTM2 symbol capacity exhausted before closing')
+        self.owner._preflight_concept_allocation(count, context='complete Part closing')
         # Reserve physical seats together. A collection of individually
         # possible admissions must not leave a prefix when their pool fills.
         layer, caps = self.alloc.layer(), self.owner._order_caps()
@@ -249,7 +276,7 @@ class PartClosing:
         # Allocate handles in the order planned, before seating any content.
         start = int(self.alloc.next_id)
         for expected in range(start, self._next):
-            if self.owner.new_concept() != expected:
+            if self.alloc.new_concept() != expected:
                 raise RuntimeError('native symbol allocation changed during closing')
         for record in self._plan:
             value, symbol, edge = record['value'], record['symbol'], record['edge']
@@ -291,7 +318,9 @@ class PartClosing:
         # Direct callers supply their already-completed operands. They do not
         # get a fabricated derivation of an absolute point.
         if clause.relation is None:
-            return Composition(clause.point, order=clause.order)
+            reference = clause.refs[0]
+            return Composition(clause.point, order=clause.order,
+                               reference=reference if type(reference) is int else -1)
         terms = []
         for role in (0, 2):
             ref = clause.refs[role]

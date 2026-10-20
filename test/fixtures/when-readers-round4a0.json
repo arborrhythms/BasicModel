@@ -27,6 +27,26 @@
       "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
     },
     {
+      "file": "bin/ClauseRow.py",
+      "function": "ClauseRows.write_clause",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/Forgetting.py",
+      "function": "forget_parts",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
       "file": "bin/Language.py",
       "function": "SymbolSpace._publish_symbol_snapshot",
       "attributes": [
@@ -200,6 +220,26 @@
       "now": "Each word is stamped at its containing source sentence position."
     },
     {
+      "file": "bin/PartClosing.py",
+      "function": "PartClosing._commit",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/PartStore.py",
+      "function": "PartStore.add",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
       "file": "bin/PerceptField.py",
       "function": "PerceptField.select",
       "attributes": [
@@ -220,6 +260,16 @@
       ]
     },
     {
+      "file": "bin/ReferenceClose.py",
+      "function": "ReferenceClose.accessible",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
       "file": "bin/ReferenceContext.py",
       "function": "SituationFrame.detached",
       "previous_absolute_time": false,
@@ -227,6 +277,16 @@
       "attributes": [
         "when"
       ]
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "stamp",
+      "attributes": [
+        "when"
+      ],
+      "role": "writer",
+      "previous_absolute_time": false,
+      "now": "New rows stamp model processing time in a separate sinusoidal column; re-witnessing preserves the first stamp."
     },
     {
       "file": "bin/SentenceAttention.py",
@@ -807,16 +867,6 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/RowTime.py",
-      "function": "stamp",
-      "attributes": [
-        "when"
-      ],
-      "role": "writer",
-      "previous_absolute_time": false,
-      "now": "New rows stamp model processing time in a separate sinusoidal column; re-witnessing preserves the first stamp."
     }
   ],
   "dynamic_readers": [

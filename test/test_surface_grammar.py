@@ -17,9 +17,9 @@ import Language
 
 def test_surface_attachment_keeps_marker_information_and_recomposes():
     layer = Language.SurfaceLayer(nInput=8, nOutput=8)
-    left, right = torch.randn(3, 8), torch.randn(3, 8)
+    left, right = torch.rand(3, 8), torch.rand(3, 8)
     parent = layer.compose(left, right)
-    assert not torch.equal(parent, layer.compose(left + .5, right))
+    assert not torch.equal(parent, layer.compose((left + 1) / 2, right))
     a, b = layer.generate(parent)
     torch.testing.assert_close(layer.compose(a, b), parent)
     assert layer.semantic_operand == 1
@@ -28,7 +28,7 @@ def test_surface_attachment_keeps_marker_information_and_recomposes():
 def test_surface_generation_learns_distinct_children_from_full_width_values():
     torch.manual_seed(827)
     layer = Language.SurfaceLayer(nInput=8, nOutput=8)
-    parent, left, right = torch.randn(3, 8), torch.randn(3, 8), torch.randn(3, 8)
+    parent, left, right = torch.rand(3, 8), torch.rand(3, 8), torch.rand(3, 8)
     optimizer = torch.optim.Adam(layer.parameters(), lr=.03)
     for _ in range(400):
         optimizer.zero_grad()
@@ -61,7 +61,7 @@ def test_selected_surface_preserves_complete_content_meaning(monkeypatch):
                        word_rows=torch.cat((entry.word_rows, entry.word_rows[:1])),
                        activations=torch.cat((entry.activations, entry.activations[:1])),
                        concept_ids=torch.cat((entry.concept_ids, entry.concept_ids[:1])),
-                       leaves=torch.cat((entry.leaves, torch.randn_like(entry.leaves[:1]))),
+                       leaves=torch.cat((entry.leaves, torch.rand_like(entry.leaves[:1]))),
                        lexical_forms=(None,) * 3, actions=actions)
     recovered = owner.program_meaning(attached, registry)
     assert recovered.metadata() == original.metadata()

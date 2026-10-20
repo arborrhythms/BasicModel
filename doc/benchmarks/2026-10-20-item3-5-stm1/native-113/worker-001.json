@@ -1,0 +1,526 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_clause_scope.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+    "test/test_clause_scope.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+    "test/test_clause_scope.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+    "test/test_clause_scope.py::test_committed_close_dissolves_stm_and_keeps_only_the_output_field",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+    "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+    "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+    "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+    "test/test_concept_forgetting.py::test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle",
+    "test/test_concept_forgetting.py::test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+    "test/test_concept_forgetting.py::test_two_empty_concepts_are_not_redundant",
+    "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "test/test_concept_forgetting.py::test_incoming_sparse_edge_or_record_prevents_recycling",
+    "test/test_concept_forgetting.py::test_different_order_or_definition_never_merges",
+    "test/test_concept_forgetting.py::test_exact_physical_preallocation_warns_even_for_external_handles",
+    "test/test_concept_forgetting.py::test_equal_descriptions_do_not_merge_distinct_individuals",
+    "test/test_concept_forgetting.py::test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean",
+    "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip",
+    "test/test_concept_forgetting.py::test_only_unreferenced_zero_relevance_column_is_pruned",
+    "test/test_concept_forgetting.py::test_component_coordinates_protect_referenced_seats",
+    "test/test_concept_forgetting.py::test_concept_meaning_starts_zero_and_grows_without_changing_direction",
+    "test/test_constituent_lesson.py::test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing_them",
+    "test/test_constituent_lesson.py::test_constituent_target_uses_all_native_reference_variants_not_the_rule_id_as_an_action",
+    "test/test_constituent_lesson.py::test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences",
+    "test/test_constituent_lesson.py::test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce",
+    "test/test_constituent_lesson.py::test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared",
+    "test/test_constituent_lesson.py::test_native_constituent_lesson_captures_student_states_without_cases",
+    "test/test_constituent_lesson.py::test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer",
+    "test/test_constituent_lesson.py::test_four_constituent_gates_on_trained_artifact"
+  ],
+  "completed": [
+    "test/test_clause_scope.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+    "test/test_clause_scope.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+    "test/test_clause_scope.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+    "test/test_clause_scope.py::test_committed_close_dissolves_stm_and_keeps_only_the_output_field",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+    "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+    "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+    "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+    "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+    "test/test_concept_forgetting.py::test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle",
+    "test/test_concept_forgetting.py::test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+    "test/test_concept_forgetting.py::test_two_empty_concepts_are_not_redundant",
+    "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "test/test_concept_forgetting.py::test_incoming_sparse_edge_or_record_prevents_recycling",
+    "test/test_concept_forgetting.py::test_different_order_or_definition_never_merges",
+    "test/test_concept_forgetting.py::test_exact_physical_preallocation_warns_even_for_external_handles",
+    "test/test_concept_forgetting.py::test_equal_descriptions_do_not_merge_distinct_individuals",
+    "test/test_concept_forgetting.py::test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean",
+    "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip",
+    "test/test_concept_forgetting.py::test_only_unreferenced_zero_relevance_column_is_pruned",
+    "test/test_concept_forgetting.py::test_component_coordinates_protect_referenced_seats",
+    "test/test_concept_forgetting.py::test_concept_meaning_starts_zero_and_grows_without_changing_direction",
+    "test/test_constituent_lesson.py::test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing_them",
+    "test/test_constituent_lesson.py::test_constituent_target_uses_all_native_reference_variants_not_the_rule_id_as_an_action",
+    "test/test_constituent_lesson.py::test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences",
+    "test/test_constituent_lesson.py::test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce",
+    "test/test_constituent_lesson.py::test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared",
+    "test/test_constituent_lesson.py::test_native_constituent_lesson_captures_student_states_without_cases",
+    "test/test_constituent_lesson.py::test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer",
+    "test/test_constituent_lesson.py::test_four_constituent_gates_on_trained_artifact"
+  ],
+  "slow_selected": [
+    "test/test_constituent_lesson.py::test_native_constituent_lesson_captures_student_states_without_cases"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_constituent_lesson.py::test_four_constituent_gates_on_trained_artifact": "stage4e"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_clause_scope.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007720374967902899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_scope.py::test_absolute_embedding_pushes_its_point_without_a_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004442709032446146,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_scope.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.25047937501221895,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_scope.py::test_committed_close_dissolves_stm_and_keeps_only_the_output_field",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012857078108936548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[assertion]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.9284079999197274,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 1; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[cache_failure]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.9286055830307305,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 1; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[pass]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.9716059581842273,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[compile-cache-retry] test_cache.py::test_compile: retry_without_precompiled_headers (once)\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_compile_cache_recovery.py::test_stale_header_retry_is_once_and_preserves_real_failures[teardown]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.6628970000892878,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.19974362500943244,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002887333044782281,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001539791002869606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011147919576615095,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007796247955411673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008031250908970833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002437499351799488,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002144169993698597,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.18432104191742837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002963750157505274,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004170420579612255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022202921099960804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002072000177577138,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001813333947211504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001994666876271367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0017562499269843102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001760917017236352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026395830791443586,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 3, 'after': 2, 'reclaimed': 1, 'protected': 0, 'retired': (1,), 'next_id': 4}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0023907499853521585,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 1, 'reclaimed': 1, 'protected': 1, 'retired': (2,), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_two_empty_concepts_are_not_redundant",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018447500187903643,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 2, 'reclaimed': 0, 'protected': 0, 'retired': (), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003064541844651103,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 9, 'after': 7, 'reclaimed': 2, 'protected': 3, 'retired': (2, 1), 'next_id': 11}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_incoming_sparse_edge_or_record_prevents_recycling",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002087583066895604,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 3, 'after': 3, 'reclaimed': 0, 'protected': 4, 'retired': (), 'next_id': 5}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_different_order_or_definition_never_merges",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018875841051340103,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 2, 'reclaimed': 0, 'protected': 0, 'retired': (), 'next_id': 3}\r\n[Concept forgetting] {'before': 2, 'after': 2, 'reclaimed': 0, 'protected': 0, 'retired': (), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_exact_physical_preallocation_warns_even_for_external_handles",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001614958979189396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_equal_descriptions_do_not_merge_distinct_individuals",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022571671288460493,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 2, 'reclaimed': 0, 'protected': 0, 'retired': (), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024505408946424723,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 1, 'reclaimed': 1, 'protected': 0, 'retired': (1,), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004405332962051034,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 1, 'reclaimed': 1, 'protected': 0, 'retired': (1,), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_only_unreferenced_zero_relevance_column_is_pruned",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002359083155170083,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 1, 'after': 1, 'reclaimed': 0, 'protected': 1, 'retired': (), 'next_id': 2}\r\n[Concept forgetting] {'before': 1, 'after': 0, 'reclaimed': 1, 'protected': 0, 'retired': (1,), 'next_id': 2}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_component_coordinates_protect_referenced_seats",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018763330299407244,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 2, 'reclaimed': 0, 'protected': 2, 'retired': (), 'next_id': 3}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_concept_meaning_starts_zero_and_grows_without_changing_direction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002530419733375311,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing_them",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005805750144645572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_constituent_target_uses_all_native_reference_variants_not_the_rule_id_as_an_action",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021504098549485207,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009553751442581415,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009517499711364508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005003339610993862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_native_constituent_lesson_captures_student_states_without_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 8.61002775002271,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06133483303710818,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_constituent_lesson.py::test_four_constituent_gates_on_trained_artifact",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "stage4e",
+      "duration": 0.0003088340163230896,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_constituent_lesson.py', 249, 'Skipped: phase artifact absent: stage4e (no producing lesson registered)')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

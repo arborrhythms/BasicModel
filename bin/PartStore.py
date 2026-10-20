@@ -153,7 +153,7 @@ class PartStore(nn.Module):
             readings.append('conditional')
         if 'situation' in left and 'speech_individual' in right:
             readings.append('attribution')
-        if 'object' in left and 'word' in right:
+        if part != whole and 'object' in left and 'word' in right:
             readings.append('definition')
         if 'kind' in left and 'kind' in right:
             readings.append('subsumption')

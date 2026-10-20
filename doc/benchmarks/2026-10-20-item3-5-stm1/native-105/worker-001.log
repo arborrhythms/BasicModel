@@ -1,0 +1,748 @@
+.FFFFFF.F.FFFFFFFFFFF.FF.FFFF                                            [100%]
+=================================== FAILURES ===================================
+_______ test_closing_uses_the_ordered_object_parent_and_deduplicates_it ________
+test/test_definition_taxonomy.py:86: in test_closing_uses_the_ordered_object_parent_and_deduplicates_it
+    row = store.write_clause(source)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:472: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:183: in prepare
+    assert_cube(value.point)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____________ test_failed_closing_does_not_leave_a_taxonomy_prefix _____________
+test/test_definition_taxonomy.py:113: in test_failed_closing_does_not_leave_a_taxonomy_prefix
+    store.write_clause(bad)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:472: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:183: in prepare
+    assert_cube(value.point)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ test_closing_binds_subject_form_to_particular_without_widening_compose_access _
+test/test_definition_taxonomy.py:131: in test_closing_binds_subject_form_to_particular_without_widening_compose_access
+    assert cid in f.cs.word_concepts('cat')
+E   AssertionError: assert 7152357471235947894 in (15, 16, 21, 22)
+E    +  where (15, 16, 21, 22) = word_concepts('cat')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_clause_acceptance.SentenceFixture object at 0x12839c890>.cs
+______________ test_referenced_phrase_admission_is_atomic[width] _______________
+test/test_definition_taxonomy.py:162: in test_referenced_phrase_admission_is_atomic
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____________ test_referenced_phrase_admission_is_atomic[capacity] _____________
+test/test_definition_taxonomy.py:165: in test_referenced_phrase_admission_is_atomic
+    with pytest.raises(OverflowError, match='forgetting'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE OverflowError
+__________ test_selected_anaphor_form_binds_to_its_own_end_particular __________
+test/test_definition_taxonomy.py:183: in test_selected_anaphor_form_binds_to_its_own_end_particular
+    assert int(f.store.row_ids[row]) in f.cs.word_concepts('he')
+E   AssertionError: assert -5431123250321959018 in (19, 20, 25)
+E    +  where -5431123250321959018 = int(tensor(-5431123250321959018))
+E    +  and   (19, 20, 25) = word_concepts('he')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_clause_acceptance.SentenceFixture object at 0x12d626b70>.cs
+________________________ test_symbol_history_projection ________________________
+test/test_relevance_bases.py:217: in test_symbol_history_projection
+    assert p is not None and float(p[row_object]) >= 5.0
+E   assert (None is not None)
+________ TestTruthLoss.test_contradicting_proposition_positive_penalty _________
+test/test_reasoning.py:219: in test_contradicting_proposition_positive_penalty
+    self.assertGreater(penalty.item(), 0.0)
+E   AssertionError: 0.0 not greater than 0.0
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:170: in test_real_packed_ends_train_before_the_next_sentence
+    model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+bin/Models.py:13482: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14014: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10096: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23749: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17067: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22301: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21871: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20990: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_sentence_compose.py:163: in observe
+    torch.testing.assert_close(payload, roles)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 14 / 312 (4.5%)
+E   Greatest absolute difference: 0.2173198163509369 at index (0, 3) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0, 3) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+______________________ test_repeated_word_is_not_reminted ______________________
+test/test_sentence_protocol.py:70: in test_repeated_word_is_not_reminted
+    assert not model._attention_words.descended.any()
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x146e272f0>()
+E    +    where <built-in method any of Tensor object at 0x146e272f0> = tensor([[ True, False,  True, False, False, False, False, False]]).any
+E    +      where tensor([[ True, False,  True, False, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])).descended
+E    +        where NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub..._features=64, bias=True)\n      (1): Tanh()\n    )\n    (readout): Linear(in_features=64, out_features=1, bias=True)\n  )\n)._attention_words
+_______________ test_sum_is_a_mean_and_witness_inverse_is_exact ________________
+test/test_operator_catalogue.py:49: in test_sum_is_a_mean_and_witness_inverse_is_exact
+    assert not bad.any()
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x146982800>()
+E    +    where <built-in method any of Tensor object at 0x146982800> = tensor([True]).any
+________ test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse ________
+test/test_operator_catalogue.py:62: in test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse
+    once = op.compose(verb,modifier)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3463: in forward
+    return self.apply_adverb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3213: in apply_adverb
+    return self._verb_rail_transform(vp_content, gain, shift)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3264: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+______ test_inverse_dispatch_uses_declared_computation_not_operator_name _______
+test/test_operator_catalogue.py:116: in test_inverse_dispatch_uses_declared_computation_not_operator_name
+    assert not unavailable.any()
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x1468a5900>()
+E    +    where <built-in method any of Tensor object at 0x1468a5900> = tensor([True]).any
+___ test_modifier_can_write_silent_coordinate_and_reverse_with_witness[verb] ___
+test/test_operators_round1.py:142: in test_modifier_can_write_silent_coordinate_and_reverse_with_witness
+    actual = op.compose(operand, modifier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3413: in forward
+    return self.apply_verb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3281: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3264: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ test_modifier_can_write_silent_coordinate_and_reverse_with_witness[adverb] __
+test/test_operators_round1.py:142: in test_modifier_can_write_silent_coordinate_and_reverse_with_witness
+    actual = op.compose(operand, modifier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3463: in forward
+    return self.apply_adverb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3213: in apply_adverb
+    return self._verb_rail_transform(vp_content, gain, shift)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3264: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_________ test_gain_only_checkpoint_loads_with_zero_translation[verb] __________
+test/test_operators_round1.py:186: in test_gain_only_checkpoint_loads_with_zero_translation
+    torch.testing.assert_close(restored.compose(x, y), old.compose(x, y), atol=0, rtol=0)
+                               ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3413: in forward
+    return self.apply_verb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3281: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3264: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________ test_gain_only_checkpoint_loads_with_zero_translation[adverb] _________
+test/test_operators_round1.py:186: in test_gain_only_checkpoint_loads_with_zero_translation
+    torch.testing.assert_close(restored.compose(x, y), old.compose(x, y), atol=0, rtol=0)
+                               ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3463: in forward
+    return self.apply_adverb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3213: in apply_adverb
+    return self._verb_rail_transform(vp_content, gain, shift)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3264: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____ test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar] _____
+test/test_operators_round2c.py:96: in test_zero_meaning_departures_and_one_reader_step
+    assert not torch.equal(first['root'],second['root'])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10c5b53a0>(tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]), tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]))
+E    +    where <built-in method equal of type object at 0x10c5b53a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.498s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+_________ test_live_gate_reread_changes_clock_but_not_address_or_when __________
+test/test_operators_round4a0.py:156: in test_live_gate_reread_changes_clock_but_not_address_or_when
+    rows = (store.rel_type[:len(store)] != store.REL_DEF).nonzero().flatten()
+            ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'TernaryTruthStore' object has no attribute 'rel_type'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 14.013s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph_compile.py:1820 
+DEBUG    torch.__trace:graph_compile.py:1841 
+DEBUG    torch.__trace:graph_compile.py:1891 
+DEBUG    torch.__trace:graph_compile.py:1909 
+DEBUG    torch.__trace:graph_compile.py:1913 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph_compile.py:1820 
+DEBUG    torch.__trace:graph_compile.py:1841 
+DEBUG    torch.__trace:graph_compile.py:1891 
+DEBUG    torch.__trace:graph_compile.py:1909 
+DEBUG    torch.__trace:graph_compile.py:1913 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022
+___ test_when_reader_inventory_covers_current_attribute_and_dynamic_readers ____
+test/test_operators_round4a0.py:210: in test_when_reader_inventory_covers_current_attribute_and_dynamic_readers
+    assert actual == {(row['file'], row['function']) for row in fixture['readers']}
+E   AssertionError: assert {('bin/Attent...ompute'), ...} == {('bin/Attent...cewise'), ...}
+E     
+E     Extra items in the left set:
+E     ('bin/Forgetting.py', 'forget_parts')
+E     ('bin/PartStore.py', 'PartStore.add')
+E     ('bin/PartClosing.py', 'PartClosing._commit')
+E     ('bin/ClauseRow.py', 'ClauseRows.write_clause')
+E     ('bin/ReferenceClose.py', 'ReferenceClose.accessible')
+E     Use -v to get more diff
+_________ test_conflicting_claim_preserves_support_and_counterevidence _________
+test/test_lies_can_be_learned.py:12: in test_conflicting_claim_preserves_support_and_counterevidence
+    assert store.row(row)['corners'][2] == pytest.approx(.6)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'corners'
+_______________ test_zero_provenance_registers_without_asserting _______________
+test/test_lies_can_be_learned.py:20: in test_zero_provenance_registers_without_asserting
+    assert store.row(row)['corners'][3] == 1.
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'corners'
+_____ test_transparent_operation_preserves_a_vp_with_a_relational_operand ______
+test/test_live_references.py:42: in test_transparent_operation_preserves_a_vp_with_a_relational_operand
+    row = store.write_clause(field)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:472: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:196: in prepare
+    self._definition(value['symbol'], value['value'].word_id, clause.evidence)
+bin/PartClosing.py:164: in _definition
+    raise ValueError('a word-derived mint requires its admitted word description')
+E   ValueError: a word-derived mint requires its admitted word description
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:244: in test_public_reading_fuses_the_reference_before_capture_and_write
+    assert clause.refs[0] == cid
+E   assert -1 == -4818115069803014736
+=============================== warnings summary ===============================
+test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15563: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    if index is not None and float(store.features.values[index]) == 0:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_definition_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it
+FAILED test/test_definition_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix
+FAILED test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]
+FAILED test/test_definition_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular
+FAILED test/test_relevance_bases.py::test_symbol_history_projection - assert ...
+FAILED test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_sentence_protocol.py::test_repeated_word_is_not_reminted - a...
+FAILED test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact
+FAILED test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse
+FAILED test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name
+FAILED test/test_operators_round1.py::test_modifier_can_write_silent_coordinate_and_reverse_with_witness[verb]
+FAILED test/test_operators_round1.py::test_modifier_can_write_silent_coordinate_and_reverse_with_witness[adverb]
+FAILED test/test_operators_round1.py::test_gain_only_checkpoint_loads_with_zero_translation[verb]
+FAILED test/test_operators_round1.py::test_gain_only_checkpoint_loads_with_zero_translation[adverb]
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]
+FAILED test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when
+FAILED test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers
+FAILED test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence
+FAILED test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting
+FAILED test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+24 failed, 5 passed, 2 warnings in 27.00s

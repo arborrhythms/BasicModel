@@ -21,15 +21,24 @@ correct.
 
 Step 1b remains an unpublished candidate on `codex/item3-5-first-pass`.
 The [current receipt](benchmarks/2026-10-20-item3-5-stm1/status.md) records
-native-95's 231 completed cases: 230 passed, one retired copular-artifact
-prerequisite skip. Whole §14, saved and random paired reconstruction,
-G1–G3 and cube/inverse gates have scoped evidence. Both saved arrival
-initializations pass in both orders (95/97); Claude's unsaved state is
-unavailable. The final proof-writer guard passes 46/46 in native-99. Both
-decomposition lengths pass in both gain arms in attempt 100, all eight
-companion questions correct. The full landing sweep and publication remain
-pending. All failed attempts are retained;
-the three signed-coordinate artifacts remain retired and prerequisite-skipped.
+one full sweep: **5,965 completed; 5,420 passed, 219 failed, 325 skipped,
+one XPASS**. Later scoped checks or declared fixture ports close 218 of
+those failures; native MM_grammar pool exhaustion remains unresolved, and
+publication is held for bind-plan §10's allocation decision and repair.
+Native-120 completes 316/316 (309 passed, three fixture failures, four
+prerequisite skips); native-121 passes the four repaired fixture checks.
+Whole §14, G1–G3, reference-close, cube/inverse, word-store and compiled
+boundaries pass. Saved arrivals 32/75 pass in both orders in native-122/123;
+the new sweep arrival failure passes at its exact captured state in native-125.
+The random paired case and saved state 43 tie exactly at zero reconstruction
+cost. Claude's unsaved state is unavailable and is not claimed as replayed.
+Both decomposition lengths pass in both gain arms in attempt 124, all eight
+companion questions correct at 234/512 and 557/768 work. Original snapshots,
+scopes, budgets and assertions are unchanged.
+All failed and incomplete attempts remain in the receipt; the three
+signed-coordinate artifacts remain retired and prerequisite-skipped.
+The optional cold-start six-epoch learning run timed out without a learning
+verdict and is explicitly carried to Item 0, without extra training.
 
 Item 4's source `fdeef42b8` and October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
 records each §9 gate, the review of record, and close-out measurements.
@@ -267,13 +276,14 @@ harness; what changes is when it runs.
   replacement must keep is rewritten against the new API. One regression
   per repaired defect; no families of mechanism checks.
 
-Phase prerequisites are separate from learning outcomes. `stage3` registers
-its archived order checkpoint, including the producing receipt's failed
-four-word confidence gate; registration does not certify that gate passed.
-The NP restoration certificate uses `np_definite`, its passed predecessor
-with nonempty occupation state. FineWeb, copular identity (`c`) and the full
-4e kept-readings certificate have no qualifying artifact registered yet.
-The column-copula test remains an unconditional mechanism contract.
+Phase prerequisites are separate from learning outcomes. The October 20
+migration decision retired `stage3`, `np_definite` and `np_description`:
+their registry entries are null, and their signed-coordinate files are
+archived beside their producing receipts and never read. Their certificates
+remain prerequisite-skipped until the producing lessons are next needed in
+Item 3.5, with their fixed budgets and seeds. FineWeb, copular identity (`c`)
+and the full 4e kept-readings certificate also have no qualifying artifact
+registered. The column-copula test remains an unconditional mechanism contract.
 
 `restore_phase(loader)` verifies the marked prerequisite before calling the
 consumer's loader with its resolved path. There is no training or fresh-model

@@ -74,8 +74,8 @@ def test_relate_x_x_merges_to_one_edge():
     _word, A = cs.interpret_word([1], 2, key="w")
     sx = cs.singleton_concept(A)                     # the unit set {A}
     C = cs.reify_concept(sx, sx)                     # part- AND whole-leg on sx
-    cs._populate_concept_weights(C)                  # relate() records only
-    c_row, s_row = _rowp(cs, C), _rowp(cs, sx)
-    got = cs.concept_weights(c_row)
-    assert [c for (c, _w) in got].count(s_row) == 1  # merged: ONE untyped edge
-    assert got == [(s_row, 1.0)]                     # ...and nothing else
+    parts = Spaces._concept_alloc_of(cs).parts
+    assert parts.refs[C].tolist() == [sx, sx]
+    assert parts.find(sx, sx) == C
+    assert cs.reify_concept(sx, sx) == C
+    assert sum(parts.refs[edge].tolist() == [sx, sx] for edge in parts.indices()) == 1

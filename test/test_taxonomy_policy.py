@@ -35,6 +35,7 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
                          evidence=(1., 0.))
     assert model.reason_about(model.grammatical_thoughts.form('ask', fact)).support_true == 1
     model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
+    cs._concept_allocator.parts.remove(a[1], b[1])
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == 0
 
@@ -47,7 +48,10 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     assert result.support_true == 1
     path = result.result.evidence['path']
     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
-    assert len(store) == 1 and store.row(0)['kind']=='inference'
+    assert len(store) == 0
+    assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
     model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
+    # Remove the derived conclusion as well as its shared-store premises.
+    cs._concept_allocator.parts.remove(a[1],c[1])
     cs.retire_concept(b[1])
     assert model.reason_about(QuerySpec.from_surface('isPart', a, c)).support_true == 0

@@ -1,0 +1,4 @@
+test/test_reverse_traversal.py::test_reconstruction_uses_held_word_support_after_attention_changes
+test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal
+
+2 tests collected in 0.10s

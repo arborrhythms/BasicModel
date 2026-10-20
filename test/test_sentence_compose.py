@@ -146,6 +146,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         return original(loss)
     monkeypatch.setattr(model, '_sentence_train_step', step)
     commit = model._commit_sentence
+    committed = {}
     def observe(*args):
         events.append(('commit', args[1]))
         result = commit(*args)
@@ -155,9 +156,12 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         assert all(occurrence is not None for row in context for occurrence in row)
         for b, alternative in enumerate((True, False)):
             expected = candidates[args[1], alternative]
-            roles, occupied = disc._canonical_meaning(
-                expected['observed'][b], expected['observed_depths'][b], expected['layout'],
-                None if expected['roles'] is None else expected['roles'][b])
+            # Context reads the retained occurrence/Part view after STM1
+            # dissolves; it does not retain the trial's wide operand array.
+            stored = model.symbolSpace.ltm_store.meaning_of(
+                model.symbolSpace.ltm_store.location(context[b][-1]))
+            roles, occupied = stored.roles, stored.role_mask
+            committed[args[1], b] = roles.detach().clone(), occupied.clone()
             depth, payload, mask = disc._read_context(b)[0][-1]
             assert depth == int(occupied.sum())
             torch.testing.assert_close(payload, roles)
@@ -179,7 +183,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
             for b, alternative in enumerate((True, False)):
                 expected = candidates[sid, alternative]['clauses'][b]
                 actual = model._last_understanding.sentence_fields[sid][b]
-                torch.testing.assert_close(actual.meaning.roles[actual.meaning.role_mask], expected.slots)
+                roles, occupied = committed[sid, b]
+                torch.testing.assert_close(actual.meaning.roles, roles)
+                torch.testing.assert_close(actual.meaning.role_mask, occupied)
                 assert not hasattr(actual, 'actions')
         if not compiled:
             assert perceived == [0, 0, 1, 1]

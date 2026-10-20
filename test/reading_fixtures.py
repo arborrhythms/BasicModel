@@ -222,6 +222,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
         _incoming_trust_multiplier=lambda: trust)
     owner._concept_owner = lambda: owner.conceptualSpace
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
+    if discourse is not None:
+        discourse._ltm_store = store
     # These are closing/storage fixtures, with no learned thought policy.
     # Unknown references still take the real zero-budget question path.
     from Layers import WhatInteractionMemory
@@ -302,3 +304,20 @@ def supply_object(owner, word):
     owner._csw_concept_row(0, obj)
     owner.interpret.define(word, obj)
     return obj
+
+
+def keep_existing_references(monkeypatch):
+    """A supplied binding policy for tests of a fixed word-field inventory.
+
+    The field probes admit four words into six/eight seats. They measure
+    reading those words, not how many new individuals an untrained parse
+    can mint at its close. Existing references and open roles stay legal.
+    """
+    import ReferenceContext
+    prepare = ReferenceContext.prepare_operands
+    def supplied(*args, **kwargs):
+        menu = prepare(*args, **kwargs)
+        for arity in ('binary', 'unary'):
+            menu[arity+'_valid'] = menu[arity+'_valid'] & ~menu[arity+'_choices'].eq(-2).any(-1)
+        return menu
+    monkeypatch.setattr(ReferenceContext, 'prepare_operands', supplied)

@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+    "test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement[False]",
+    "test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement[True]",
+    "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+    "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker",
+    "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+    "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+    "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+    "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+    "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-120/worker-005.recycle.json"
+}

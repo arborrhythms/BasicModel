@@ -1,0 +1,22 @@
+[collect] 11 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.45 GiB
+[worker-000] 11 selectors; limit 900s, 8.0 GiB
+[worker-001] 24 selectors; limit 900s, 8.0 GiB
+[worker-001] exit 0; 19.3s; peak 1.01 GiB
+[worker-002] 2 selectors; limit 900s, 8.0 GiB
+[worker-002] exit 0; 4.9s; peak 0.77 GiB
+[worker-003] 14 selectors; limit 900s, 8.0 GiB
+[worker-003] exit 0; 5.2s; peak 1.01 GiB
+[worker-004] 1 selectors; limit 900s, 8.0 GiB
+[worker-004] exit 0; 18.3s; peak 1.50 GiB
+[worker-005] 4 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 1; 61.0s; peak 1.67 GiB
+[worker-006] 1 selectors; limit 900s, 8.0 GiB
+[worker-006] exit 1; 43.2s; peak 1.00 GiB
+[worker-007] 1 selectors; limit 900s, 8.0 GiB
+[worker-007] exit 0; 5.1s; peak 0.90 GiB
+[worker-008] 1 selectors; limit 900s, 8.0 GiB
+[worker-008] exit 0; 20.4s; peak 0.85 GiB
+[worker-005] exit 0; 321.5s; peak 2.77 GiB
+Result: test_failure, exit 1; 59/59 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-118/result.json

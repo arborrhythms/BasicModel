@@ -1,0 +1,92 @@
+........................................................................ [ 28%]
+........................................................................ [ 56%]
+......................................................ssssssssssssss..ss [ 84%]
+ss.ssssssss......s..............FFF.....                                 [100%]
+=================================== FAILURES ===================================
+__________________ test_eval_script_emits_every_report_column __________________
+test/test_eval_math_thinking.py:24: in test_eval_script_emits_every_report_column
+    rows = ev.main(["--config", str(_ROOT / "data" / "MM_math.xml"),
+bin/eval_math_thinking.py:205: in main
+    rows = evaluate(model, split=args.split, budget=budget, rows=args.rows,
+bin/eval_math_thinking.py:118: in evaluate
+    result = model.think(questions, x, max_iterations=int(budget))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10308: in think
+    first = self.ask(question, input_data, executor=executor, record=True,
+bin/Models.py:10113: in ask
+    construction = self.reverseOutput(self._last_understanding, derivation,**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9482: in reverseOutput
+    concepts = cs.synthesize(
+bin/Spaces.py:18749: in synthesize
+    event = condition(event)
+            ^^^^^^^^^^^^^^^^
+bin/Models.py:9486: in <lambda>
+    condition=lambda idea: self._generation_read(self._condition_answer_on_question(
+bin/Models.py:9001: in _condition_answer_on_question
+    conditioned = cube_translate(answer, role[..., None] * delta[:, None])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:133: in cube_translate
+    mapped = cube_unchart(cube_chart(value) + delta)
+                          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____ TestLiftLowerWhen.test_content_only_operand_passes_through_legacy_fold ____
+test/test_event_compose.py:78: in test_content_only_operand_passes_through_legacy_fold
+    out = lift.compose(a, a)
+          ^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_______ TestLiftLowerWhen.test_lift_and_lower_treat_the_event_as_opaque ________
+test/test_event_compose.py:66: in test_lift_and_lower_treat_the_event_as_opaque
+    out = lift.compose(ev, ev)
+          ^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=============================== warnings summary ===============================
+test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column
+FAILED test/test_event_compose.py::TestLiftLowerWhen::test_content_only_operand_passes_through_legacy_fold
+FAILED test/test_event_compose.py::TestLiftLowerWhen::test_lift_and_lower_treat_the_event_as_opaque
+3 failed, 226 passed, 27 skipped, 1 warning in 5.45s

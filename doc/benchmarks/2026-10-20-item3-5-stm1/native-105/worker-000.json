@@ -1,0 +1,291 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_clause_closing.py::test_bare_unlocated_np_rewitnesses_its_address",
+    "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip"
+  ],
+  "completed": [
+    "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_clause_closing.py::test_bare_unlocated_np_rewitnesses_its_address",
+    "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.2065154172014445,
+      "message": "test/test_grammar_reconstruction_gate.py:65: in test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal\n    model.forward(model.inputSpace.prepInput(list(data.test_input)))\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8183: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23749: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17067: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22301: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21871: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20990: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_grammar_reconstruction_gate.py:57: in observe\n    assert parents and not torch.equal(parents[0], before)\nE   assert ([tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.1366, 0.0000, 0.0000, 0.1465, 0.1366,\\n         0.1465, 0.0000, 0.1366, 0.0...0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n         0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])] and not True)\nE    +  where True = <built-in method equal of type object at 0x10a7293a0>(tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.1366, 0.0000, 0.0000, 0.1465, 0.1366,\\n         0.1465, 0.0000, 0.1366, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.1366, 0.0000, 0.0000, 0.1465, 0.1366,\\n         0.1465, 0.0000, 0.1366, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]))\nE    +    where <built-in method equal of type object at 0x10a7293a0> = torch.equal",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.025780790951102972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.024073708103969693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.018901458010077477,
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:73: in case\n    retained = fixture.store.expectation_pair(index, gain=document_gain)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9771: in expectation_pair\n    i = idx if isinstance(idx, tuple) else int(idx)\n                                           ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.017939791083335876,
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:73: in case\n    retained = fixture.store.expectation_pair(index, gain=document_gain)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9771: in expectation_pair\n    i = idx if isinstance(idx, tuple) else int(idx)\n                                           ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.016562790842726827,
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:73: in case\n    retained = fixture.store.expectation_pair(index, gain=document_gain)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9771: in expectation_pair\n    i = idx if isinstance(idx, tuple) else int(idx)\n                                           ^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_stream_chain",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.239608749980107,
+      "message": "test/test_item55_mechanisms.py:206: in test_stream_chain\n    assert torch.equal(getattr(live,key)[observations],value)\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10a7293a0>(tensor([[1.8286e-09, 1.0000e+00, 1.9175e-03, 1.0000e+00],\\n        [1.8286e-09, 1.0000e+00, 1.9175e-03, 1.0000e+00]]), tensor([[1.0972e-09, 1.0000e+00, 1.1505e-03, 1.0000e+00],\\n        [1.0972e-09, 1.0000e+00, 1.1505e-03, 1.0000e+00]]))\nE    +    where <built-in method equal of type object at 0x10a7293a0> = torch.equal",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.385s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_surface_inverses",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 2.8363214160781354,
+      "message": "test/test_item55_mechanisms.py:305: in test_surface_inverses\n    _native_step_comparison(tmp_path, monkeypatch)\ntest/test_item55_mechanisms.py:414: in _native_step_comparison\n    torch.testing.assert_close(recovered[record.word_valid],record.word_values[record.word_valid])\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 303 / 1248 (24.3%)\nE   Greatest absolute difference: 0.9997559189796448 at index (1, 1) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (1, 1) (up to 1.3e-06 allowed)",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.025497541995719075,
+      "message": "test/test_item6_2_thinking.py:287: in test_answer_credit_moves_shared_chooser_toward_the_completed_chain\n    assert chooser.thought_logits(goal,menu).softmax(-1)[0,1]>before\nE   assert tensor(0.5000, grad_fn=<SelectBackward0>) > tensor(0.5000)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028432910330593586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.13523950008675456,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 11.292995332973078,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.692s)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7975/test_native_progress_and_train0/small-native.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7975/test_native_progress_and_train0/small-native.ckpt\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.585s)\r\nbatch = 0 (\u0394=0.667s)\r\nbatch = 0 (\u0394=0.579s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.004074957920238376,
+      "message": "test/test_math_chain_repair.py:110: in test_pending_relation_fills_in_place_in_both_arrival_orders\n    assert store.row(row)['pending'] and int(store.refs[row, 0]) == -1\nE   assert (False)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0034859171137213707,
+      "message": "test/test_math_chain_repair.py:123: in test_pending_relation_fills_in_place_in_both_arrival_orders\n    assert int(store.refs[row, 0]) == int(store.row_ids[occurrence])\nE   assert -1 == 2197281606984904200\nE    +  where -1 = int(tensor(-1))\nE    +  and   2197281606984904200 = int(tensor(2197281606984904200))",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.1504580418113619,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.06611970905214548,
+      "message": "test/test_meronomy_ladder.py:100: in test_forward_equals_compose_on_a_live_snapshot\n    a = ls.forward(snap.clone())\n        ^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:13704: in forward\n    self._symbol_space.forward(symbolic_snapshot)\nbin/Language.py:13939: in forward\n    self._compose_eager(snap)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Language.py:13952: in _compose_eager\n    self.compose(snap)\nbin/Language.py:10541: in compose\n    self.current_rules = self.languageLayer.compose(\nbin/Language.py:4976: in compose\n    derivation = self.operation_layer.derive(\nbin/Language.py:7064: in derive\n    _, next_x, route = self(\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6823: in forward\n    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7180: in _stacked_reduced\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0010895831510424614,
+      "message": "test/test_adverb_eig_edit.py:122: in test_strong_adverb_changes_output_but_preserves_complement\n    assert torch.allclose(out[..., 0], vp[..., 0], atol=1e-6)  # eig 0 preserved\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10a7293a0>(tensor([[0.0011, 0.0011, 0.0011, 0.0011, 0.0010],\\n        [0.0011, 0.0010, 0.0009, 0.0011, 0.0011]], grad_fn=<SelectBackward0>), tensor([[0., 0., 0., 0., 0.],\\n        [0., 0., 0., 0., 0.]]), atol=1e-06)\nE    +    where <built-in method allclose of type object at 0x10a7293a0> = torch.allclose",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_bare_unlocated_np_rewitnesses_its_address",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.007715417072176933,
+      "message": "test/test_clause_closing.py:64: in test_bare_unlocated_np_rewitnesses_its_address\n    row = store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:400: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.007967874873429537,
+      "message": "test/test_clause_closing.py:94: in test_three_slot_closing_registers_its_composite_operand\n    row = store.write_clause(clause)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:400: in write_clause\n    raise ValueError('clause admission requires its native concept owner')\nE   ValueError: clause admission requires its native concept owner",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002355624921619892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0029031659942120314,
+      "message": "test/test_cs_symbol_table.py:391: in test_assert_relation_replaces_poles_and_enters_embedding\n    cs.assert_concept_relation(B, sym_whole=whole)\nbin/Spaces.py:16149: in assert_concept_relation\n    self._populate_concept_weights(c)\nbin/Spaces.py:15600: in _populate_concept_weights\n    self.add_concept_edge(c_row, s_row, weight=1.)  # asserted membership\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:14695: in add_concept_edge\n    raise ValueError('sigma edges require symbols of the preceding order')\nE   ValueError: sigma edges require symbols of the preceding order",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0022164590191096067,
+      "message": "test/test_concept_capacity_policy.py:130: in test_rejected_word_does_not_consume_location_fallback_rows\n    store.append_idea(torch.zeros(_D), sentence_index=len(store))\n    ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartStore' object has no attribute 'append_idea'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.002082457998767495,
+      "message": "test/test_concept_capacity_policy.py:130: in test_rejected_word_does_not_consume_location_fallback_rows\n    store.append_idea(torch.zeros(_D), sentence_index=len(store))\n    ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartStore' object has no attribute 'append_idea'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.00344820786267519,
+      "message": "test/test_concept_forgetting.py:97: in test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts\n    assert report['reclaimed'] == 2 and report['retired'] == (small, large)\nE   assert (3 == 2)",
+      "stdout": "[Concept forgetting] {'before': 9, 'after': 6, 'reclaimed': 3, 'protected': 1, 'retired': (5, 2, 1), 'next_id': 10}\r\n"
+    },
+    {
+      "nodeid": "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005161583889275789,
+      "message": "",
+      "stdout": "[Concept forgetting] {'before': 2, 'after': 1, 'reclaimed': 1, 'protected': 0, 'retired': (1,), 'next_id': 3}\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

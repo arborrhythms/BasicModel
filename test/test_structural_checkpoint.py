@@ -31,6 +31,8 @@ def _allocator():
 
 
 def _model_with(cs, ws):
+    if not hasattr(cs, 'definitions'):
+        cs.definitions = cs._concept_allocator.definitions
     model = Models.BaseModel()
     model.name = "StructuralCheckpointTest"
     model.spaces = []

@@ -126,8 +126,7 @@ def test_rejected_word_does_not_consume_location_fallback_rows(remaining):
     for row in range(8 - remaining):
         cs._csw_concept_row(0, 1000 + row)
     store = cs.definitions._store()
-    while len(store) < store.capacity:
-        store.append_idea(torch.zeros(_D), sentence_index=len(store))
+    cs._concept_allocator.next_id = store.capacity
     before = _allocator_snapshot(cs)
     spans = torch.tensor([[[0, 2]]])
     cs._autobind_property_concepts(

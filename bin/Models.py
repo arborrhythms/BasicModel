@@ -8975,7 +8975,7 @@ class BasicModel(BaseModel):
             self.question_conditioner = module
         return module
 
-    def _condition_answer_on_question(self, answer, context, *, occupied=None):
+    def _condition_answer_on_question(self, answer, context, *, occupied=None, identity=True):
         """Condition the conceptual root from the derivation's frozen context."""
         if not torch.is_tensor(answer) or answer.dim() != 3:
             return answer
@@ -8997,8 +8997,14 @@ class BasicModel(BaseModel):
         live = answer.detach().abs().amax(-1).ne(0) if occupied is None else occupied
         root = live.long().argmax(-1)
         role = F.one_hot(root, answer.shape[1]).to(answer)
-        from Layers import cube_translate
-        conditioned = cube_translate(answer, role[..., None] * delta[:, None])
+        shift = role[..., None] * delta[:, None]
+        if identity:
+            from Layers import cube_translate
+            conditioned = cube_translate(answer, shift)
+        else:
+            # Dense event synthesis has no native identity carrier. Its
+            # signed event coordinates retain their linear conditioning law.
+            conditioned = answer + shift
         return torch.where(role[..., None].bool(), conditioned, answer)
 
     def _check_recall_batch(self, batch=None):
@@ -9486,7 +9492,8 @@ class BasicModel(BaseModel):
                         condition=lambda idea: self._generation_read(self._condition_answer_on_question(
                             idea, derivation.conditioning_context.detach()
                             if torch.is_tensor(derivation.conditioning_context)
-                            else derivation.conditioning_context), charge=_walk_options is None))
+                            else derivation.conditioning_context, identity=False),
+                            charge=_walk_options is None, identity=False))
                 percepts = ps.synthesize(
                     concepts, context=perceptual_context,
                     selections=derivation.synthesis_references,
@@ -11942,10 +11949,15 @@ class BasicModel(BaseModel):
         isp = self.inputSpace
         B, W, D = reference.shape
         slots = roots_live.shape[1]
-        active = isp._word_active_mask.bool()
-        leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
-        if torch.is_tensor(leaf_mask):
-            active = active & leaf_mask
+        if understanding is not None:
+            # Attention can change after this sentence closes. Reconstruction
+            # belongs to the held reading and its accepted support.
+            active = understanding.word_valid.bool()
+        else:
+            active = isp._word_active_mask.bool()
+            leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
+            if torch.is_tensor(leaf_mask):
+                active = active & leaf_mask
         ids = getattr(isp, '_packed_sentence_ids', torch.zeros_like(active, dtype=torch.long))
         ready, targets, target_valid = self._byte_tables(B, W)
         if understanding is not None:
@@ -13417,7 +13429,7 @@ class BasicModel(BaseModel):
         return owner.similarity_codebook.lookup_rows(torch.tensor(row, device=reference.device),stream=stream).detach()
 
     def _grammar_lesson_objectives(self, programs, *, split, source_rows, source_positions=None,
-                                   student_states=None):
+                                   student_states=None, streams=None):
         """Score supplied annotations after the student has fixed its parse.
 
         No labels enter forward, resolution or generation. Ordinary unlabelled
@@ -13464,7 +13476,7 @@ class BasicModel(BaseModel):
         from GrammarLessons import compose_loss, generate_loss
         self._grammar_lesson_errors = {'compose': Error(), 'generate': Error()}
         costs = {"compose": compose_loss(self.languageSpace, teacher_words, lessons,
-                                       errors=self._grammar_lesson_errors['compose']),
+                                       errors=self._grammar_lesson_errors['compose'], streams=streams),
                  "generate": generate_loss(self.languageSpace, teacher_words, lessons,
                                self.grammatical_thoughts, self._grammar_target_word,
                                word_code_by_stream=lambda word,b:self._grammar_target_word(word,stream=b),
@@ -18948,7 +18960,7 @@ class BasicModel(BaseModel):
                     # plan, Phase 2b): the tiling ladder's parent map,
                     # pushed on the STM provenance slab (tensor-pure).
                     self._push_unit_provenance(stm, commit_b_1, p)
-                    if not _compiled_recurrent:
+                    if not torch.compiler.is_compiling():
                         stm._max_depth_host = stm._max_depth_host + 1
                     self._stm_word_rounds(commit_b_1, p)
                 # Masked contribution: at inactive batch rows / padding
@@ -19065,7 +19077,7 @@ class BasicModel(BaseModel):
                     concept_activation=a_result.word_concept_activation)
                 # Coarser-whole provenance (fold-ladder plan, Phase 2b).
                 self._push_unit_provenance(stm, commit, p)
-                if not _compiled_recurrent:
+                if not torch.compiler.is_compiling():
                     stm._max_depth_host = stm._max_depth_host + 1
 
                 # C owns the grammar call.  Snapshot the post-push, pre-reduce
@@ -19842,7 +19854,7 @@ class BasicModel(BaseModel):
                 objectives = self._grammar_lesson_objectives([program],
                     split=self._reading_lesson_split, source_rows=[source],
                     source_positions=[self._sentence_leaf_positions(record, b)],
-                    student_states=[self._student_compose_states(record, b)])
+                    student_states=[self._student_compose_states(record, b)], streams=[b])
                 if objectives:
                     for name, value in objectives.items():
                         errors.merge(self._grammar_lesson_errors[name], prefix='grammar.',
@@ -22689,7 +22701,7 @@ class BasicModel(BaseModel):
         stm = self.conceptualSpace.stm
         if stm is None:
             return
-        snap = self._reverse_seed_snapshot(seed) if from_idea else None
+        snap = self._reverse_seed_snapshot(seed) if seed is not None else None
         if snap is None:
             snap = stm.snapshot()
         if snap is None:
@@ -22949,7 +22961,7 @@ class BasicModel(BaseModel):
                 torch.full_like(table.level,LEVEL_ROW),selected,
                 torch.tensor([meter.spent for meter in work],device=slot.device) if work is not None else table.spent)
 
-    def _generation_read(self, idea, *, record=None, charge=True):
+    def _generation_read(self, idea, *, record=None, charge=True, identity=True):
         """Retrieve into an owned generation operand, preserving its source."""
         reader = getattr(self, 'answer_attention', None)
         if reader is None or not torch.is_tensor(idea):
@@ -22961,7 +22973,7 @@ class BasicModel(BaseModel):
         self._answer_attention_step(carrier, self.perceptualSpace.subspace,
                                     record=record, charge=charge)
         observation = getattr(self, '_answer_attention_obs', None)
-        return reader.consume(idea, None if observation is None else observation['content'])
+        return reader.consume(idea, None if observation is None else observation['content'], identity=identity)
 
     @torch.compiler.disable
     def _reasoning_spaces(self):

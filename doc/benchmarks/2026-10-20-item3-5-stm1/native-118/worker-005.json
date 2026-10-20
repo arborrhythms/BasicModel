@@ -1,0 +1,64 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint"
+  ],
+  "slow_selected": [
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.20146820903755724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 213.46789612504654,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nbatch = 4 (\u0394=13.929s, 100.00%)\r\nbatch = 8 (\u0394=12.287s, 100.00%)\r\nbatch = 12 (\u0394=13.917s, 100.00%)\r\nTraining throughput: 4 batches in 53.052s; word units 100.0% of 80 words (letters-only 100.0% of 80).\r\nbatch = 0 (\u0394=13.208s, 100.00%)\r\nbatch = 4 (\u0394=14.152s, 100.00%)\r\nbatch = 8 (\u0394=12.748s, 100.00%)\r\nbatch = 12 (\u0394=13.450s, 100.00%)\r\nTraining throughput: 4 batches in 53.551s; word units 100.0% of 80 words (letters-only 100.0% of 80).\r\nbatch = 0 (\u0394=13.117s, 100.00%)\r\nbatch = 4 (\u0394=13.670s, 100.00%)\r\nbatch = 8 (\u0394=13.104s, 100.00%)\r\nbatch = 12 (\u0394=13.303s, 100.00%)\r\nTraining throughput: 4 batches in 53.189s; word units 100.0% of 80 words (letters-only 100.0% of 80).\r\nbatch = 0 (\u0394=12.907s, 100.00%)\r\nbatch = 4 (\u0394=13.901s, 100.00%)\r\nbatch = 8 (\u0394=12.910s, 100.00%)\r\nbatch = 12 (\u0394=13.762s, 100.00%)\r\nTraining throughput: 4 batches in 53.478s; word units 100.0% of 80 words (letters-only 100.0% of 80).\r\n"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 51.91693133302033,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 16.67%)\r\nbatch = 8 (\u0394=9.181s, 33.33%)\r\nbatch = 16 (\u0394=7.670s, 50.00%)\r\nbatch = 24 (\u0394=8.043s, 66.67%)\r\nbatch = 32 (\u0394=8.750s, 83.33%)\r\nbatch = 40 (\u0394=9.099s, 100.00%)\r\nrunEpoch(train): hit max_batches=6 cap; cursor exiting early (6 batches processed, ds.all_done=False).\r\nTraining throughput: 6 batches in 51.737s; word units 90.3% of 144 words (letters-only 100.0% of 48).\r\n"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 51.869528209092095,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 16.67%)\r\nbatch = 8 (\u0394=8.993s, 33.33%)\r\nbatch = 16 (\u0394=7.783s, 50.00%)\r\nbatch = 24 (\u0394=7.978s, 66.67%)\r\nbatch = 32 (\u0394=8.512s, 83.33%)\r\nbatch = 40 (\u0394=9.048s, 100.00%)\r\nrunEpoch(train): hit max_batches=6 cap; cursor exiting early (6 batches processed, ds.all_done=False).\r\nTraining throughput: 6 batches in 51.210s; word units 90.3% of 144 words (letters-only 100.0% of 48).\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8016/test_utility_state_and_predica0/ladder.ckpt\r\n[BasicModel] Ignored 16 stale checkpoint keys not present in the current model\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8016/test_utility_state_and_predica0/ladder.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

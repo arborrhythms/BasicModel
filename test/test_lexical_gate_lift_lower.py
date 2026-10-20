@@ -47,8 +47,8 @@ def _op(cls_name):
 
 def _operands(seed=11):
     torch.manual_seed(seed)
-    a = torch.rand(2, _D) * 1.6 - 0.8
-    b = torch.rand(2, _D) * 1.6 - 0.8
+    a = torch.rand(2, _D) * 0.8 + 0.1
+    b = torch.rand(2, _D) * 0.8 + 0.1
     return a, b
 
 
@@ -104,8 +104,8 @@ def test_projection_trains_end_to_end_with_composition_loss(cls_name):
     walk = torch.rand(_D) * 2 - 1
     run = torch.rand(_D) * 2 - 1
     a, b = _operands(seed=19)
-    t_walk = torch.rand(2, _D) * 1.2 - 0.6
-    t_run = torch.rand(2, _D) * 1.2 - 0.6
+    t_walk = torch.rand(2, _D) * 0.6 + 0.2
+    t_run = torch.rand(2, _D) * 0.6 + 0.2
 
     def loss_fn():
         c_w = op.forward(a, b, gate=op.lexical_gate(walk))

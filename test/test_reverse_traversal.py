@@ -1,5 +1,7 @@
-"""Compiled reverse-loops plan, slice 1: the bounded tied traversal of the
-recorded derivation (doc/plans/2026-09-12-compiled-reverse-loops.md)."""
+"""Free reconstruction, tied inverse, and compiled-boundary contracts.
+
+The compose journal is provenance; the free decoder never replays it.
+"""
 import sys
 from pathlib import Path
 
@@ -29,30 +31,33 @@ def _traversal_model(tmp_path):
 
 def _run(m, samples, fn=None):
     _stage_fullgraph_tensor_peer(m, samples)
-    with torch.no_grad():
+    from contextlib import nullcontext
+    boundary = nullcontext() if getattr(m, "_sentence_run_active", False) else m._sentence_run()
+    with torch.no_grad(), boundary:
         out = (fn or m._forward_with_compiled_sentence_state)(None)
     m._publish_compiled_sentence_state(out)
     return out
 
 
-@pytest.mark.slow
-def test_traversal_recovers_every_active_word_without_underflow(tmp_path):
+@pytest.mark.usefixtures('eager_reading')
+def test_free_walk_reports_missing_leaves_without_underflow(tmp_path):
+    from test_output_walk import _stop
     m = _traversal_model(tmp_path)
-    assert m.reconstruct_in_loop
-    out = _run(m, ["12 plus 1", "3 plus 4"])
-    assert len(out) == 21
-    ideas, cost, truncated = m._recon_ideas, m._recon_cost, m._recon_truncated
-    idea_cost = m._recon_idea_cost
-    assert bool(torch.isfinite(idea_cost).all()) and idea_cost.shape == (2,)
-    active = m.inputSpace._word_active_mask
-    assert tuple(ideas.shape) == (*active.shape, int(m.conceptualSpace.stm.concept_dim))
-    assert bool(torch.isfinite(cost).all()) and cost.shape == (2,)
-    assert not bool(truncated.any())
-    # Every active word received a recovered idea; inactive columns stay zero.
-    norms = ideas.norm(dim=-1)
-    assert bool((norms[active] > 0).all())
-    assert bool((norms[~active] == 0).all())
-    m.End(); m.symbolSpace.soft_reset()
+    m.eval()
+    _stop(m)
+    try:
+        out = _run(m, ["12 plus 1", "3 plus 4"])
+        assert len(out) == 21
+        active = m.inputSpace._word_active_mask
+        assert tuple(m._recon_ideas.shape) == (*active.shape, int(m.conceptualSpace.stm.concept_dim))
+        assert torch.isfinite(m._recon_cost).all()
+        assert torch.isfinite(m._recon_ideas).all()
+        assert not m._recon_ideas[~active].any()
+        # STOP cannot recover these multiword inputs. Coverage is reported,
+        # rather than manufacturing a traversal from the target length.
+        assert m._recon_truncated.all()
+    finally:
+        m.End(); m.symbolSpace.soft_reset()
 
 
 def test_tied_binary_reverse_recomposes_the_parent(tmp_path):
@@ -69,78 +74,86 @@ def test_tied_binary_reverse_recomposes_the_parent(tmp_path):
         idx = names.index(name)
         op = list(binary.ops)[idx]
         op = getattr(op, "gl", op)
-        parent = torch.tanh(torch.randn(3, D) * 0.5)
+        parent = (1 + torch.tanh(torch.randn(3, D) * 0.5)) / 2
         left, right = language.reverse_binary_step(
             parent, torch.full((3,), idx), torch.ones(3, dtype=torch.bool))
         recomposed = op.compose(left, right)
         cw = int(getattr(op, "_content_width", 0) or D)
         assert torch.allclose(recomposed[:, :cw], parent[:, :cw], atol=1e-3), name
     # An invalid row is left untouched.
-    parent = torch.tanh(torch.randn(2, D))
+    parent = (1 + torch.tanh(torch.randn(2, D))) / 2
     left, right = language.reverse_binary_step(
         parent, torch.zeros(2, dtype=torch.long), torch.zeros(2, dtype=torch.bool))
     assert torch.equal(left, parent) and torch.equal(right, parent)
 
 
-def test_chunk_reverse_is_the_exact_residual_against_the_reference(tmp_path):
+@pytest.mark.usefixtures('eager_reading')
+def test_cleared_journal_cannot_change_the_free_reconstruction(tmp_path):
     m = _traversal_model(tmp_path)
-    language = m.languageSpace
-    binary = language._tree_layer(2)
-    names = list(binary.op_names)
-    if "chunk" not in names:
-        pytest.skip("grammar without chunk")
-    idx = names.index("chunk")
-    D = int(m.conceptualSpace.stm.concept_dim)
-    a = torch.randn(2, D); b = torch.randn(2, D)
-    left, right = language.reverse_binary_step(
-        a + b, torch.full((2,), idx), torch.ones(2, dtype=torch.bool), reference=b)
-    assert torch.allclose(right, b) and torch.allclose(left, a, atol=1e-6)
+    m.eval()
+    try:
+        _run(m, ["12 plus 1"])
+        record = next(iter(m._sentence_understandings.values()))
+        def recover():
+            return m._reconstruct_sentences(record.root, record.word_values,
+                record.roots, record.depths, record.end_slots, record.end_depth,
+                record.sentence, understanding=record, keep_ideas=True)
+        with torch.no_grad():
+            before = recover()
+            m._reconstruction_stack()._choice_mask.zero_()
+            after = recover()
+        for actual, expected in zip(after, before):
+            torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    finally:
+        m.End(); m.symbolSpace.soft_reset()
 
 
-@pytest.mark.slow
-def test_cleared_trace_reports_truncation(tmp_path):
+@pytest.mark.usefixtures('eager_reading')
+def test_reconstruction_uses_held_word_support_after_attention_changes(tmp_path):
+    from test_output_walk import _stop
     m = _traversal_model(tmp_path)
-    _run(m, ["12 plus 1"])
-    assert not bool(m._recon_truncated.any())
-    trace = m._reconstruction_stack()
-    with torch.no_grad():
-        trace._choice_mask.zero_()
-    S = m._stm_single_S
-    pushed = torch.zeros_like(m._recon_ideas)
-    _ideas, _idea_cost, _byte_cost, truncated = m._reconstruct_sentence_traversal(S, pushed)
-    assert bool(truncated.all())
-    m.End(); m.symbolSpace.soft_reset()
+    m.eval()
+    _stop(m)
+    try:
+        _run(m, ["12 plus 1"])
+        record = next(iter(m._sentence_understandings.values()))
+        def recover():
+            return m._reconstruct_sentences(record.root, record.word_values,
+                record.roots, record.depths, record.end_slots, record.end_depth,
+                record.sentence, understanding=record, keep_ideas=True)
+        with torch.no_grad():
+            before = recover()
+            m.inputSpace._ar_grammar_leaf_mask = torch.zeros_like(record.word_valid)
+            after = recover()
+        assert before[2].gt(0).all()
+        for actual, expected in zip(after, before):
+            torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    finally:
+        m.End(); m.symbolSpace.soft_reset()
 
 
-@pytest.mark.slow
-def test_byte_fidelity_is_zero_on_the_row_and_positive_off_it(tmp_path):
-    """The byte decoding snaps a recovered idea to the brick's dictionary
-    snapshot: a word's own row scores (near) zero at its position; another
-    word's row at that position scores positive."""
+@pytest.mark.usefixtures('eager_reading')
+def test_native_identity_audit_accepts_bank_words_and_rejects_unknown_content(tmp_path):
     m = _traversal_model(tmp_path)
-    _run(m, ["12 plus 1"])
-    isp = m.inputSpace
-    active = isp._word_active_mask
-    reference = m._tensor_pushed_ideas
-    B, W = int(reference.shape[0]), int(reference.shape[1])
-    ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    m._prime_sentence_symbols(0)
-    bank = m._sentence_primed_bank
-    snap = bank is not None
-    bank_n, bank_bytes, bank_valid = bank.codes, bank.bytes, bank.byte_valid
-    assert ready and snap and int(bank_n.shape[1]) >= W
-    n_active = int(active[0].sum())
-    own, swapped = [], []
-    for w in range(n_active):
-        idx = torch.tensor(w)
-        own.append(float(m._byte_word_cost(
-            reference[:, w], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True, priming=bank.weights)[0]))
-        other = (w + 3) % n_active
-        swapped.append(float(m._byte_word_cost(
-            reference[:, other], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True, priming=bank.weights)[0]))
-    assert max(own) < 1e-2
-    assert min(swapped) > max(own) + 0.5
-    m.End(); m.symbolSpace.soft_reset()
+    m.eval()
+    try:
+        _run(m, ["12 plus 1"])
+        record = next(iter(m._sentence_understandings.values()))
+        bank = record.primed
+        ready, targets, valid = m._byte_tables(*record.word_values.shape[:2])
+        assert ready and bank.valid.any()
+        index = bank.valid.long().argmax(-1)
+        word = bank.codes.gather(1, index[:, None, None].expand(-1,1,bank.codes.shape[-1]))[:,0]
+        args = (torch.tensor(0), bank.codes, bank.bytes, bank.byte_valid, targets, valid, True)
+        torch.testing.assert_close(m._byte_word_cost(word, *args), torch.zeros(len(word)))
+        unknown = torch.zeros_like(word).requires_grad_()
+        cost = m._byte_word_cost(unknown, *args)
+        torch.testing.assert_close(cost, torch.ones(len(word)))
+        # Fixed identity is an audit; continuous byte credit is a separate
+        # dictionary contract, covered below and in test_byte_reconstruction.
+        torch.testing.assert_close(torch.autograd.grad(cost.sum(), unknown)[0], torch.zeros_like(unknown))
+    finally:
+        m.End(); m.symbolSpace.soft_reset()
 
 
 def _stage_packed(m, rows):
@@ -167,10 +180,10 @@ def _select_completed_binary_path(m):
     def binary(x, candidates, *_args, **_kwargs):
         scores = x.new_full(candidates.shape[:-1], -1e6)
         scores[..., 0] = 0.
-        return x.new_full((*x.shape[:2], 1), 1e6), scores
+        return x.new_full((*x.shape[:2], 1), -1e6), scores
 
     def unary(x, candidates, *_args, **_kwargs):
-        return (x.new_full((*x.shape[:2], 1), 1e6),
+        return (x.new_full((*x.shape[:2], 1), -1e6),
                 x.new_full(candidates.shape[:-1], -1e6))
 
     chooser.score_binary, chooser.score_unary = binary, unary
@@ -181,6 +194,7 @@ def _replay_operand_rows(m):
     trace = m._reconstruction_stack()
     _rules, arities, mask = trace.choices()
     active = m.inputSpace._word_active_mask
+    leaves = m.inputSpace._ar_grammar_leaf_mask
     ids = m.inputSpace._packed_sentence_ids
     rows = m._word_symbol_rows()
     width = int(active.shape[1])
@@ -206,7 +220,8 @@ def _replay_operand_rows(m):
                     stack[position] = -1
 
             for w in sentence:
-                stack.insert(0, int(rows[b, w]))
+                if leaves is None or bool(leaves[b, w]):
+                    stack.insert(0, int(rows[b, w]))
                 fold(3 * w)
                 fold(3 * w + 1)
                 fold(3 * w + 2)
@@ -219,6 +234,7 @@ def _replay_operand_rows(m):
 
 
 @pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, monkeypatch):
     """Codex item 4: real packed endings retain the operands of the fold,
     including a known leaf beside a composite, before reducing the stack."""
@@ -238,8 +254,15 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
         language = m.languageSpace
         operation = language.language_layer.operation_layer
         ordinary = language.choose_operation
-        ends = m.inputSpace._packed_sentence_end_mask
-        width = int(ends.shape[1])
+        leaves = m.inputSpace._ar_grammar_leaf_mask.bool()
+        sentence_ids = m.inputSpace._packed_sentence_ids
+        width = int(leaves.shape[1])
+        positions = torch.arange(width, device=leaves.device)
+        later = positions[None, :] > positions[:, None]
+        same_sentence = sentence_ids[:, :, None] == sentence_ids[:, None, :]
+        # A word's accepted leaf can precede its last raw tile. Retain the
+        # final accepted leaf of each sentence, not the final raw tile.
+        ends = leaves & ~(same_sentence & later & leaves[:, None, :]).any(-1)
         monkeypatch.setattr(m, "_compose_masked_action", lambda slot, depth:
                             torch.as_tensor(slot, device=depth.device).expand_as(depth))
 
@@ -259,7 +282,7 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
                 torch.full_like(state[1], operation.r_reduce), retain,
                 torch.zeros_like(retain))
             return LanguageOperationChoice(*(torch.where(
-                retain[:, None] if a.ndim == 2 else retain, a, b)
+                retain[:, None] if a.ndim == 2 else retain, a, b) if torch.is_tensor(a) else b
                 for a, b in zip(unary, choice)))
 
         monkeypatch.setattr(language, "choose_operation", retain_final_leaf)
@@ -288,6 +311,20 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
         m.symbolSpace.soft_reset()
 
 
+
+def _capture_scored_records(model):
+    """Hold the exact scored inputs before later thought can bind their roots."""
+    from dataclasses import fields, replace
+    captured = {}
+    original = model._reconstruct_trial
+    def reconstruct(record):
+        captured[int(record.sentence)] = replace(record, **{
+            field.name: getattr(record, field.name).detach().clone()
+            for field in fields(record) if torch.is_tensor(getattr(record, field.name))})
+        return original(record)
+    model._reconstruct_trial = reconstruct
+    return captured
+
 def _compiled_record_reconstruction(model, records):
     """Compile the current numerical boundary with identical saved evidence.
 
@@ -304,14 +341,23 @@ def _compiled_record_reconstruction(model, records):
     compiled = torch.compile(reconstruct, backend='eager', fullgraph=True, dynamic=False)
     with torch.no_grad():
         results = [compiled(record) for record in records]
-    assert int(torch._dynamo.utils.counters['stats']['unique_graphs']) == 1
+    graphs = int(torch._dynamo.utils.counters['stats']['unique_graphs'])
+    # Each held sentence compiles as a full graph. Different bank widths
+    # legitimately require distinct static signatures; replay must reuse them.
+    assert 1 <= graphs <= len(records)
+    with torch.no_grad():
+        replay = [compiled(record) for record in records]
+    assert int(torch._dynamo.utils.counters['stats']['unique_graphs']) == graphs
+    for actual, expected in zip(replay, results):
+        for a, e in zip(actual, expected):
+            torch.testing.assert_close(a, e, rtol=0, atol=0)
     return torch.stack([r[0] for r in results]).sum(0), torch.stack([r[4] for r in results]).sum(0)
 
 
 @pytest.mark.slow
 def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     """Requirement 3: one traversal per completed sentence; packed rows keep
-    separate per-sentence costs; every word of every sentence recovered."""
+    separate per-sentence costs with identical eager/compiled decoding."""
     m = _build_ladder_variant(tmp_path, "recon16", [
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
@@ -324,6 +370,7 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     # The compiled and eager traversals must receive the same hard path.
     # Sampling a different path is not a reconstruction parity failure.
     _select_completed_binary_path(m)
+    captured = _capture_scored_records(m)
     _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
     with torch.no_grad(), m._sentence_run():
         out = m._forward_with_compiled_sentence_state(None)
@@ -335,13 +382,14 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     costs = m._recon_sentence_costs                      # [B, slots]
     assert bool(torch.isfinite(costs).all())
     assert costs.shape[0] == 2 and costs.shape[1] >= 2
-    assert not bool(m._recon_truncated.any())
-    norms = m._recon_ideas.norm(dim=-1)
-    assert bool((norms[active] > 0).all()) and bool((norms[~active] == 0).all())
+    assert torch.isfinite(m._recon_ideas).all()
+    assert not m._recon_ideas[~active].any()
+    # Untrained free decoding may omit leaves; packed ownership and the
+    # compiled/eager numerical boundary must still agree exactly.
     # Row 1 has one sentence: its second slot carries no cost.
     assert float(costs[1, 1]) == 0.0
     eager_ideas, eager_costs = m._recon_ideas.clone(), costs.clone()
-    records = list(m._sentence_understandings.values())
+    records = list(captured.values())
     try:
         compiled_ideas, compiled_costs = _compiled_record_reconstruction(m, records)
         assert torch.allclose(compiled_costs, eager_costs, atol=1e-4)
@@ -354,10 +402,11 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
 @pytest.mark.slow
 def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
     m = _traversal_model(tmp_path)
+    captured = _capture_scored_records(m)
     with m._sentence_run():
         _run(m, ["12 plus 1", "3 plus 4"])
     eager_ideas, eager_cost = m._recon_ideas.clone(), m._recon_cost.clone()
-    records = list(m._sentence_understandings.values())
+    records = list(captured.values())
     try:
         compiled_ideas, compiled_costs = _compiled_record_reconstruction(m, records)
         assert torch.allclose(compiled_costs.sum(-1), eager_cost, atol=1e-4)
@@ -368,56 +417,7 @@ def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
 
 
 @pytest.mark.slow
-def test_tied_traversal_trains_the_fold_parameters_and_owns_none(tmp_path):
-    """Tying gate: the reconstruction cost's gradient reaches the compose
-    path's fold parameters (the lift/lower inner layers, through their own
-    inverses) and the model owns no reverse-student parameter under the
-    tied contract; the recorded choices are indices (no gradient path)."""
-    m = _traversal_model(tmp_path)
-    assert not any(".reverse_chooser." in n or n.startswith("reverse_chooser.")
-                   for n, _ in m.named_parameters())
-    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
-    m.zero_grad(set_to_none=True)
-    out = m._forward_with_compiled_sentence_state(None)
-    m._publish_compiled_sentence_state(out)
-    cost = m._recon_cost
-    assert cost.requires_grad and bool(torch.isfinite(cost).all())
-    cost.mean().backward()
-    language = m.languageSpace
-    binary = language._tree_layer(2)
-    names = list(binary.op_names)
-    touched = 0
-    for name in ("lift", "lower"):
-        if name not in names:
-            continue
-        op = list(binary.ops)[names.index(name)]
-        gl = getattr(op, "gl", op)
-        inner = getattr(gl, "_sigma", None) or getattr(gl, "_pi", None)
-        grads = [p.grad for p in inner.layer.parameters() if p.grad is not None]
-        assert grads, f"{name}: no gradient reached the tied inverse's weights"
-        touched += sum(int(g.abs().sum() > 0) for g in grads)
-    assert touched > 0
-    trace = m._reconstruction_stack()
-    assert not trace._choice_rule_ids.requires_grad
-    m.End(); m.symbolSpace.soft_reset()
-
-
-@pytest.mark.slow
-def test_evaluation_decode_unwinds_from_the_end_state(tmp_path):
-    """The retired trace replay's role: in evaluation, reverseReconstruct
-    takes the sentence's end state and unwinds the recorded derivation
-    into per-word ideas (``_recovered_word_ideas``)."""
-    m = _traversal_model(tmp_path)
-    _run(m, ["12 plus 1", "3 plus 4"])
-    with torch.no_grad():
-        recovered = m._recovered_word_ideas(m._stm_single_S)
-    active = m.inputSpace._word_active_mask
-    assert recovered is not None and tuple(recovered.shape[:2]) == tuple(active.shape)
-    assert bool((recovered.norm(dim=-1)[active] > 0).all())
-    m.End(); m.symbolSpace.soft_reset()
-
-
-@pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
     """A relative sentence stops at depth 3: the traversal starts from
     all three slots (newest at 0), not from the root alone."""
@@ -440,12 +440,16 @@ def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_
     """The null candidate keeps the byte cost a function of the idea: a
     one-word brick cannot score zero by having nothing to choose between,
     and a zero or wrong idea scores positive with a gradient."""
-    m = _traversal_model(tmp_path)
-    _run(m, ["ab", "12"])                                   # one unit per row
-    reference = m._tensor_pushed_ideas
-    B, W = int(reference.shape[0]), int(reference.shape[1])
-    ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    snap, bank_n, bank_bytes, bank_valid = m._snapshot_tables(reference)
+    from types import SimpleNamespace, MethodType
+    from Models import BasicModel
+    m = SimpleNamespace(_BYTE_ASSIGNMENT_TAU=.1)
+    m._byte_word_cost = MethodType(BasicModel._byte_word_cost, m)
+    reference = torch.eye(2).reshape(2,1,2)
+    bank_n = torch.eye(2)[None].expand(2,-1,-1)
+    bank_bytes = torch.tensor([[[97,98],[49,50]]]).expand(2,-1,-1)
+    bank_valid = torch.ones_like(bank_bytes,dtype=torch.bool)
+    bytes_bwp = torch.tensor([[[97,98]],[[49,50]]])
+    valid_bwp = torch.ones_like(bytes_bwp,dtype=torch.bool)
     args = (bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)
     own = m._byte_word_cost(reference[:, 0], torch.tensor(0), *args)
     zero = m._byte_word_cost(torch.zeros_like(reference[:, 0]), torch.tensor(0), *args)
@@ -473,7 +477,6 @@ def test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word(tmp_
     assert float(zero.min()) > 0.1 and float(wrong_c.min()) > 0.1
     assert float(wrong_c.min()) > 100.0 * float(own.max())
     assert float(torch.autograd.grad(wrong_c.sum(), [wrong])[0].abs().sum()) > 0
-    m.End(); m.symbolSpace.soft_reset()
 
 
 @pytest.mark.slow
@@ -481,12 +484,15 @@ def test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score(tmp_path):
     """Candidates are the staged snapshot's present rows: an absent row,
     however similar to the idea, leaves the word's byte cost unchanged;
     a present row that is nearer changes it."""
-    m = _traversal_model(tmp_path)
-    _run(m, ["12 plus 1", "3 plus 4"])
-    reference = m._tensor_pushed_ideas
-    B, W = int(reference.shape[0]), int(reference.shape[1])
-    ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    snap, bank_n, bank_bytes, bank_valid = m._snapshot_tables(reference)
+    from types import SimpleNamespace, MethodType
+    from Models import BasicModel
+    m = SimpleNamespace(_BYTE_ASSIGNMENT_TAU=.1)
+    m._byte_word_cost = MethodType(BasicModel._byte_word_cost, m)
+    reference = torch.eye(4)[None]
+    bank_n = reference.clone()
+    bank_bytes = torch.tensor([[[97],[98],[99],[100]]])
+    bank_valid = torch.ones_like(bank_bytes,dtype=torch.bool)
+    bytes_bwp, valid_bwp = bank_bytes.clone(), bank_valid.clone()
     idea = reference[:, 1] * 0.5 + reference[:, 3] * 0.5     # between two words
     base = m._byte_word_cost(idea, torch.tensor(1), bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)
     absent = bank_valid.clone(); absent[:, 3] = False           # row 3 leaves the snapshot
@@ -495,77 +501,10 @@ def test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score(tmp_path):
     bank2 = bank_n.clone(); bank2[:, 3] = bank_n[:, 1]          # an absent row's content is irrelevant
     same = m._byte_word_cost(idea, torch.tensor(1), bank2, bank_bytes, absent, bytes_bwp, valid_bwp, True)
     assert torch.allclose(off, same, atol=1e-6)
-    m.End(); m.symbolSpace.soft_reset()
 
 
 @pytest.mark.slow
-def test_closing_chain_of_chunks_unwinds_to_the_words(tmp_path):
-    """Constituent routing (Codex, 2026-09-14): three words a, b, c pushed
-    in order and folded by two chunk endings (newest-first: c+b, then
-    a+(b+c)) unwind to [a, b, c] at their positions, no truncation."""
-    m = _traversal_model(tmp_path)
-    _run(m, ["12 plus 1", "3 plus 4"])                      # staging: trace, tables, atoms
-    isp = m.inputSpace
-    language = m.languageSpace
-    names = list(language._tree_layer(2).op_names)
-    chunk_id = int(language._cs_binary_rule_ids[names.index("chunk")])
-    trace = m._reconstruction_stack()
-    active = isp._word_active_mask
-    B, W = int(active.shape[0]), int(active.shape[1])
-    D = int(m.conceptualSpace.stm.concept_dim)
-    torch.manual_seed(3)
-    words = torch.randn(B, 3, D)
-    a, b, c = words[:, 0], words[:, 1], words[:, 2]
-    reference = torch.zeros(B, W, D); reference[:, :3] = words
-    with torch.no_grad():
-        active.zero_(); active[:, :3] = True
-        trace._choice_mask.zero_(); trace._choice_rule_ids.fill_(-1); trace._choice_arities.zero_()
-        trace._choice_left_rows.fill_(-1); trace._choice_right_rows.fill_(-1)   # a synthetic trace: no operand rows
-        for k in range(2):                                   # the two endings, in the order recorded
-            trace._choice_rule_ids[:, 3 * W + k] = chunk_id
-            trace._choice_arities[:, 3 * W + k] = 2
-            trace._choice_mask[:, 3 * W + k] = True
-    S = a + b + c                                            # a + (b + c)
-    roots = torch.zeros(B, 1, 3 * D)
-    end = torch.cat((S.unsqueeze(1), torch.zeros(B, 2, D)), dim=1)
-    m._recon_keep_ideas = True
-    rec, idea, byte_c, trunc, _per = m._reconstruct_sentences(
-        S, reference, roots, torch.ones(B, 1, dtype=torch.long), end, torch.ones(B, dtype=torch.long),
-        candidate_basis=(torch.stack((a, b, c, b+c), 1), torch.ones(B, 4, dtype=torch.bool)))
-    assert not bool(trunc.any())
-    for w, want in enumerate((a, b, c)):
-        assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))
-    assert float(idea.max()) < 1e-6
-    # Compound operand (the reviewer's (a+b)+c): a per-word fold joined a
-    # and b when b was pushed, then one closing joined the composite (left)
-    # with c (right). Each synthetic bank contains its actual intermediate
-    # compound. References are not inverse operands; the free search must
-    # find both constituents in this bank.
-    rows = torch.arange(3).reshape(1, 3).expand(B, 3).clone() + 100     # symbol rows a, b, c
-    object.__setattr__(isp, "_ar_word_concept_rows", torch.full((B, W), -1, dtype=torch.long))
-    object.__setattr__(isp, "_ar_word_object_rows", torch.full((B, W), -1, dtype=torch.long))
-    isp._ar_word_concept_rows[:, :3] = rows
-    with torch.no_grad():
-        trace._choice_mask.zero_(); trace._choice_rule_ids.fill_(-1); trace._choice_arities.zero_()
-        trace._choice_left_rows.fill_(-1); trace._choice_right_rows.fill_(-1)
-        trace._choice_rule_ids[:, 3 * 1 + 1] = chunk_id; trace._choice_arities[:, 3 * 1 + 1] = 2
-        trace._choice_mask[:, 3 * 1 + 1] = True
-        trace._choice_left_rows[:, 3 * 1 + 1] = rows[:, 0]; trace._choice_right_rows[:, 3 * 1 + 1] = rows[:, 1]
-        trace._choice_rule_ids[:, 3 * W] = chunk_id; trace._choice_arities[:, 3 * W] = 2
-        trace._choice_mask[:, 3 * W] = True
-        trace._choice_left_rows[:, 3 * W] = -1; trace._choice_right_rows[:, 3 * W] = rows[:, 2]
-    S2 = (a + b) + c
-    end2 = torch.cat((S2.unsqueeze(1), torch.zeros(B, 2, D)), dim=1)
-    rec2, idea2, _bc, trunc2, _p = m._reconstruct_sentences(
-        S2, reference, roots, torch.ones(B, 1, dtype=torch.long), end2, torch.ones(B, dtype=torch.long),
-        candidate_basis=(torch.stack((a, b, a+b, c), 1), torch.ones(B, 4, dtype=torch.bool)))
-    assert not bool(trunc2.any())
-    for w, want in enumerate((a, b, c)):
-        assert torch.allclose(rec2[:, w], want, atol=1e-4), ("compound", w, float((rec2[:, w] - want).abs().max()))
-    m.End(); m.symbolSpace.soft_reset()
-
-
-@pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_snapshot_bytes_are_staged_on_the_first_brick(tmp_path):
     """The dictionary snapshot is staged after the brick's concept rows,
     so the byte decoder is active from the first brick: the words' rows

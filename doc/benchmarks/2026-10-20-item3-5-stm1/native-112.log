@@ -1,0 +1,7 @@
+[collect] 2 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.43 GiB
+[worker-000] 7 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 8.0s; peak 2.10 GiB
+Result: passed, exit 0; 7/7 cases completed.
+doc/benchmarks/2026-10-20-item3-5-stm1/native-112/result.json
+Skipped phase certificates: fineweb: 1

@@ -1,0 +1,66 @@
+....F................................................................... [ 28%]
+........................................s............................... [ 56%]
+........................................................................ [ 84%]
+........................................                                 [100%]
+=================================== FAILURES ===================================
+_ test_interpretation_retains_the_form_and_supplied_object_without_inventing_a_kind _
+test/test_attention_promotion.py:162: in test_interpretation_retains_the_form_and_supplied_object_without_inventing_a_kind
+    assert cs.taxonomy_parents(obj) == []
+E   assert [7] == []
+E     
+E     Left contains one more item: 7
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15012: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    float(ly.values[i]))
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_attention_promotion.py:233: UserWarning: Space ownership migration: removed 34 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16225: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7047: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_attention_promotion.py::test_interpretation_retains_the_form_and_supplied_object_without_inventing_a_kind
+1 failed, 254 passed, 1 skipped, 15 warnings in 10.56s

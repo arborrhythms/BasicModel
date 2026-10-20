@@ -1,0 +1,134 @@
+...............Fs....................................F.....s............ [ 77%]
+....F................                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:170: in test_real_packed_ends_train_before_the_next_sentence
+    model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+bin/Models.py:13475: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13631: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14007: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10089: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23742: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17060: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22294: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21864: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20983: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_sentence_compose.py:163: in observe
+    torch.testing.assert_close(payload, roles)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 14 / 312 (4.5%)
+E   Greatest absolute difference: 0.11126420646905899 at index (0, 9) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0, 9) (up to 1.3e-06 allowed)
+_________ test_first_and_later_words_keep_the_same_grad_carry_contract _________
+test/test_sentence_gradients.py:36: in test_first_and_later_words_keep_the_same_grad_carry_contract
+    model.runBatch(train=True, batchSize=2, optimizer=model.getOptimizer(lr=.003),
+bin/Models.py:13475: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13631: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14007: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10089: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23742: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17060: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22294: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21864: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+test/test_sentence_gradients.py:31: in driver
+    return original(*args[:-1], checked)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20983: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20275: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:173: in _append_observed_meaning
+    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:487: in write_clause
+    closing.preflight()
+bin/PartClosing.py:214: in preflight
+    self.owner._preflight_concept_allocation(count, context='complete Part closing')
+bin/Spaces.py:14311: in _preflight_concept_allocation
+    raise RuntimeError(
+E   RuntimeError: ConceptualSpace concept inventory exhausted while allocating 25 id(s) for complete Part closing: next id 41, physical capacity 64. No concept was minted.
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Activated aligned codebook prefix 32 -> 64 rows (physical capacity 64; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
+______________________ test_repeated_word_is_not_reminted ______________________
+test/test_sentence_protocol.py:70: in test_repeated_word_is_not_reminted
+    assert not model._attention_words.descended.any()
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x148a54f50>()
+E    +    where <built-in method any of Tensor object at 0x148a54f50> = tensor([[ True, False,  True, False, False, False, False, False]]).any
+E    +      where tensor([[ True, False,  True, False, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])).descended
+E    +        where NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub..._features=64, bias=True)\n      (1): Tanh()\n    )\n    (readout): Linear(in_features=64, out_features=1, bias=True)\n  )\n)._attention_words
+=============================== warnings summary ===============================
+test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+FAILED test/test_sentence_protocol.py::test_repeated_word_is_not_reminted - a...
+3 failed, 88 passed, 2 skipped, 2 warnings in 22.28s

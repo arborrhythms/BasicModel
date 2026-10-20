@@ -48,8 +48,8 @@ class DefinitionIndex:
         obj, word = store.refs[row].tolist()
         allocator = self._allocator()
         value = allocator.word_descriptions.get(word)
-        if (value is None or 'object' not in allocator.symbol_types.get(obj, ())
-                or 'word' not in allocator.symbol_types.get(word, ())):
+        if (value is None or 'definition' not in store.readings(
+                row, lambda ref: allocator.symbol_types.get(ref, ()))):
             return  # only an object -> word edge has the definition reading
         if word <= 0 or obj <= 0 or word == obj:
             raise ValueError('DEF requires distinct native word and object identities')

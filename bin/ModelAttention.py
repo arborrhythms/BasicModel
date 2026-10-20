@@ -111,7 +111,7 @@ def native_word_poles(model, spans, forms, known):
         getattr(ws.subspace.what, 'primitive_properties', None), raw, whole_spans), live_spans)
     native = owner._cs_field_concept_ids[:field.shape[0]]
     native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
-    objects = [[((word,) if owner.interpret.no_object(word) else owner.definitions.objects(word))
+    objects = [[tuple(dict.fromkeys((word, *owner.definitions.objects(word))))
                 if (word := owner.interpret.word_for_form(form)) is not None else ()
                 for form in row[:width]] for row in forms]
     alternatives = max(1, max((len(values) for row in objects for values in row), default=0))

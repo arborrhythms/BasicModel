@@ -54,7 +54,7 @@ def test_free_lift_inverse_searches_both_operands_from_the_bank(tmp_path):
         index=list(binary.op_names).index('lift')
         op=getattr(binary.ops[index],'gl',binary.ops[index])
         dimension=model.conceptualSpace.stm.concept_dim
-        codes=torch.arange(1,1+3*dimension,dtype=torch.float32).reshape(1,3,dimension)/100
+        codes=torch.arange(1,1+3*dimension,dtype=torch.float32).reshape(1,3,dimension)/(3*dimension+1)
         parent=op.compose(codes[:,0],codes[:,1])
         left,right,bad=language.reverse_binary_step(parent,torch.tensor([index]),torch.tensor([True]),
             basis=codes,basis_valid=torch.ones(1,3,dtype=torch.bool),basis_priming=torch.ones(1,3),return_status=True)

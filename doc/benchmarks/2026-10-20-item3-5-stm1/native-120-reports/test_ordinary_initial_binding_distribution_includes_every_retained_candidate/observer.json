@@ -1,0 +1,114 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 0,
+    "episodes": 7,
+    "sentences": 8
+  },
+  "operations": {
+    "not": 32,
+    "bind": 4,
+    "conclude": 4,
+    "exist": 1
+  },
+  "credit": {
+    "reconstruction_and_answer": 7,
+    "nonzero_graph": 4,
+    "ties": 3,
+    "nonzero_chooser_gradients": 4
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 0,
+      "costs": [
+        0.20986123085021974,
+        0.0
+      ],
+      "graph": true,
+      "surrogate": -0.33958008885383606,
+      "raw_chooser_gradient_l2": 0.21561654636064245
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 1,
+      "costs": [
+        0.20986123085021974,
+        0.20986123085021974
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 2,
+      "costs": [
+        0.20986123085021974,
+        0.4197224617004395
+      ],
+      "graph": true,
+      "surrogate": 0.35779377818107605,
+      "raw_chooser_gradient_l2": 0.18341474722419832
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 3,
+      "costs": [
+        0.20986123085021974,
+        0.20986123085021974
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 4,
+      "costs": [
+        0.20986123085021974,
+        0.0
+      ],
+      "graph": true,
+      "surrogate": -0.33958008885383606,
+      "raw_chooser_gradient_l2": 0.21561654544830328
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 6,
+      "costs": [
+        0.20986123085021974,
+        0.20986123085021974
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 7,
+      "costs": [
+        0.20986123085021974,
+        0.0
+      ],
+      "graph": true,
+      "surrogate": -0.33958008885383606,
+      "raw_chooser_gradient_l2": 0.21561654636064245
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.8302643853937864,
+  "raw_chooser_gradient_l2_max": 0.21561654636064245
+}

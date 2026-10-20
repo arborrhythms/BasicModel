@@ -38,7 +38,7 @@ def test_sum_is_a_mean_and_witness_inverse_is_exact():
     from Language import SumLayer, LanguageSpace
     from types import SimpleNamespace, MethodType
     op = SumLayer()
-    left, right = torch.tensor([[.2, -.8]]), torch.tensor([[.6, .4]])
+    left, right = torch.tensor([[.2, .8]]), torch.tensor([[.6, .4]])
     parent = op.compose(left, right)
     torch.testing.assert_close(parent, (left+right)/2)
     owner = SimpleNamespace()
@@ -53,19 +53,21 @@ def test_sum_is_a_mean_and_witness_inverse_is_exact():
 
 def test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse():
     from Language import AdverbLayer
+    from Layers import cube_chart, cube_unchart
     op = AdverbLayer(nInput=4, nOutput=4)
     with torch.no_grad():
         op._adv_edit.weight.copy_(torch.eye(4)*.5)
         op._adv_edit.bias.zero_()
-    verb = torch.tensor([[.2, -.3, 0., .4]], requires_grad=True)
+    verb = torch.tensor([[.6, .35, .5, .7]], requires_grad=True)
     modifier = torch.ones(1,4)
     once = op.compose(verb,modifier)
     twice = op.compose(once,modifier)
     # Gains compose multiplicatively in the verb's existing chart.
-    gain = torch.atanh(once)/torch.where(verb==0, 1., torch.atanh(verb))
-    expected = torch.tanh(torch.atanh(verb)*gain.square())
+    chart = cube_chart(verb)
+    gain = cube_chart(once)/torch.where(chart==0, 1., chart)
+    expected = cube_unchart(chart*gain.square())
     torch.testing.assert_close(twice, expected)
-    assert (twice.abs()[verb!=0] > once.abs()[verb!=0]).all()
+    assert ((twice-.5).abs()[verb!=.5] > (once-.5).abs()[verb!=.5]).all()
     recovered, witness = op.reverse(once, adverb_what=modifier)
     torch.testing.assert_close(recovered, verb)
     torch.testing.assert_close(witness, modifier)
@@ -107,7 +109,7 @@ def test_inverse_dispatch_uses_declared_computation_not_operator_name():
     for method in ('_reverse_of_binary_op', '_finish_binary_inverse',
                    'reverse_binary_step', 'reverse_unary_step'):
         setattr(owner, method, MethodType(getattr(LanguageSpace, method), owner))
-    left, right = torch.tensor([[.2, -.8]]), torch.tensor([[.6, .4]])
+    left, right = torch.tensor([[.2, .8]]), torch.tensor([[.6, .4]])
     mean = SumLayer()
     mean.rule_name = 'renamed_mean'
     a, b, unavailable = owner.reverse_binary_step(

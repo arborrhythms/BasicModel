@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-118/worker-004.recycle.json"
+}

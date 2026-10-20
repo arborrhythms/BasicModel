@@ -38,8 +38,8 @@ def _set_flag(value):
 
 def _vp_and_adv(seed=0):
     g = torch.Generator().manual_seed(seed)
-    vp = torch.randn(2, 5, _D, generator=g).tanh() * 0.8
-    adv = torch.randn(2, 5, _D, generator=g).tanh() * 0.8
+    vp = torch.randn(2, 5, _D, generator=g).tanh() * 0.4 + 0.5
+    adv = torch.randn(2, 5, _D, generator=g).tanh() * 0.4 + 0.5
     return vp, adv
 
 
@@ -110,13 +110,13 @@ def test_untrained_adverb_is_noop():
 
 def test_strong_adverb_changes_output_but_preserves_complement():
     """With a forced edit: dims the VP uses are edited, but a dim the VP lacks
-    (vp[..., k] == 0 -> p_vp[..., k] == 0) is preserved exactly."""
+    (vp[..., k] == .5 -> chart(vp)[..., k] == 0) is preserved exactly."""
     _set_flag(True)
     try:
         lyr = _strong_edit(LiftLayer(nInput=_D, nOutput=_D))
         vp, adv = _vp_and_adv()
         vp = vp.clone()
-        vp[..., 0] = 0.0                                 # VP lacks eig 0
+        vp[..., 0] = 0.5                                 # VP lacks eig 0
         out = lyr.apply_adverb(vp, adv)
         assert not torch.allclose(out, vp, atol=1e-4)    # edited somewhere
         assert torch.allclose(out[..., 0], vp[..., 0], atol=1e-6)  # eig 0 preserved

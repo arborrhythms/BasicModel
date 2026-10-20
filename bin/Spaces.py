@@ -14274,7 +14274,11 @@ class ConceptualSpace(Space):
         capacity_raw = (None if legacy_relation_store
                         else getattr(self, "nVectors", None))
         capacity = None if capacity_raw is None else int(capacity_raw)
-        return nxt, nxt + n - int(alloc.reclaimed_seats), capacity
+        # Unseated relation handles live in LTM2's own allocation. Their
+        # monotonic numbers are not reserved concept-bank coordinates.
+        unseated = sum(self._csw_row_of(symbol) is None
+                       for symbol in alloc.parts.indices().tolist())
+        return nxt, nxt + n - int(alloc.reclaimed_seats) - unseated, capacity
 
     def _preflight_concept_row(self, order=0):
         """Check the physical seat before changing identity or definition records."""
@@ -14509,7 +14513,10 @@ class ConceptualSpace(Space):
                     and w[0] == "sym"):
                 continue
             ident[sym] = (p, w)
-            alloc.clear(sym)          # records vanish (subsumed by codebooks)
+            # Only the raw pole tie is subsumed by the codebook. Incoming
+            # Part relations still name this identity and must survive.
+            store.clear_constituents(sym)
+            alloc.settle(sym)
             resolved.append(sym)
         return resolved
 
@@ -15509,7 +15516,9 @@ class ConceptualSpace(Space):
         if (witness is not None and parts and all(isinstance(p, int) for p in parts)
                 and ps is not None and getattr(ps, 'percept_store', None) is not None):
             parts = ps.fuse_parts(parts)
-        sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
+        # Sigma reads the constituents of this row. Its containing wholes
+        # are incoming relations, not operands one order below this row.
+        sym_refs = [x for x in parts if _is_sym(x)]
         # Validate identity before allocating rows or writing any constituent.
         if any(int(x[1]) == int(concept_id) for x in sym_refs):
             raise ValueError('self-edge: a concept cannot be its own part')
@@ -15850,7 +15859,7 @@ class ConceptualSpace(Space):
         p = None
         for (_o, cid), row in self._csw_rows.items():
             h = 0.0
-            for _role, ref in ly.constituents(cid):
+            for _role, ref in alloc.records(cid):
                 if (isinstance(ref, tuple) and len(ref) == 2
                         and ref[0] == "sym"):
                     h += float(heat.get(int(ref[1]), 0.0))
@@ -16546,6 +16555,8 @@ class ConceptualSpace(Space):
         well-known 'words' atom — updated below when ``ws``/``whole_pos``
         are supplied. Idempotent per surface key.
         """
+        from Definitions import form_key
+        key = str(form_key(key))
         reg = getattr(self, '_recognized_words', None)
         if reg is None:
             reg = {}
@@ -16579,7 +16590,7 @@ class ConceptualSpace(Space):
         model = getattr(self, '_model', None)
         native = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
         identity = getattr(native, 'identity', None)
-        if identity is not None:
+        if identity is not None and 0 <= int(pid) < len(native):
             raw = native.bytes_for(int(pid))
             if identity.word_rows.get(raw) == int(pid):
                 return self.interpret.word_for_form(raw)

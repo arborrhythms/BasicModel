@@ -42,7 +42,19 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
     np = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
                 reference_request=request, composition=term)
     value = torch.maximum(point, predicate)
-    composition = Composition(value, (term, Composition(predicate)), operation='lift', order=2)
+    owner = resolver.components.owner
+    from Spaces import _concept_alloc_of
+    allocator = _concept_alloc_of(owner)
+    predicates = resolver.__dict__.setdefault('_fixture_predicates', {})
+    key = tuple(predicate.tolist())
+    if key not in predicates:
+        symbol = allocator.new_concept()
+        row = owner._csw_concept_row(0, symbol)
+        with torch.no_grad():
+            owner.similarity_codebook.W[row].copy_(predicate)
+        predicates[key] = symbol
+    composition = Composition(value, (term, Composition(predicate, reference=predicates[key])),
+                              operation='lift', order=2)
     clause = Clause(ConceptualMeaning.from_description(value), point=value,
                     children=(np,), refs=(('clause', 0), -1, -1), order=2,
                     composition=composition)

@@ -268,7 +268,7 @@ def test_boundary_generate_gated_by_router_wire_serial():
 
         ss.reverse = _spy
         try:
-            model._chart_generate_from_stm()
+            model._chart_generate_from_stm(model._stm_single_S)
         finally:
             ss.reverse = orig
         return state["n"]

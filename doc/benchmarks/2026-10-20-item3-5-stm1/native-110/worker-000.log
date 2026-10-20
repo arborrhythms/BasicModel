@@ -1,0 +1,175 @@
+........F.FF.F......................F......                              [100%]
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:184: in test_real_packed_ends_train_before_the_next_sentence
+    torch.testing.assert_close(actual.meaning.roles[actual.meaning.role_mask], expected.slots)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 14 / 312 (4.5%)
+E   Greatest absolute difference: 0.2428050935268402 at index (0, 3) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0, 3) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+_____ test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar] _____
+test/test_operators_round2c.py:96: in test_zero_meaning_departures_and_one_reader_step
+    assert not torch.equal(first['root'],second['root'])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10e6a93a0>(tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]), tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]))
+E    +    where <built-in method equal of type object at 0x10e6a93a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.428s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:261: in test_public_reading_fuses_the_reference_before_capture_and_write
+    clause.point.sum().backward()
+.venv/lib/python3.12/site-packages/torch/_tensor.py:623: in backward
+    torch.autograd.backward(
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:395: in backward
+    _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+E   RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+______________ test_normal_batch_trains_supplied_grammar_lessons _______________
+test/test_surface_grammar.py:228: in test_normal_batch_trains_supplied_grammar_lessons
+    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
+bin/Models.py:13482: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13638: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14014: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8720: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10096: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8405: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8183: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23749: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17067: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22301: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21871: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20865: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20792: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19849: in _sentence_path_cost
+    objectives = self._grammar_lesson_objectives([program],
+bin/Models.py:13473: in _grammar_lesson_objectives
+    costs = {"compose": compose_loss(self.languageSpace, teacher_words, lessons,
+bin/GrammarLessons.py:271: in compose_loss
+    _, _, route = layer(window.detach()[None], slots=1,
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6986: in forward
+    departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
+bin/Language.py:6700: in _distinct_departures
+    ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: The expanded size of the tensor (1) must match the existing size (2) at non-singleton dimension 0.  Target sizes: [1, 1, 2, 104].  Tensor sizes: [2, 1, 1, 1]
+____________________________ test_surface_inverses _____________________________
+test/test_item55_mechanisms.py:305: in test_surface_inverses
+    _native_step_comparison(tmp_path, monkeypatch)
+test/test_item55_mechanisms.py:414: in _native_step_comparison
+    torch.testing.assert_close(recovered[record.word_valid],record.word_values[record.word_valid])
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 35 / 1248 (2.8%)
+E   Greatest absolute difference: 1.9490718841552734e-05 at index (0, 8) (up to 1e-05 allowed)
+E   Greatest relative difference: 2.041943844233174e-05 at index (0, 8) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (warm-up)
+batch = 0 (warm-up)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+FAILED test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons
+FAILED test/test_item55_mechanisms.py::test_surface_inverses - AssertionError...
+5 failed, 38 passed, 1 warning in 10.14s

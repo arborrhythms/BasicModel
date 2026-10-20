@@ -5855,9 +5855,17 @@ class ConceptAllocator:
 
     def records(self, cid):
         raw = self.store_of(cid).constituents(cid)
+        def structural(part, whole):
+            # The physical owner is shared, but a name is not a taxonomic
+            # parent and a word's objects are not its composing constituents.
+            edge = self.parts.find(part, whole)
+            return 'definition' not in self.parts.readings(
+                edge, lambda ref: self.symbol_types.get(ref, ()))
         return list(dict.fromkeys((*raw,
-                *(('part', ('sym', part)) for part in self.parts.parts(cid)),
-                *(('whole', ('sym', whole)) for whole in self.parts.wholes(cid)))))
+                *(('part', ('sym', part)) for part in self.parts.parts(cid)
+                  if structural(part, cid)),
+                *(('whole', ('sym', whole)) for whole in self.parts.wholes(cid)
+                  if structural(cid, whole)))))
 
     def refs(self, cid, role):
         """``role``-tagged refs of ``cid`` in record (insertion) order."""
@@ -8110,61 +8118,27 @@ class TruthLayer(Layer):
             "ignorance": clamp(ignorance),
         }
 
-    # -- TruthLoss: Union Norm Reduction -----------------------------
+    # -- TruthLoss: incompatible evidence -----------------------------
 
     def falsity_penalty(self, symbol_states, basis):
-        """Compute additive truth loss via union norm reduction.
+        """Differentiable overlap with the TruthSet's opposite evidence.
 
-        For each proposition in ``symbol_states``, measure how much the
-        TruthSet union norm drops when the proposition is included.
-        Contradiction cancels dimensions (via the catalogue union's
-        bitonic same-sign logic), reducing the norm -> positive penalty.
-
-        Agreeing propositions preserve or extend the union -> no penalty.
-        Unknown propositions (zero dims) pass through -> no penalty.
-        DoT weighting is implicit: high-DoT truths contribute more energy
-        to the union, so contradicting them causes a larger norm drop.
-
-        Both sides of the union live in symbol space by
-        construction: stored truths are recorded from
-        ``WholeSpace.forwardEnd``, and ``symbol_states`` should be
-        the post-pi activations cached during the Sigma-Pi loop (the
-        model's ``self.symbol_states[-1]``).  Using symbols rather
-        than pre-pi concepts keeps both operands in the basis's
-        native space.
-
-        Args:
-            symbol_states: (B, N, D) symbolic activations from the
-                forward pass (post-pi, post-l1_proximal -- the
-                committed beliefs).
-            basis: The proposition's symbol basis.
-
-        Returns:
-            Scalar penalty >= 0 (differentiable).
+        Stored affirmations and denials keep their separate maxima. An
+        agreeing or unknown proposition has no opposite overlap; a denial
+        of an affirmed coordinate has positive cost. The lattice union
+        preserves both poles, so its norm cannot measure contradiction.
+        ``basis`` names the symbolic carrier shared by both operands.
         """
-        n = self.count.item()
+        n = int(self.count)
         if n == 0:
-            return symbol_states.new_tensor(0.0)
-
-        stored = self.truths[:n]  # (n, D)
-
-        # Set union uses signed max, independently of grammatical mean OR.
-        truth_union = stored[0]
-        for i in range(1, n):
-            truth_union = Ops.union(truth_union, stored[i])
-        union_norm = truth_union.norm()
-
-        # For each proposition, compute norm reduction
-        B, N, D = symbol_states.shape
-        propositions = symbol_states.reshape(-1, D)  # (B*N, D)
-
-        penalties = []
-        for p in range(propositions.shape[0]):
-            extended = Ops.union(truth_union, propositions[p])
-            reduction = union_norm - extended.norm()
-            penalties.append(torch.relu(reduction))
-
-        return torch.stack(penalties).mean()
+            return symbol_states.new_tensor(0.)
+        stored = self.truths[:n]
+        positive = stored.relu().amax(0)
+        negative = (-stored).relu().amax(0)
+        propositions = symbol_states.reshape(-1, stored.shape[-1])
+        conflict = (torch.minimum(positive, (-propositions).relu())
+                    + torch.minimum(negative, propositions.relu()))
+        return conflict.norm(dim=-1).mean()
 
     # -- Maintenance ---------------------------------------------------
 

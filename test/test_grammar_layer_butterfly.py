@@ -347,7 +347,7 @@ class TestLiftLowerButterflyDelegation(unittest.TestCase):
     def test_lower_butterfly_identity_init(self):
         torch.manual_seed(8)
         layer = LowerLayer(nInput=3, nOutput=3)
-        x = torch.tanh(torch.randn(2, 8, 3) * 0.1)
+        x = (1 + torch.tanh(torch.randn(2, 8, 3) * 0.1)) / 2
         torch.testing.assert_close(layer.forward(torch.ones_like(x), x), x, rtol=0, atol=0)
 
 

@@ -509,8 +509,9 @@ in `bin/Language.py`.
   2026-05-01 Step-9 cleanup). In bitonic mode, conflicting +/- assertions
   cancel.
 - **Grounding** (`ground()`): finds the minimal subset entailing a query.
-- **TruthLoss**: additive penalty for contradictions, measured by union norm
-  reduction. See [Reasoning.md](Reasoning.md).
+- **TruthLoss**: additive penalty for contradictions, measured by overlap with the
+  TruthSet’s opposite evidence. The lattice union preserves both evidence
+  poles, so a union-norm reduction is not a contradiction measure. See [Reasoning.md](Reasoning.md).
 - **Derive**: pairwise mereological inference via `part()`; generalized by
   `extrapolate()` to all two-argument methods.
 

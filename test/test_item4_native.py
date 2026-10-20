@@ -69,7 +69,7 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
             idea, ready, _, _ = host._materialize_answer_idea(understanding, answer, What.present(0))
             torch.testing.assert_close(idea[0], entry.end_state, atol=0, rtol=0)
             assert ready.all() and answer.resolved
-        index = fixture.store.index_of_row(field.row_id)
+        index = fixture.store.location(field.row_id)
         retained = fixture.store.expectation_pair(index, gain=document_gain)
         floor = (1-row_gain)*(1-document_gain)
         torch.testing.assert_close(image.conceived, image.observed*floor, atol=1e-7, rtol=1e-6)

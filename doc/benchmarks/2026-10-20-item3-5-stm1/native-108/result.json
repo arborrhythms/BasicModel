@@ -1,0 +1,488 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+    "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+  ],
+  "completed": [
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+    "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/worker-000.json"
+      ],
+      "pid": 92387,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2596032016,
+      "elapsed_seconds": 58.99692429089919,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+        "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+        "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+        "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+        "test/test_item55_mechanisms.py::test_stream_chain",
+        "test/test_item55_mechanisms.py::test_surface_inverses",
+        "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+        "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+        "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+        "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+        "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "completed": [
+        "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+        "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+        "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+        "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+        "test/test_item55_mechanisms.py::test_stream_chain",
+        "test/test_item55_mechanisms.py::test_surface_inverses",
+        "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+        "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+        "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+        "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+        "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.24567145900800824,
+          "message": "test/test_word_admission.py:113: in test_29_each_reading_publishes_only_its_words\n    assert not torch.equal(symbols[left], symbols[right])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10a54d3a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.]]), tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.]]))\nE    +    where <built-in method equal of type object at 0x10a54d3a0> = torch.equal",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.17181841703131795,
+          "message": "test/test_word_admission.py:113: in test_29_each_reading_publishes_only_its_words\n    assert not torch.equal(symbols[left], symbols[right])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10a54d3a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.]]), tensor([[0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0... -0., -0.,  ..., -0., -0., -0.],\\n        [0., 0., 0.,  ..., 0., 0., 0.],\\n        [-0., -0., -0.,  ..., -0., -0., -0.]]))\nE    +    where <built-in method equal of type object at 0x10a54d3a0> = torch.equal",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.04299791716039181,
+          "message": "test/test_reference_close.py:162: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert references[0] == references[2] and references[1] == references[3]\nE   AssertionError: assert (10 == ('ltm', 'address-v1', -5391850817442540826))",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0422804169356823,
+          "message": "test/test_reference_close.py:162: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert references[0] == references[2] and references[1] == references[3]\nE   AssertionError: assert (10 == ('ltm', 'address-v1', 5436397175774633411))",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.04309983388520777,
+          "message": "test/test_reference_close.py:162: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert references[0] == references[2] and references[1] == references[3]\nE   AssertionError: assert (10 == ('ltm', 'address-v1', 7854516783634533602))",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.042607874842360616,
+          "message": "test/test_reference_close.py:162: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert references[0] == references[2] and references[1] == references[3]\nE   AssertionError: assert (10 == ('ltm', 'address-v1', -3078385005553270454))",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.610773416934535,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.012074083089828491,
+          "message": "test/test_selected_nested_meaning.py:67: in test_nested_observation_writers_retain_children_without_certifying_them\n    assert not child['meaning'].roles.requires_grad\nE   AssertionError: assert not True\nE    +  where True = tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>).requires_grad\nE    +    where tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>) = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 13), ('sym', 4010033338316264258), ('sym', 15)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', ())), scope=(), sentence_kind='relation').roles",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.010083667002618313,
+          "message": "test/test_selected_nested_meaning.py:67: in test_nested_observation_writers_retain_children_without_certifying_them\n    assert not child['meaning'].roles.requires_grad\nE   AssertionError: assert not True\nE    +  where True = tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>).requires_grad\nE    +    where tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>) = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 13), ('sym', 4010033338316264258), ('sym', 15)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', ())), scope=(), sentence_kind='relation').roles",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.009697417030110955,
+          "message": "test/test_selected_nested_meaning.py:67: in test_nested_observation_writers_retain_children_without_certifying_them\n    assert not child['meaning'].roles.requires_grad\nE   AssertionError: assert not True\nE    +  where True = tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>).requires_grad\nE    +    where tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>) = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 13), ('sym', 4010033338316264258), ('sym', 15)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', ())), scope=(), sentence_kind='relation').roles",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.009881458012387156,
+          "message": "test/test_selected_relation_meaning.py:410: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert not stored.roles.requires_grad\nE   AssertionError: assert not True\nE    +  where True = tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>).requires_grad\nE    +    where tensor([[0.6243, 0.5381, 0.4260, 0.5740, 0.5851, 0.4900, 0.4558, 0.3488],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.3629, 0.6410, 0.4518, 0.5831, 0.5089, 0.5309, 0.3980, 0.4759]],\\n       grad_fn=<CloneBackward0>) = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 13), ('sym', 4010033338316264258), ('sym', 15)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', ())), scope=(), sentence_kind='relation').roles",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.00955950003117323,
+          "message": "test/test_selected_relation_meaning.py:410: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    assert not stored.roles.requires_grad\nE   AssertionError: assert not True\nE    +  where True = tensor([[0.6401, 0.5874, 0.5430, 0.5840, 0.6244, 0.5043, 0.4999, 0.4075],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.5531, 0.4675, 0.5038, 0.4530, 0.6187, 0.4342, 0.6691, 0.5792]],\\n       grad_fn=<CloneBackward0>).requires_grad\nE    +    where tensor([[0.6401, 0.5874, 0.5430, 0.5840, 0.6244, 0.5043, 0.4999, 0.4075],\\n        [0.4566, 0.0115, 0.1937, 0.5191, 0.3...5, 0.1952],\\n        [0.5531, 0.4675, 0.5038, 0.4530, 0.6187, 0.4342, 0.6691, 0.5792]],\\n       grad_fn=<CloneBackward0>) = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 13), ('sym', 4010033338316264258), ('sym', 15)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', ())), scope=(), sentence_kind='relation').roles",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01606283406727016,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 37.5128127920907,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.010424916865304112,
+          "message": "test/test_definition_taxonomy.py:139: in test_closing_binds_subject_form_to_particular_without_widening_compose_access\n    assert f.cs.interpret.forward(f.words['cat'][0], order=1) == f.noun('cat')\nE   AssertionError: assert 22 == 16\nE    +  where 22 = forward(15, order=1)\nE    +    where forward = InterpretLayer().forward\nE    +      where InterpretLayer() = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).interpret\nE    +        where ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n) = <test_clause_acceptance.SentenceFixture object at 0x149aa0650>.cs\nE    +  and   16 = noun('cat')\nE    +    where noun = <test_clause_acceptance.SentenceFixture object at 0x149aa0650>.noun",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0003890420775860548,
+          "message": "test/test_reasoning.py:219: in test_contradicting_proposition_positive_penalty\n    self.assertGreater(penalty.item(), 0.0)\nE   AssertionError: 0.0 not greater than 0.0",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.8833349158521742,
+          "message": "test/test_sentence_compose.py:170: in test_real_packed_ends_train_before_the_next_sentence\n    model.runBatch(train=True, optimizer=optimizer, batchSize=2,\nbin/Models.py:13482: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13638: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14014: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8720: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10096: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8405: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8183: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23749: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17067: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22301: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21871: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20990: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_sentence_compose.py:163: in observe\n    torch.testing.assert_close(payload, roles)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 14 / 312 (4.5%)\nE   Greatest absolute difference: 0.24073778092861176 at index (0, 0) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0, 0) (up to 1.3e-06 allowed)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.15364891709759831,
+          "message": "test/test_sentence_protocol.py:70: in test_repeated_word_is_not_reminted\n    assert not model._attention_words.descended.any()\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x146697020>()\nE    +    where <built-in method any of Tensor object at 0x146697020> = tensor([[ True, False,  True, False, False, False, False, False]]).any\nE    +      where tensor([[ True, False,  True, False, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\\n         [ 6, 11],\\n         [ 0,  0],\\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])).descended\nE    +        where NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\\n         [ 6, 11],\\n         [ 0,  0],\\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub..._features=64, bias=True)\\n      (1): Tanh()\\n    )\\n    (readout): Linear(in_features=64, out_features=1, bias=True)\\n  )\\n)._attention_words",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.46350987488403916,
+          "message": "test/test_operators_round2c.py:96: in test_zero_meaning_departures_and_one_reader_step\n    assert not torch.equal(first['root'],second['root'])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10a54d3a0>(tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]), tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]))\nE    +    where <built-in method equal of type object at 0x10a54d3a0> = torch.equal",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.430s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.7929193340241909,
+          "message": "test/test_live_references.py:246: in test_public_reading_fuses_the_reference_before_capture_and_write\n    torch.testing.assert_close(\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 17 / 104 (16.3%)\nE   Greatest absolute difference: 0.8806540966033936 at index (67,)\nE   Greatest relative difference: 1.0 at index (2,)",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item55_mechanisms.py::test_stream_chain",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.1832539171446115,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.335s)\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_item55_mechanisms.py::test_surface_inverses",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 2.2193640840705484,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006835409440100193,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.08546495786868036,
+          "message": "test/test_surface_grammar.py:40: in test_surface_generation_learns_distinct_children_from_full_width_values\n    assert float(loss.detach()) < .001\nE   assert 0.005450207274407148 < 0.001\nE    +  where 0.005450207274407148 = float(tensor(0.0055))\nE    +    where tensor(0.0055) = <built-in method detach of Tensor object at 0x14f0d04b0>()\nE    +      where <built-in method detach of Tensor object at 0x14f0d04b0> = tensor(0.0055, grad_fn=<AddBackward0>).detach",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006804040865972638,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002454998902976513,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": "fineweb",
+          "duration": 0.00025295792147517204,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_surface_grammar.py', 191, 'Skipped: phase artifact absent: fineweb (no producing lesson registered)')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.6201509998645633,
+          "message": "test/test_surface_grammar.py:228: in test_normal_batch_trains_supplied_grammar_lessons\n    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,\nbin/Models.py:13482: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13638: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14014: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8720: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10096: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8405: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8183: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23749: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17067: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22301: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21871: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20865: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20792: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19849: in _sentence_path_cost\n    objectives = self._grammar_lesson_objectives([program],\nbin/Models.py:13473: in _grammar_lesson_objectives\n    costs = {\"compose\": compose_loss(self.languageSpace, teacher_words, lessons,\nbin/GrammarLessons.py:265: in compose_loss\n    binary, unary = compose_examples(language, program, lesson[\"tree\"],\nbin/GrammarLessons.py:92: in compose_examples\n    reduce()\nbin/GrammarLessons.py:87: in reduce\n    value = op(window[0], window[1])\n            ^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:4763: in forward\n    return self.gl.compose_blocks(self.gl.compose, left, right)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:2496: in compose_blocks\n    return kernel(*operands, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3550: in compose\n    return cube_unchart((self.marker_map(marker) + cube_chart(right)) / self.chart_scale())\n                                                   ^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 2400.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108",
+  "elapsed_seconds": 63.610556040890515,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {
+    "fineweb": [
+      {
+        "nodeid": "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+        "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_surface_grammar.py', 191, 'Skipped: phase artifact absent: fineweb (no producing lesson registered)')"
+      }
+    ]
+  },
+  "peak_aggregate_memory_bytes": 2596032016,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/collect.json"
+    ],
+    "pid": 92360,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 467158264,
+    "elapsed_seconds": 3.8333938331343234,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+        "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+        "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+        "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+        "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+        "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+        "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+        "test/test_item55_mechanisms.py::test_stream_chain",
+        "test/test_item55_mechanisms.py::test_surface_inverses",
+        "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+        "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+        "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+        "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+        "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {
+        "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning": "fineweb"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning": "fineweb"
+  }
+}

@@ -109,63 +109,24 @@ class TestReverseRoundtripStillCompletes(unittest.TestCase):
     is a non-NaN scalar."""
 
     def test_terminal_stm_snapshot_available_after_forward(self):
-        """The migration's public contract — "get the most recently
-        pushed C-space_role idea from STM" — must be addressable: a forward
-        pass leaves ``self.conceptualSpace.stm.snapshot()`` non-None
-        and indexable at the terminal depth axis."""
+        """The close dissolves STM; its completed understanding owns reversal."""
         model = _make_plain_model()
-        x = _one_input(model)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            with torch.no_grad():
-                model.forward(x)
-        stm = model.conceptualSpace.stm
-        snap = stm.snapshot()
-        self.assertIsNotNone(
-            snap,
-            "Terminal STM snapshot must be non-None after a forward "
-            "(the per-word loop pushed at least one idea).")
-        # The most-recent C-space_role idea is the last position along the
-        # depth axis. The migration target uses this as the seed for
-        # the reverse pipeline (instead of ``_cs_cache[-1]``).
-        self.assertGreaterEqual(
-            snap.shape[1], 1,
-            "STM snapshot must have at least one push along its "
-            "depth axis (the terminal idea the reverse path reads).")
+        with torch.no_grad():
+            result = model.forward(_one_input(model))
+            held = model._capture_understanding(result)
+        self.assertIsNone(model.conceptualSpace.stm.snapshot())
+        self.assertTrue(held.sentence_records)
+        self.assertGreater(int(held.sentence_records[-1].end_depth.sum()), 0)
 
     def testreverse_via_terminal_stm(self):
-        """``reverse`` accepts the terminal CS
-        subspace stamped with the most-recent STM idea and completes
-        without raising. The exact reconstruction value is allowed to
-        be degenerate (single-input reverse through averaged loops
-        is approximate by design)."""
+        """The owned inverse completes after its working STM has dissolved."""
         model = _make_plain_model()
-        x = _one_input(model)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            with torch.no_grad():
-                model.forward(x)
-                stm = model.conceptualSpace.stm
-                snap = stm.snapshot()
-                self.assertIsNotNone(snap)
-                # Stamp the most-recent C-space_role idea (the terminal
-                # idea built up over the sentence) onto the CS
-                # subspace as the reverse-path seed. Matches the
-                # shape contract the retired ``_cs_cache[-1]`` held
-                # (``[B, 1, D_c]``; same as ``_reverse_from_S``'s
-                # ``S3 = S.unsqueeze(1)`` lift).
-                terminal_idea = snap[:, -1:, :]
-                cs = model.conceptualSpace
-                cs.subspace.set_event(terminal_idea)
-                # Must not raise. The reverse pipeline itself uses
-                # per-layer try/except guards on its internal
-                # ``_reverse_body`` walk so a shape mismatch in one
-                # stage degrades to a passthrough; the call site
-                # we're protecting is the dispatch + STM read.
-                rev_sub = model.reverse(
-                    cs.subspace)
-        # rev_sub may be None on degraded paths — what matters is
-        # that no exception escaped the call.
+        with torch.no_grad():
+            result = model.forward(_one_input(model))
+            held = model._capture_understanding(result)
+            self.assertIsNone(model.conceptualSpace.stm.snapshot())
+            recovered, _ = model.reverseReconstruct(held)
+        self.assertTrue(torch.isfinite(recovered).all())
 
     def test_runBatch_reverse_path_does_not_depend_on_cs_cache(self):
         """The reverse-pass reconstruction in ``runBatch`` (the consumer

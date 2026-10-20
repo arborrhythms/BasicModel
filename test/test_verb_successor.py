@@ -49,7 +49,7 @@ def test_successor_by_construction_on_the_real_verb_layer():
         layer._verb_spec.weight.copy_(torch.eye(D))
         layer._verb_spec.bias.zero_()
     r, a = 1.45, 0.012
-    codes = torch.tanh(torch.tensor([[a * (r ** n)] * D for n in range(N)]))
+    codes = (1 + torch.tanh(torch.tensor([[a * (r ** n)] * D for n in range(N)]))) / 2
     v = torch.full((D,), math.log(r) + 0.1)        # readout = log r after the threshold
     with torch.no_grad():
         w = layer._verb_spectrum_w(v)
@@ -65,7 +65,7 @@ def test_successor_by_construction_on_the_real_verb_layer():
 def test_readout_receives_gradient_at_zero_init():
     layer = VerbLayer(D, D)
     assert float(layer._verb_spec.weight.abs().sum()) == 0.0    # the real init
-    codes = torch.tanh(0.5 * torch.randn(N, D))
+    codes = (1 + torch.tanh(0.5 * torch.randn(N, D))) / 2
     v = 0.5 * torch.randn(D)
     out = layer.apply_verb(codes[:-1], v.unsqueeze(0).expand(N - 1, -1))
     ((out - codes[1:]) ** 2).mean().backward()
@@ -80,14 +80,14 @@ def test_successor_is_learned_from_zero_init():
     opt = torch.optim.Adam([codes_p, v_p] + list(layer._verb_spec.parameters()), lr=0.02)
     for _ in range(2000):
         opt.zero_grad()
-        c = torch.tanh(codes_p)
+        c = (1 + torch.tanh(codes_p)) / 2
         out = layer.apply_verb(c[:-1], v_p.unsqueeze(0).expand(N - 1, -1))
         loss = torch.nn.functional.cross_entropy(-torch.cdist(out, c) / 0.05,
                                                  torch.arange(1, N))
         loss.backward()
         opt.step()
     with torch.no_grad():
-        c = torch.tanh(codes_p)
+        c = (1 + torch.tanh(codes_p)) / 2
         out = layer.apply_verb(c[:-1], v_p.unsqueeze(0).expand(N - 1, -1))
         assert _nearest(out, c).tolist() == list(range(1, N))
         assert _count(layer, c, v_p.detach()) == list(range(1, N))

@@ -1,0 +1,491 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty"
+  ],
+  "completed": [
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty"
+  ],
+  "slow_selected": [
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.24475454213097692,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.16476437519304454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01091954205185175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0095726668369025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009353083092719316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00919241621159017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008977917023003101,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009543792111799121,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.3922555830795318,
+      "message": "test/test_sentence_compose.py:184: in test_real_packed_ends_train_before_the_next_sentence\n    torch.testing.assert_close(actual.meaning.roles[actual.meaning.role_mask], expected.slots)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 14 / 312 (4.5%)\nE   Greatest absolute difference: 0.2428050935268402 at index (0, 3) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0, 3) (up to 1.3e-06 allowed)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.14897458301857114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.46126287477090955,
+      "message": "test/test_operators_round2c.py:96: in test_zero_meaning_departures_and_one_reader_step\n    assert not torch.equal(first['root'],second['root'])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10e6a93a0>(tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]), tensor([[[0., 0., 0., 0., 1., 0., 0., 1., 1., 1., 0., 1., 0., 1., 1., 1., 1.,\\n          1., 0., 1., 1., 0., 0., 0., 1....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]))\nE    +    where <built-in method equal of type object at 0x10e6a93a0> = torch.equal",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.428s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.5533875420223922,
+      "message": "test/test_live_references.py:261: in test_public_reading_fuses_the_reference_before_capture_and_write\n    clause.point.sum().backward()\n.venv/lib/python3.12/site-packages/torch/_tensor.py:623: in backward\n    torch.autograd.backward(\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:395: in backward\n    _engine_run_backward(\n.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward\n    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass\nE   RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0830197089817375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.6285908338613808,
+      "message": "test/test_surface_grammar.py:228: in test_normal_batch_trains_supplied_grammar_lessons\n    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,\nbin/Models.py:13482: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13638: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14014: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8720: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10096: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8405: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8183: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23749: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17067: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22301: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21871: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20865: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20792: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19849: in _sentence_path_cost\n    objectives = self._grammar_lesson_objectives([program],\nbin/Models.py:13473: in _grammar_lesson_objectives\n    costs = {\"compose\": compose_loss(self.languageSpace, teacher_words, lessons,\nbin/GrammarLessons.py:271: in compose_loss\n    _, _, route = layer(window.detach()[None], slots=1,\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6986: in forward\n    departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,\nbin/Language.py:6700: in _distinct_departures\n    ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: The expanded size of the tensor (1) must match the existing size (2) at non-singleton dimension 0.  Target sizes: [1, 1, 2, 104].  Tensor sizes: [2, 1, 1, 1]",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0029374579899013042,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002767540980130434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0023964999709278345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009252500021830201,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04374520806595683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0431590829975903,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04266549996100366,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04305354203097522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0039504580199718475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022359162103384733,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003183751832693815,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01164562487974763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005767707945778966,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005317500326782465,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00028020795434713364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003095830325037241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00042629195377230644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004157500807195902,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00799808301962912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00039729196578264236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009564500069245696,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009235457982867956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_surface_inverses",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 2.416662875097245,
+      "message": "test/test_item55_mechanisms.py:305: in test_surface_inverses\n    _native_step_comparison(tmp_path, monkeypatch)\ntest/test_item55_mechanisms.py:414: in _native_step_comparison\n    torch.testing.assert_close(recovered[record.word_valid],record.word_values[record.word_valid])\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 35 / 1248 (2.8%)\nE   Greatest absolute difference: 1.9490718841552734e-05 at index (0, 8) (up to 1e-05 allowed)\nE   Greatest relative difference: 2.041943844233174e-05 at index (0, 8) (up to 1.3e-06 allowed)",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002854159101843834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002747499383985996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019929185509681702,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00041091698221862316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.051745374919846654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002675838768482208,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -121,8 +121,8 @@ def test_small_frozen_evaluator_keeps_definition_rows_and_reservations():
     model, data = gate.build_eval_model('data/MM_grammar_wording.xml', autoload=False)
     manifest = gate.load_manifest(gate.DEFAULT_MANIFEST)
     def inventory():
-        return [dict(words=cs.definitions.word_ids, objects=cs.definitions.object_ids,
-            rows=deepcopy(cs.definitions._store()._definition_rows),
+        return [dict(words=tuple(cs.definitions.word_ids), objects=tuple(cs.definitions.object_ids),
+            rows=deepcopy(cs.definitions._rows),
             pending=deepcopy(cs.interpret._pending),
             placement=dict(_concept_alloc_of(cs).placement), capacity=cs.definitions._store().capacity)
             for cs in model.conceptualSpaces]

@@ -39,9 +39,9 @@ def _stamped_event(m, rule_name, N=4):
     torch.manual_seed(0)
     event = torch.zeros(1, N, D)
     live = 2
-    event[0, :live, :cw] = torch.tanh(torch.randn(live, cw) * 0.5)
+    event[0, :live, :cw] = (1 + torch.tanh(torch.randn(live, cw) * 0.5)) / 2
     event[0, 0, cw] = 0.0                                                   # a plain concept slot
-    event[0, 1, cw] = float(Language.TheGrammar.where_id_for_rule(global_id))  # the rule on top
+    event[0, 1, cw] = 0.0  # location metadata is not an identity coordinate  # the rule on top
     return event, gl, cw, live
 
 
@@ -77,7 +77,7 @@ def _independent_split(m, rule, event):
     left[:,cw:]=0;right[:,cw:]=0
     parent=op.compose(left,right)
     event=event.clone()
-    event[:,0]=-left*.17
+    event[:,0]=left*.17
     event[:,1]=parent
     bank=torch.stack((left,right),1)
     def policy(top):

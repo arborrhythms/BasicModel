@@ -1,0 +1,112 @@
+...............FFssFFFF................................................. [ 45%]
+........................................................................ [ 90%]
+................                                                         [100%]
+=================================== FAILURES ===================================
+_ test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit] _
+test/test_trial_policy_ownership.py:38: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction
+    result = model.reverseOutput(understanding, held)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9429: in reverseOutput
+    idea = self._generation_read(idea,
+bin/Models.py:22964: in _generation_read
+    return reader.consume(idea, None if observation is None else observation['content'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Attention.py:500: in consume
+    out[..., :d] = cube_translate(out[..., :d], add)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:133: in cube_translate
+    mapped = cube_unchart(cube_chart(value) + delta)
+                          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore] _
+test/test_trial_policy_ownership.py:38: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction
+    result = model.reverseOutput(understanding, held)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9429: in reverseOutput
+    idea = self._generation_read(idea,
+bin/Models.py:22964: in _generation_read
+    return reader.consume(idea, None if observation is None else observation['content'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Attention.py:500: in consume
+    out[..., :d] = cube_translate(out[..., :d], add)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:133: in cube_translate
+    mapped = cube_unchart(cube_chart(value) + delta)
+                          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__________ test_registration_does_not_depend_on_testimony_trust[0.0] ___________
+test/test_truth_criterion_gates_learning.py:14: in test_registration_does_not_depend_on_testimony_trust
+    assert row == 0 and len(store) == 1
+E   AssertionError: assert (('sym', 5) == 0)
+__________ test_registration_does_not_depend_on_testimony_trust[0.3] ___________
+test/test_truth_criterion_gates_learning.py:14: in test_registration_does_not_depend_on_testimony_trust
+    assert row == 0 and len(store) == 1
+E   AssertionError: assert (('sym', 5) == 0)
+__________ test_registration_does_not_depend_on_testimony_trust[1.0] ___________
+test/test_truth_criterion_gates_learning.py:14: in test_registration_does_not_depend_on_testimony_trust
+    assert row == 0 and len(store) == 1
+E   AssertionError: assert (('sym', 5) == 0)
+__________ test_registration_does_not_depend_on_testimony_trust[-0.7] __________
+test/test_truth_criterion_gates_learning.py:14: in test_registration_does_not_depend_on_testimony_trust
+    assert row == 0 and len(store) == 1
+E   AssertionError: assert (('sym', 5) == 0)
+=============================== warnings summary ===============================
+test/test_training_diagnostic_contracts.py::test_diagnostic_failure_does_not_abort_real_training
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16987: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    if float(union) <= 1e-12:
+
+test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [4] contradicts existing truth [0] (cosine similarity -0.772)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild
+test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit]
+FAILED test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]
+6 failed, 152 passed, 2 skipped, 14 warnings in 6.61s

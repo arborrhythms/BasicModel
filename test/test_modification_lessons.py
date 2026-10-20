@@ -40,7 +40,7 @@ def test_identity_carrying_unary_faces_reverse_exactly_and_retire_free_marker_st
     from Language import LowerLayer, LowerUnaryLayer, DefiniteUnaryLayer, PrepositionLayer, PrepositionUnaryLayer
     from GrammarCheckpoint import align
     # Dyadic inputs make bit-exactness inspectable without picking a seed.
-    value=torch.arange(-16.,16.).reshape(4,8)/8
+    value=torch.arange(32.).reshape(4,8)/32
     for face,base in ((LowerUnaryLayer,LowerLayer(8,8)),(DefiniteUnaryLayer,LowerLayer(8,8)),
                       (PrepositionUnaryLayer,PrepositionLayer(8,8))):
         unary=face(base)

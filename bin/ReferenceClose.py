@@ -70,28 +70,28 @@ class ReferenceClose(nn.Module):
         alloc = _concept_alloc_of(owner)
         parts = alloc.parts
         version = (parts.revision, owner.similarity_codebook.W._version)
-        store = self.store
-        cache = getattr(store, '_participant_cache', None)
+        cache = getattr(parts, '_participant_cache', None)
         if cache is None or cache[0] != version:
             rows = {}
             def add(predicate, edge, role, identity):
-                value = self.store._concept_point(predicate)
+                from IdentityRows import point
+                value = point(owner, predicate)
                 if value is not None:
                     rows.setdefault(self._predicate_key(self.predicate_coordinates(value)), []).append(
                         (edge, role, identity))
             for edge in parts.indices().tolist():
                 part, whole = parts.refs[edge].tolist()
                 if 'state' in alloc.symbol_types.get(edge, ()):
-                    add(part, edge, 2, whole)
-                    add(edge, edge, 2, whole)
+                    add(whole, edge, 2, part)
+                    add(edge, edge, 2, part)
                 if parts.contains(whole) and 'state' in alloc.symbol_types.get(whole, ()):
-                    predicate = int(parts.refs[whole, 0])
+                    predicate = int(parts.refs[whole, 1])
                     add(predicate, edge, 0, part)
                     add(whole, edge, 0, part)
                 elif 'situation' in alloc.symbol_types.get(edge, ()):
                     add(whole, edge, 0, part)
             cache = version, {key: tuple(dict.fromkeys(value)) for key, value in rows.items()}
-            store._participant_cache = cache
+            parts._participant_cache = cache
         return cache[1]
 
     def prediction(self, identity, predicate, role):
@@ -99,7 +99,8 @@ class ReferenceClose(nn.Module):
             return predicate.sum()*0
         rows = [(edge, target) for edge, r, target in
                 self._participants().get(self._predicate_key(predicate), ()) if r == role]
-        parts = self.store.parts
+        from Spaces import _concept_alloc_of
+        parts = _concept_alloc_of(self.components.owner).parts
         total = sum(int(parts.access_count[edge]) for edge, _ in rows)
         target = identity[-1] if isinstance(identity, tuple) else identity
         count = sum(int(parts.access_count[edge]) for edge, candidate in rows if candidate == target)
@@ -107,7 +108,8 @@ class ReferenceClose(nn.Module):
 
     def expected_roles(self, predicate):
         rows = self._participants().get(self._predicate_key(self.predicate_coordinates(predicate)), ())
-        parts = self.store.parts
+        from Spaces import _concept_alloc_of
+        parts = _concept_alloc_of(self.components.owner).parts
         return tuple(role for role in (0, 2) if sum(int(parts.access_count[edge])
             for edge, r, _ in rows if r == role) >= self.components.verbs.recurrence)
 
@@ -145,6 +147,20 @@ class ReferenceClose(nn.Module):
             if isinstance(location, int) and int(row['order']) == 1:
                 records[row['row_id']] = location, dict(role=0, position=(position, 0), identity=None)
             at_time = active[(parts.when[active] == row['when'].to(parts.when)).all(-1)]
+            # A timestamp is not a sentence identity. Traverse this frame's
+            # retained derivation before consulting any contemporaneous edge.
+            roots = ([location[1]] if isinstance(location, tuple) else
+                     [ref[1] for ref in row['meaning'].role_refs
+                      if ref is not None and ref[0] == 'sym' and parts.contains(ref[1])])
+            if roots:
+                pending, reachable = list(roots), set()
+                while pending:
+                    edge = pending.pop()
+                    if edge in reachable or not parts.contains(edge):
+                        continue
+                    reachable.add(edge)
+                    pending.extend(parts.refs[edge].tolist())
+                at_time = active.new_tensor(sorted(reachable))
             edges = list(at_time.tolist())
             if isinstance(location, tuple):
                 edges.append(location[1])
@@ -168,11 +184,11 @@ class ReferenceClose(nn.Module):
                 for edge in at_time.tolist():
                     part, whole = parts.refs[edge].tolist()
                     if role == 2 and 'state' in alloc.symbol_types.get(edge, ()):
-                        if whole == identity:
-                            predicate = part
+                        if part == identity:
+                            predicate = whole
                             break
                     if role == 0 and part == identity:
-                        predicate = int(parts.refs[whole, 0]) if parts.contains(whole) and (
+                        predicate = int(parts.refs[whole, 1]) if parts.contains(whole) and (
                             'state' in alloc.symbol_types.get(whole, ())) else whole
                         break
                 records.pop(identity, None)

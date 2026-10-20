@@ -94,3 +94,38 @@ def test_bound_terminal_admits_its_new_word_without_reminting_the_object(monkeyp
     assert f.cs.definitions.objects(word) == (identity,)
     assert f.store.parts.find(identity, word) is not None
     assert f.store._concept_point(identity) is not None
+
+
+def test_self_reference_of_a_word_with_an_object_use_is_not_a_definition(monkeypatch):
+    f = SentenceFixture(monkeypatch)
+    obj = f.noun('a')
+    word = f.words['a'][0]
+    alloc = f.cs._concept_allocator
+    # A name can itself be referred to as an object. Its self-reference
+    # remains legal; it is not a definition of itself.
+    alloc.symbol_types[word].add('object')
+    edge = f.store.parts.add(word, word, truth_plus=1.)
+    assert 'definition' not in f.store.parts.readings(edge, alloc.symbol_types.get)
+    assert f.cs.definitions.objects(word) == (obj,)
+    assert f.store.parts.find(word, word) == edge
+
+
+def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(monkeypatch):
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    participant = f.noun('participant')
+    alloc = f.cs._concept_allocator
+    word = alloc.new_concept()
+    alloc.symbol_types[word] = {'word'}
+    alloc.reference_orders[word] = 0
+    assert f.cs._csw_row_of(word) is None
+    left = Composition(f.registry._payload(('sym', participant)), reference=participant)
+    right = Composition(torch.eye(8)[3], reference=word)
+    point = torch.maximum(left.point, right.point)
+    term = Composition(point, (left, right), operation='verb', formal_name='verb', head_role=1)
+    clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
+    f.store.write_clause(clause)
+    assert f.store.parts.find(participant, word) is not None
+    assert f.cs._csw_row_of(word) is None
+    assert alloc.symbol_types[word] == {'word'}

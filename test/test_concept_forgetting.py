@@ -80,10 +80,10 @@ def test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_refe
     cs.similarity_codebook.W[rows[0], 0] = .9
     cs.similarity_codebook.W[rows[1], 1] = .05  # A different direction, not an exact duplicate.
     cs.add_part(defined, 42)
-    store = cs._definition_store
+    store = cs._closed_clause_store()
     stored = store.append_idea(torch.ones(8), sentence_index=0)
     store.refs[stored, 0] = referenced
-    store._leaf_postings[rows[4], 0] = {stored}
+    cs._concept_allocator.parts.add(posted, referenced)
     layer.add_edge(rows[6], rows[5], 0.)  # Zero coefficients still have sparse placement.
     layer.features.add_edge(rows[7], 0, 0.)
     layer.witnessed[rows[8]] = True
@@ -171,13 +171,14 @@ def test_reclaimed_capacity_and_taxonomy_provenance_roundtrip():
     weak, row = concept(cs, magnitude=.1)
     strong, _ = concept(cs, magnitude=.9)
     reclaim_concepts(cs)
-    cs._concept_allocator.ltm_edges[strong, 101] = {('ltm', 'fixture', 992)}
+    edge = cs._concept_allocator.parts.add(strong, strong, truth_plus=.7, truth_minus=.2)
     source = _model_with(cs, SimpleNamespace())
     saved = source._collect_structural_extras()['conceptual_spaces'][0]['allocator']
     target_cs = _cs(8)
     _model_with(target_cs, SimpleNamespace())._restore_allocator_extras(target_cs, saved)
     assert target_cs._concept_allocator.reclaimed_seats == 1
-    assert target_cs._concept_allocator.ltm_edges == cs._concept_allocator.ltm_edges
+    torch.testing.assert_close(target_cs._concept_allocator.parts.refs, cs._concept_allocator.parts.refs)
+    assert target_cs._concept_allocator.parts.row(edge)['truth_minus'] == pytest.approx(.2)
     new, seat = concept(target_cs, part=12)
     assert new > strong and seat == row and target_cs._csw_row_of(weak) is None
 

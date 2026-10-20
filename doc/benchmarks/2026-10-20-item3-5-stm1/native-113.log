@@ -1,0 +1,42 @@
+[collect] 305 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 5.9s; peak 0.43 GiB
+[worker-000] 64 selectors; limit 1800s, 8.0 GiB
+[worker-001] 46 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 26.6s; peak 0.63 GiB
+[worker-002] 64 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 28.4s; peak 2.00 GiB
+[worker-003] 51 selectors; limit 1800s, 8.0 GiB
+[worker-003] exit 0; 6.5s; peak 2.51 GiB
+[worker-004] 59 selectors; limit 1800s, 8.0 GiB
+[worker-002] exit 0; 29.0s; peak 0.79 GiB
+[worker-005] 64 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 24.5s; peak 2.14 GiB
+[worker-006] 58 selectors; limit 1800s, 8.0 GiB
+[worker-005] exit 1; 89.9s; peak 2.00 GiB
+[worker-007] 64 selectors; limit 1800s, 8.0 GiB
+[worker-007] exit 0; 27.9s; peak 2.64 GiB
+[worker-008] 58 selectors; limit 1800s, 8.0 GiB
+[worker-008] exit 0; 89.4s; peak 0.90 GiB
+[worker-009] 64 selectors; limit 1800s, 8.0 GiB
+[worker-009] exit 0; 57.7s; peak 1.85 GiB
+[worker-010] 50 selectors; limit 1800s, 8.0 GiB
+[worker-010] exit 1; 114.1s; peak 2.63 GiB
+[worker-011] 45 selectors; limit 1800s, 8.0 GiB
+[worker-011] exit 0; 15.4s; peak 1.51 GiB
+[worker-012] 62 selectors; limit 1800s, 8.0 GiB
+[worker-012] exit 1; 213.7s; peak 2.47 GiB
+[worker-013] 41 selectors; limit 1800s, 8.0 GiB
+[worker-013] exit 0; 34.2s; peak 1.38 GiB
+[worker-014] 64 selectors; limit 1800s, 8.0 GiB
+[worker-014] exit 1; 8.1s; peak 1.22 GiB
+[worker-015] 43 selectors; limit 1800s, 8.0 GiB
+[worker-015] exit 0; 41.1s; peak 1.71 GiB
+[worker-016] 29 selectors; limit 1800s, 8.0 GiB
+[worker-006] interrupted 125; 812.9s; peak 4.11 GiB
+[worker-016] interrupted 125; 125.9s; peak 1.39 GiB
+Result: interrupted, exit 130; 893/926 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-113/result.json
+Skipped phase certificates: copular_identity: 1
+Skipped phase certificates: fineweb: 1
+Skipped phase certificates: stage3: 1
+Skipped phase certificates: stage4e: 1

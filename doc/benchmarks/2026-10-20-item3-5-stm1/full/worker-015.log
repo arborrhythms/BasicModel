@@ -1,0 +1,380 @@
+F.F.F....................................................FF........FFF.F [ 35%]
+.FFFFF......FF.FF.FF...................F......F......................... [ 70%]
+............................s.......sssssss..........F.....ss            [100%]
+=================================== FAILURES ===================================
+______ test_two_verbs_distinct_with_masks_on_ablated_identical[LiftLayer] ______
+test/test_lexical_gate_lift_lower.py:73: in test_two_verbs_distinct_with_masks_on_ablated_identical
+    c_walk = op.forward(a, b, gate=g_walk)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+______ test_projection_trains_end_to_end_with_composition_loss[LiftLayer] ______
+test/test_lexical_gate_lift_lower.py:118: in test_projection_trains_end_to_end_with_composition_loss
+    initial = loss_fn().item()
+              ^^^^^^^^^
+test/test_lexical_gate_lift_lower.py:111: in loss_fn
+    c_w = op.forward(a, b, gate=op.lexical_gate(walk))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+________________ test_signed_kernel_gated_roundtrip[LiftLayer] _________________
+test/test_lexical_gate_lift_lower.py:174: in test_signed_kernel_gated_roundtrip
+    y = op.forward(a, b, gate=g)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_________ test_conflicting_claim_preserves_support_and_counterevidence _________
+test/test_lies_can_be_learned.py:10: in test_conflicting_claim_preserves_support_and_counterevidence
+    assert len(store) == 1
+E   assert 0 == 1
+E    +  where 0 = len(TernaryTruthStore())
+_______________ test_zero_provenance_registers_without_asserting _______________
+test/test_lies_can_be_learned.py:18: in test_zero_provenance_registers_without_asserting
+    assert row == 0
+E   AssertionError: assert ('sym', 5) == 0
+__ TestLiftLowerForwardReverseShape.test_lift_forward_two_operands_one_result __
+test/test_lift_lower_binary_grammar_ops.py:124: in test_lift_forward_two_operands_one_result
+    out = lift.forward(a, b)
+          ^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_______ TestLiftLowerForwardReverseShape.test_lift_reverse_returns_pair ________
+test/test_lift_lower_binary_grammar_ops.py:150: in test_lift_reverse_returns_pair
+    parent = lift.forward(a, b)
+             ^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ TestLiftLowerForwardReverseShape.test_lower_forward_two_operands_one_result __
+test/test_lift_lower_binary_grammar_ops.py:138: in test_lower_forward_two_operands_one_result
+    out = lower.forward(a, b)
+          ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3496: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____________ TestLiftLowerRoundTrip.test_lift_round_trip_consistent ____________
+test/test_lift_lower_binary_grammar_ops.py:190: in test_lift_round_trip_consistent
+    parent = lift.forward(a, b)
+             ^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____ TestLiftLowerComposeGenerate.test_lift_compose_dispatches_to_forward _____
+test/test_lift_lower_binary_grammar_ops.py:222: in test_lift_compose_dispatches_to_forward
+    via_compose = lift.compose(a, b)
+                  ^^^^^^^^^^^^^^^^^^
+bin/Language.py:3338: in compose
+    return self.forward(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____ TestLiftLowerComposeGenerate.test_lift_generate_dispatches_to_reverse _____
+test/test_lift_lower_binary_grammar_ops.py:245: in test_lift_generate_dispatches_to_reverse
+    parent = lift.forward(a, b)
+             ^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____ TestLiftLowerComposeGenerate.test_lower_compose_dispatches_to_forward _____
+test/test_lift_lower_binary_grammar_ops.py:233: in test_lower_compose_dispatches_to_forward
+    via_compose = lower.compose(a, b)
+                  ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3499: in compose
+    return self.forward(marker, description, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3496: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____ TestLiftLowerNoSubstrateBorrow.test_lift_constructible_without_spaces _____
+test/test_lift_lower_binary_grammar_ops.py:272: in test_lift_constructible_without_spaces
+    out = layer.forward(a, b)
+          ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____ TestLiftLowerNoSubstrateBorrow.test_lower_constructible_without_spaces ____
+test/test_lift_lower_binary_grammar_ops.py:281: in test_lower_constructible_without_spaces
+    out = layer.forward(a, b)
+          ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3496: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ TestLiftLowerFactorization.test_different_ADJs_give_different_lower_outputs __
+test/test_lift_lower_factorization.py:169: in test_different_ADJs_give_different_lower_outputs
+    out_a = lower.forward(ADJ_a, NP)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3496: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ TestLiftLowerFactorization.test_different_VPs_give_different_lift_outputs ___
+test/test_lift_lower_factorization.py:154: in test_different_VPs_give_different_lift_outputs
+    out_a = lift.forward(VP_a, NP)
+            ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ TestLiftLowerFactorization.test_lift_self_contained_no_substrate_fallback ___
+test/test_lift_lower_factorization.py:254: in test_lift_self_contained_no_substrate_fallback
+    out = layer.forward(VP, NP)
+          ^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+___ TestLiftLowerFactorization.test_lift_vs_lower_differ_after_perturbation ____
+test/test_lift_lower_factorization.py:207: in test_lift_vs_lower_differ_after_perturbation
+    out_lift = lift.forward(GATE, NP)
+               ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+__ TestLiftLowerFactorization.test_lower_self_contained_no_substrate_fallback __
+test/test_lift_lower_factorization.py:278: in test_lower_self_contained_no_substrate_fallback
+    out = layer.forward(ADJ, NP)
+          ^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3496: in forward
+    return assert_cube(description)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+____ TestLiftLowerRecommender.test_lift_reverse_uses_recommender_with_basis ____
+test/test_lift_lower_recommender.py:57: in test_lift_reverse_uses_recommender_with_basis
+    self._check(lift)
+test/test_lift_lower_recommender.py:43: in _check
+    parent = layer.forward(left, right)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3205: in forward
+    return self._sigma.compose(left, right, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:3299: in compose
+    a_l = self._chart(left)
+          ^^^^^^^^^^^^^^^^^
+bin/Layers.py:3144: in _chart
+    return cube_chart(value, bounded=self._bounded_backward)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____ test_transparent_operation_preserves_a_vp_with_a_relational_operand ______
+test/test_live_references.py:42: in test_transparent_operation_preserves_a_vp_with_a_relational_operand
+    row = store.write_clause(field)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:472: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:192: in prepare
+    self._definition(value['symbol'], value['value'].word_id, clause.evidence)
+bin/PartClosing.py:160: in _definition
+    raise ValueError('a word-derived mint requires its admitted word description')
+E   ValueError: a word-derived mint requires its admitted word description
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:244: in test_public_reading_fuses_the_reference_before_capture_and_write
+    assert clause.refs[0] == cid
+E   assert -1 == -4818115069803014736
+_ test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label __
+test/test_math_chain.py:212: in test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label
+    phrase = verb(subject[None], verb(head[None], obj[None]))[0]
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3413: in forward
+    return self.apply_verb(left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3281: in apply_verb
+    return self._verb_rail_transform(
+bin/Language.py:3264: in _verb_rail_transform
+    interior = cube_chart(value_f32, bounded=False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:116: in cube_chart
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=============================== warnings summary ===============================
+test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_lexical_gate_lift_lower.py::test_two_verbs_distinct_with_masks_on_ablated_identical[LiftLayer]
+FAILED test/test_lexical_gate_lift_lower.py::test_projection_trains_end_to_end_with_composition_loss[LiftLayer]
+FAILED test/test_lexical_gate_lift_lower.py::test_signed_kernel_gated_roundtrip[LiftLayer]
+FAILED test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence
+FAILED test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_forward_two_operands_one_result
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_reverse_returns_pair
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_forward_two_operands_one_result
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lift_round_trip_consistent
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_compose_dispatches_to_forward
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_generate_dispatches_to_reverse
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_ADJs_give_different_lower_outputs
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_VPs_give_different_lift_outputs
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_self_contained_no_substrate_fallback
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_vs_lower_differ_after_perturbation
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_self_contained_no_substrate_fallback
+FAILED test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis
+FAILED test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+FAILED test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label
+23 failed, 172 passed, 10 skipped, 1 warning in 146.63s (0:02:26)

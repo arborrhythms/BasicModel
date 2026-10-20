@@ -50,18 +50,21 @@ def test_nested_compose_preserves_complete_child_roles_without_a_write(monkeypat
 @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
 def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
     _cs, registry, language, entry, leaves = _nested(monkeypatch)
+    # The common owner otherwise already contains the catalogue's assertion.
+    _cs._concept_allocator.parts.remove(*entry.concept_ids[:2].tolist())
     store = _write_selected_observation(language, registry, entry, path)
-    # Bound child and parent carry ignorance without creating question rows.
-    assert len(store) == 2
+    # The two native pairs retain ignorance independently in the common owner.
+    assert len(store) == 0
+    child_id = store.parts.find(*entry.concept_ids[:2].tolist())
+    parent_id = store.parts.find(int(entry.concept_ids[2]), child_id)
+    assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}
+    child, parent = store.row(('sym', child_id)), store.row(('sym', parent_id))
     from ThoughtReferences import open_slots
-    assert all(not open_slots(store.meaning_of(i)) for i in range(len(store)))
-    assert all(store.row(i)['evidence'] == (0., 0.) for i in range(len(store)))
-    child, parent = store.row(0), store.row(1)
-    assert parent["meaning"].role_refs[2] == child["occurrence"]
-    assert child["kind"] == "unverified" and child["trust"] == 0
-    torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
-    assert not child["meaning"].roles.requires_grad
-    assert parent["kind"] == "observation"
+    assert not open_slots(child['meaning']) and not open_slots(parent['meaning'])
+    assert child['evidence'] == parent['evidence'] == (0., 0.)
+    assert parent['meaning'].role_refs[2] == child['occurrence']
+    torch.testing.assert_close(child['meaning'].roles[0], registry._payload(('sym', int(entry.concept_ids[0]))))
+    assert not child['meaning'].roles.requires_grad
 
 
 def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
@@ -75,8 +78,10 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
         return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]
     for store in stores[1:]:
         assert addresses(store) == addresses(stores[0])
-        for name in ('slots', 'rel_type', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):
+        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):
             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
+        for name in ('refs', 'truth_plus', 'truth_minus', 'surprise', 'when'):
+            torch.testing.assert_close(getattr(store.parts, name), getattr(stores[0].parts, name), rtol=0, atol=0)
         for row in range(len(store)):
             torch.testing.assert_close(store.meaning_of(row).roles,
                                        stores[0].meaning_of(row).roles)
@@ -127,5 +132,6 @@ def _write_selected_observation(language, registry, entry, path):
     attach_clause_index(host, store, registry.space)
     # Every public entry reaches this common closing; real entry-point parity
     # is exercised by test_sentence_boundary.
+    store._test_initial_parts = set(store.parts.indices().tolist())
     commit_reading(language, registry, entry, store, owner=host)
     return store

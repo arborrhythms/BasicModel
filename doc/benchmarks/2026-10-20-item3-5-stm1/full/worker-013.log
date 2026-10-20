@@ -1,0 +1,69 @@
+...s......s..............................................s.F.F.......... [ 35%]
+........................................................................ [ 70%]
+...................................s.........................            [100%]
+=================================== FAILURES ===================================
+_ TestSoftRuleProbsGradReachesRouter.test_grad_reaches_unary_anchors_via_projection _
+test/test_intra_routing_grad_to_router.py:150: in test_grad_reaches_unary_anchors_via_projection
+    ss.compose(x)
+bin/Language.py:10541: in compose
+    self.current_rules = self.languageLayer.compose(
+bin/Language.py:4976: in compose
+    derivation = self.operation_layer.derive(
+bin/Language.py:7064: in derive
+    _, next_x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6823: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7180: in _stacked_reduced
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ TestSoftRuleProbsGradReachesRouter.test_rule_probs_requires_grad_on_full_router _
+test/test_intra_routing_grad_to_router.py:89: in test_rule_probs_requires_grad_on_full_router
+    ss.compose(x)
+bin/Language.py:10541: in compose
+    self.current_rules = self.languageLayer.compose(
+bin/Language.py:4976: in compose
+    derivation = self.operation_layer.derive(
+bin/Language.py:7064: in derive
+    _, next_x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6823: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7180: in _stacked_reduced
+    assert_cube(value)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+=============================== warnings summary ===============================
+test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_intra_routing_grad_to_router.py:229: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    float(col_mass[1] + col_mass[2]), 0.0,
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7047: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_anchors_via_projection
+FAILED test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_rule_probs_requires_grad_on_full_router
+2 failed, 199 passed, 4 skipped, 3 warnings in 26.57s

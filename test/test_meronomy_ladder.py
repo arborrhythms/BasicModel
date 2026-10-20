@@ -86,6 +86,11 @@ def test_forward_equals_compose_on_a_live_snapshot():
     with torch.no_grad():
         m.forward(x)
     snap = getattr(m, "_current_discourse_s", None)
+    # This fixture starts in the dense signed event chart; the grammar
+    # alias comparison consumes its corresponding native cube coordinates.
+    if torch.is_tensor(snap):
+        from Layers import cube_unchart
+        snap = cube_unchart(snap)
     if not torch.is_tensor(snap):
         pytest.skip("no symbolic snapshot on this fixture")
 
@@ -558,6 +563,7 @@ def test_utility_counts_accrue_once_per_presentation(eager_reading, trained_ladd
 
 
 @pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase():
     """Under digit wholes a two-digit numeral is a coarse whole over two
     digit units; a chunk chosen on that pair recurring ``admissionCount``
@@ -724,6 +730,7 @@ def test_digit_identity_order_and_repetition_are_distinct_occurrences(ladder):
 # -- Phase 2b acceptance (mechanism): phrases on a text corpus ------------------
 
 @pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
     """On the inline idiom / literal corpus (``kick the bucket`` vs ``kick
     the ball``, frequency-matched) adjacent words share a clause, so
@@ -761,6 +768,7 @@ def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
 # -- contracts 6-7: the counts, admissions and acquired predicates round-trip ----
 
 @pytest.mark.slow
+@pytest.mark.usefixtures('eager_reading')
 def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
     m = _build_ladder()
     cs = m._concept_owner()

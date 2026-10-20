@@ -69,8 +69,8 @@ def test_reify_relation_between_symbols():
     A = cs.relate(1, 2)                          # cat-object <= cat-object-props
     B = cs.relate(3, 4)                          # cat-word   <= cat-word-props
     C = cs.reify_concept(A, B)                  # "the object is a word"
-    assert cs.concept_parts(C) == [("sym", A)]
-    assert cs.concept_wholes(C) == [("sym", B)]
+    assert cs._concept_allocator.parts.refs[C].tolist() == [A, B]
+    assert cs._concept_allocator.parts.find(A, B) == C
 
 
 def test_identity_at_one_part_one_whole():
@@ -383,10 +383,12 @@ def test_assert_relation_replaces_poles_and_enters_embedding():
     assert set(cs.concept_parts(B)) == {1}
     assert set(cs.concept_wholes(B)) == {2}
     # "a cat has whiskers" (whiskers-object = another concept, id 9):
-    cs.assert_concept_relation(B, sym_part=9)
+    part = cs.new_concept()
+    cs.assert_concept_relation(B, sym_part=part)
     assert ATOM not in cs.concept_parts(B)           # pole replaced
     # "cats are animals" (animal-object = concept 11):
-    cs.assert_concept_relation(B, sym_whole=11)
+    whole = cs.new_concept()
+    cs.assert_concept_relation(B, sym_whole=whole)
     assert UNIVERSE not in cs.concept_wholes(B)
     # B's definition now has content -> it holds sparse edges (min-support).
     order = cs._concept_source_order(B)

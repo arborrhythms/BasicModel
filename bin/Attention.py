@@ -475,7 +475,7 @@ class PrimedSymbolReader(nn.Module):
         # to retrieve content that lowers the loss.
         self.consume_gate = nn.Parameter(torch.zeros(1))
 
-    def consume(self, symbols, content):
+    def consume(self, symbols, content, *, identity=True):
         """Feed the soft-read ``content`` ``[B, Dc]`` into an owned operand
         ``symbols`` (``[B, N, D]`` or ``[B, D]``) as a zero-init chart translation
         on the common leading width. The identity operand stays in the cube.
@@ -496,8 +496,11 @@ class PrimedSymbolReader(nn.Module):
         if symbols.dim() == 3:
             add = add.unsqueeze(1)                                     # [B,1,d]
         out = symbols.clone()
-        from Layers import cube_translate
-        out[..., :d] = cube_translate(out[..., :d], add)
+        if identity:
+            from Layers import cube_translate
+            out[..., :d] = cube_translate(out[..., :d], add)
+        else:
+            out[..., :d] = out[..., :d] + add
         return out
 
     @staticmethod

@@ -208,7 +208,7 @@ def test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label(
     from Language import VerbLayer
     verb = VerbLayer(8, 8)
     # Ordinary opaque codes. There is no numeral index or arithmetic target.
-    head, obj, subject, target = torch.randn(4, 8).tanh()
+    head, obj, subject, target = (1 + torch.randn(4, 8).tanh()) / 2
     phrase = verb(subject[None], verb(head[None], obj[None]))[0]
     program = SimpleNamespace(actions=torch.tensor([[1, 0, -1]]),
         operation_values=torch.stack((phrase, target, phrase * 0))[None])

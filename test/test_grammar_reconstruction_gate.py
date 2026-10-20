@@ -51,9 +51,11 @@ def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(
         assert parents, 'the reading must traverse the grammar inverse'
         before = parents[0]
         changed = list(state[1])
-        changed[9], changed[13] = changed[9] + 10, changed[13] + 10
+        changed[6], changed[10] = (changed[6] + .5) / 2, (changed[10] + .5) / 2
+        current = list(state[0])
+        current[0] = (current[0] + .5) / 2
         parents.clear()
-        model.reconstruct_grammar_sentence((state[0], tuple(changed), state[2]), sid, active)
+        model.reconstruct_grammar_sentence((tuple(current), tuple(changed), state[2]), sid, active)
         assert parents and not torch.equal(parents[0], before)
         assert model._word_symbol_concept_ids() is None
         decoded.append(texts)

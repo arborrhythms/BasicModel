@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+    "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_item55_mechanisms.py::test_surface_inverses"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning": "fineweb"
+  },
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

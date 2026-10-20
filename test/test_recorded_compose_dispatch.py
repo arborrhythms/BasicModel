@@ -22,7 +22,7 @@ def test_recorded_binary_executes_only_selected_operators(tmp_path, monkeypatch)
 
             monkeypatch.setattr(op, "forward_with_context", observe)
         width = int(model.conceptualSpace.stm.concept_dim)
-        left, right = torch.randn(2, width), torch.randn(2, width)
+        left, right = torch.rand(2, width), torch.rand(2, width)
         language.forward_binary_step(
             left, right, torch.full((2,), chosen), torch.tensor([True, False]))
         assert calls == ["sum"]
@@ -47,7 +47,7 @@ def test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows(tmp_pat
         # The actual replay supplies two views of the same stack storage.
         torch.manual_seed(461)
         width = int(model.conceptualSpace.stm.concept_dim)
-        operands = (torch.randn(3, 2, width) * .1).requires_grad_()
+        operands = (torch.rand(3, 2, width) * .8 + .1).requires_grad_()
         left, right = operands[:, 1], operands[:, 0]
         window = torch.stack((left, right), dim=1)
         candidates = binary._stacked_reduced(window)[:, 0]

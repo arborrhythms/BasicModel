@@ -23,7 +23,9 @@ def test_identical_empty_meanings_do_not_require_identical_forms():
 
 
 @pytest.mark.parametrize('config,capacity', [('XOR_grammar', 6), ('MM_grammar', 8)])
-def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity):
+def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity, monkeypatch):
+    from reading_fixtures import keep_existing_references
+    keep_existing_references(monkeypatch)
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model(f'data/{config}.xml')
     admitted = []

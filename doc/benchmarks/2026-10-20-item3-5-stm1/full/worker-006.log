@@ -1,0 +1,74 @@
+..s..............s.................................................FFFFF [ 75%]
+F..........ss....s.....                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_closing_uses_the_ordered_object_parent_and_deduplicates_it ________
+test/test_definition_taxonomy.py:86: in test_closing_uses_the_ordered_object_parent_and_deduplicates_it
+    row = store.write_clause(source)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:472: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:179: in prepare
+    assert_cube(value.point)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____________ test_failed_closing_does_not_leave_a_taxonomy_prefix _____________
+test/test_definition_taxonomy.py:113: in test_failed_closing_does_not_leave_a_taxonomy_prefix
+    store.write_clause(bad)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:472: in write_clause
+    closing.prepare(value)
+bin/PartClosing.py:179: in prepare
+    assert_cube(value.point)
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_ test_closing_binds_subject_form_to_particular_without_widening_compose_access _
+test/test_definition_taxonomy.py:131: in test_closing_binds_subject_form_to_particular_without_widening_compose_access
+    assert cid in f.cs.word_concepts('cat')
+E   AssertionError: assert 7152357471235947894 in (15, 16, 21, 22)
+E    +  where (15, 16, 21, 22) = word_concepts('cat')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_clause_acceptance.SentenceFixture object at 0x1312dd4f0>.cs
+______________ test_referenced_phrase_admission_is_atomic[width] _______________
+test/test_definition_taxonomy.py:162: in test_referenced_phrase_admission_is_atomic
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____________ test_referenced_phrase_admission_is_atomic[capacity] _____________
+test/test_definition_taxonomy.py:165: in test_referenced_phrase_admission_is_atomic
+    with pytest.raises(OverflowError, match='forgetting'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE OverflowError
+__________ test_selected_anaphor_form_binds_to_its_own_end_particular __________
+test/test_definition_taxonomy.py:183: in test_selected_anaphor_form_binds_to_its_own_end_particular
+    assert int(f.store.row_ids[row]) in f.cs.word_concepts('he')
+E   AssertionError: assert -5431123250321959018 in (19, 20, 25)
+E    +  where -5431123250321959018 = int(tensor(-5431123250321959018))
+E    +  and   (19, 20, 25) = word_concepts('he')
+E    +    where word_concepts = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).word_concepts
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_clause_acceptance.SentenceFixture object at 0x13183af90>.cs
+=============================== warnings summary ===============================
+test/test_cursor_universal.py::test_xor_runs_through_trial_cursor
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_definition_sparsity.py:34: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert abs(float(p) - 0.4) < 1e-6, "marginal ranks 0.3 + 0.1, top-2 exempt"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_definition_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it
+FAILED test/test_definition_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix
+FAILED test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]
+FAILED test/test_definition_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular
+6 failed, 84 passed, 5 skipped, 2 warnings in 28.66s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reverse_traversal.py::test_reconstruction_uses_held_word_support_after_attention_changes"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-119/worker-000.recycle.json"
+}

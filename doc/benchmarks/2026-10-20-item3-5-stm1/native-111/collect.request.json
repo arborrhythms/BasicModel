@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_operators_round2c.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

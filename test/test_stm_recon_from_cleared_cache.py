@@ -215,7 +215,7 @@ def test_cache_clears_and_chart_generate_rederives_from_stm():
     ss.generate = _spy
     try:
         with torch.no_grad():
-            model._chart_generate_from_stm()
+            model._chart_generate_from_stm(model._stm_single_S)
     finally:
         ss.generate = orig
 

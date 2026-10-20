@@ -35,7 +35,7 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     wrapped = language._tree_layer(2).ops[operation]
     op = getattr(wrapped, 'gl', wrapped)
     inverse = getattr(op, 'inverse_kind', None)
-    side = 'left' if inverse == 'right' else 'right'
+    side = 'left' if inverse in ('right', 'surface') else 'right'
     witness = frame[0 if side == 'left' else 1].detach()[None]
     if inverse == 'search':
         # No derivation inverse: a free search or occurrence target must not

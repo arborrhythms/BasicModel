@@ -1,0 +1,41 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 50.33224320807494,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 2 (\u0394=9.523s)\r\nbatch = 4 (\u0394=11.626s)\r\nbatch = 6 (\u0394=20.899s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 1], \"question_source\": 3, \"episode\": true, \"work\": 234, \"answer\": \"four\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", -9166221088850505817], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -9166221088850505817], \"refs\": [[\"sym\", 78], [\"sym\", 4010033338316264258], [\"sym\", 43]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 57], [\"sym\", 28], [\"sym\", 81]], \"known_witnesses\": true, \"witness_texts\": [\"y is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 1], \"question_source\": 7, \"episode\": true, \"work\": 234, \"answer\": \"four\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", -523247335180444832], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -523247335180444832], \"refs\": [[\"sym\", 86], [\"sym\", 4010033338316264258], [\"sym\", 58]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 72], [\"sym\", 39], [\"sym\", 89]], \"known_witnesses\": true, \"witness_texts\": [\"y is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 81.2174723749049,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 2 (\u0394=8.501s)\r\nbatch = 4 (\u0394=10.890s)\r\nbatch = 6 (\u0394=10.638s)\r\nbatch = 8 (\u0394=9.757s)\r\nbatch = 10 (\u0394=33.919s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 2], \"question_source\": 5, \"episode\": true, \"work\": 557, \"answer\": \"five\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", -7109639778695105635], \"open\": [], \"expected_chain_length\": 2, \"inference_count\": 2, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -776286462986188049], \"refs\": [[\"sym\", 101], [\"sym\", 4010033338316264258], [\"sym\", 43]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 57], [\"sym\", 28], [\"sym\", 104]], \"known_witnesses\": true, \"witness_texts\": [\"z is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}, {\"occurrence\": [\"ltm\", \"address-v1\", -7109639778695105635], \"refs\": [[\"sym\", 118], [\"sym\", 4010033338316264258], [\"sym\", 74]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 84], [\"ltm\", \"address-v1\", -776286462986188049], [\"sym\", 121]], \"known_witnesses\": true, \"witness_texts\": [\"y is z plus one.\", null, \"four plus one is five.\"], \"bound_words\": [\"five\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 2], \"question_source\": 11, \"episode\": true, \"work\": 557, \"answer\": \"five\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", -7967528671705352279], \"open\": [], \"expected_chain_length\": 2, \"inference_count\": 2, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -8784017490586908707], \"refs\": [[\"sym\", 109], [\"sym\", 4010033338316264258], [\"sym\", 58]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 72], [\"sym\", 39], [\"sym\", 112]], \"known_witnesses\": true, \"witness_texts\": [\"z is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}, {\"occurrence\": [\"ltm\", \"address-v1\", -7967528671705352279], \"refs\": [[\"sym\", 126], [\"sym\", 4010033338316264258], [\"sym\", 85]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"sym\", 95], [\"ltm\", \"address-v1\", -8784017490586908707], [\"sym\", 129]], \"known_witnesses\": true, \"witness_texts\": [\"y is z plus one.\", null, \"four plus one is five.\"], \"bound_words\": [\"five\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

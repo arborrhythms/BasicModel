@@ -263,8 +263,12 @@ def credit_chain_world(monkeypatch):
         return (second,) if any(r.evidence.get('frames') for r in results) else (direct,)
     monkeypatch.setattr('ThoughtStream.candidates',menu)
     with torch.no_grad():
-        model.shared_grammar.chooser.mlp[-1].weight.zero_()
-        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+        scorer = model.shared_grammar.chooser
+        # Binding initialization already makes content neutral. Clearing its
+        # readout as well would create two consecutive zero projections.
+        if not hasattr(scorer, "reference_choice"):
+            scorer.mlp[-1].weight.zero_()
+            scorer.mlp[-1].bias.zero_()
     model.train()
     model.errors.clear()
     return model,registry,store,goal,(direct.request,first.request)

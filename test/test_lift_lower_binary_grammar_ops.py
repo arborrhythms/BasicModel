@@ -118,8 +118,8 @@ class TestLiftLowerForwardReverseShape(unittest.TestCase):
         D = 4
         lift = self._make_lift(D)
         torch.manual_seed(0)
-        a = torch.rand(2, 5, D) * 1.8 - 0.9
-        b = torch.rand(2, 5, D) * 1.8 - 0.9
+        a = torch.rand(2, 5, D) * 0.9 + 0.05
+        b = torch.rand(2, 5, D) * 0.9 + 0.05
         with torch.no_grad():
             out = lift.forward(a, b)
         self.assertTrue(torch.is_tensor(out),
@@ -132,8 +132,8 @@ class TestLiftLowerForwardReverseShape(unittest.TestCase):
         D = 4
         lower = self._make_lower(D)
         torch.manual_seed(1)
-        a = torch.rand(2, 5, D) * 1.8 - 0.9
-        b = torch.rand(2, 5, D) * 1.8 - 0.9
+        a = torch.rand(2, 5, D) * 0.9 + 0.05
+        b = torch.rand(2, 5, D) * 0.9 + 0.05
         with torch.no_grad():
             out = lower.forward(a, b)
         self.assertTrue(torch.is_tensor(out))
@@ -144,8 +144,8 @@ class TestLiftLowerForwardReverseShape(unittest.TestCase):
         D = 4
         lift = self._make_lift(D)
         torch.manual_seed(2)
-        a = torch.rand(2, 5, D) * 1.8 - 0.9
-        b = torch.rand(2, 5, D) * 1.8 - 0.9
+        a = torch.rand(2, 5, D) * 0.9 + 0.05
+        b = torch.rand(2, 5, D) * 0.9 + 0.05
         with torch.no_grad():
             parent = lift.forward(a, b)
             split = lift.reverse(parent)
@@ -184,8 +184,8 @@ class TestLiftLowerRoundTrip(unittest.TestCase):
         D = 4
         lift = LiftLayer(nInput=D, nOutput=D)
         torch.manual_seed(4)
-        a = torch.rand(2, 3, D) * 1.8 - 0.9
-        b = torch.rand(2, 3, D) * 1.8 - 0.9
+        a = torch.rand(2, 3, D) * 0.9 + 0.05
+        b = torch.rand(2, 3, D) * 0.9 + 0.05
         with torch.no_grad():
             parent = lift.forward(a, b)
             left, right = lift.reverse(parent)
@@ -216,8 +216,8 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
         D = 4
         lift = LiftLayer(nInput=D, nOutput=D)
         torch.manual_seed(6)
-        a = torch.rand(2, 3, D) * 1.8 - 0.9
-        b = torch.rand(2, 3, D) * 1.8 - 0.9
+        a = torch.rand(2, 3, D) * 0.9 + 0.05
+        b = torch.rand(2, 3, D) * 0.9 + 0.05
         with torch.no_grad():
             via_compose = lift.compose(a, b)
             via_forward = lift.forward(a, b)
@@ -227,8 +227,8 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
         D = 4
         lower = LowerLayer(nInput=D, nOutput=D)
         torch.manual_seed(7)
-        a = torch.rand(2, 3, D) * 1.8 - 0.9
-        b = torch.rand(2, 3, D) * 1.8 - 0.9
+        a = torch.rand(2, 3, D) * 0.9 + 0.05
+        b = torch.rand(2, 3, D) * 0.9 + 0.05
         with torch.no_grad():
             via_compose = lower.compose(a, b)
             via_forward = lower.forward(a, b)
@@ -239,8 +239,8 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
         D = 4
         lift = LiftLayer(nInput=D, nOutput=D)
         torch.manual_seed(8)
-        a = torch.rand(2, 3, D) * 1.8 - 0.9
-        b = torch.rand(2, 3, D) * 1.8 - 0.9
+        a = torch.rand(2, 3, D) * 0.9 + 0.05
+        b = torch.rand(2, 3, D) * 0.9 + 0.05
         with torch.no_grad():
             parent = lift.forward(a, b)
             via_gen = lift.generate(parent)
@@ -266,8 +266,8 @@ class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
         layer = LiftLayer(nInput=4, nOutput=4)
         # Forward path must run without any Space wiring -- the layer
         # is self-contained per the Stage 4 contract.
-        a = torch.rand(2, 3, 4) * 1.8 - 0.9
-        b = torch.rand(2, 3, 4) * 1.8 - 0.9
+        a = torch.rand(2, 3, 4) * 0.9 + 0.05
+        b = torch.rand(2, 3, 4) * 0.9 + 0.05
         with torch.no_grad():
             out = layer.forward(a, b)
         self.assertTrue(torch.isfinite(out).all())
@@ -275,8 +275,8 @@ class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
     def test_lower_constructible_without_spaces(self):
         """LowerLayer instantiates with no Space references."""
         layer = LowerLayer(nInput=4, nOutput=4)
-        a = torch.rand(2, 3, 4) * 1.8 - 0.9
-        b = torch.rand(2, 3, 4) * 1.8 - 0.9
+        a = torch.rand(2, 3, 4) * 0.9 + 0.05
+        b = torch.rand(2, 3, 4) * 0.9 + 0.05
         with torch.no_grad():
             out = layer.forward(a, b)
         self.assertTrue(torch.isfinite(out).all())

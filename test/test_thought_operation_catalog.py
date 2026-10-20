@@ -627,7 +627,7 @@ def test_live_router_adapters_receive_the_owner_built_structural_context():
             self.contexts = []
 
         def compose(self, left, right):
-            return left + right
+            return (left + right) / 2
 
         def compose_from_grammar_context(self, operands, *, context):
             self.contexts.append(context)
@@ -645,7 +645,7 @@ def test_live_router_adapters_receive_the_owner_built_structural_context():
         ops=[_UnaryGrammarOpAdapter(unary)], rule_ids=[0], space_role="CS")
     router.attach_layer_ops(
         ops=[_BinaryGrammarOpAdapter(binary)], rule_ids=[1], space_role="CS")
-    router.compose(torch.randn(1, 2, 4), word_space=None,
+    router.compose(torch.rand(1, 2, 4), word_space=None,
                    grammar_context=context)
 
     assert unary.contexts and all(value is context for value in unary.contexts)
@@ -717,7 +717,7 @@ def test_recorded_compose_step_keeps_the_same_structural_context_contract():
             self.contexts = []
 
         def compose(self, left, right):
-            return left + right
+            return (left + right) / 2
 
         def compose_from_grammar_context(self, operands, *, context):
             self.contexts.append(context)
@@ -736,9 +736,9 @@ def test_recorded_compose_step_keeps_the_same_structural_context_contract():
         language, "_language_layer_ref", SimpleNamespace(operation_layer=binary))
 
     parent = language.forward_binary_step(
-        torch.ones(1, 4), torch.full((1, 4), 2.0),
+        torch.full((1, 4), .2), torch.full((1, 4), .4),
         torch.zeros(1, dtype=torch.long), torch.ones(1, dtype=torch.bool))
-    torch.testing.assert_close(parent, torch.full((1, 4), 3.0))
+    torch.testing.assert_close(parent, torch.full((1, 4), .3))
     assert capture.contexts and all(c is owner._last_structural_compose_context for c in capture.contexts)
 
 
@@ -760,7 +760,7 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
             self.contexts = []
 
         def compose(self, left, right):
-            return left + right
+            return (left + right) / 2
 
         def compose_from_grammar_context(self, operands, *, context):
             self.contexts.append(context)
@@ -778,7 +778,7 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
     object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner))
     object.__setattr__(
         language, "_language_layer_ref", SimpleNamespace(operation_layer=reducer))
-    buffer = torch.randn(1, 2, 4)
+    buffer = torch.rand(1, 2, 4)
     state = (
         buffer, torch.tensor([2]), torch.zeros(1, 2, dtype=torch.long),
         torch.zeros(1, 2, dtype=torch.long), torch.full((1, 2), -1, dtype=torch.long),

@@ -11,7 +11,7 @@ def test_shared_stack_contract_allows_unary_until_the_deadline(_xor_model, monke
         state, choice = original(model)
         # Three forced NOTs leave an intersection nonzero only if the
         # operands share an occupied pole. Both binary choices remain legal.
-        state[0][:, 1, 1::2].neg_()
+        state[0][:, 1, 1::2] = state[0][:, 1, 0::2]
         return state, choice
     monkeypatch.setattr(contract, '_shared_compose', mixed_poles)
 

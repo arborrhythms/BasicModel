@@ -1,0 +1,31 @@
+{
+  "selectors": [
+    "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+    "test/test_clause_closing.py::test_bare_unlocated_np_rewitnesses_its_address",
+    "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_cs_symbol_table.py::test_reify_relation_between_symbols",
+    "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-105/worker-000.recycle.json"
+}

@@ -81,7 +81,9 @@ def test_29_shared_whole_does_not_evidence_an_absent_word():
 
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('configuration', ['MM_xor.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
-def test_29_each_reading_publishes_only_its_words(configuration):
+def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
+    from reading_fixtures import keep_existing_references
+    keep_existing_references(monkeypatch)
     from test_mm_xor import _fresh_model, _PROJECT
     model, _, data = _fresh_model(str(Path(_PROJECT) / 'data' / configuration))
     model.eval()

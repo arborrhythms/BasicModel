@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+    "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+    "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[left-lift]",
+    "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lift]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+    "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+    "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+    "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+    "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+    "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+    "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-103/worker-005.recycle.json"
+}

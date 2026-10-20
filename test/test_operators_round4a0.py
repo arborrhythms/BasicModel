@@ -153,7 +153,7 @@ def test_live_gate_reread_changes_clock_but_not_address_or_when():
         optimizer = model.getOptimizer(lr=.01)
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
         store = model.symbolSpace.ltm_store
-        rows = (store.rel_type[:len(store)] != store.REL_DEF).nonzero().flatten()
+        rows = torch.arange(len(store))
         assert len(rows) == 4
         expected = {sentence_key(tuple(text.split())) for text in
                     (b'hello world', b'hello there', b'loving world', b'loving there')}
@@ -161,7 +161,7 @@ def test_live_gate_reread_changes_clock_but_not_address_or_when():
         addresses, bands = store.address_keys[rows].clone(), store.when[rows].clone()
         witnesses = store.witness_count[rows].clone()
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
-        assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) == 4
+        assert len(store) == 4
         assert torch.equal(store.address_keys[rows], addresses)
         assert torch.equal(store.when[rows], bands)
         assert (store.witness_count[rows] > witnesses).all()

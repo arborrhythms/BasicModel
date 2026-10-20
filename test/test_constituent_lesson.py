@@ -231,7 +231,7 @@ def test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer(tmp_path, m
         for key in ('lr', 'betas', 'eps', 'weight_decay', 'capturable'):
             assert compose.param_groups[0][key] == attention.param_groups[0][key]
         assert sum(p is layer.reduce_pressure for g in optimizer.param_groups for p in g['params']) == 1
-        window = torch.randn(1, 2, 232)
+        window = torch.rand(1, 2, 232)
         def wait_cost():
             _, _, route = layer(window, slots=2, allowance=7, rounds_left=3)
             return -route['probabilities'][0, -1].log()

@@ -59,8 +59,9 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
                     end_state=torch.cat((entry.leaves[:1], torch.zeros_like(entry.end_state[1:]))))
     clause = finish_reading(language, entry, registry=registry)
     store = TernaryTruthStore(entry.leaves.shape[-1], capacity=4)
-    store.configure_clause_index(allocate=lambda _point: pytest.fail('direct NP minted a concept'),
-                                 concept_point=lambda cid: entry.leaves[0] if cid == 1 else None)
+    from ClauseRow import attach_clause_index
+    from types import SimpleNamespace
+    attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
     row = store.write_clause(clause)
     assert int(store.row_ids[row]) == int(store.address_keys[row]) != 1
     assert store.write_clause(clause) == row
@@ -88,9 +89,10 @@ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
     assert clause.refs[0] == ('clause', 0)
     assert len(clause.children) == 1 and clause.children[0].relation == 'part'
     store = TernaryTruthStore(leaves.shape[-1], capacity=8)
-    identities = iter(range(1000, 1008))
-    store.configure_clause_index(allocate=lambda _: next(identities),
-        concept_point=lambda cid: registry._payload(('sym', cid)))
+    from ClauseRow import attach_clause_index
+    from types import SimpleNamespace
+    attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
     row = store.write_clause(clause)
-    assert int(store.refs[row, 0]) == int(store.row_ids[0])
-    assert not bool(store.slots[row, 0].any())
+    inner = store.parts.find(*entry.concept_ids[:2].tolist())
+    assert store.parts.refs[row[1], 0] == inner
+    assert len(store) == 0 and store.parts.contains(inner)

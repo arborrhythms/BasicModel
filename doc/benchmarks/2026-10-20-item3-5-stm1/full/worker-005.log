@@ -1,0 +1,95 @@
+...sss.sss....................ssssss.......................sFs.......... [ 45%]
+.................................................F......FF....F......... [ 91%]
+F......ssssss                                                            [100%]
+=================================== FAILURES ===================================
+_______ test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer _______
+test/test_constituent_lesson.py:238: in test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer
+    before = wait_cost()
+             ^^^^^^^^^^^
+test/test_constituent_lesson.py:236: in wait_cost
+    _, _, route = layer(window, slots=2, allowance=7, rounds_left=3)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6823: in forward
+    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7167: in _stacked_reduced
+    else op.forward_with_context(left, right, x) if hasattr(op, 'forward_with_context')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:4765: in forward_with_context
+    return self.gl.compose_blocks(self.gl.compose, left, right)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:2511: in compose_blocks
+    return assert_cube(torch.cat((form, meaning), -1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:103: in assert_cube
+    torch._assert_async(
+E   RuntimeError: identity map requires finite coordinates in [0, 1]
+_____________________ test_reify_relation_between_symbols ______________________
+test/test_cs_symbol_table.py:72: in test_reify_relation_between_symbols
+    assert cs.concept_parts(C) == [("sym", A)]
+E   AssertionError: assert [] == [('sym', 1)]
+E     
+E     Right contains one more item: ('sym', 1)
+E     Use -v to get more diff
+________________________ test_interpret_word_structure _________________________
+test/test_cs_symbol_table.py:160: in test_interpret_word_structure
+    assert set(cs.concept_parts(A)) == {65, 66, 67}
+E   AssertionError: assert {('sym', 2), 65, 66, 67} == {65, 66, 67}
+E     
+E     Extra items in the left set:
+E     ('sym', 2)
+E     Use -v to get more diff
+________________ test_singleton_concept_is_idempotent_unit_set _________________
+test/test_cs_symbol_table.py:184: in test_singleton_concept_is_idempotent_unit_set
+    assert cs.concept_parts(S) == [("sym", x)]       # unit-set persists
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert [] == [('sym', 1)]
+E     
+E     Right contains one more item: ('sym', 1)
+E     Use -v to get more diff
+_________ test_resolve_identities_does_not_collapse_unspecified_object _________
+test/test_cs_symbol_table.py:243: in test_resolve_identities_does_not_collapse_unspecified_object
+    assert set(cs.concept_parts(B)) == {65, 66, 67} and cs.concept_wholes(B) == [WORD]
+E   AssertionError: assert ({65, 66, 67} == {65, 66, 67}
+E     
+E     Use -v to get more diff and [('sym', 1), 100] == [100]
+E     
+E     At index 0 diff: ('sym', 1) != 100
+E     Left contains one more item: 100
+E     Use -v to get more diff)
+___________ test_assert_relation_replaces_poles_and_enters_embedding ___________
+test/test_cs_symbol_table.py:389: in test_assert_relation_replaces_poles_and_enters_embedding
+    cs.assert_concept_relation(B, sym_whole=11)
+bin/Spaces.py:16142: in assert_concept_relation
+    self._populate_concept_weights(c)
+bin/Spaces.py:15593: in _populate_concept_weights
+    self.add_concept_edge(c_row, s_row, weight=1.)  # asserted membership
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:14688: in add_concept_edge
+    raise ValueError('sigma edges require symbols of the preceding order')
+E   ValueError: sigma edges require symbols of the preceding order
+=============================== warnings summary ===============================
+test/test_constituent_lesson.py::test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_cs_sparse_weights.py::test_add_concept_edge_dedup_and_query
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15012: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    float(ly.values[i]))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_constituent_lesson.py::test_wait_lesson_trains_pressure_with_the_order_lesson_optimizer
+FAILED test/test_cs_symbol_table.py::test_reify_relation_between_symbols - As...
+FAILED test/test_cs_symbol_table.py::test_interpret_word_structure - Assertio...
+FAILED test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set
+FAILED test/test_cs_symbol_table.py::test_resolve_identities_does_not_collapse_unspecified_object
+FAILED test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding
+6 failed, 131 passed, 20 skipped, 2 warnings in 5.64s

@@ -49,9 +49,9 @@ class TestLiftLowerWhen(unittest.TestCase):
 
     def _point_event(self, t=0):
         _ENC.t = int(t)
-        what = torch.randn(_NWHAT).tanh()
-        where = torch.tensor([0.3, -0.4])
-        when = _ENC.encode(t)                            # present instant at time t
+        what = (1 + torch.randn(_NWHAT).tanh()) / 2
+        where = torch.tensor([0.65, 0.3])
+        when = (1 + _ENC.encode(t)) / 2                            # present instant at time t
         return _event(what, where, when)
 
     def test_lift_and_lower_treat_the_event_as_opaque(self):
@@ -74,7 +74,7 @@ class TestLiftLowerWhen(unittest.TestCase):
         # No where/when tail: width == nInput -> legacy binary sigma fold,
         # output is content-width (unchanged contract for the SS-space_role route).
         lift = LiftLayer(nInput=_NWHAT)
-        a = torch.randn(1, 1, _NWHAT).tanh()
+        a = (1 + torch.randn(1, 1, _NWHAT).tanh()) / 2
         out = lift.compose(a, a)
         self.assertEqual(out.shape[-1], _NWHAT)
         self.assertTrue(torch.isfinite(out).all())

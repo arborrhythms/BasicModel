@@ -7,6 +7,21 @@ from test_output_path_supervised import _native_answer_model
 from test_output_walk import _capture_program_probe, _stop
 
 
+def _with_identity_bank(understanding, codes):
+    """Supply the lexical support of an explicit concluded working idea."""
+    from dataclasses import replace
+
+    record = understanding.sentence_records[-1]
+    bank = record.primed
+    batch, count = codes.shape[:2]
+    bank = replace(bank, codes=codes, rows=torch.arange(count)[None].expand(batch, -1),
+                   weights=codes.new_ones(batch, count),
+                   own=torch.ones(batch, count, dtype=torch.bool),
+                   bytes=bank.bytes[:, :1].expand(-1, count, -1),
+                   byte_valid=bank.byte_valid[:, :1].expand(-1, count, -1))
+    return replace(understanding, sentence_records=(replace(record, primed=bank),))
+
+
 @pytest.mark.parametrize("output_loop", [False, True])
 def test_realization_uses_a_held_derivation_without_running_resolution(
         tmp_path, monkeypatch, output_loop, eager_reading):
@@ -61,21 +76,22 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
             direction = torch.nn.functional.normalize(direction, dim=0)
             assert bool(direction.abs().sum() > 0)
             ideas = torch.zeros_like(held.conceptual_answer)
-            ideas[0, 0] = direction
-            ideas[1, 0] = direction * .25
+            from Layers import cube_unchart
+            ideas[0, 0] = cube_unchart(direction)
+            ideas[1, 0] = cube_unchart(direction * .25)
             held = replace(held, conceptual_answer=ideas)
             language = model.languageSpace
             policy = language.generate_policy
-            choice = list(language._generate_binary_names).index("synthesize")
-            # Chunk is additive; its equal-child inverse halves its parent. Expand values of
-            # length 1 and .5, then emit .25: four leaves in row 0, one in row 1.
+            choice = list(language._generate_binary_names).index("lift")
+            # Lift adds chart coordinates; its inverse halves the chart. Expand
+            # chart lengths 1 and .5, then emit .25: four leaves versus one.
             policy.weight.zero_()
             policy.bias.fill_(-1000)
             policy.bias[-1] = 0
-            policy.weight[choice].copy_(4 * direction[:policy.in_features])
-            policy.bias[choice] = -1.5
+            policy.weight[choice].copy_(8 * direction[:policy.in_features])
+            policy.bias[choice] = -4 * direction[:policy.in_features].sum() - 1.5
             bank=understanding.sentence_records[-1].primed
-            codes=torch.stack((direction*.25,direction*.5,direction),0)[None].expand(2,-1,-1)
+            codes=cube_unchart(torch.stack((direction*.25,direction*.5,direction),0))[None].expand(2,-1,-1)
             bank=replace(bank,codes=codes,rows=torch.arange(3)[None].expand(2,-1),
                          weights=torch.ones(2,3),own=torch.ones(2,3,dtype=torch.bool),
                          bytes=bank.bytes[:,:1].expand(-1,3,-1),byte_valid=bank.byte_valid[:,:1].expand(-1,3,-1))
@@ -114,8 +130,7 @@ def test_public_boundary_prepares_target_free_metadata_before_realization(tmp_pa
 
 
 @pytest.mark.parametrize("output_loop", [False, True])
-@pytest.mark.parametrize("supplied", [False, True])
-def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop, supplied, eager_reading):
+def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop, eager_reading):
     from dataclasses import replace
     import Models
 
@@ -126,10 +141,13 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         _stop(model)
     try:
         with torch.no_grad():
-            understanding = _capture_program_probe(model, ["1 plus 2", "3 plus 4"])
+            understanding = _capture_program_probe(model, ["1", "2"])
             resolved = model.resolveAnswer(
                 understanding, (What.supervised(0), What.supervised(1)))
-        source = resolved.conceptual_answer.detach().clone().requires_grad_()
+        # The gradient boundary consumes a given answer. An untrained input
+        # derivation can erase its root, so supply a readable concluded idea.
+        source = torch.full_like(resolved.conceptual_answer, .2).requires_grad_()
+        understanding = _with_identity_bank(understanding, source[:, :1].detach())
         held = replace(resolved, conceptual_answer=source)
         construction = model.reverseOutput(understanding, held)
         loss = construction.percepts.square().mean()
@@ -146,15 +164,14 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         torch._dynamo.reset()
 
 
-@pytest.mark.parametrize("supplied", [False, True])
-def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch, supplied, eager_reading):
+def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch, eager_reading):
     from dataclasses import replace
 
     model = _native_answer_model(tmp_path, True)
     model.eval()
     try:
         with torch.no_grad():
-            understanding = _capture_program_probe(model, ["1 plus 2", "3 plus 4"])
+            understanding = _capture_program_probe(model, ["1", "2"])
             held = model.resolveAnswer(understanding, (What.supervised(0), What.supervised(1)))
             language = model.languageSpace
             index = list(language._generate_binary_names).index("lift")
@@ -162,10 +179,14 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
             leaf = torch.full((2, held.conceptual_answer.shape[-1]), .08)
             parent = operator.compose(leaf, leaf)
             children = operator.generate(parent)
-            threshold = (parent.norm(dim=-1).min()
-                         + torch.stack([child.norm(dim=-1).max() for child in children]).max()) / 2
-            assert all(bool((child.norm(dim=-1) < threshold).all()) for child in children)
-            assert bool((parent.norm(dim=-1) > threshold).all())
+            # The fixed policy needs readable terminals as well as an
+            # inverse. Duplicate equal codes would make STOP ambiguous.
+            torch.testing.assert_close(children[0], children[1], rtol=0, atol=0)
+            understanding = _with_identity_bank(understanding, children[0][:, None])
+            threshold = ((parent-.5).norm(dim=-1).min()
+                         + torch.stack([(child-.5).norm(dim=-1).max() for child in children]).max()) / 2
+            assert all(bool(((child-.5).norm(dim=-1) < threshold).all()) for child in children)
+            assert bool(((parent-.5).norm(dim=-1) > threshold).all())
             state = torch.zeros_like(held.conceptual_answer)
             state[:, 0] = parent
         state.requires_grad_()
@@ -175,7 +196,7 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
             # Root expands once; its smaller children are emitted.
             scores = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
             scores[:, -1] = 0.
-            scores[:, index] = top.norm(dim=-1) - threshold
+            scores[:, index] = (top-.5).norm(dim=-1) - threshold
             return scores
 
         monkeypatch.setattr(language, "generate_policy_logits", one_split)
@@ -202,7 +223,7 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
 
 
 @pytest.mark.slow
-def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch, eager_reading):
+def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
     import util
 

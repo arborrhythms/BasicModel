@@ -63,7 +63,9 @@ def compose_examples(language, program, tree, *, variables=()):
         # Explicit variable augmentation stays on the teacher side.
         leaves = leaves.clone()
         for i in variables:
-            substitute = F.normalize(torch.randn_like(leaves[i]), dim=-1) * leaves[i].norm()
+            from Layers import cube_chart, cube_unchart
+            substitute = cube_unchart(F.normalize(torch.randn_like(leaves[i]), dim=-1)
+                                     * cube_chart(leaves[i]).norm())
             leaves[i] = torch.where(torch.rand((), device=leaves.device) < .5,
                                     substitute, leaves[i])
     root, parents, rules = _annotation_tree(language, tree, len(leaves))
@@ -227,7 +229,7 @@ def student_target_probability(layer, state, probabilities):
     return probabilities[student_target_actions(layer, state)].sum()
 
 
-def compose_loss(language, programs, lessons, *, errors=None):
+def compose_loss(language, programs, lessons, *, errors=None, streams=None):
     """Supervise supplied forms in the same joint compose softmax.
 
     Operator-only lessons retain their contract. A complete constituent
@@ -242,7 +244,7 @@ def compose_loss(language, programs, lessons, *, errors=None):
     context_width = getattr(layer.chooser, 'WHAT_CONTEXT_DIM', 0)
     from Layers import Error
     errors = Error() if errors is None else errors
-    for program, lesson in zip(programs, lessons):
+    for b, (program, lesson) in enumerate(zip(programs, lessons)):
         if lesson is None:
             continue
         if program is None:
@@ -264,17 +266,20 @@ def compose_loss(language, programs, lessons, *, errors=None):
             continue
         binary, unary = compose_examples(language, program, lesson["tree"],
                                          variables=lesson.get("variables", ()))
+        prime = getattr(layer, '_expectation_prime', None)
+        stream = b if streams is None else streams[b]
+        prime = None if prime is None else prime[stream:stream+1]
         for window, target, _closing, _depth in binary:
             if target >= 0:
                 _, _, route = layer(window.detach()[None], slots=1,
-                    what_ctx=window.new_zeros(1, context_width))
+                    what_ctx=window.new_zeros(1, context_width), expectation_prime=prime)
                 probabilities = route['probabilities']
                 errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
                              math.log(probabilities.shape[-1]), category='grammar')
         for value, target in unary:
             if target >= 0:
                 _, _, route = layer(value.detach()[None, None], slots=1,
-                    what_ctx=value.new_zeros(1, context_width))
+                    what_ctx=value.new_zeros(1, context_width), expectation_prime=prime)
                 probabilities = route['probabilities']
                 errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
                              math.log(probabilities.shape[-1]), category='grammar')
