@@ -20045,23 +20045,25 @@ class BasicModel(BaseModel):
         self._sentence_reader_observation = dict(presented=presented_read,
             comparison=dict(mse=self._sentence_answer_raw_cost.detach(),
                             predictions=self._sentence_answer_predictions.detach()))
-        if getattr(self.inputSpace.data, 'answer_mode', None) == 'binding':
-            # A binding task judges the referent, not how well an untrained
-            # surface reader regenerates the whole question. Before a closing
+        questions = self._sentence_answer_questions
+        data = self.inputSpace.data
+        answers = tuple(data.what(question) for question in questions)
+        if any(answer.available and answer.kind == 'referent' for answer in answers):
+            # A supplied referent judges its binding. Before a closing
             # episode an unfilled referent costs one; after a checked filling
             # the same scorer used by ThoughtAnswer gives exact identity zero.
             # Both output readers above retain their ordinary training graphs.
             from BindingAnswers import cost as binding_cost
-            questions = self._sentence_answer_questions
-            data = self.inputSpace.data
             values = []
             for row, meaning in enumerate(observation['meanings']):
-                answer = data.what(questions[row]) if row < len(questions) else None
-                values.append(cost.new_zeros(()) if not bool(active[row]) or answer is None
-                    or not answer.available else cost.new_ones(()) if meaning is None else
-                    binding_cost(self, meaning, answer.what, stream=row))
+                answer = answers[row] if row < len(answers) else None
+                referent = answer is not None and answer.available and answer.kind == 'referent'
+                values.append(cost.new_zeros(()) if not bool(active[row]) else
+                    (cost[row] if cost.ndim else cost) if not referent else
+                    cost.new_ones(()) if meaning is None else binding_cost(
+                        self, meaning, answer.what, stream=row))
                 if (registry is not None and bool(active[row]) and meaning is not None
-                        and answer is not None and answer.available
+                        and referent
                         and observation.get('reference_plans')):
                     resolver = self._concept_owner().components.reference_close
                     loss = resolver.answer_loss(observation['reference_plans'][row], meaning, answer.what)

@@ -45,6 +45,15 @@ correct). Its next gate is Claude's review, then the one landing sweep;
 steps 2–6 have not started.
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns.
+*Status (Claude, 2026-10-20):* step 0 round 2 is accepted and published on
+both mains (`bfc834d79`/`d6eb0cf3b`, WikiOracle `cb4d718`); step 1, `bind`
+as a thought operation, is reviewed on `codex/item3-5-first-pass` at
+`f4f11aa5b` — conforms to the bind plan §1–§5, gates G1–G3 and both
+decomposition certificates pass; Alec decided it lands after its sweep and
+**step 1b** migrates the scorer to [bind plan §6–§6.2](doc/plans/2026-10-19-bind-thought-operation.md)
+(identity only in the major structures: the meet as the content term,
+containment for the form term, no nouns dictionary, no count tables, no
+ICA event chart, STM as an index) before LTM1/LTM3.
 
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and

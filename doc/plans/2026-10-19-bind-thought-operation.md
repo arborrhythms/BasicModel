@@ -115,3 +115,125 @@ the generator's referent:
 
 Minting by recurrence in LTM1 and the LTM1/LTM3 layout (3.5 step 2);
 cross-document individuals (order-2 kinds); any learning claim.
+
+## 6. Identity without side structures (Alec, 2026-10-19/20; amends §1–§3)
+
+Alec: only the major structures — percept, concept, symbol, STM, LTM —
+may hold identity. `components.nouns` (signatures, witnesses), the
+resolver's `seen` / `cooccurrence` / `associations` / `predicates` tables
+and the **ICA event chart** are removed from the identity path. An LTM1
+row holds **no embedded reference**: a reference would destroy the row's
+order and concreteness. Generic (unminted) objects exist, and identifying
+several generic references as one object *is* the binding problem, done
+over **short-term concepts** until a concept is minted.
+
+**Identity has two manifestations and no third:**
+
+1. **Minted:** a concept row with its symbol at the shared index; its
+   content is that row's vector, folded from its occurrences at each
+   commit (what `absorb` computes today, written into the concept row);
+   its occurrences are the LTM rows whose identity column names the
+   symbol. Proper nouns are this from the first occurrence (step 1).
+2. **Short-term:** the NP's fold point — the unminted centroid of the
+   perceptual space its parts and wholes define — **with its `.where` and
+   `.when` band**, held in STM for the situation. Verified 2026-10-20 on
+   the production fold operators (`/tmp/centroid_probe.py` through
+   `SentenceFixture`, width 8, untrained codes): identical description ⇒
+   identical point; a narrower description is contained in the wider
+   (meet equals the narrower); different descriptions separate; the
+   determiner leaves no trace. Not verified, and not expected: identity of
+   *individuals* — two cats introduced with the same words have one
+   centroid, and an underspecified re-mention leans toward one candidate
+   by the accident of the codes. So the location band is part of the
+   short-term concept (the object file: Kahneman, Treisman & Gibbs 1992;
+   Pylyshyn's indexes), and the remaining evidence is `bind`'s. The
+   concept dissolves at the end of the situation unless recurrence mints
+   it.
+
+**What `bind` reads, from the major structures only:**
+- content: the request's fold point against each candidate's point (a
+  short-term concept in STM, or a minted concept row), in concept
+  coordinates — containment first, then distance; no chart;
+- location: the request's band against the candidate's band;
+- expectation: the prime (a read of the symbol field) and the verb's
+  participants read from LTM rows' identity columns (rebuildable cache if
+  needed, like the definitions index);
+- recency and role: the stream's row order and the recorded derivation;
+- form: the word's percept and symbol;
+- the combining weights are `bind`'s own parameters.
+
+**Row shape (amends the two-truths amendment's storage note):** one
+concept slot, the identity column, the address columns. The identity
+column names minted symbols only; while a participant is short-term the
+column is empty and its identity is the inference above. A fused LTM1
+row's subject is therefore recoverable as a symbol once minted, and
+before that only as the short-term concept the derivation points at.
+
+**Before building:** rerun the probe on production codes (the [0, 1]
+percept cube) as toy G0; the fixture's signed codes make the containment
+test approximate.
+
+### 6.1 The content term is the meet, and STM is an index (Alec, 2026-10-20)
+
+Alec: a pronoun (a large region) and an individual (a specific one, many
+defining parts and wholes) overlap, and as centroids they suffer the
+bias §6 recorded; the **intersection** of their perceptual/conceptual
+definitions does not. The probe agrees: distance leaned toward one
+candidate by the codes' accident, containment through the meet did not.
+
+- **Content term = two ratios from the meet** (coordinatewise minimum in
+  the cube, the sigma/pi machinery): for request `q` and candidate `c`,
+  `|q ∧ c| / |c|` (how much of the candidate the request covers) and
+  `|q ∧ c| / |q|` (how much of the request the candidate covers). An
+  underspecified request ("the cat"; a pronoun) contains every candidate
+  of its kind, so content ties and location, recency and expectation
+  decide — correct. A more specific request excludes candidates whose
+  meet with it is only the kind. No distance anywhere in `bind`.
+- **Form term = the same operation**: a form (a pronoun, a determiner)
+  has a learned region; the test is the candidate's containment in it.
+  This replaces the `cue_policy` matrix with a region per form, learned
+  by exposure.
+- **STM stays an index.** STM holds the addresses (`.where`, `.when`) of
+  the most recent rows — eight is the right order (Cowan; Miller) — plus
+  the symbol activation field the prime and the chooser already read. The
+  candidate's full region is read from its LTM1 occurrence row's slot at
+  bind time; the intersection is computed on read, never stored. A
+  short-term concept is therefore nothing but a recent LTM1 row that STM
+  points at, read through the meet; it needs no copy in STM and no new
+  STM capability. (Holding eight recent activations in STM would
+  duplicate the rows the close already wrote.)
+
+### 6.2 Reinterpretation, and the migration as step 1b (Alec, 2026-10-20)
+
+Alec: with the intersection computed on read, LTM stores the bound
+versions, so a reinterpretation of identity would have to read the
+surface text again. Not quite: the NP occurrence row keeps its fold point
+and band raw and the sentence row keeps its fused point raw; the binding
+is the identity column beside them. A reinterpretation re-runs `bind`
+over the stored rows and rewrites the column (what `revise` does today,
+with the occurrence points immutable). What cannot be recovered without
+the text is the **parse**: only the fused derivation is kept. The one real
+cost is the **minted concept row**: its content is a fold (meet/join) of
+its occurrences, which cannot subtract an occurrence back out, so it is a
+**rebuildable cache** over the rows that name the symbol, re-folded when
+a binding is revised — like the definitions index over the DEF rows. Rows
+item 5 has forgotten leave the fold as it stands.
+
+**Step 1b — the migration (decided 2026-10-20; after step 1's landing,
+before LTM1/LTM3):** keep the operation, its registry and reverse face,
+the three site detectors, the kept-write contract and gates G1–G3;
+replace `ReferenceClose.score`'s feature construction and the structures
+it reads: (i) content = the two meet ratios `|q∧c|/|c|`, `|q∧c|/|q|` in
+concept coordinates against the candidate's LTM1 row point or minted
+concept row — the ICA event chart leaves the identity path; (ii) form =
+containment of the candidate in the form's learned region — `cue_policy`
+retired; (iii) expectation = the prime plus the verb's participants read
+from LTM rows' identity columns with a rebuildable cache — the
+role-keyed `associations`/`predicates`/`seen`/`cooccurrence` tables
+retired; (iv) `components.nouns` (signatures, witnesses) retired — a
+minted individual's content is its concept row, re-folded from its
+occurrence rows; witnesses are a query; (v) STM = recent row addresses
+plus the activation field, the intersection computed on read. Gates:
+G1–G3 unchanged, the 18 reference-close cases ported to the new scorer,
+both decomposition certificates in both arms, toy G0 on production
+[0, 1] codes first.

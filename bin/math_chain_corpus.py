@@ -43,7 +43,9 @@ class ChainDocument:
     statement_references: tuple = ()
 
     def target(self, sentence, *, supplied=True):
-        return self.answer if supplied and sentence == self.question else None
+        from What import ReferentTarget
+        return (ReferentTarget(self.answer) if supplied and sentence == self.question
+                and self.answer is not None else None)
 
 
 class MathChainCorpus:

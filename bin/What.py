@@ -124,6 +124,10 @@ class WhatQuestion:
 What = WhatQuestion
 
 
+class ReferentTarget(str):
+    """A supplied label naming a referent, rather than a sentence to emit."""
+
+
 @dataclass(frozen=True)
 class WhatAnswer:
     """The desired or produced ``what`` for one question."""
@@ -138,6 +142,7 @@ class WhatAnswer:
     ltm_slot: Optional["LTMSlot"] = field(default=None, compare=False)
     execution: Any = field(default=None, repr=False, compare=False)
     text: Optional[str] = None
+    kind: str = "sentence"
 
     def __post_init__(self) -> None:
         if self.available and self.what is None:
@@ -146,6 +151,10 @@ class WhatAnswer:
             raise ValueError("an unavailable what answer cannot contain a response")
         object.__setattr__(self, "provenance", str(self.provenance))
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))
+        if isinstance(self.what, ReferentTarget):
+            object.__setattr__(self, "kind", "referent")
+        if self.kind not in ("referent", "sentence"):
+            raise ValueError("answer kind must be referent or sentence")
 
     @classmethod
     def unavailable(cls, question: WhatQuestion, reason: str,

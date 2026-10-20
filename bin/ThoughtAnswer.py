@@ -58,12 +58,11 @@ def scorer(model, state, observation, sentence):
                 value = reader(model,bound,sentence,active,view,registry=comparison)
         trials.append((presented,comparison,getattr(model,'_thought_walk',None)))
         data = model.inputSpace.data
-        if getattr(data, 'answer_mode', None) == 'binding':
-            questions = model._sentence_answer_questions
-            answer = data.what(questions[row]) if row < len(questions) else None
-            if answer is not None and answer.available:
-                from BindingAnswers import cost
-                return cost(model, result.meaning, answer.what,stream=row)
+        questions = model._sentence_answer_questions
+        answer = data.what(questions[row]) if row < len(questions) else None
+        if answer is not None and answer.available and answer.kind == 'referent':
+            from BindingAnswers import cost
+            return cost(model, result.meaning, answer.what,stream=row)
         return 0. if value is None else value[row] if value.ndim else value
     return score,trials
 

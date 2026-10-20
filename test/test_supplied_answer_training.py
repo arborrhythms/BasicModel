@@ -28,7 +28,8 @@ def _sentence(supplied):
         normalizer=SimpleNamespace(denormalize=lambda value, **kw: value),
         inputSpace=SimpleNamespace(data=SimpleNamespace(has_supervised_outputs=supplied)),
         _sentence_supplied_answers=torch.zeros(2, 1) if supplied else None,
-        _sentence_training=True, _align_output_pred=lambda pred, target: pred,
+        _sentence_training=True, _sentence_answer_questions=(),
+        _align_output_pred=lambda pred, target: pred,
         _publish_sentence_scratch=lambda state: None,
         _tensor_pushed_ideas=root[:, None], reconstruct_in_loop=False,
         _sentence_observation=lambda *a: {}, _reading_lesson_enabled=False,
@@ -101,7 +102,7 @@ def test_real_supplied_trials_cost_before_updates_and_reach_only_reader(monkeypa
 def test_native_trial_reads_the_completed_point_without_state_credit():
     from Meaning import ConceptualMeaning
     from Models import BasicModel
-    from What import What
+    from What import What, WhatAnswer
     model, state, parameters = _sentence(True)
     root = state[1][9][:, 0]
     meanings = [ConceptualMeaning(torch.stack((row, row, torch.zeros_like(row))),
@@ -110,7 +111,7 @@ def test_native_trial_reads_the_completed_point_without_state_credit():
                for row, meaning in zip(root, meanings)]
     model.answer_synthesis = True
     model._sentence_answer_questions = tuple(What.supervised(i) for i in range(2))
-    model.inputSpace.data.what = lambda question: SimpleNamespace(available=True, what=0.)
+    model.inputSpace.data.what = lambda question: WhatAnswer(question, 0.)
     model._what_grammar_context = lambda *args, **kwargs: (None, None)
     model.outputSpace.prepOutput = lambda values: torch.tensor(values)[:, None]
     seen = []

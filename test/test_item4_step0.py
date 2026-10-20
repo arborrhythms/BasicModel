@@ -79,36 +79,59 @@ def test_episode_state_audit_does_not_materialize_sparse_capacity(monkeypatch):
     assert module.value_digest(original) != module.value_digest(changed)
 
 
-def test_binding_judge_scores_referent_while_surface_readers_keep_their_training(monkeypatch):
+@pytest.mark.parametrize('old_flag', (None, 'binding'))
+def test_binding_judge_scores_referent_while_surface_readers_keep_their_training(monkeypatch, old_flag):
     from dataclasses import replace
     from types import SimpleNamespace
     from Models import BasicModel
     from Meaning import ConceptualMeaning
     from Layers import Error
     from ThoughtReferences import question
+    from What import What, WhatAnswer, ReferentTarget
     base = question(ConceptualMeaning.from_description(torch.ones(4)))
     correct = replace(base, role_refs=(('sym', 5), None, None),
                       bindings={'_bound_roles': (('referent', 0),)})
     wrong = replace(correct, role_refs=(('sym', 7), None, None))
     owner = SimpleNamespace(word_concepts=lambda _: (5,), _csw_row_of=lambda _: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda *args, **kwargs: torch.ones(1, 4)))
-    data = SimpleNamespace(answer_mode='binding',
-        what=lambda question: SimpleNamespace(available=True, what='target'))
+    questions = tuple(What.supervised(i) for i in range(4))
+    answers = tuple(WhatAnswer(q, ReferentTarget('target') if i < 3 else 'target')
+                    for i, q in enumerate(questions))
+    data = SimpleNamespace(answer_mode=old_flag, what=lambda q: answers[q.where])
     model = SimpleNamespace(inputSpace=SimpleNamespace(data=data), _concept_owner=lambda: owner,
-        symbolSpace=SimpleNamespace(ltm_store=None), _sentence_answer_questions=(0, 1, 2))
-    surface = torch.tensor([2., 0., .1], requires_grad=True)
+        symbolSpace=SimpleNamespace(ltm_store=None), _sentence_answer_questions=questions)
+    surface = torch.tensor([2., 0., .1, .2], requires_grad=True)
     def reader(model, *args, registry=None):
         model._sentence_answer_raw_cost = surface
         model._sentence_answer_predictions = surface[:, None]
         registry.add('surface', surface, objective='output')
         return surface
     monkeypatch.setattr(BasicModel, '_sentence_reader_error', reader)
-    registry = Error(row_mask=torch.ones(3, dtype=torch.bool))
+    registry = Error(row_mask=torch.ones(4, dtype=torch.bool))
     result = BasicModel._sentence_answer_error(model, None, 0,
-        torch.ones(3, dtype=torch.bool), dict(meanings=[correct, wrong, base]), registry=registry)
-    assert result.tolist() == [0., .5, 1.]
+        torch.ones(4, dtype=torch.bool), dict(meanings=[correct, wrong, base, base]), registry=registry)
+    assert result.tolist() == pytest.approx([0., .5, 1., .2])
     registry.total(objective='output').sum().backward()
-    assert surface.grad.tolist() == [1., 1., 1.]
+    assert surface.grad.tolist() == [1., 1., 1., 1.]
+
+
+@pytest.mark.parametrize('kind', ('referent', 'sentence'))
+def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
+    from types import SimpleNamespace
+    from What import What, WhatAnswer, ReferentTarget
+    from Meaning import ConceptualMeaning
+    from ThoughtReferences import question
+    from ThoughtAnswer import scorer
+    import BindingAnswers
+    meaning = question(ConceptualMeaning.from_description(torch.ones(4)), (('referent', 0),))
+    prompt = What.supervised(0)
+    answer = WhatAnswer(prompt, ReferentTarget('an opaque target') if kind == 'referent' else 'target')
+    model = SimpleNamespace(_sentence_answer_questions=(prompt,),
+        inputSpace=SimpleNamespace(data=SimpleNamespace(what=lambda _: answer)),
+        _sentence_reader_error=lambda *args, **kwargs: torch.tensor([.75]))
+    monkeypatch.setattr(BindingAnswers, 'cost', lambda *args, **kwargs: torch.tensor(.125))
+    score, _ = scorer(model, None, dict(meanings=[meaning]), 0)
+    assert float(score(0, SimpleNamespace(meaning=meaning))) == (.125 if kind == 'referent' else .75)
 
 
 def test_open_region_with_only_negation_offers_conclude(monkeypatch):
