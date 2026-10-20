@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010417499579489231,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000775874825194478,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021353340707719326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020329250022768974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01168683310970664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002672499977052212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02544641704298556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014049999881535769,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

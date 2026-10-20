@@ -1,0 +1,20 @@
+{
+  "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open": {
+    "seed": 1420138552,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep": {
+    "seed": 3726313616,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation": {
+    "seed": 1430144723,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  }
+}

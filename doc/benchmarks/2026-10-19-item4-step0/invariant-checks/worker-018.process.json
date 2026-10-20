@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/invariant-checks/worker-018.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/invariant-checks/worker-018.json"
+  ],
+  "pid": 50401,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 542475536,
+  "elapsed_seconds": 5.025374374818057,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/invariant-checks/worker-018.log"
+}

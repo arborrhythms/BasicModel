@@ -1,0 +1,30 @@
+{
+  "harness-smoke": {
+    "seed": 3793202205,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 75,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {}
+  }
+}

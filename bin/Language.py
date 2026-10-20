@@ -6213,14 +6213,19 @@ class MLPTransformChooser(TransformChooser):
         in_dim = (2 * self.d_model + self.embed_dim
                   + self.pos_dim)
         self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
-        # The two operand choices are features of this same scorer. Small
-        # weights start mint/open close to equiprobable; cloning existing
-        # initialization preserves the RNG stream of grammars without bind.
+        # Reference variants share their operation's score at initialization.
+        # Both the candidate-value columns and the reference projection must
+        # start neutral: a small random projection gives no bound as retained
+        # candidates grow or their coordinates differ. The other columns keep
+        # the operation/context preference; both neutral paths receive ordinary
+        # gradients. No additional random draw or checkpoint key is introduced.
         if binding_choices:
+            with torch.no_grad():
+                self.mlp[0].weight[:, self.d_model:2 * self.d_model].zero_()
             self.reference_choice = nn.Linear(2 * self.d_model + 2, self.hidden,
                                               bias=False, device='meta')
             self.reference_choice.weight = nn.Parameter(
-                F.pad(.01 * self.mlp[0].weight[:, :2 * self.d_model].detach().clone(), (0, 2)))
+                self.mlp[0].weight.new_zeros(self.hidden, 2 * self.d_model + 2))
         # The mean alone identifies (left, right) with (right, left).
         # Feed their signed difference into THIS MLP's first hidden layer;
         # together mean and difference retain both full-width operands and
@@ -6716,13 +6721,20 @@ class OperationSelectionLayer(nn.Module):
         return torch.cat(representatives, -1)
 
     def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None,
-               return_details=False):
+               return_details=False, slot_limit=None):
         """Field locations in this same chooser; symbols enter forward after gloss."""
         keys = keys.detach()
         B,K,D=keys.shape
-        candidates=keys[:,:,None].expand(B,K,legal.shape[-1],D)
-        _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+        width = K if slot_limit is None else min(K, slot_limit)
+        # The word field can occupy at most one slot per word, while the
+        # work budget may reserve hundreds of slots. Score that prefix and
+        # restore the full masked menu before selection: action addresses,
+        # probabilities, random draws and work charges retain their contract.
+        torch._assert_async(~legal[:, width:].any(), 'attention slot bound excludes a legal action')
+        candidates=keys[:,:width,None].expand(B,width,legal.shape[-1],D)
+        _,scores=self.chooser.score_unary(keys[:,:width],candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
                                           op_offset=self.r_reduce+self.r_apply)
+        scores=F.pad(scores,(0,0,0,K-width),value=-torch.inf)
         scores=scores+self.space_prior[space][...,None]
         if prior is not None:scores=scores+prior.detach()[...,None]
         scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
@@ -6790,6 +6802,23 @@ class OperationSelectionLayer(nn.Module):
         required = (depth - allowance).clamp_min(0)
         return torch.where(depth > 0, self.reduce_pressure * (
             depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
+
+    def prime_bias(self, candidates, prime, *, binding_choices=False):
+        """Positive selection prior, with bounded odds for reference variants.
+
+        An untrained reference chooser is neutral within each operation.
+        Its external prior must preserve the [.9, 1.1]-of-uniform contract
+        for any retained menu. A logit span <= log(1.1) bounds every
+        conditional probability ratio to [1/1.1, 1.1]. Scale the whole
+        prior, preserving its ordering and sign; learned logits are unbounded.
+        """
+        bias = torch.einsum('bad,bd->ba',
+            F.normalize(candidates.detach()[..., :self.d_model], dim=-1), prime.to(candidates))
+        if binding_choices:
+            span = bias.amax(-1, keepdim=True) - bias.amin(-1, keepdim=True)
+            bound = math.log(1.1)
+            bias = bias * (bound / span.clamp_min(bound))
+        return bias.detach()
 
     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
                 masked_action=None, what_ctx=None, op_prior=None, occupation=None,
@@ -6944,8 +6973,9 @@ class OperationSelectionLayer(nn.Module):
             logits = logits + score_delta
         prime = getattr(self, '_expectation_prime', None)
         if prime is not None:
-            bias = torch.einsum('bad,bd->ba', F.normalize(candidates.detach()[..., :self.d_model], dim=-1), prime.to(x))
-            logits = logits + bias.detach()
+            bias = self.prime_bias(candidates, prime, binding_choices=bool(
+                reference_data is not None and reference_data.get('binding_choices')))
+            logits = logits + bias
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else
                      torch.where(masked_action >= 0, masked_action, greedy))

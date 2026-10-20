@@ -1,0 +1,121 @@
+{
+  "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing": {
+    "seed": 4036386253,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role": {
+    "seed": 1732202686,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity": {
+    "seed": 3073216941,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {}
+  },
+  "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write": {
+    "seed": 3760528831,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 18,
+        "with_prior": 0,
+        "coordinates": 752,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "S": {
+        "calls": 3096,
+        "with_prior": 3096,
+        "coordinates": 2357682,
+        "below_one": 1268360,
+        "minimum": 0.7192601561546326,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 47,
+        "with_prior": 33,
+        "coordinates": 141,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 47,
+        "with_prior": 47,
+        "coordinates": 141,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 33,
+        "with_prior": 33,
+        "coordinates": 99,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  }
+}

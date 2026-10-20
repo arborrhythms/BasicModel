@@ -1,0 +1,13 @@
+{
+  "outcome": "interrupted",
+  "pass_claim": false,
+  "reason": "Explicitly stopped while compiling backward graphs in a Python-forced behavior fixture. Both workers completed only their first two-row sentence batch. Align the fixture with section14 eager_reading; preserve this partial compiled run separately.",
+  "driver_pid": 53776,
+  "runner_pid": 53787,
+  "worker_pids": [
+    53825,
+    53826
+  ],
+  "sample": "decomposition-zero-stack.txt",
+  "approximate_elapsed_seconds": 355
+}

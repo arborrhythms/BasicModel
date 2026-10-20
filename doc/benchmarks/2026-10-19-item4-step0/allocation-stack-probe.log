@@ -1,0 +1,812 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+BATCH [0, 4] budget 0
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+BATCH [1, 5] budget 0
+batch = 2 (Δ=6.484s)
+BATCH [2, 6] budget 0
+batch = 4 (Δ=6.635s)
+BATCH [3, 7] budget 512
+PEAK 2152644608 CALLS 39000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 2710470656 CALLS 66000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 3268263936 CALLS 93000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 3826089984 CALLS 120000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 4383899648 CALLS 147000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 4941758464 CALLS 174000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 5499535360 CALLS 201000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 6056886272 CALLS 228000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 6614155264 CALLS 255000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 7171964928 CALLS 282000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14026, in _run_batch_once
+    _what_answers = self._what_or_think(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8734, in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10101, in ask
+    execution = self._execute_input_sentence(input_data, executor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13095, in _lex_embed_stem
+    stage_input(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 241, in stage_input
+    reading=read()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 232, in narrow_words
+    witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+ALLOCATION aten.where.self [2, 16, 8, 256, 256] 67108864   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23823, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13099, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11296, in _stage_serial_concept_rows
+    properties = ws.subspace.what.primitive_properties.on_counts(primitive_counts)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 150, in on_counts
+    result = _PropertySupportRead.apply(weights, counts.to(weights) > 0, conjunctive)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py", line 45, in forward
+    values = torch.where(present.unsqueeze(-2), weights[start:start + 256],
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 42, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=12)), flush=True)
+
+PEAK 7711096832 CALLS 339000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23840, in _forward_per_stage
+    body_result = self._forward_body(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17097, in _forward_body
+    return self._forward_body_per_word(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22392, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21944, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20632, in _run_sentence_word_bricks
+    greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 220, in narrow_words
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 6729, in attend
+    _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 6380, in score_unary
+    indices = indices + self.n_copy + op_offset
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 8254816256 CALLS 365000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23840, in _forward_per_stage
+    body_result = self._forward_body(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17097, in _forward_body
+    return self._forward_body_per_word(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22392, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21944, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20632, in _run_sentence_word_bricks
+    greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 220, in narrow_words
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 6740, in attend
+    counts = (torch.isfinite(logits).sum(-1)-1).clamp_min(0)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)
+
+PEAK 8812642304 CALLS 392000   File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8419, in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8197, in forward
+    return self._forward_per_stage(inputData)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 23840, in _forward_per_stage
+    body_result = self._forward_body(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17097, in _forward_body
+    return self._forward_body_per_word(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22392, in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21944, in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 20632, in _run_sentence_word_bricks
+    greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py", line 228, in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py", line 220, in narrow_words
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 6740, in attend
+    counts = (torch.isfinite(logits).sum(-1)-1).clamp_min(0)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548, in _fn
+    return fn(*args, **kwargs)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py", line 34, in __torch_dispatch__
+    ''.join(traceback.format_stack(limit=15)), flush=True)

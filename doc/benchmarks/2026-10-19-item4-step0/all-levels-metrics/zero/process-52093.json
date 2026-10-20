@@ -1,0 +1,158 @@
+{
+  "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": {
+    "seed": 3491438094,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 102,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      },
+      {
+        "index": 1,
+        "scope": "common per-stage constructor",
+        "parameters": 102,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 42,
+        "with_prior": 42,
+        "coordinates": 1344,
+        "below_one": 1013,
+        "minimum": 0.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal": {
+    "seed": 2105377828,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 102,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 1,
+        "with_prior": 1,
+        "coordinates": 32,
+        "below_one": 24,
+        "minimum": 0.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal": {
+    "seed": 484835009,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 117,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 15,
+        "with_prior": 14,
+        "coordinates": 480,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "S_word": {
+        "calls": 30,
+        "with_prior": 30,
+        "coordinates": 960,
+        "below_one": 720,
+        "minimum": 0.0,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 60,
+        "with_prior": 56,
+        "coordinates": 180,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 60,
+        "with_prior": 60,
+        "coordinates": 180,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 56,
+        "with_prior": 56,
+        "coordinates": 168,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  }
+}

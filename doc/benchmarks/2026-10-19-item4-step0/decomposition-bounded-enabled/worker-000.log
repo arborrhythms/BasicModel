@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_forced_native_decomposition_through_training_driver[1] __________
+test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver
+    assert proved, questions
+E   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]
+E   assert []
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 2 (Δ=6.832s)
+batch = 4 (Δ=7.087s)
+batch = 6 (Δ=10.068s)
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "0", "pair": [3, 1], "question_source": 3, "episode": true, "work": 65, "answer": "four", "bound_correct": false, "committed_binding": null, "open": [["referent", 0]], "expected_chain_length": 1, "inference_count": 0, "chain_correct": false, "inferences": [], "operations": ["query", "conclude"]}
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "1", "pair": [3, 1], "question_source": 7, "episode": false, "work": 0, "answer": "four", "bound_correct": false, "committed_binding": ["ltm", "address-v1", -8189701630310319635], "open": [], "expected_chain_length": 1, "inference_count": 0, "chain_correct": false, "inferences": [], "operations": []}
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+1 failed, 2 warnings in 30.55s

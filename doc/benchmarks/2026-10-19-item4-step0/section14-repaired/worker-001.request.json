@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_preserves_the_initial_binding_band_for_any_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_preserves_the_initial_binding_band_for_any_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_preserves_the_initial_binding_band_for_any_menu[257]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/section14-repaired/worker-001.recycle.json"
+}

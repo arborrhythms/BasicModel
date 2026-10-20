@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-sum]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-sum]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[2]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[7]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_preserves_the_initial_binding_band_for_any_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_preserves_the_initial_binding_band_for_any_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_preserves_the_initial_binding_band_for_any_menu[257]",
+    "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/bracket-memory-checks/worker-000.recycle.json"
+}

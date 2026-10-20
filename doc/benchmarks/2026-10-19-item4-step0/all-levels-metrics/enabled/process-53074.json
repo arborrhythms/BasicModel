@@ -1,0 +1,14 @@
+{
+  "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct": {
+    "seed": 1200768635,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp": {
+    "seed": 4203302786,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context": {
+    "seed": 3018575623,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles": {
+    "seed": 3790098658,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 12,
+        "with_prior": 11,
+        "coordinates": 192,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "S_word": {
+        "calls": 36,
+        "with_prior": 36,
+        "coordinates": 576,
+        "below_one": 390,
+        "minimum": 0.0,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 12,
+        "with_prior": 9,
+        "coordinates": 36,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 12,
+        "with_prior": 12,
+        "coordinates": 36,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 9,
+        "with_prior": 9,
+        "coordinates": 27,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label": {
+    "seed": 285072483,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class": {
+    "seed": 3689280796,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source": {
+    "seed": 742868163,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 1,
+        "with_prior": 0,
+        "coordinates": 32,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "S_word": {
+        "calls": 1,
+        "with_prior": 1,
+        "coordinates": 32,
+        "below_one": 24,
+        "minimum": 0.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]": {
+    "seed": 3647101174,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]": {
+    "seed": 3291452183,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice": {
+    "seed": 3963496293,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [],
+    "reads": {}
+  }
+}

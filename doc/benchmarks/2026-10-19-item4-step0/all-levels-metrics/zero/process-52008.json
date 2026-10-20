@@ -1,0 +1,224 @@
+{
+  "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]": {
+    "seed": 1696169547,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 69,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 84,
+        "with_prior": 84,
+        "coordinates": 4864,
+        "below_one": 4864,
+        "minimum": 0.0,
+        "maximum": 0.0
+      }
+    }
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]": {
+    "seed": 546772860,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 69,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 84,
+        "with_prior": 84,
+        "coordinates": 9728,
+        "below_one": 9728,
+        "minimum": 0.0,
+        "maximum": 0.0
+      }
+    }
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]": {
+    "seed": 548682657,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 69,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 84,
+        "with_prior": 84,
+        "coordinates": 4864,
+        "below_one": 4864,
+        "minimum": 0.0,
+        "maximum": 0.0
+      }
+    }
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]": {
+    "seed": 1419218178,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 69,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 84,
+        "with_prior": 84,
+        "coordinates": 9728,
+        "below_one": 9728,
+        "minimum": 0.0,
+        "maximum": 0.0
+      }
+    }
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]": {
+    "seed": 3945880131,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 69,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 84,
+        "with_prior": 84,
+        "coordinates": 4864,
+        "below_one": 4864,
+        "minimum": 0.0,
+        "maximum": 0.0
+      }
+    }
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]": {
+    "seed": 60797512,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 69,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters": "saved for paired comparison"
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 84,
+        "with_prior": 84,
+        "coordinates": 9728,
+        "below_one": 9728,
+        "minimum": 0.0,
+        "maximum": 0.0
+      }
+    }
+  }
+}

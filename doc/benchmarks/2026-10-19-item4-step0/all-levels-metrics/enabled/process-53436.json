@@ -1,0 +1,58 @@
+{
+  "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open": {
+    "seed": 88324027,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork": {
+    "seed": 4235504530,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates": {
+    "seed": 1714150522,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]": {
+    "seed": 2939107269,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]": {
+    "seed": 1130074944,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]": {
+    "seed": 2267896672,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]": {
+    "seed": 3600614365,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients": {
+    "seed": 1789223184,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  }
+}

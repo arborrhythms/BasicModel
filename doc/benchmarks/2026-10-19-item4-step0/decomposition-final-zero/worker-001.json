@@ -1,0 +1,17 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+  "device": "cpu"
+}

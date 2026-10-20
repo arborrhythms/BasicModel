@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_allocation_probe.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/allocation-probe"
+  ],
+  "pid": 55943,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1776272896,
+  "elapsed_seconds": 4.0939687909558415,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/allocation-probe.log"
+}

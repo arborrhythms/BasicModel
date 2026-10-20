@@ -1,0 +1,78 @@
+{
+  "exit_code": 125,
+  "reason": "running",
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [],
+  "workers": [],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 600.0,
+    "suite_seconds": 1200.0,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-zero",
+  "elapsed_seconds": 4.167563125025481,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 428967088,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-zero/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-zero/collect.json"
+    ],
+    "pid": 53816,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428967088,
+    "elapsed_seconds": 3.5076868750620633,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-zero/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {},
+  "active_workers": [
+    {
+      "name": "worker-000",
+      "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-zero/worker-000.json",
+      "device": "cpu"
+    },
+    {
+      "name": "worker-001",
+      "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-zero/worker-001.json",
+      "device": "cpu"
+    }
+  ]
+}

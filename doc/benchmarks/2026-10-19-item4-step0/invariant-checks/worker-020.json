@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser"
+  ],
+  "completed": [
+    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011991332983598113,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

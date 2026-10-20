@@ -18,6 +18,13 @@ The shipped defaults are four zero gains, `expectationPrime=true` and
 prediction enabled, turns off the compose and candidate-attention selection
 prime and restores uniform eligible alternatives (`φ=1`). It is a gate
 fixture; zero attenuation alone does not promise the previous selection law.
+Reference variants start with neutral candidate-value columns and reference
+projection in the shared chooser. The enabled prime still biases their
+selection, but its logit span is bounded by `log(1.1)` in binding menus.
+With neutral initial scores this keeps each conditional probability within
+`[1/1.1, 1.1]` of uniform, for any retained set. This calibrates the fixed
+prior; learned scores remain unrestricted and both neutral paths receive
+ordinary gradients. Other menus keep their existing prime scale.
 Perceptual mean and variance supply per-coordinate salience and a scalar
 region gain; codebook lookup reads the original coordinates.
 Closing confidence κ is per symbol, the maximum of its two predicted
@@ -151,6 +158,13 @@ contracts; their retirement is not evidence that a learning gate passed.
 
 All four gain strengths default to zero in both canonical configurations. A
 nonzero operating point must first pass the native zero-gain parity gate.
-The unscaled selection prime and exploration fraction `φ=.5` are separate
-from these gains. Claude's candidate review blocks the landing sweep pending
-Alec's decision on their defaults and enabled-expectation parity.
+The selection prime and exploration fraction `φ=.5` are separate from these
+gains and remain enabled by Alec's B3 decision. The original close-out's
+enabled-default/parity comparison is recorded in its receipt. The later
+[outstanding-gates round](benchmarks/2026-10-19-item4-step0/README.md) compares
+the declared all-gains-.5 operating point with all gains zero, both prime on
+and φ=.5; it also repairs initialization and calibrates the binding prime.
+Its candidate review and single landing sweep are separate from the earlier
+close-out and remain required. All 16 standing XOR cases pass in both arms;
+the one-successor decomposition certificate still fails in both. The nonzero
+configuration is therefore a measured candidate, not an accepted new default.

@@ -218,7 +218,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
         replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
         action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
-            masked_action=mask,replay_action=replay,return_details=True)
+            masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W))
         slot=(action//A).clamp_max(K-1);op=action%A
         chosen=live[rows,slot]&(action<A*K)
         selected=covered[rows,slot]&chosen[:,None]

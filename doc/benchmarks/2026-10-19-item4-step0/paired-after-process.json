@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/paired_probe.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/paired-after.json"
+  ],
+  "pid": 50220,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 655361464,
+  "elapsed_seconds": 5.1713714161887765,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/paired-after.log"
+}

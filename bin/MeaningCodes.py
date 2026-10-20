@@ -46,14 +46,18 @@ def recover_lanes(name, parent, left, right, form_width):
     """Recover compatible leaf magnitudes after identifying the two forms.
 
     Each lane is solved independently against the frozen signless codes.
+    A live candidate may carry either or both poles. Recover its shared
+    code support before solving; its current stance is not the stance of
+    the parent being decoded.
     Min/max are not injective: choose the least min operands and greatest
     max operands consistent with the root. This recovers a reading, not the
     lost derivation. A mean has the two-code nonnegative least-squares read.
-    No evidence from the opposite lane enters a lane's inverse.
+    No evidence from the opposite parent lane enters a lane's inverse.
     """
-    width = (parent.shape[-1] - form_width) // 2
-    a = left[..., form_width:form_width + width]
-    b = right[..., form_width:form_width + width]
+    def signless(candidate):
+        positive, negative = candidate[..., form_width:].chunk(2, -1)
+        return torch.maximum(positive, negative)
+    a, b = signless(left), signless(right)
     positive, negative = parent[..., form_width:].chunk(2, -1)
 
     def read(y, rule):

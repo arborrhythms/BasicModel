@@ -1,0 +1,296 @@
+{
+  "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate": {
+    "seed": 2637482701,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 15,
+        "with_prior": 0,
+        "coordinates": 1920,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "S_word": {
+        "calls": 31,
+        "with_prior": 31,
+        "coordinates": 3968,
+        "below_one": 2976,
+        "minimum": 0.0,
+        "maximum": 1.0
+      },
+      "S": {
+        "calls": 1796,
+        "with_prior": 1796,
+        "coordinates": 2930952,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 120,
+        "with_prior": 80,
+        "coordinates": 360,
+        "below_one": 56,
+        "minimum": 0.9999997615814209,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 120,
+        "with_prior": 120,
+        "coordinates": 360,
+        "below_one": 104,
+        "minimum": 0.9999997615814209,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 80,
+        "with_prior": 80,
+        "coordinates": 240,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": {
+    "seed": 491075833,
+    "configuration": {},
+    "constructors": [],
+    "reads": {}
+  },
+  "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage": {
+    "seed": 3683865303,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 1,
+        "with_prior": 0,
+        "coordinates": 32,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "S_word": {
+        "calls": 3,
+        "with_prior": 3,
+        "coordinates": 96,
+        "below_one": 96,
+        "minimum": 0.0,
+        "maximum": 0.9775828123092651
+      },
+      "S": {
+        "calls": 132,
+        "with_prior": 132,
+        "coordinates": 5346,
+        "below_one": 208,
+        "minimum": 0.9595173001289368,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 2,
+        "with_prior": 0,
+        "coordinates": 6,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 2,
+        "with_prior": 2,
+        "coordinates": 6,
+        "below_one": 1,
+        "minimum": 0.9824162721633911,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": {
+    "seed": 841828515,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 2,
+        "with_prior": 1,
+        "coordinates": 256,
+        "below_one": 48,
+        "minimum": 0.7580603361129761,
+        "maximum": 1.0
+      },
+      "S": {
+        "calls": 232,
+        "with_prior": 232,
+        "coordinates": 248784,
+        "below_one": 234,
+        "minimum": 0.8317034244537354,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 16,
+        "with_prior": 8,
+        "coordinates": 48,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 16,
+        "with_prior": 16,
+        "coordinates": 48,
+        "below_one": 8,
+        "minimum": 0.9259824752807617,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 8,
+        "with_prior": 8,
+        "coordinates": 24,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]": {
+    "seed": 3852227740,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 2,
+        "with_prior": 1,
+        "coordinates": 256,
+        "below_one": 80,
+        "minimum": 0.773040771484375,
+        "maximum": 1.0
+      },
+      "S": {
+        "calls": 276,
+        "with_prior": 276,
+        "coordinates": 467112,
+        "below_one": 317014,
+        "minimum": 0.7666237354278564,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 16,
+        "with_prior": 8,
+        "coordinates": 48,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 16,
+        "with_prior": 16,
+        "coordinates": 48,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 8,
+        "with_prior": 8,
+        "coordinates": 24,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  }
+}

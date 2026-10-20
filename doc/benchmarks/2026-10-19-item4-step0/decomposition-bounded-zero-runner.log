@@ -1,0 +1,8 @@
+[collect] 1 selectors; limit 300s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.40 GiB
+[worker-000] 1 selectors; limit 300s, 8.0 GiB
+[worker-001] 1 selectors; limit 300s, 8.0 GiB
+[worker-000] exit 1; 45.2s; peak 1.94 GiB
+[worker-001] exit 0; 56.2s; peak 2.17 GiB
+Result: test_failure, exit 1; 2/2 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-bounded-zero/result.json

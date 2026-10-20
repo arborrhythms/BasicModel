@@ -1,0 +1,1382 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+    "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+    "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+    "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+    "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+    "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice",
+    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+    "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+    "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+    "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+    "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+    "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+    "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+    "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+    "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+    "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+    "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+    "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+    "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "completed": [
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+    "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+    "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+    "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+    "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+    "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+    "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+    "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+    "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+    "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+    "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+    "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+    "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+    "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation",
+    "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+    "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+    "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+    "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+    "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice",
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-001.json"
+      ],
+      "pid": 53073,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 574752232,
+      "elapsed_seconds": 19.712824707850814,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+      ],
+      "completed": [
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.165818792069331,
+          "message": "",
+          "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.265072959009558,
+          "message": "",
+          "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.215200999984518,
+          "message": "",
+          "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-000.json"
+      ],
+      "pid": 53072,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 832358056,
+      "elapsed_seconds": 33.54416716704145,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "completed": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 3.991760917007923,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 64), (25, 72), (26, 80), (27, 88)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.783796167001128,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 64), (49, 72), (50, 80), (51, 88)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 4.012777374824509,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 64), (25, 72), (26, 80), (27, 88)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.694179292069748,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 64), (49, 72), (50, 80), (51, 88)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 4.070871375035495,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 64), (25, 72), (26, 80), (27, 88)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.8075938750989735,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 64), (49, 72), (50, 80), (51, 88)]}\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-002.json"
+      ],
+      "pid": 53074,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1656016832,
+      "elapsed_seconds": 59.8736989160534,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 28.045590874971822,
+          "message": "",
+          "stdout": "XOR_exact reconstruction count: 4/4\n\n"
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 27.75631650001742,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-003.json"
+      ],
+      "pid": 53109,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1377061744,
+      "elapsed_seconds": 54.0865392498672,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 3.3413017911370844,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0900490831118077,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 45.52348312502727,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-005.json"
+      ],
+      "pid": 53244,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1510197456,
+      "elapsed_seconds": 21.254770499886945,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+        "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+        "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+        "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+        "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+        "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+        "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+        "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations"
+      ],
+      "completed": [
+        "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+        "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+        "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+        "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+        "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+        "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+        "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+        "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00020833313465118408,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017286250367760658,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00017516710795462132,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016659579705446959,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00014045904390513897,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006515000015497208,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 16.733898582868278,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=5.028s)\r\nbatch = 2 (\u0394=5.476s)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.2008062091190368,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-007.json"
+      ],
+      "pid": 53296,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440305008,
+      "elapsed_seconds": 4.2427224579732865,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+        "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+        "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+        "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+        "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+        "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+        "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+        "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands"
+      ],
+      "completed": [
+        "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+        "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+        "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+        "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+        "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+        "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+        "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+        "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013137790840119123,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.018317250069230795,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006351668853312731,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003738375147804618,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014269170351326466,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00047216680832207203,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00020470889285206795,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012897458160296082,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-008.json"
+      ],
+      "pid": 53303,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1457506368,
+      "elapsed_seconds": 60.1038554161787,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+        "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+        "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+        "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write"
+      ],
+      "completed": [
+        "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+        "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+        "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+        "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017976083094254136,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004142499528825283,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.19815141707658768,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 55.59413987514563,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.970s)\r\nbatch = 2 (\u0394=0.958s)\r\nbatch = 4 (\u0394=1.332s)\r\nbatch = 6 (\u0394=1.829s)\r\nbatch = 8 (\u0394=2.877s)\r\nbatch = 10 (\u0394=3.000s)\r\nbatch = 12 (\u0394=3.146s)\r\nbatch = 14 (\u0394=2.984s)\r\nbatch = 16 (\u0394=3.081s)\r\nbatch = 18 (\u0394=2.625s)\r\nbatch = 0 (\u0394=4.542s)\r\nbatch = 3 (\u0394=3.093s)\r\nbatch = 6 (\u0394=4.708s)\r\nbatch = 9 (\u0394=4.669s)\r\nbatch = 12 (\u0394=4.930s)\r\nbatch = 15 (\u0394=3.214s)\r\nbatch = 0 (\u0394=6.036s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-009.json"
+      ],
+      "pid": 53436,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 441353584,
+      "elapsed_seconds": 4.221735583851114,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+        "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+        "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+        "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients"
+      ],
+      "completed": [
+        "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+        "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+        "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+        "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0176234170794487,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014932078775018454,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007367918733507395,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010288042016327381,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009920166106894612,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010030166013166308,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009863290935754776,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012538083828985691,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-010.json"
+      ],
+      "pid": 53462,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 437224792,
+      "elapsed_seconds": 4.206108124926686,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+        "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+        "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+      ],
+      "completed": [
+        "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+        "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+        "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009142500348389149,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004965420812368393,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00042433408088982105,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-006.json"
+      ],
+      "pid": 53276,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1802848800,
+      "elapsed_seconds": 81.58740500011481,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+        "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+        "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+        "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+        "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+        "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+        "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+        "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice"
+      ],
+      "completed": [
+        "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+        "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+        "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+        "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+        "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+        "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+        "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+        "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002560125198215246,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 76.87463908316568,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=5.945s)\r\nbatch = 2 (\u0394=6.360s)\r\nbatch = 3 (\u0394=6.123s)\r\nbatch = 4 (\u0394=5.693s)\r\nbatch = 5 (\u0394=5.493s)\r\nbatch = 6 (\u0394=2.218s)\r\nbatch = 7 (\u0394=7.906s)\r\nbatch = 8 (\u0394=6.277s)\r\nbatch = 9 (\u0394=7.164s)\r\nbatch = 10 (\u0394=7.409s)\r\nbatch = 11 (\u0394=8.434s)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0008606670890003443,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00034979102201759815,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.36518233292736113,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00028345780447125435,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002091249916702509,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012162416009232402,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-012.json"
+      ],
+      "pid": 53475,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440960272,
+      "elapsed_seconds": 4.308141791028902,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010950840078294277,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0008072080090641975,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0022196669597178698,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.020532167050987482,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010874832980334759,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002993331290781498,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02355212508700788,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0012689169961959124,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-011.json"
+      ],
+      "pid": 53471,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2021428536,
+      "elapsed_seconds": 12.296459374949336,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 4.222059125080705,
+          "message": "c/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py:159: in run\n    rows = train_documents(model, documents, folder, after=after, episode=episode)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:40: in run_batch\n    return batch(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13490: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13646: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14026: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8734: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10101: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8419: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8197: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23840: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17097: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22392: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21944: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20903: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:142: in sentence_pair\n    exploit = compose(cache, None)\n              ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20771: in compose\n    word_step(index, payload, native)\nbin/Models.py:20760: in word_step\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21697: in stage_cs_lang\n    proposal = choose_operation(\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:43: in choose_operation\n    return choose(state, row_gate, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:12500: in choose_operation\n    _, _, route = layer(window, **arguments)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:47: in operation\n    return forward(x, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6982: in forward\n    action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:51: in choose_logits\n    chosen, probabilities, legal = select(logits, **kwargs)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ValueError: too many values to unpack (expected 3)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.5328055829741061,
+          "message": "c/benchmarks/2026-10-08-math-chain-repair-2/decomposition_certificate.py:159: in run\n    rows = train_documents(model, documents, folder, after=after, episode=episode)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:40: in run_batch\n    return batch(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13490: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13646: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14026: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8734: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10101: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8419: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8197: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23840: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17097: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22392: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21944: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20903: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:142: in sentence_pair\n    exploit = compose(cache, None)\n              ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20771: in compose\n    word_step(index, payload, native)\nbin/Models.py:20760: in word_step\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21697: in stage_cs_lang\n    proposal = choose_operation(\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:43: in choose_operation\n    return choose(state, row_gate, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:12500: in choose_operation\n    _, _, route = layer(window, **arguments)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:47: in operation\n    return forward(x, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6982: in forward\n    action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,\ndoc/benchmarks/2026-10-08-math-chain-repair-2/forced_decomposition_grammar.py:51: in choose_logits\n    chosen, probabilities, legal = select(logits, **kwargs)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ValueError: too many values to unpack (expected 3)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-004.json"
+      ],
+      "pid": 53152,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1299860312,
+      "elapsed_seconds": 185.24849429097958,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000291542150080204,
+          "message": "",
+          "stdout": " 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.319s, 100.00%)\r\nTraining throughput: 1 batches in 0.319s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.327s, 100.00%)\r\nTraining throughput: 1 batches in 0.326s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.320s, 100.00%)\r\nTraining throughput: 1 batches in 0.320s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.323s, 100.00%)\r\nTraining throughput: 1 batches in 0.322s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.329s, 100.00%)\r\nTraining throughput: 1 batches in 0.328s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.330s, 100.00%)\r\nTraining throughput: 1 batches in 0.330s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.324s, 100.00%)\r\nTraining throughput: 1 batches in 0.323s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.331s, 100.00%)\r\nTraining throughput: 1 batches in 0.331s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0007, reconstruction=0.0000\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.328s, 100.00%)\r\nTraining throughput: 1 batches in 0.327s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.331s, 100.00%)\r\nTraining throughput: 1 batches in 0.331s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.329s, 100.00%)\r\nTraining throughput: 1 batches in 0.329s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.343s, 100.00%)\r\nTraining throughput: 1 batches in 0.342s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.328s, 100.00%)\r\nTraining throughput: 1 batches in 0.328s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.326s, 100.00%)\r\nTraining throughput: 1 batches in 0.325s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.335s, 100.00%)\r\nTraining throughput: 1 batches in 0.334s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.470s, 100.00%)\r\nTraining throughput: 1 batches in 0.470s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.329s, 100.00%)\r\nTraining throughput: 1 batches in 0.329s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0000, reconstruction=0.0000\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=7.316s, 100.00%)\r\nTraining throughput: 1 batches in 7.268s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed=' ' label=0.0000 predicted=0.0009 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.9982 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.9986 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=-0.0033 MISMATCH\r\n"
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001657081302255392,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-013.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-013.json"
+      ],
+      "pid": 53504,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2713341768,
+      "elapsed_seconds": 237.9835159999784,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/worker-013.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 170.668060624972,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=11.789s)\r\nbatch = 16 (\u0394=6.131s)\r\nbatch = 24 (\u0394=10.116s)\r\nbatch = 32 (\u0394=14.779s)\r\nbatch = 40 (\u0394=6.161s)\r\nbatch = 48 (\u0394=9.674s)\r\nbatch = 56 (\u0394=11.754s)\r\nbatch = 64 (\u0394=17.265s)\r\nbatch = 72 (\u0394=5.932s)\r\nbatch = 80 (\u0394=9.888s)\r\nbatch = 88 (\u0394=11.719s)\r\nbatch = 96 (\u0394=13.734s)\r\nbatch = 104 (\u0394=20.293s)\r\nbatch = 0 (\u0394=14.272s)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": "copular_identity",
+          "duration": 0.0006322499830275774,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 222, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 6.472120499936864,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 27.73830679198727,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=13.253s)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 28.89748320914805,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=17.097s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled",
+  "elapsed_seconds": 402.31359366700053,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "skipped_certificates_by_phase": {
+    "copular_identity": [
+      {
+        "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 222, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')"
+      }
+    ]
+  },
+  "peak_aggregate_memory_bytes": 4669054992,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/collect.json"
+    ],
+    "pid": 53065,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436405448,
+    "elapsed_seconds": 3.7335863751359284,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/all-levels-enabled/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+        "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+        "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+        "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+        "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+        "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+        "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+        "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+        "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+        "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+        "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+        "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+        "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+        "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+        "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+        "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+        "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice",
+        "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+        "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+        "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+        "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+        "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+        "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+        "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+        "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+        "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+        "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+        "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+        "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+        "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+        "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+        "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+        "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+        "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+        "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+        "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+        "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+      ],
+      "requested_devices": {},
+      "shared_training": {
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy": "test/test_explicit_dimensions.py::xor_grammar",
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct": "test/test_explicit_dimensions.py::xor_grammar"
+      },
+      "phase_certificates": {
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+  }
+}

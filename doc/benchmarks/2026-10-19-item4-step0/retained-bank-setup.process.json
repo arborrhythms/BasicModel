@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-c",
+    "from pathlib import Path; from tempfile import TemporaryDirectory; from math_chain_ordinary import ordinary_model; from binding_distribution_probe import retained_bank_distributions; import util; util.TheCompileBackend='none'; t=TemporaryDirectory(); m=ordinary_model(Path(t.name)); r=retained_bank_distributions(m); print([(x['order'],x['stored_count'],len(x['alternatives'])) for x in r]); print(min(p*len(x['alternatives']) for x in r for p in x['probabilities']),max(p*len(x['alternatives']) for x in r for p in x['probabilities'])); m.End()"
+  ],
+  "pid": 51752,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 660194624,
+  "elapsed_seconds": 3.6141135001089424,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/retained-bank-setup.log"
+}

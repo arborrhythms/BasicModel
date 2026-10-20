@@ -159,7 +159,7 @@ def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match()
 def test_ordinary_initial_binding_distribution_includes_every_retained_candidate(tmp_path, eager_reading):
     """Certificate b: unforced distribution, with empirical openings reported."""
     import json
-    from binding_distribution_probe import binding_distributions
+    from binding_distribution_probe import binding_distributions, retained_bank_distributions
     from math_chain_ordinary import ordinary_model, train_documents, stage, observer_class
     from math_chain_corpus import ChainDocument
     from MathChainTraining import present
@@ -170,6 +170,9 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
         # at initialization before the training certificate starts.
         chooser = model._selected_thought_chooser(None)
         initial = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        compose = model.languageSpace.language_layer.operation_layer.chooser
+        compose_initial = {name: value.detach().clone() for name, value in compose.named_parameters()}
+        retained_records = retained_bank_distributions(model)
         provision = tmp_path/'provision'
         provision.mkdir()
         # Cover small and larger retained menus with different real
@@ -189,18 +192,21 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
             observer.context = dict(epoch=0, phase='initialization_read')
             present(model, split='train', after_batch=observer.after_batch)
         assert all(torch.equal(value, initial[name]) for name, value in chooser.named_parameters())
+        assert all(torch.equal(value, compose_initial[name]) for name, value in compose.named_parameters())
         documents = [ChainDocument(str(i), ('what is y ?',), question=0) for i in range(8)]
         with binding_distributions() as records:
             rows = train_documents(model, documents, tmp_path)
         # Both contexts use the identical untrained chooser; the first has
         # backward candidates within its real multi-sentence documents.
-        records = prior_records + records
+        records = retained_records + prior_records + records
         assert records
         ratios = [p*len(item['alternatives']) for item in records for p in item['probabilities']]
         retained = sum(sum(value not in (0,-2) for value in item['alternatives']) for item in records)
         report = dict(forced=False, conditional_band=[.9,1.1], alternatives_relative_to_uniform=[min(ratios),max(ratios)],
             initialization_documents=len(provision_documents), retained_premise_counts=[1,2,3,4],
-            initialization_read_menus=len(prior_records), training_menus=len(records)-len(prior_records),
+            controlled_retained_menus=len(retained_records),
+            initialization_read_menus=len(prior_records),
+            training_menus=len(records)-len(prior_records)-len(retained_records),
             retained_candidates=retained, menus=len(records), questions=len(rows),
             observed_committed_open=sum(bool(row['open']) for row in rows),
             observed_episodes=sum(row['episode'] for row in rows),

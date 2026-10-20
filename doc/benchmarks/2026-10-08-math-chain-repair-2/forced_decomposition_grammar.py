@@ -48,10 +48,11 @@ class ForcedDecompositionGrammar:
             finally:
                 self.data = previous
         def choose_logits(logits, **kwargs):
-            chosen, probabilities, legal = select(logits, **kwargs)
+            result = select(logits, **kwargs)
+            chosen, probabilities, legal = result[:3]
             fork = getattr(self.model, '_compose_fork', None)
             if self.data is None or fork is None:
-                return chosen, probabilities, legal
+                return result
             state, active, context = self.current
             scope = context['reference_scope']
             data = self.data
@@ -166,7 +167,7 @@ class ForcedDecompositionGrammar:
                         scope=scope[b,:depth].tolist(),
                         left=sorted(left),right=sorted(right)))
                 legal[b] = bool(allowed[chosen[b]])
-            return chosen, probabilities, legal
+            return result
         for owner,name,value in ((SentenceFork,'begin_word',begin_word),
                                  (BasicModel,'runBatch',run_batch),
                                  (language,'choose_operation',choose_operation),

@@ -1,0 +1,70 @@
+{
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": 272541893685462426,
+      "address": [
+        "ltm",
+        "address-v1",
+        272541893685462426
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 0,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 4,
+      "row_id": -8173686650785694507,
+      "address": [
+        "ltm",
+        "address-v1",
+        -8173686650785694507
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 0,
+      "query_open": []
+    }
+  ],
+  "episodes": [],
+  "menus": [],
+  "source_readings": {
+    "(0, 0)": [
+      [
+        "ltm",
+        "address-v1",
+        -1185518619493577597
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -4606974902103042418
+      ]
+    ],
+    "(1, 0)": [
+      [
+        "ltm",
+        "address-v1",
+        7916236595202640214
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -9000653948695030074
+      ]
+    ]
+  }
+}

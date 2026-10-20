@@ -22,9 +22,31 @@ lines below keep the numbers their items had when they landed.
 Alec's defaults are all four gains zero, selection prime on and φ=.5;
 the declared enabled-prediction parity comparison and the whole §14 file
 complete. The single full sweep and scoped repairs are recorded separately.
-The original failed learning run, the distribution bound and .0517 paired-cost
-counterexample stay open at Item 0. Independent 5.5 gates remain unchanged.
+The original failed learning run stays open at Item 0. The distribution
+bound and .0517 paired-cost counterexample pass scoped repairs before 3.5 in
+[one outstanding-gates receipt](doc/benchmarks/2026-10-19-item4-step0/README.md),
+on `codex/item4-step0`. Independent 5.5 gates remain unchanged.
+All 16 standing XOR cases pass with every level enabled and in the matched
+zero-gain arm. The one-successor decomposition certificate fails in both
+arms after its API and memory repairs; it is a blocker in this round, before
+review resolution and the single landing sweep. It is not deferred to 3.5
+or relabeled as a learning gate.
 Item 5's landing remains BasicModel `9207f5e03` / WikiOracle `929e4a8`.
+
+**Before 3.5 (Alec, 2026-10-19: "we need to get them passing"):** item
+4's carried mechanism failures are not carried again — spec §9 gate 1
+(XOR fixtures now measured at all levels; one math-chain blocker remains), the
+`.0517` paired zero-cost invariant, the initial-binding distribution
+bound — as step 0 of the
+[first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19).
+Both local and remote `main`s now name the published Item 4 heads:
+BasicModel `3ad4056e4`, WikiOracle `9d81ec0`.
+**Necessary deferral, accepted after evaluation:** the copular-identity
+certificate needs its producing lesson. Item 3.5 owns stage 4e → NP
+continuation → copular identity → artifact registration and unchanged c
+certificate. No producing artifact exists; the October 18 decision withdrew
+the proposed one-equality-hop reader patch in favor of this phase gate.
+The unconditional column-copula mechanism certificate stays in this round.
 
 **Next mechanism:** Item **3.5**, on a new branch after Item 4 publication,
 in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
@@ -36,7 +58,7 @@ There is no identity-learning claim: the native reference-close lesson remains
 
 **Item 4 publication:** source `fdeef42b8` includes every BasicModel edit,
 including the newer LTM1/LTM3, occurrence, Philosophy and todo changes.
-The final receipt commit and WikiOracle bump follow on the same branch.
+The closing receipt is `3ad4056e4`; WikiOracle bump `9d81ec0` names it.
 The pre-existing parent nanochat pointer is preserved outside Item 4; it
 is the only unrelated parent-tree change, not an uncommitted BasicModel edit.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
@@ -217,11 +239,12 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   immediate failure is different: its filled reference points to an order-one
   child associated with `the`, with no lexical path to `five`. All assertions
   remain unchanged; no repair or learning claim is made.
-- b's initial binding-distribution bound remains flaky after construction-based
-  coverage of 32 documents, histories 1–4 and four names. Development maximum
-  1.153045 and the [first part-2 sweep's](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
-  .848586–1.179175 range violate the unchanged .9–1.1 band; the latter is a new
-  failing node relative to accepted 6.1. No passing initialization closes it.
+- b's initial binding-distribution repair awaits review and the landing
+  sweep in the [outstanding-gates round](doc/benchmarks/2026-10-19-item4-step0/README.md).
+  Neutral candidate initialization and bounded prime odds address the cause;
+  controlled retained contexts guarantee coverage beside the unchanged
+  32-document audit. Scoped range .930257–1.077537 meets the unchanged
+  .9–1.1 band. The earlier .848586–1.179175 failure remains in its receipt.
 - The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
   adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
   failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
@@ -516,8 +539,9 @@ not by a passing identity lesson.
 - **3.5. Mechanism residue of items 6 and 5.5** (Alec, 2026-10-19: "even
    though we are on 4, 6 and 5.5 have incomplete work"; completed after
    item 4, before 3). Mechanism work only; every learning *claim* stays at
-   item 0's gates (6.1, 6.2, 6.5, 9, 8; the carried c and paired `.0517`
-   counterexamples). Each line below lands with its receipt or is moved to
+   item 0's gates (6.1, 6.2, 6.5, 9, 8). The copular c artifact belongs
+   after stage 4e and the NP continuation; the paired `.0517` invariant
+   is repaired in the preceding outstanding-gates round. Each line below lands with its receipt or is moved to
    item 0 or FutureWork with the reason written here; when the list is
    empty the 6 and 5.5 entries collapse to Done lines.
 
@@ -797,7 +821,9 @@ not by a passing identity lesson.
    **Item 4's learning gates** remain open: §9.6 graded versus shuffled
    (seed 23's shuffled control has lower R); global derivation optimality;
    per-level residual/collapse measurements and exposure; learned repeated-cat
-   recognition and all-level XOR. The original failed native run is not
+   recognition. The standing all-level XOR/math regression comparison is
+   the preceding outstanding-gates round's §9.1 gate, not a deferred
+   learning campaign. The original failed native run is not
    regraded or extended. The mechanism and controlled carrier certificates
    do not satisfy these learning gates ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
 

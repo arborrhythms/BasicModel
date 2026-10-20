@@ -1,0 +1,170 @@
+{
+  "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": {
+    "seed": 3491438094,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 102,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      },
+      {
+        "index": 1,
+        "scope": "common per-stage constructor",
+        "parameters": 102,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 42,
+        "with_prior": 42,
+        "coordinates": 1344,
+        "below_one": 1013,
+        "minimum": 0.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal": {
+    "seed": 2105377828,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 102,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "S_word": {
+        "calls": 1,
+        "with_prior": 1,
+        "coordinates": 32,
+        "below_one": 24,
+        "minimum": 0.0,
+        "maximum": 1.0
+      }
+    }
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal": {
+    "seed": 484835009,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 117,
+        "gains": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "prime": true,
+        "initial_parameters_equal": true,
+        "unequal_parameters": []
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 15,
+        "with_prior": 14,
+        "coordinates": 480,
+        "below_one": 168,
+        "minimum": 0.7188517451286316,
+        "maximum": 1.0
+      },
+      "S_word": {
+        "calls": 30,
+        "with_prior": 30,
+        "coordinates": 960,
+        "below_one": 960,
+        "minimum": 0.0,
+        "maximum": 0.9116455316543579
+      },
+      "S": {
+        "calls": 180,
+        "with_prior": 180,
+        "coordinates": 15408,
+        "below_one": 3238,
+        "minimum": 0.8889471888542175,
+        "maximum": 1.0
+      },
+      "D": {
+        "calls": 60,
+        "with_prior": 56,
+        "coordinates": 180,
+        "below_one": 2,
+        "minimum": 0.9453170299530029,
+        "maximum": 1.0
+      },
+      "R": {
+        "calls": 60,
+        "with_prior": 60,
+        "coordinates": 180,
+        "below_one": 2,
+        "minimum": 0.9454262852668762,
+        "maximum": 1.0
+      },
+      "other_closing": {
+        "calls": 56,
+        "with_prior": 56,
+        "coordinates": 168,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  }
+}

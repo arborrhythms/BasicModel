@@ -4,6 +4,52 @@ from unittest.mock import patch
 import torch
 
 
+def retained_bank_distributions(model):
+    """Audit the native chooser with guaranteed retained-context coverage.
+
+    An untrained document reader need not construct an individual at all.
+    Supply stored context here without training or forcing a chooser action;
+    the ordinary document audit remains separate and unchanged.
+    """
+    from Layers import TernaryTruthStore
+    from ReferenceContext import ReferenceBank
+    language = model.languageSpace
+    layer = language.language_layer.operation_layer
+    like = next(layer.parameters())
+    width = layer.d_model
+    records = []
+    for order in (0, 2):  # Order-one binding belongs to the close-time resolver.
+        for count in (1, 4, 16):
+            # Distinct, nonnegative descriptions; no RNG draw or lexical hint.
+            points = torch.arange(1, (count+2)*width+1, device=like.device,
+                                  dtype=like.dtype).reshape(count+2, width)
+            points = torch.nn.functional.normalize(points, dim=-1)
+            store = TernaryTruthStore(width, capacity=count)
+            rows = [store.append_idea(point, order=order, document_key='retained-context',
+                                     sentence_index=i) for i, point in enumerate(points[:count])]
+            ids = store.row_ids[rows].to(device=like.device)[None]
+            bank = ReferenceBank(ids, points[:count][None], torch.ones_like(ids, dtype=torch.bool),
+                torch.zeros_like(ids, dtype=torch.bool), points[0][None],
+                torch.ones(1, device=like.device, dtype=torch.bool), column_ids=ids.flatten(),
+                interpreter=model._concept_owner().interpret,
+                associations=ids.new_empty(0, 2), orders=torch.full_like(ids, order),
+                close_references=True)
+            buffer = points[-2:][None]
+            identities = torch.arange(1, 3, device=like.device, dtype=torch.long)[None]
+            state = (buffer, ids.new_tensor([2]), torch.full_like(identities, order),
+                     torch.zeros_like(identities), identities, buffer.new_ones(1, 2))
+            scope = torch.stack((torch.zeros_like(identities), identities), -1)
+            with patch.object(language, '_reference_bank', bank, create=True), \
+                    patch.object(layer, '_expectation_prime', points[0][None], create=True), \
+                    binding_distributions() as observed, torch.no_grad():
+                language.choose_operation(state, torch.ones(1, device=like.device, dtype=torch.bool),
+                    slots=1, sample=False, reference_scope=scope, policy_grad=False)
+            for item in observed:
+                item.update(context='controlled_retained_bank', stored_count=count, order=order)
+            records.extend(observed)
+    return records
+
+
 @contextmanager
 def binding_distributions():
     from Language import OperationSelectionLayer

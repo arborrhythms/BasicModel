@@ -13,7 +13,14 @@ def value_digest(value, seen=None, cache=None):
     if torch.is_tensor(value):
         data=value.detach().cpu()
         if data.layout != torch.strided:
-            data=data.to_dense()
+            # A sparse dictionary's logical capacity can be enormous. Audit
+            # its canonical occupied storage without materializing that space.
+            data=data.to_sparse_coo().coalesce()
+            indices,values=data.indices(),data.values()
+            result=('sparse_tensor',str(data.dtype),tuple(data.shape),
+                    value_digest(indices),value_digest(values))
+            cache[id(value)]=result
+            return result
         data=data.contiguous()
         result = ('tensor',str(data.dtype),tuple(data.shape),hashlib.sha256(
             data.reshape(-1).view(torch.uint8).numpy().tobytes()).hexdigest())

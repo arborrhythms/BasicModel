@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition_keep_probe.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-keep"
+  ],
+  "pid": 56957,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2030291440,
+  "elapsed_seconds": 50.76101112505421,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-keep.log"
+}
