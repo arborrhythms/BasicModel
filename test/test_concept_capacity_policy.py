@@ -112,8 +112,9 @@ def test_serial_property_autobind_does_not_persist_sentence_chain():
         percept_store=None, ws=_property_ws())
 
     alloc = cs._concept_allocator
-    assert set(cs.definitions._forms) == {"ab", "cd"}
-    assert alloc.next_id == 5                    # two atomic A/B/C triples
+    assert set(alloc.word_forms) == {"ab", "cd"}
+    assert not cs.definitions.word_ids
+    assert alloc.next_id == 3                    # two admitted forms, no invented objects
     assert not hasattr(alloc, "joint")
     assert not hasattr(alloc, "chain_idx")
     assert alloc.relate_idx == {}

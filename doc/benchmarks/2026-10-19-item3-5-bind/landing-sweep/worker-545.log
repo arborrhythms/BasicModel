@@ -1,0 +1,43 @@
+......FF                                                                 [100%]
+=================================== FAILURES ===================================
+________ test_live_mint_rekeys_pending_and_completed_definitions[False] ________
+test/test_operators_round3a.py:133: in test_live_mint_rekeys_pending_and_completed_definitions
+    assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word
+E   AssertionError: assert None == 1
+E    +  where None = word(identity='24800bb800380ea03f000000')
+E    +    where word = <Definitions.DefinitionIndex object at 0x122a1fad0>.word
+E    +      where <Definitions.DefinitionIndex object at 0x122a1fad0> = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).definitions
+E    +    and   '24800bb800380ea03f000000' = <built-in method hex of bytes object at 0x122a41230>()
+E    +      where <built-in method hex of bytes object at 0x122a41230> = b'$\x80\x0b\xb8\x008\x0e\xa0?\x00\x00\x00'.hex
+E    +        where b'$\x80\x0b\xb8\x008\x0e\xa0?\x00\x00\x00' = <function WordIdentity.key at 0x11fa6c7c0>(tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0.]))
+E    +          where <function WordIdentity.key at 0x11fa6c7c0> = WordIdentity().key
+E    +          and   tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0.]) = form(b'calaba')
+E    +            where form = WordIdentity().form
+________ test_live_mint_rekeys_pending_and_completed_definitions[True] _________
+test/test_operators_round3a.py:133: in test_live_mint_rekeys_pending_and_completed_definitions
+    assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word
+E   AssertionError: assert None == 1
+E    +  where None = word(identity='24800bb800380ea03f000000')
+E    +    where word = <Definitions.DefinitionIndex object at 0x10cfa86b0>.word
+E    +      where <Definitions.DefinitionIndex object at 0x10cfa86b0> = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).definitions
+E    +    and   '24800bb800380ea03f000000' = <built-in method hex of bytes object at 0x142e5cf90>()
+E    +      where <built-in method hex of bytes object at 0x142e5cf90> = b'$\x80\x0b\xb8\x008\x0e\xa0?\x00\x00\x00'.hex
+E    +        where b'$\x80\x0b\xb8\x008\x0e\xa0?\x00\x00\x00' = <function WordIdentity.key at 0x11fa6c7c0>(tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0.]))
+E    +          where <function WordIdentity.key at 0x11fa6c7c0> = WordIdentity().key
+E    +          and   tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0.]) = form(b'calaba')
+E    +            where form = WordIdentity().form
+=============================== warnings summary ===============================
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16028: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    if index is not None and float(store.features.values[index]) == 0:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+FAILED test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]
+2 failed, 6 passed, 2 warnings in 2.70s

@@ -1,0 +1,18 @@
+FF......                                                                 [100%]
+=================================== FAILURES ===================================
+____________________________ test_operator_coverage ____________________________
+test/test_role_collapsed_grammar.py:149: in test_operator_coverage
+    assert not missing, f"{_GRAMMAR_NAME} missing ops: {missing}"
+E   AssertionError: complete.grammar missing ops: {'bind'}
+E   assert not {'bind'}
+_________________________ test_forward_reverse_pairing _________________________
+test/test_role_collapsed_grammar.py:157: in test_forward_reverse_pairing
+    assert _REQUIRED_OPS <= up
+E   AssertionError: assert {'adverb', 'a...unction', ...} <= {'adverb', 'a...e_unary', ...}
+E
+E     Extra items in the left set:
+E     'bind'
+=========================== short test summary info ============================
+FAILED test/test_role_collapsed_grammar.py::test_operator_coverage - Assertio...
+FAILED test/test_role_collapsed_grammar.py::test_forward_reverse_pairing - As...
+2 failed, 6 passed in 2.58s

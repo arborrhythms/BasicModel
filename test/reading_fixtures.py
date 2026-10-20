@@ -288,3 +288,17 @@ def use_eager_reading(monkeypatch):
         return values
     monkeypatch.setattr(util, "TheCompileBackend", "none")
     monkeypatch.setattr(torch, "while_loop", eager_while)
+
+
+def supply_object(owner, word):
+    """Supply a native object definition; merely reading a form cannot do so."""
+    obj = owner.new_concept()
+    parts, wholes = tuple(owner.concept_parts(word)), tuple(owner.concept_wholes(word))
+    for part in parts:
+        owner.add_part(obj, part)
+    for whole in wholes:
+        owner.add_whole(obj, whole)
+    owner._populate_concept_weights(obj, witness=(parts, wholes), word_reading=True)
+    owner._csw_concept_row(0, obj)
+    owner.interpret.define(word, obj)
+    return obj

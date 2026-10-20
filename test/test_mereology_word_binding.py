@@ -7,7 +7,9 @@ from test_word_interpretation import _operator
 def test_word_spelling_is_ordered_and_binding_is_idempotent():
     cs, interpret = _operator()
     word = interpret.lookup_word([10, 11, 12], [], form='abc')
-    obj = interpret.forward(word)
+    from reading_fixtures import supply_object
+    obj = supply_object(cs, word)
+    assert interpret.forward(word) == obj
     assert interpret.lookup_word([10, 11, 12], [], form='abc') == word
     assert interpret.forward(word) == obj
     assert set(cs.concept_parts(word)) == {10, 11, 12}
@@ -31,7 +33,9 @@ def test_two_words_do_not_create_a_sentence_concept():
 def test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders(monkeypatch):
     cs, interpret = _operator()
     word = interpret.lookup_word([10, 11], [], form='ab')
-    obj = interpret.forward(word)
+    from reading_fixtures import supply_object
+    obj = supply_object(cs, word)
+    assert interpret.forward(word) == obj
     monkeypatch.setattr(cs, 'taxonomy_children', lambda *a: pytest.fail('taxonomy walk during translation'))
     assert cs.definitions.deref(word) == obj
     assert not hasattr(WholeSpace, 'taxonomy_children')

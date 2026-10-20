@@ -5,12 +5,11 @@ Published bases: BasicModel `d6eb0cf3b` (source `bfc834d79`);
 WikiOracle `cb4d718be`. This is step 1 of the
 [ordered plan](../../plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19),
 following the [concrete bind design](../../plans/2026-10-19-bind-thought-operation.md).
-It is a mechanism candidate, not a learning result or a completed Item 3.5.
+Step 1 is accepted and its landing validation is complete; this is not a learning result or a completed Item 3.5.
 Final scoped validation: **334 passed, one prerequisite skip; 335/335 completed**
 in 168.54 s. Both unchanged decomposition lengths pass in both gain arms
 (4/4 certificates, all 8 companion questions correct). [Question tables](questions.md)
-report every generated case and native companion question. Review and landing
-remain open under the publish rule.
+report every generated case and native companion question. The [landing receipt](landing.md) records the one complete 5,907-case sweep, all 48 failures and their scoped repairs, the supplied-answer-kind correction, and the final native checks (72 passed, one prerequisite skip; both decomposition lengths pass in both arms). Publication to both mains precedes step 1b.
 Human-readable logs/HTML have trailing whitespace normalized where needed;
 their original bytes remain in adjacent `.raw.gz` files. JSON diagnostics
 retain the captured output. Generated source manifests are not retained.

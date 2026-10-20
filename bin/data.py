@@ -679,7 +679,6 @@ class Data():
         # Optional text answers remain loss-side labels; the loader tensors
         # are only batching sentinels, never a numeric answer vocabulary.
         self.text_answers = None
-        self.answer_mode = None
         self.grammar_lessons = {"train": [], "validation": [], "test": []}
         self.source_manifest = None
         # Parallel objective addresses for the Teacher's direct
@@ -758,7 +757,6 @@ class Data():
         """
         self.has_supervised_outputs = False
         self.text_answers = None
-        self.answer_mode = None
         self.source_manifest = {"dataset": str(dataset)}
         self.grammar_lessons = {"train": [], "validation": [], "test": []}
         self.source_addresses = {
@@ -1383,7 +1381,6 @@ class Data():
 
     def loadMathChain(self, dat=None):
         """Opaque-word worked corpus; labels are text, never numeral vectors."""
-        self.answer_mode = 'binding'
         self.__dict__.pop('math_range', None)
         self.__dict__.pop('math_problems', None)
         from math_chain_corpus import MathChainCorpus

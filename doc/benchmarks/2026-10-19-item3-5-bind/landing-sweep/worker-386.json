@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+    "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[None]",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[binding]",
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[referent]"
+  ],
+  "completed": [
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+    "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[None]",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[binding]",
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[referent]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01453749998472631,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004069169517606497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021216599270701408,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002482919953763485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006073750555515289,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[None]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014793958980590105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[binding]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004505419638007879,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[referent]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00041716708801686764,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -149,14 +149,16 @@ def test_nonrecurring_row_decays_and_is_recycled():
     assert cs.concept_id_at_row(old) is None
 
 
-def test_interpretation_replaces_the_word_row_without_inventing_a_kind():
+def test_interpretation_retains_the_form_and_supplied_object_without_inventing_a_kind():
     cs, _ = _fixture()
     before = len(cs._concept_allocator.layer()._tensor_rows)
-    word, obj = cs.interpret_word([1], 2, key='cat')
-    assert cs._csw_row_of(word) is None
+    word, _ = cs.interpret_word([1], 2, key='cat')
+    from reading_fixtures import supply_object
+    obj = supply_object(cs, word)
+    assert cs._csw_row_of(word) is not None
     row = cs._csw_row_of(obj)
     assert row in cs._witnessed_rows()
-    assert len(cs._concept_allocator.layer()._tensor_rows) == before + 1
+    assert len(cs._concept_allocator.layer()._tensor_rows) == before + 2
     assert cs.taxonomy_parents(obj) == []
 
 

@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+    "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+    "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+    "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-022.recycle.json"
+}

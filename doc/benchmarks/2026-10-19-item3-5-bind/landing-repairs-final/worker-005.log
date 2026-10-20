@@ -1,0 +1,9 @@
+........                                                                 [100%]
+=============================== warnings summary ===============================
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:10858: UserWarning: retired sentence/ARMA heads migrated to a fresh shared activation predictor
+    warnings.warn('retired sentence/ARMA heads migrated to a fresh shared activation predictor', UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 2 warnings in 23.16s

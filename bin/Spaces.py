@@ -14618,8 +14618,9 @@ class ConceptualSpace(Space):
                     wt = word_texts[b]
                     key = (wt[k] if wt is not None and k < len(wt) else None)
                     if key is not None:
-                        word = self.definitions.word(form=key)
-                        loc_sym = None if word is None else self.definitions.deref(word)
+                        word = self.interpret.word_for_form(key)
+                        loc_sym = (None if word is None else word if self.interpret.no_object(word)
+                                   else self.definitions.deref(word))
                 word_definition = loc_sym is not None
                 matched_parts = []
                 span_when = None
@@ -15375,8 +15376,7 @@ class ConceptualSpace(Space):
         # A word's properties describe it; they cannot make that word occur
         # in a bracket lacking its part. This gates lexical evidence only,
         # leaving the field's four-corner folds and property events intact.
-        index = self._definition_index()
-        word_rows = {self._csw_row_of(cid) for cid in (() if index is None else index.object_ids)}
+        word_rows = {self._csw_row_of(cid) for cid in self.interpret.lexical_identities()}
         word_rows.discard(None)
         for row in tuple(word_rows):
             word_rows.update(other for other, weight in self.concept_weights(row) if weight > 0)
@@ -16995,7 +16995,7 @@ class ConceptualSpace(Space):
         return operator
 
     def interpret_word(self, word_parts, word_whole, key=None, *, occurrence=None):
-        """One eager admission; the object's row replaces the word's row."""
+        """Admit a form and read its witnessed object, or the still-open form."""
         word = self.interpret.lookup_word(word_parts, word_whole, form=key)
         if word is None:
             return None
@@ -17054,12 +17054,15 @@ class ConceptualSpace(Space):
         if identity is not None:
             raw = native.bytes_for(int(pid))
             if identity.word_rows.get(raw) == int(pid):
-                return self.definitions.word(identity=identity.word_keys[raw].hex())
-        return self.definitions.word(unit=int(pid))
+                return self.interpret.word_for_form(raw)
+        word = self.definitions.word(unit=int(pid))
+        return word if word is not None else next((cid for cid, value in self.interpret._pending.items()
+            if (int(pid),) in value['parts']), None)
 
     def object_concept_of_percept(self, pid):
         word = self.concept_of_percept(pid)
-        return None if word is None else self.definitions.deref(word)
+        return (None if word is None else word if self.interpret.no_object(word)
+                else self.definitions.deref(word))
 
     def word_concept_of_object(self, cid):
         words = self.definitions.words(cid)

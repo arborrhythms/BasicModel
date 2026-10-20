@@ -216,6 +216,34 @@ def restore_warmup(model, path, restore):
         migrate=getattr(type(module),'migrate_expectation_checkpoint',None)
         if migrate is not None:migrate(module,saved,name+'.')
     current=model.state_dict()
+    # The native loader rebuilds pre-role resolver counts from retained
+    # occurrences once. Do not overwrite that migration with the old envelope.
+    from IndependentComponents import _unpack_state
+    from ThoughtReferences import bindings
+    for key,value in tuple(saved.items()):
+        if not key.endswith('reference_close._extra_state'):
+            continue
+        previous,actual=_unpack_state(value),_unpack_state(current[key])
+        if previous.get('version',1)>=2:
+            continue
+        for name in ('seen','cooccurrence','predicates','total'):
+            torch.testing.assert_close(actual[name],previous[name],rtol=0,atol=0)
+        resolver=model.get_submodule(key[:-len('._extra_state')])
+        associations={}
+        for row in range(len(resolver.store)):
+            context=bindings(resolver.store.meaning_of(row)).get('_individual_context')
+            if context is None:continue
+            context=dict(context)
+            atoms=resolver.support(resolver.coordinates(resolver.store.point_of_row(
+                int(resolver.store.row_ids[row]))))
+            heads=resolver.support(resolver._predicate(context))
+            for atom in atoms:
+                for head in heads:
+                    pair=(atom,head,context['role'])
+                    associations[pair]=associations.get(pair,0.)+int(resolver.store.witness_count[row])
+        assert actual['version']==2 and actual['associations']==associations
+        saved[key]=current[key].detach().clone()
+        drift[key]=dict(schema_migration='role counts v2 from retained occurrences')
     # The native loader authenticates and migrates pre-Item-4 estimate
     # sidecars. Restoring their old fingerprint bytes would undo that
     # migration while leaving the new sidecar in place, corrupting the next

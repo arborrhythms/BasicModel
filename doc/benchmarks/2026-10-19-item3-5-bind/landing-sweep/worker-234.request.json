@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/reports/Expectation outside attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/computational_theories.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/expectation_attention_neuroscience.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/memory_statistical_learning_attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/preattentive_prediction_audition.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/prediction_in_reading.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/visual_capture_inattentional_blindness.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/three-surfaces.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-234.recycle.json"
+}

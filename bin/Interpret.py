@@ -93,7 +93,9 @@ class InterpretLayer(GrammarLayer):
         if getattr(cs, '_online_learning_frozen', False):
             # Held-out reads may resolve existing definitions, but cannot
             # reserve identities, add decompositions or finish pending words.
-            return index.word(unit=parts, form=form)
+            known = index.word(unit=parts, form=form)
+            return known if known is not None else next((cid for cid, value in self._pending.items()
+                if parts in value['parts'] or (form is not None and form_key(form) in value['forms'])), None)
         model = getattr(cs, '_model', None)
         ps = getattr(model, 'perceptualSpace', None)
         native = getattr(ps, 'percept_store', None)
@@ -167,7 +169,7 @@ class InterpretLayer(GrammarLayer):
             # native discovery: identify them through the definition table.
             # A field with witnessed objects still owns its case rows, so a
             # word cannot occupy a competing row before its unit recurs.
-            lexical = set(index.word_ids) | set(index.object_ids)
+            lexical = set(index.word_ids) | set(index.object_ids) | set(self._pending)
             discovering = any(cs.concept_id_at_row(row) not in lexical
                               for row in cs._witnessed_rows())
         if discovering:

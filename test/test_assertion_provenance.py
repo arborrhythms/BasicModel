@@ -12,7 +12,7 @@ def test_provisioning_retains_completed_fields_and_shared_row_ids():
     asserted = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
     definitions = store.relations(store.REL_DEF).tolist()
     assert len(asserted) == 3
-    assert definitions
+    assert not definitions, "reading a form does not invent a DEF object"
     assert len(store) == len(asserted) + len(definitions)
     for row in asserted:
         assert int(store.meaning_of(row).role_mask.sum()) in (1, 3)

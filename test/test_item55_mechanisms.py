@@ -60,13 +60,19 @@ def _stream_code_banks(tmp_path,monkeypatch):
             model.runBatch(train=False,split='validation',batchSize=2,
                 batch_override=(raw,torch.empty(2,0)),document_keys=('a','b'))
             owner=model._concept_owner();book=owner.similarity_codebook
-            cid=owner.definitions.deref(owner.definitions.word(form='cat'))
+            cid=owner.interpret.forward(owner.interpret.word_for_form('cat'))
             row=owner._csw_row_of(cid)
             point=book.lookup_rows(torch.tensor(row))
             meaning=ConceptualMeaning(torch.stack((point,point*0,point*0)),
                 torch.tensor([True,False,False]),role_refs=(('sym',cid),None,None))
-            model.symbolSpace.ltm_store.append_meaning(meaning,kind='observation',
-                stream=1,document_key='c',sentence_index=1)
+            # The certificate supplies two distinct situated observations.
+            # Bare objectless readings need not have closed point-valued rows.
+            from dataclasses import replace
+            from ClauseRow import Clause
+            for stream, value in enumerate((replace(meaning,roles=meaning.roles*.5),meaning)):
+                model.symbolSpace.ltm_store.write_clause(
+                    Clause(value, point=value.roles[0], refs=(cid,-1,-1), order=0),
+                    stream=stream, document_key=('context',stream), sentence_index=1)
             book.mereology.begin_forward()
             leaves=book.lookup_rows(torch.tensor([[row],[row]]),streams=True)
             assert not torch.equal(leaves[0],leaves[1]),'fixture must exercise different occurrence contexts'
@@ -334,8 +340,10 @@ def _native_step_comparison(tmp_path, monkeypatch):
             original_binary = operation.chooser.score_binary
             original_unary = operation.chooser.score_unary
             def scores(x,candidates,*args,op_indices=None,unary=False,**kwargs):
-                if op_indices is None:
-                    return (original_unary if unary else original_binary)(x,candidates,*args,**kwargs)
+                names = operation.unary_names if unary else operation.op_names
+                if op_indices is None or bool((op_indices >= len(names)).any()):
+                    return (original_unary if unary else original_binary)(
+                        x,candidates,*args,op_indices=op_indices,**kwargs)
                 values = x.new_full(candidates.shape[:-1],-1e6)
                 names = operation.unary_names if unary else operation.op_names
                 stop=x.new_full((*x.shape[:2],1),-1e6)

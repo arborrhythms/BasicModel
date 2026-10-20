@@ -58,7 +58,24 @@ def align(model, state, old):
             result[key] = value.detach().clone()
             drift[key] = dict(action='initialized empty stream history; checkpoint has no stream witnesses')
     for key in live:
-        if key.endswith('.parts_of_speech._extra_state') and key not in result:
+        if not key.endswith('.parts_of_speech._extra_state'):
+            continue
+        if key in result:
+            from IndependentComponents import _pack_state, _unpack_state
+            state = _unpack_state(result[key])
+            owner = model.get_submodule(key[:-len('._extra_state')])
+            if state['version'] != 1:
+                raise ValueError('unknown occupation checkpoint schema')
+            if tuple(state['arguments']) != owner.arguments:
+                if old is None:
+                    raise ValueError('occupation migration requires the saved grammar catalogue')
+                counts = {word: {argument: count for argument, count in values.items()
+                                 if argument in owner.index}
+                          for word, values in state['counts'].items()}
+                result[key] = _pack_state(dict(state, arguments=owner.arguments, counts=counts))
+                drift[key] = dict(action='aligned declared formal arguments',
+                                  retired=sorted(set(state['arguments']) - set(owner.arguments)))
+        else:
             if old is not None and old.get('occupation_schema') == 1:
                 raise ValueError('checkpoint is missing its occupation state')
             from PartsOfSpeech import PartsOfSpeech
@@ -88,8 +105,6 @@ def align(model, state, old):
                     transforms[key] = (target,None,None)
         result.update(pending)
 
-    retire_markers()
-
     rules = _mapping(old['rule_keys'],new['rule_keys'])
     roles = _mapping(old['roles'],new['roles'])
     categories = _mapping(old['categories'],new['categories'])
@@ -108,6 +123,34 @@ def align(model, state, old):
         for alias,module in model.named_modules(remove_duplicate=False):
             if module is owner:
                 operations[alias+'.'] = (binary,unary,tools)
+                # Operation modules have positional storage too. Remap all
+                # aliases from the same declared catalogue before inspecting
+                # tensor shapes; a shifted operator must not inherit its
+                # predecessor's parameters or optimizer moments.
+                for kind, field in (('binary', 'ops'), ('unary', 'unary_ops')):
+                    previous = _identities(old_ops[kind])
+                    current = _identities(new_ops[kind])
+                    head = f'{alias}.{field}.'
+                    pending = {}
+                    for key in [key for key in result if key.startswith(head)]:
+                        position, suffix = key[len(head):].split('.', 1)
+                        index = int(position)
+                        if index >= len(previous):
+                            raise ValueError(f'grammar catalogue does not describe operator: {key}')
+                        value = result.pop(key)
+                        identity = previous[index]
+                        if identity not in current:
+                            drift[key] = dict(action='dropped retired operator')
+                            transforms[key] = None
+                            continue
+                        target = f'{head}{current.index(identity)}.{suffix}'
+                        pending[target] = value
+                        if key != target:
+                            drift[key] = dict(action='renamed', target=target)
+                            transforms[key] = (target, None, None)
+                    result.update(pending)
+
+    retire_markers()
 
     for key,value in tuple(result.items()):
         if key not in live or not torch.is_tensor(value):
@@ -120,7 +163,7 @@ def align(model, state, old):
         elif key.endswith('.category_embedding.weight'):
             axis,indices=0,categories
             indices += tuple(range(len(indices),live[key].shape[0]))
-        elif '.operation_layer.' in key:
+        elif any(key.startswith(prefix) for prefix in operations):
             matches = [axes for prefix,axes in operations.items() if key.startswith(prefix)]
             if len(matches) != 1:
                 raise ValueError(f'grammar catalogue has no unique operation owner: {key}')

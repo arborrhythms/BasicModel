@@ -1,0 +1,32 @@
+..F...                                                                   [100%]
+=================================== FAILURES ===================================
+________ test_serial_property_autobind_does_not_persist_sentence_chain _________
+test/test_concept_capacity_policy.py:115: in test_serial_property_autobind_does_not_persist_sentence_chain
+    assert set(cs.definitions._forms) == {"ab", "cd"}
+E   AssertionError: assert set() == {'ab', 'cd'}
+E
+E     Extra items in the right set:
+E     'ab'
+E     'cd'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_concept_capacity_policy.py:75: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    assert cs._csw_concept_row(0, 1000 + row) == row
+
+test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_concept_capacity_policy.py:88: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    assert cs._csw_concept_row(0, 1000 + row) == row
+
+test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_concept_capacity_policy.py:145: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    cs._csw_concept_row(0, 1000 + row)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain
+1 failed, 5 passed, 4 warnings in 2.89s

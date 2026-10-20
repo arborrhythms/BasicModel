@@ -1,0 +1,49 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+  ],
+  "completed": [
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.2486632908694446,
+      "message": "test/test_grammar_object_leaves.py:45: in test_grammar_resolves_each_word_to_its_full_object_code\n    expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:100: in deref\n    choices = self.objects(word)\n              ^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:88: in objects\n    return self._objects.get(int(word), ())\n                             ^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.7452151658944786,
+      "message": "test/test_grammar_object_leaves.py:45: in test_grammar_resolves_each_word_to_its_full_object_code\n    expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:100: in deref\n    choices = self.objects(word)\n              ^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:88: in objects\n    return self._objects.get(int(word), ())\n                             ^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.7762337080202997,
+      "message": "test/test_grammar_object_leaves.py:45: in test_grammar_resolves_each_word_to_its_full_object_code\n    expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:100: in deref\n    choices = self.objects(word)\n              ^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:88: in objects\n    return self._objects.get(int(word), ())\n                             ^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

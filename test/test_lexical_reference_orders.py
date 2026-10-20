@@ -12,7 +12,9 @@ from test_cs_sparse_weights import _cs
 
 def vocabulary():
     cs = _cs(nS=256, order=3)
-    word, obj = cs.interpret_word([7], [], key='cat')
+    word, _ = cs.interpret_word([7], [], key='cat')
+    from reading_fixtures import supply_object
+    obj = supply_object(cs, word)
     ids = [obj]
     for order in range(1, 3):
         cid = cs.new_concept()
@@ -75,7 +77,9 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     """Operand positions and the configured storage rung impose no order ceiling."""
     from ReferenceContext import reference_requests, result_order
     cs = _cs(nS=256, order=1)
-    word, raw = cs.interpret_word([7], [], key='statement')
+    word, _ = cs.interpret_word([7], [], key='statement')
+    from reading_fixtures import supply_object
+    raw = supply_object(cs, word)
     individual = cs.new_concept()
     cs.add_part(individual, ('sym', raw))
     kinds = [cs.new_concept(), cs.new_concept()]

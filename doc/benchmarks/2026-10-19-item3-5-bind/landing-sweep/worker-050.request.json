@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-050.recycle.json"
+}

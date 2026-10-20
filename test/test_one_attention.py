@@ -421,12 +421,14 @@ def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world']))
         forms, _, _, live = model._attention_forms
         spans = model._attention_spans
-        known = torch.tensor([[bool(form) and model._concept_owner().definitions.word(form=form)
+        known = torch.tensor([[bool(form) and model._concept_owner().interpret.word_for_form(form)
                                is not None for form in row] for row in forms]) & live
         assert known.any()
         width = int(torch.where(known, torch.arange(known.shape[1])[None]+1, 0).max())
         reference = native_word_poles(model, spans[:, :width],
                                      [row[:width] for row in forms], known[:, :width])
+        assert reference[known[:, :width]].any(), 'admitted forms retain native identification evidence'
+        assert not model._concept_owner().definitions.word_ids
         fi = model.perceptualSpace._forward_input
         native_width = fi['native_indices'].shape[1]
         fi['native_indices'] = torch.nn.functional.pad(fi['native_indices'], (0, 19), value=-1)

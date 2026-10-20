@@ -1,0 +1,26 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_word_surface_and_reassociated_object_survive_strict_checkpoint ______
+test/test_word_store.py:818: in test_word_surface_and_reassociated_object_survive_strict_checkpoint
+    store._update_semantic_fingerprint(old)
+bin/Layers.py:8894: in _update_semantic_fingerprint
+    i = int(idx)
+        ^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+___ test_missing_surface_snapshot_is_a_staging_error_without_input_fallback ____
+test/test_word_store.py:865: in test_missing_surface_snapshot_is_a_staging_error_without_input_fallback
+    assert ready and not bool(valid.any())
+E   assert (True and not True)
+E    +  where True = bool(tensor(True))
+E    +    where tensor(True) = <built-in method any of Tensor object at 0x126a09d60>()
+E    +      where <built-in method any of Tensor object at 0x126a09d60> = tensor([[[ True, False, False,  ..., False, False, False],\n         [ True, False, False,  ..., False, False, False],\n...         [False, False, False,  ..., False, False, False],\n         [False, False, False,  ..., False, False, False]]]).any
+=============================== warnings summary ===============================
+test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint
+FAILED test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback
+2 failed, 1 warning in 3.40s

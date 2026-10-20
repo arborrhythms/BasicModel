@@ -1,0 +1,17 @@
+.....F..                                                                 [100%]
+=================================== FAILURES ===================================
+_____ test_frozen_interpretation_reads_known_without_learning_or_reserving _____
+test/test_review10_contracts.py:73: in test_frozen_interpretation_reads_known_without_learning_or_reserving
+    assert interpret.lookup_word([10], [2], form='known') == word
+E   AssertionError: assert None == 1
+E    +  where None = lookup_word([10], [2], form='known')
+E    +    where lookup_word = InterpretLayer().lookup_word
+=============================== warnings summary ===============================
+test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving
+1 failed, 7 passed, 1 warning in 3.44s

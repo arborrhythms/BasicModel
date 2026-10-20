@@ -168,7 +168,7 @@ def test_idea_caches_the_operand_addresses_recorded_before_fusion():
         targets=torch.tensor([0, 1, 1]), end_state=torch.stack((result, result * 0, result * 0)),
         operation_values=frames, operation_refs=torch.tensor([[-1, -1], [-1, -1], [1, -1]]))
     ended = finish_clause(language, entry)
-    assert ended.refs == (1, -1, -1)
+    assert ended.refs == (1, 8, -1)  # No binding menu may erase the known predicate.
 
 
 

@@ -78,7 +78,8 @@ def test_interpreted_object_keeps_the_native_features_in_one_row():
     assert {col for row, col in features._index if row == a_row} == {4, 4 * int(WORD) + 2}
     assert Spaces._concept_alloc_of(cs).layer().feature_groups[a_row, 4] == (1, 2)
     b_row = cs._csw_concept_row(0, B)
-    assert b_row == a_row and cs._csw_row_of(A) is None
+    assert A == B and b_row == a_row == cs._csw_row_of(A)
+    assert not cs.definitions.objects(A), "native form features do not invent an object"
 
 
 

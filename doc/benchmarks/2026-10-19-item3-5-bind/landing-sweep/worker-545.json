@@ -1,0 +1,104 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+    "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+    "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_projection_is_only_binding_view",
+    "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[True]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]"
+  ],
+  "completed": [
+    "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+    "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+    "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_projection_is_only_binding_view",
+    "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[True]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022730249911546707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008777457987889647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_projection_is_only_binding_view",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021376874996349216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008596915984526277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004807542078197002,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008735124953091145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.04313100012950599,
+      "message": "test/test_operators_round3a.py:133: in test_live_mint_rekeys_pending_and_completed_definitions\n    assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word\nE   AssertionError: assert None == 1\nE    +  where None = word(identity='24800bb800380ea03f000000')\nE    +    where word = <Definitions.DefinitionIndex object at 0x122a1fad0>.word\nE    +      where <Definitions.DefinitionIndex object at 0x122a1fad0> = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).definitions\nE    +    and   '24800bb800380ea03f000000' = <built-in method hex of bytes object at 0x122a41230>()\nE    +      where <built-in method hex of bytes object at 0x122a41230> = b'$\\x80\\x0b\\xb8\\x008\\x0e\\xa0?\\x00\\x00\\x00'.hex\nE    +        where b'$\\x80\\x0b\\xb8\\x008\\x0e\\xa0?\\x00\\x00\\x00' = <function WordIdentity.key at 0x11fa6c7c0>(tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n        0., 0., 0., 0., 0., 0.]))\nE    +          where <function WordIdentity.key at 0x11fa6c7c0> = WordIdentity().key\nE    +          and   tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n        0., 0., 0., 0., 0., 0.]) = form(b'calaba')\nE    +            where form = WordIdentity().form",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.02420033304952085,
+      "message": "test/test_operators_round3a.py:133: in test_live_mint_rekeys_pending_and_completed_definitions\n    assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word\nE   AssertionError: assert None == 1\nE    +  where None = word(identity='24800bb800380ea03f000000')\nE    +    where word = <Definitions.DefinitionIndex object at 0x10cfa86b0>.word\nE    +      where <Definitions.DefinitionIndex object at 0x10cfa86b0> = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).definitions\nE    +    and   '24800bb800380ea03f000000' = <built-in method hex of bytes object at 0x142e5cf90>()\nE    +      where <built-in method hex of bytes object at 0x142e5cf90> = b'$\\x80\\x0b\\xb8\\x008\\x0e\\xa0?\\x00\\x00\\x00'.hex\nE    +        where b'$\\x80\\x0b\\xb8\\x008\\x0e\\xa0?\\x00\\x00\\x00' = <function WordIdentity.key at 0x11fa6c7c0>(tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n        0., 0., 0., 0., 0., 0.]))\nE    +          where <function WordIdentity.key at 0x11fa6c7c0> = WordIdentity().key\nE    +          and   tensor([0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1.,\\n        0., 1., 0., 0., 0., 0., 0., 0....., 0.,\\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n        0., 0., 0., 0., 0., 0.]) = form(b'calaba')\nE    +            where form = WordIdentity().form",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

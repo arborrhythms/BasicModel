@@ -1,0 +1,46 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml] ___
+test/test_grammar_object_leaves.py:45: in test_grammar_resolves_each_word_to_its_full_object_code
+    expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:100: in deref
+    choices = self.objects(word)
+              ^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:88: in objects
+    return self._objects.get(int(word), ())
+                             ^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+___ test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml] ____
+test/test_grammar_object_leaves.py:45: in test_grammar_resolves_each_word_to_its_full_object_code
+    expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:100: in deref
+    choices = self.objects(word)
+              ^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:88: in objects
+    return self._objects.get(int(word), ())
+                             ^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+_______ test_grammar_resolves_each_word_to_its_full_object_code[aligned] _______
+test/test_grammar_object_leaves.py:45: in test_grammar_resolves_each_word_to_its_full_object_code
+    expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:100: in deref
+    choices = self.objects(word)
+              ^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:88: in objects
+    return self._objects.get(int(word), ())
+                             ^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+=============================== warnings summary ===============================
+test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]
+3 failed, 1 warning in 5.40s

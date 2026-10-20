@@ -154,12 +154,14 @@ def test_populate_then_resolve_identities_live_lifecycle():
 
 def test_interpret_word_structure():
     cs = _cs()
-    A, B = cs.interpret_word([65, 66, 67], WORD)
+    A, _ = cs.interpret_word([65, 66, 67], WORD)
+    from reading_fixtures import supply_object
+    B = supply_object(cs, A)
     assert set(cs.concept_parts(A)) == {65, 66, 67}
     assert cs.concept_wholes(A) == [WORD]
     assert set(cs.concept_parts(B)) == {65, 66, 67}
     assert cs.concept_wholes(B) == [WORD]
-    assert cs._csw_row_of(A) is None
+    assert cs._csw_row_of(A) is not None
     assert cs._csw_row_of(B) is not None
     assert cs.definitions.deref(A) == B
 
@@ -229,7 +231,9 @@ def test_object_symbol_is_refinable_not_yet_identity():
 
 def test_resolve_identities_does_not_collapse_unspecified_object():
     cs = _cs()
-    A, B = cs.interpret_word([65, 66, 67], WORD)
+    A, _ = cs.interpret_word([65, 66, 67], WORD)
+    from reading_fixtures import supply_object
+    B = supply_object(cs, A)
     resolved = cs.resolve_identities()
     # B (ATOM <= UNIVERSE) is the unspecified object -> NOT collapsed; it stays
     # active for refinement and is not recorded as a resolved identity.
@@ -465,13 +469,16 @@ def test_prune_drops_everything_when_other_whole_linked():
 
 def test_word_object_testimony_participation_strengthens_on_reoccurrence():
     cs = _cs_sparse_active()
-    A, B = cs.interpret_word([1, 2], 3, key="cat", occurrence=(0, 0))
+    A, _ = cs.interpret_word([1, 2], 3, key="cat")
+    from reading_fixtures import supply_object
+    B = supply_object(cs, A)
+    assert cs.interpret.forward(A, occurrence=(0, 0)) == B
     row = cs._csw_row_of(B)
     store = cs._concept_allocator.layer()
     # Exercise re-use after the ordinary value decay, not an already saturated gate.
     store.participation[row] = .25
     before = float(store.participation[row])
-    assert cs._csw_row_of(A) is None and cs.definitions.deref(A) == B
+    assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B
     assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
     assert before < float(store.participation[row]) <= 1.
-    assert cs._csw_row_of(A) is None and cs.definitions.deref(A) == B
+    assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B

@@ -61,7 +61,8 @@ def test_frozen_interpretation_reads_known_without_learning_or_reserving():
     from eval_nanochat_grammar import frozen_online_learning
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [1], form='known')
-    obj = interpret.forward(word)
+    from reading_fixtures import supply_object
+    obj = supply_object(cs, word)
     pending = interpret.lookup_word([8], [], form='pending')
     before = deepcopy(cs.definitions.description(word))
     identities = dict(_concept_alloc_of(cs).placement)
@@ -72,7 +73,8 @@ def test_frozen_interpretation_reads_known_without_learning_or_reserving():
         assert interpret.lookup_word([9], [], form='novel') is None
         assert interpret.lookup_word([10], [2], form='known') == word
         assert interpret.forward(word, occurrence=(99, 0)) == obj
-        assert interpret.forward(pending) is None
+        assert interpret.lookup_word([11], [3], form='pending') == pending
+        assert interpret.forward(pending) == pending  # Its admitted form stays readable.
         assert interpret.define(pending, obj) is None
         assert len(cs.definitions._store()) == definitions
         assert dict(_concept_alloc_of(cs).placement) == identities

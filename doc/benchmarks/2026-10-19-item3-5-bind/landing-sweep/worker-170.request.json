@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_decomposition_chooser.py::test_initial_choice_is_exactly_the_residual_argmin_without_rng",
+    "test/test_decomposition_chooser.py::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order",
+    "test/test_decomposition_chooser.py::test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming",
+    "test/test_decomposition_chooser.py::test_absent_target_is_counted_and_has_no_training_gradient",
+    "test/test_decomposition_chooser.py::test_uniform_round_and_action_proposal_carries_both_count_factors",
+    "test/test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-170.recycle.json"
+}

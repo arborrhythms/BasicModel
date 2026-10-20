@@ -133,8 +133,8 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
         raw = torch.zeros(1, 1, 8, dtype=torch.long)
         raw[0, 0, :len(word)] = torch.tensor(list(word.encode()))
         model.forward(raw)
-        word_id = cs.definitions.word(form=word)
-        cid, = cs.definitions.objects(word_id)
+        word_id = cs.interpret.word_for_form(word)
+        cid = cs.interpret.forward(word_id)
         carrier = model._combine_last_cs_sub
         slot = (carrier._concept_ids == cid).nonzero().flatten()
         assert len(slot) == 1, word
@@ -151,8 +151,8 @@ def test_more_than_eight_words_reuse_the_attended_field(tmp_path):
     carrier = model._combine_last_cs_sub
     leg = model.symbolSpace.forward_concept_to_symbol(carrier)
     for b, word in enumerate(words):
-        word_id = cs.definitions.word(form=word)
-        cid, = cs.definitions.objects(word_id)
+        word_id = cs.interpret.word_for_form(word)
+        cid = cs.interpret.forward(word_id)
         ids = carrier._concept_ids
         ids = ids[:, b] if ids.ndim == 2 else ids
         slot = (ids == cid).nonzero().flatten()

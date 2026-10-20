@@ -1,0 +1,114 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing/worker-000.json"
+      ],
+      "pid": 96519,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2101480448,
+      "elapsed_seconds": 80.56839908403344,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 28.49090937501751,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 2 (\u0394=6.007s)\r\nbatch = 4 (\u0394=6.480s)\r\nbatch = 6 (\u0394=10.234s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 1], \"question_source\": 3, \"episode\": true, \"work\": 175, \"answer\": \"four\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", -284838226991552333], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -284838226991552333], \"refs\": [[\"ltm\", \"address-v1\", 537660460989189223], [\"sym\", 4010033338316264258], [\"ltm\", \"address-v1\", 3317854644100594798]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"ltm\", \"address-v1\", 5112480217475837642], [\"ltm\", \"address-v1\", 3971860901301033104], [\"ltm\", \"address-v1\", 808598639923755280]], \"known_witnesses\": true, \"witness_texts\": [\"y is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 1], \"question_source\": 7, \"episode\": true, \"work\": 178, \"answer\": \"four\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", 573548959258110783], \"open\": [], \"expected_chain_length\": 1, \"inference_count\": 1, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", 573548959258110783], \"refs\": [[\"ltm\", \"address-v1\", -1499765695554630181], [\"sym\", 4010033338316264258], [\"ltm\", \"address-v1\", -236723623848964594]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"ltm\", \"address-v1\", -34491881028239050], [\"ltm\", \"address-v1\", -7378704643248848052], [\"ltm\", \"address-v1\", 6145542923210657769]], \"known_witnesses\": true, \"witness_texts\": [\"y is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 48.14524804195389,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 2 (\u0394=6.254s)\r\nbatch = 4 (\u0394=6.390s)\r\nbatch = 6 (\u0394=7.238s)\r\nbatch = 8 (\u0394=6.912s)\r\nbatch = 10 (\u0394=15.884s)\r\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"0\", \"pair\": [3, 2], \"question_source\": 5, \"episode\": true, \"work\": 455, \"answer\": \"five\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", -3336032979067523229], \"open\": [], \"expected_chain_length\": 2, \"inference_count\": 2, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -8119360074144493101], \"refs\": [[\"ltm\", \"address-v1\", 7719320542000109693], [\"sym\", 4010033338316264258], [\"ltm\", \"address-v1\", 7211267527207101012]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"ltm\", \"address-v1\", -5965009268148290770], [\"ltm\", \"address-v1\", 7354978869620695258], [\"ltm\", \"address-v1\", 7852481151916202450]], \"known_witnesses\": true, \"witness_texts\": [\"z is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}, {\"occurrence\": [\"ltm\", \"address-v1\", -3336032979067523229], \"refs\": [[\"ltm\", \"address-v1\", -5270723994139227937], [\"sym\", 4010033338316264258], [\"ltm\", \"address-v1\", 8973819229254247741]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"ltm\", \"address-v1\", -5473404074830695222], [\"ltm\", \"address-v1\", -8119360074144493101], [\"ltm\", \"address-v1\", 1398649273806093050]], \"known_witnesses\": true, \"witness_texts\": [\"y is z plus one.\", null, \"four plus one is five.\"], \"bound_words\": [\"five\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n{\"epoch\": 1, \"phase\": \"ordinary_certificate\", \"split\": \"train\", \"document\": \"1\", \"pair\": [3, 2], \"question_source\": 11, \"episode\": true, \"work\": 465, \"answer\": \"five\", \"bound_correct\": true, \"committed_binding\": [\"ltm\", \"address-v1\", 1450819904323826519], \"open\": [], \"expected_chain_length\": 2, \"inference_count\": 2, \"chain_correct\": true, \"inferences\": [{\"occurrence\": [\"ltm\", \"address-v1\", -8290473803712636751], \"refs\": [[\"ltm\", \"address-v1\", -5870949152933363771], [\"sym\", 4010033338316264258], [\"ltm\", \"address-v1\", 4143624189393780813]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"ltm\", \"address-v1\", -665716913467795916], [\"ltm\", \"address-v1\", 4645526681080038590], [\"ltm\", \"address-v1\", -6833339845197929729]], \"known_witnesses\": true, \"witness_texts\": [\"z is x plus one.\", \"x is three.\", \"three plus one is four.\"], \"bound_words\": [\"four\"]}, {\"occurrence\": [\"ltm\", \"address-v1\", 1450819904323826519], \"refs\": [[\"ltm\", \"address-v1\", -7740389322549684374], [\"sym\", 4010033338316264258], [\"ltm\", \"address-v1\", -7750939685856688959]], \"open\": [], \"operation\": \"query\", \"witnesses\": [[\"ltm\", \"address-v1\", -7540231376977836200], [\"ltm\", \"address-v1\", -8290473803712636751], [\"ltm\", \"address-v1\", -8741351580689636785]], \"known_witnesses\": true, \"witness_texts\": [\"y is z plus one.\", null, \"four plus one is five.\"], \"bound_words\": [\"five\"]}], \"operations\": [\"query\", \"ask\", \"query\", \"ask\", \"query\", \"conclude\", \"query\", \"conclude\", \"query\", \"conclude\"]}\n\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing",
+  "elapsed_seconds": 84.86871741712093,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2101480448,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing/collect.json"
+    ],
+    "pid": 96486,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434881736,
+    "elapsed_seconds": 3.6019145408645272,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/bind-decomposition-zero-landing/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02649012510664761,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

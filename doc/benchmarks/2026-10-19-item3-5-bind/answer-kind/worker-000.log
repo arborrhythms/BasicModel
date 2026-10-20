@@ -1,0 +1,22 @@
+...............F                                                         [100%]
+=================================== FAILURES ===================================
+__________ test_thought_judge_uses_the_supplied_answer_kind[referent] __________
+test/test_item4_step0.py:134: in test_thought_judge_uses_the_supplied_answer_kind
+    assert float(score(0, SimpleNamespace(meaning=meaning))) == (.125 if kind == 'referent' else .75)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtAnswer.py:48: in score
+    bound_view(state, observation, sentence, row, result.meaning))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtAnswer.py:9: in bound_view
+    language = list(state[1])
+                    ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=============================== warnings summary ===============================
+test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_item4_step0.py:75: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    original = torch.sparse_coo_tensor(indices, values, shape)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[referent]
+1 failed, 15 passed, 1 warning in 2.49s

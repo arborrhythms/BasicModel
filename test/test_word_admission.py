@@ -27,7 +27,10 @@ def test_23_fuse_parts_before_word_admission(tmp_path):
     word = cs.interpret.lookup_word(parts, ws.property_rows_for_bytes('love'), form='love')
     assert set(cs.concept_parts(word)) == set(ps.percept_store.identity.admit(b'love'))
     cs.interpret.forward(word)
-    assert cs.definitions.word(identity=ps.percept_store.identity.key(ps.percept_store.identity.form(b'love')).hex()) == word
+    assert cs.interpret.word_for_form('love') == word
+    assert cs.interpret._pending[word]['identity_key'] == ps.percept_store.identity.key(
+        ps.percept_store.identity.form(b'love')).hex()
+    assert not cs.definitions.objects(word)
 
 
 def test_23_same_parts_after_property_change_write_nothing():

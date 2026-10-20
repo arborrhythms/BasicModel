@@ -1,0 +1,60 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]"
+  ],
+  "completed": [
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.002228250028565526,
+      "message": "test/test_item4_step0.py:134: in test_thought_judge_uses_the_supplied_answer_kind\n    assert float(score(0, SimpleNamespace(meaning=meaning))) == (.125 if kind == 'referent' else .75)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtAnswer.py:48: in score\n    bound_view(state, observation, sentence, row, result.meaning))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtAnswer.py:9: in bound_view\n    language = list(state[1])\n                    ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.031754916068166494,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013084790902212262,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002478916896507144,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

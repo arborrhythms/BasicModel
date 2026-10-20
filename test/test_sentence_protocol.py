@@ -63,8 +63,8 @@ def test_repeated_word_is_not_reminted():
     model=_make_model();model.eval()
     with torch.no_grad():
         model(model.inputSpace.prepInput(['hello hello']))
-        owner=model._concept_owner();first=owner.definitions.word(form='hello')
+        owner=model._concept_owner();first=owner.interpret.word_for_form('hello')
         assert first is not None
         model.End();model(model.inputSpace.prepInput(['hello hello']))
-    assert owner.definitions.word(form='hello')==first
+    assert owner.interpret.word_for_form('hello')==first
     assert not model._attention_words.descended.any()

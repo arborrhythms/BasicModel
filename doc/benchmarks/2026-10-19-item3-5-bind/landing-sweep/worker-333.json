@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+    "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+    "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+    "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+    "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason"
+  ],
+  "completed": [
+    "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+    "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+    "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+    "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+    "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003662083065137267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028638748917728662,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026579999830573797,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026307501830160618,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026154580991715193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.037436499958857894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010458417003974319,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

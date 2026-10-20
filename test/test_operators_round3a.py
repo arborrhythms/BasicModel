@@ -123,11 +123,13 @@ def test_live_mint_rekeys_pending_and_completed_definitions(tmp_path, complete_f
     bank = model.perceptualSpace.percept_store.identity
     try:
         first = cs.interpret.lookup_word([], [], form='calaba')
+        from reading_fixtures import supply_object
         if complete_first:
-            cs.interpret.forward(first)
+            supply_object(cs, first)
         second = cs.interpret.lookup_word([], [], form='cabala')
-        cs.interpret.forward(first)
-        cs.interpret.forward(second)
+        if not complete_first:
+            supply_object(cs, first)
+        supply_object(cs, second)
         assert first != second
         for raw, word in [(b'calaba',first),(b'cabala',second)]:
             assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word
@@ -174,9 +176,9 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0():
         dense = []
         for word in words:
             key = identity.key(identity.form(word)).hex()
-            native = owner.definitions.word(identity=key)
+            native = owner.interpret.word_for_form(word)
             assert native is not None
-            obj = owner.definitions.deref(native)
+            obj = owner.interpret.forward(native)
             row = owner._csw_row_of(obj)
             sparse = owner.similarity_codebook.lookup_rows(row)
             torch.testing.assert_close(sparse[:96],identity.form(word),rtol=0,atol=0)

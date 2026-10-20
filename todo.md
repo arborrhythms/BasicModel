@@ -38,11 +38,12 @@ in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-o
 gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
 continuation before identity; verb group element; tense/aspect and second
 difference; then the remaining 5.5 mechanisms. Each has its own receipt.
-The [bind candidate](doc/benchmarks/2026-10-19-item3-5-bind/README.md)
-has completed scoped validation: 334 passed, one copular prerequisite skip,
-and both decomposition lengths pass in both gain arms (all eight questions
-correct). Its next gate is Claude's review, then the one landing sweep;
-steps 2–6 have not started.
+The [bind step-1 landing](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)
+has completed Claude's review, one full sweep (5,907/5,907 completed;
+48 failures repaired with scoped checks), and final native validation:
+72 passed, one copular prerequisite skip; both decomposition lengths pass
+in both gain arms with all eight questions correct. Publication to both
+mains precedes step 1b's G0 and identity migration; steps 2–6 have not started.
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns.
 *Status (Claude, 2026-10-20):* step 0 round 2 is accepted and published on
@@ -591,7 +592,13 @@ not by a passing identity lesson.
      LTM1 (the re-witnessing count, the type criterion again) and `bind`
      resolves references among minted individuals;
      the definitions index becomes a rebuildable cache over the DEF rows
-     (verify item 5's forgetting clears it).
+     (verify item 5's forgetting clears it). **Row shape decided
+     2026-10-20** ([two truths §1, "The row, field by field"](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):
+     slots (1 or 3), `.when` as model time sinusoidally encoded and never
+     read by composition, `truth_plus`/`truth_minus`, access count,
+     `surprise`; the document and the stream become context wholes in
+     WholeSpace; every other column and sidecar key is derivable, moved,
+     cached or deleted per the table; LTM1 carries no identity.
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.

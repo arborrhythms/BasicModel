@@ -1,0 +1,192 @@
+..F..F.F                                                                 [100%]
+=================================== FAILURES ===================================
+______________________________ test_stream_chain _______________________________
+test/test_item55_mechanisms.py:188: in test_stream_chain
+    _stream_code_banks(tmp_path,monkeypatch)
+test/test_item55_mechanisms.py:63: in _stream_code_banks
+    cid=owner.definitions.deref(owner.definitions.word(form='cat'))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:100: in deref
+    choices = self.objects(word)
+              ^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:88: in objects
+    return self._objects.get(int(word), ())
+                             ^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.499s)
+batch = 0 (warm-up)
+____________________________ test_surface_inverses _____________________________
+test/test_item55_mechanisms.py:282: in test_surface_inverses
+    _native_step_comparison(tmp_path, monkeypatch)
+test/test_item55_mechanisms.py:367: in _native_step_comparison
+    model.runBatch(train=paired, optimizer=model.getOptimizer(lr=0.) if paired else None,
+bin/Models.py:13506: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13662: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14042: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8747: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10114: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8432: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8210: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23885: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17113: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22437: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21989: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:21073: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20441: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:105: in close
+    result = model.run_selected_thought(field.query, row=row,
+bin/Models.py:5958: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:167: in thought_pair
+    greedy, first, state = run(trace, meter)
+                           ^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:144: in run
+    result = model._run_selected_thought_once(meaning, row=row, work_budget=work_budget,
+bin/Models.py:6395: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6357: in run_context
+    action = self._choose_selected_thought_action(
+bin/Models.py:5915: in _choose_selected_thought_action
+    logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6760: in thought_logits
+    stop, scores = self.chooser.score_unary(state, candidates,
+test/test_item55_mechanisms.py:348: in <lambda>
+    patch.setattr(operation.chooser,'score_unary',lambda *a,**k:scores(*a,unary=True,**k))
+                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item55_mechanisms.py:344: in scores
+    if names[index]==name:values[b,...,column]=1e6
+       ^^^^^^^^^^^^
+E   IndexError: list index out of range
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:structured.py:28
+DEBUG    torch.__trace:convert_frame.py:304
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:meta_utils.py:298
+DEBUG    torch.__trace:meta_utils.py:537
+DEBUG    torch.__trace:meta_utils.py:2385
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:output_graph.py:2942
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:guards.py:4769
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2363
+DEBUG    torch.__trace:utils.py:2022
+DEBUG    torch.__trace:utils.py:2363
+___________________ test_nested_wholes_from_stage3_artifact ____________________
+test/test_item55_mechanisms.py:477: in test_nested_wholes_from_stage3_artifact
+    restore_phase(lambda path: restore_warmup(model, path, restore))
+test/phase_artifacts.py:107: in restore
+    result = loader(phase_registry.resolve(phase_artifact.path))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item55_mechanisms.py:477: in <lambda>
+    restore_phase(lambda path: restore_warmup(model, path, restore))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/identity_experiment.py:209: in restore_warmup
+    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5098: in load_weights
+    raise ValueError("\n".join(lines))
+E   ValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt
+E     Keys in model but missing from file: 30 (initialized fresh)
+E     Keys in file not present in model: 12
+E       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_map.weight
+E       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_map.bias
+E       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.0.weight
+E       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.0.bias
+E       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.2.weight
+E       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.2.bias
+E       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_map.weight
+E       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_map.bias
+E       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.0.weight
+E       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.0.bias
+E       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.2.weight
+E       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.2.bias
+E     The model config likely changed since this checkpoint was saved.
+E     To fix: correct the model XML to match the saved weights,
+E             or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt to start fresh.
+----------------------------- Captured stdout call -----------------------------
+Grammar checkpoint: 41 declared migrations
+=============================== warnings summary ===============================
+test/test_item55_mechanisms.py::test_clock_independence
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:10858: UserWarning: retired sentence/ARMA heads migrated to a fresh shared activation predictor
+    warnings.warn('retired sentence/ARMA heads migrated to a fresh shared activation predictor', UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item55_mechanisms.py::test_stream_chain - TypeError: int() a...
+FAILED test/test_item55_mechanisms.py::test_surface_inverses - IndexError: li...
+FAILED test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact
+3 failed, 5 passed, 2 warnings in 11.80s

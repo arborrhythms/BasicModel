@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_formal_arguments.py::test_inputs_and_outputs_enumerated",
+    "test/test_formal_arguments.py::test_methodless_projection_skipped",
+    "test/test_formal_arguments.py::test_deterministic_order",
+    "test/test_formal_arguments.py::test_empty_grammar_is_zero_width",
+    "test/test_formal_arguments.py::test_aliases_and_all_outputs_have_distinct_arguments"
+  ],
+  "completed": [
+    "test/test_formal_arguments.py::test_inputs_and_outputs_enumerated",
+    "test/test_formal_arguments.py::test_methodless_projection_skipped",
+    "test/test_formal_arguments.py::test_deterministic_order",
+    "test/test_formal_arguments.py::test_empty_grammar_is_zero_width",
+    "test/test_formal_arguments.py::test_aliases_and_all_outputs_have_distinct_arguments"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_formal_arguments.py::test_inputs_and_outputs_enumerated",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020858296193182468,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_formal_arguments.py::test_methodless_projection_skipped",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010920781642198563,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_formal_arguments.py::test_deterministic_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010399986058473587,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_formal_arguments.py::test_empty_grammar_is_zero_width",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.279209189116955e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_formal_arguments.py::test_aliases_and_all_outputs_have_distinct_arguments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006406167056411505,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

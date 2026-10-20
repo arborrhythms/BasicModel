@@ -1,0 +1,107 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+    "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+    "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+    "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+    "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
+    "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "completed": [
+    "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+    "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+    "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+    "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+    "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
+    "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.5980770839378238,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008339998312294483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.004662249935790896,
+      "message": "test/test_parts_of_speech.py:172: in test_word_flow_follows_the_catalogue_and_ends_at_a_clause\n    r=rules[name];arity=len(r.rhs_symbols)\n      ^^^^^^^^^^^\nE   KeyError: 'bind'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034280000254511833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.39183554193004966,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003890999825671315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": "np_definite",
+      "duration": 0.5679490000475198,
+      "message": "test/test_parts_of_speech.py:332: in test_artifact_restoration_retains_weights_and_occupation_state_exactly\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/phase_artifacts.py:107: in restore\n    result = loader(phase_registry.resolve(phase_artifact.path))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_parts_of_speech.py:332: in <lambda>\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/identity_experiment.py:209: in restore_warmup\n    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5098: in load_weights\n    raise ValueError(\"\\n\".join(lines))\nE   ValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\nE     Keys in model but missing from file: 27 (initialized fresh)\nE     Keys in file not present in model: 12\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_map.weight\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_map.bias\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.0.weight\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.0.bias\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.2.weight\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.2.bias\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_map.weight\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_map.bias\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.0.weight\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.0.bias\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.2.weight\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.2.bias\nE     The model config likely changed since this checkpoint was saved.\nE     To fix: correct the model XML to match the saved weights,\nE             or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt to start fresh.",
+      "stdout": "Grammar checkpoint: 34 declared migrations\r\n"
+    },
+    {
+      "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": "np_description",
+      "duration": 0.6954137498978525,
+      "message": "test/test_parts_of_speech.py:332: in test_artifact_restoration_retains_weights_and_occupation_state_exactly\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/phase_artifacts.py:107: in restore\n    result = loader(phase_registry.resolve(phase_artifact.path))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_parts_of_speech.py:332: in <lambda>\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/identity_experiment.py:209: in restore_warmup\n    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5098: in load_weights\n    raise ValueError(\"\\n\".join(lines))\nE   ValueError: [BasicModel] Weight file mismatch -- cannot load /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\nE     Keys in model but missing from file: 27 (initialized fresh)\nE     Keys in file not present in model: 12\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_map.weight\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_map.bias\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.0.weight\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.0.bias\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.2.weight\nE       symbolSpace.subspace.layers.0.operation_layer.ops.17.gl.marker_prior.2.bias\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_map.weight\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_map.bias\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.0.weight\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.0.bias\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.2.weight\nE       symbolSpace.subspace.languageLayer.operation_layer.ops.17.gl.marker_prior.2.bias\nE     The model config likely changed since this checkpoint was saved.\nE     To fix: correct the model XML to match the saved weights,\nE             or delete/move /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt to start fresh.",
+      "stdout": "Grammar checkpoint: 34 declared migrations\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

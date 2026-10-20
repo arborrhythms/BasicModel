@@ -86,6 +86,45 @@ them, and what is a row at all**
   as the document address is. Psychologically LTM1 is the episodic trace
   and LTM3 the index over cortical codes (Tulving; Teyler & DiScenna),
   with minting on recurrence as consolidation.
+- **The row, field by field (Alec, 2026-10-20; decided after a walk
+  through every column of `TernaryTruthStore`).** The rule: LTM1 holds
+  one concept and a `.when`; LTM3 holds three symbol references and a
+  `.when`; anything else must be justified. What survives, with its
+  reason:
+
+  | field | LTM1 | LTM3 | reason |
+  |---|---|---|---|
+  | slots | 1: the concept | 3: the symbol references | "slots" is the count of content columns and nothing more |
+  | `.when` | model time, sinusoidally encoded, **a column composition never sees** (the §1.1 finding of the occurrence spec: the stamp must not ride inside the idea); the ladder's range covers the run | the same: when the relation was learned | the address and the order; streams and batches are told apart by a **unique whole** in the content, as a document is |
+  | `truth_plus`, `truth_minus` | yes | yes | the row's truth, the two lanes (renamed from `c_plus`/`c_minus`) |
+  | access count | yes | yes | forgetting; recurrence mints a concept from LTM1 (renamed from `witness_count`) |
+  | `surprise` | yes | yes | the residual at the moment of writing, read by item 5's retention beside the access count; not recomputable later |
+
+  Nothing else. `.where` is already inside the concept's reserved band
+  and needs no column unless an index independent of content is wanted.
+  The **document** returns to WholeSpace as a context whole: an
+  individual minted at its first sentence (§12 of the occurrence spec),
+  whose activation is in the field while its sentences are read, so
+  attention's region returns it with the other wholes and the sentence's
+  concept carries its trace through the fold, to the degree the fold
+  keeps it; "what was said in *d*" and re-witnessing a document become
+  content matches, and the four address columns (`document_keys`,
+  `sentence_index`, `address_keys`, `sentence_content_keys`) go. Dropped
+  as derivable or redundant: `rel_type` (LTM3's middle reference is the
+  kind), `role_mask`, `order` (the concept's), `polarity` (lanes swapped),
+  `grammatical_mode` (a question is an open reference), `row_ids`
+  (references are to symbols), `semantic_fingerprint` (an index outside
+  the row). Moved: `source_trust`/`origin` to attribution rows in LTM3 or
+  folded into the lanes at write; `stream` to the reader's own history.
+  The sidecar: `_open_references`/`_bound_roles`/`_forward_references`
+  derivable from the references; `_reference_sites`/`_reference_mentions`/
+  `_individual_context` to `bind`'s own training state; `_expected_symbols`
+  and the observed-activation target to the predictor; `_write_address`,
+  `_pending`, `_record_revision`, `_current_gate`, the `_live_*` keys and
+  `_texts` gone; `_definition_rows`, `_semantic_rows`, `_expectation_rows`
+  rebuildable caches. (The earlier "storage note" and "identity column"
+  paragraphs above are superseded by this table where they differ: LTM1
+  carries **no identity**; identity needs LTM3's separate S, V, O.)
 - **The definition index is a cache.** Definitions are LTM rows (as
   `Interpret.define` already writes them: `rel_type = REL_DEF`, refs
   `[word, −1, obj]`); `cs.definitions` is a cache over those rows for fast

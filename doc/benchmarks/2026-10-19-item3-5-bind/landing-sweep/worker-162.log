@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_word_object_testimony_participation_strengthens_on_reoccurrence _____
+test/test_cs_symbol_table.py:474: in test_word_object_testimony_participation_strengthens_on_reoccurrence
+    assert cs._csw_row_of(A) is None and cs.definitions.deref(A) == B
+E   assert (0 is None)
+E    +  where 0 = _csw_row_of(1)
+E    +    where _csw_row_of = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n)._csw_row_of
+=============================== warnings summary ===============================
+test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_cs_symbol_table.py::test_word_object_testimony_participation_strengthens_on_reoccurrence
+1 failed, 1 warning in 2.59s

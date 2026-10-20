@@ -1,0 +1,72 @@
+FFFFF.FF                                                                 [100%]
+=================================== FAILURES ===================================
+_____________ test_selected_grammar_context_selects_order[event-0] _____________
+test/test_lexical_reference_orders.py:48: in test_selected_grammar_context_selects_order
+    assert orders.tolist() == [-1, order]
+E   assert [-1, -1] == [-1, 0]
+E
+E     At index 1 diff: -1 != 0
+E     Use -v to get more diff
+__________ test_selected_grammar_context_selects_order[particular-1] ___________
+test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order
+    assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
+E   assert (1, 2, 3) == (1, 1, 2, 3)
+E
+E     At index 1 diff: 2 != 1
+E     Right contains one more item: 3
+E     Use -v to get more diff
+_____________ test_selected_grammar_context_selects_order[name-1] ______________
+test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order
+    assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
+E   assert (1, 2, 3) == (1, 1, 2, 3)
+E
+E     At index 1 diff: 2 != 1
+E     Right contains one more item: 3
+E     Use -v to get more diff
+____________ test_selected_grammar_context_selects_order[pronoun-1] ____________
+test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order
+    assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
+E   assert (1, 2, 3) == (1, 1, 2, 3)
+E
+E     At index 1 diff: 2 != 1
+E     Right contains one more item: 3
+E     Use -v to get more diff
+_____________ test_selected_grammar_context_selects_order[kind-2] ______________
+test/test_lexical_reference_orders.py:47: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+E   assert [-1, 1] == [-1, 3]
+E
+E     At index 1 diff: 1 != 3
+E     Use -v to get more diff
+_________ test_order_three_relation_over_kinds_is_read_from_its_stamp __________
+test/test_lexical_reference_orders.py:102: in test_order_three_relation_over_kinds_is_read_from_its_stamp
+    assert refs.tolist() == [relation] and orders.tolist() == [3]
+E   assert ([5] == [5]
+E
+E     Use -v to get more diff and [-1] == [3]
+E
+E     At index 0 diff: -1 != 3
+E     Use -v to get more diff)
+______ test_form_sets_survive_checkpoint_and_missing_order_stays_unknown _______
+test/test_lexical_reference_orders.py:145: in test_form_sets_survive_checkpoint_and_missing_order_stays_unknown
+    assert restored.word_concepts('cat') == tuple(sorted([restored.definitions.word(form='cat'), *ids]))
+E   assert (1, 2, 3) == (1, 1, 2, 3)
+E
+E     At index 1 diff: 2 != 1
+E     Right contains one more item: 3
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]
+FAILED test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp
+FAILED test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown
+7 failed, 1 passed, 1 warning in 2.70s

@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_native_candidate_attention.py::test_attention_priming_read_never_resizes_or_republishes_its_source",
+    "test/test_native_candidate_attention.py::test_answer_boundary_credits_only_admission_parameters",
+    "test/test_native_candidate_attention.py::test_admission_reader_boundary_compiles_without_opening_the_state_cut",
+    "test/test_native_candidate_attention.py::test_native_attention_checkpoint_and_missing_legacy_parameters"
+  ],
+  "completed": [
+    "test/test_native_candidate_attention.py::test_attention_priming_read_never_resizes_or_republishes_its_source",
+    "test/test_native_candidate_attention.py::test_answer_boundary_credits_only_admission_parameters",
+    "test/test_native_candidate_attention.py::test_admission_reader_boundary_compiles_without_opening_the_state_cut",
+    "test/test_native_candidate_attention.py::test_native_attention_checkpoint_and_missing_legacy_parameters"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_native_candidate_attention.py::test_attention_priming_read_never_resizes_or_republishes_its_source",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04150987509638071,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_native_candidate_attention.py::test_answer_boundary_credits_only_admission_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016112209064885974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_native_candidate_attention.py::test_admission_reader_boundary_compiles_without_opening_the_state_cut",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.6060873749665916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_native_candidate_attention.py::test_native_attention_checkpoint_and_missing_legacy_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.13281291699968278,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7514/test_native_attention_checkpoi0/attention.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7514/test_native_attention_checkpoi0/attention.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 1 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)\r\n[BasicModel] Weight file partial -- /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7514/test_native_attention_checkpoi0/attention.ckpt\n  Keys in model but missing from file: 4 (initialized fresh)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-7514/test_native_attention_checkpoi0/attention.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

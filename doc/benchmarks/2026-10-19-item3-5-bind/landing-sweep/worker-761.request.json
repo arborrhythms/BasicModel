@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-761.recycle.json"
+}

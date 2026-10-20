@@ -726,6 +726,12 @@ def _surface_snapshot_model():
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
     _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+    # These inverse-surface certificates exercise supplied object definitions.
+    # Bare admission now retains a form until such an object is witnessed.
+    from reading_fixtures import supply_object
+    for word in sorted(m._concept_owner().interpret._pending):
+        supply_object(m._concept_owner(), word)
+    _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
     # The helper pads P after lexical staging; compare snapshots at that
     # same fixed shape so changed byte values are the only perturbation.
     m._stage_snapshot_bytes()
@@ -773,7 +779,7 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         other_word = int(isp._ar_word_concept_ids[0, 1])
         other_row = int(isp._ar_word_object_rows[0, 1])
         assert row != other_row
-        assert owner._csw_row_of(word) is None
+        assert owner._csw_row_of(word) is not None
         reference = isp._ar_word_object_atoms
         target = m._byte_tables(*reference.shape[:2])
         before = _surface_byte_cost(m, reference, target)

@@ -42,7 +42,7 @@ def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatc
             model(inputs)
         assert len(seen) == 8, f'every real word must resolve once; observed {len(seen)} object leaves'
         owner = model._concept_owner()
-        expected_rows = {owner._csw_row_of(owner.definitions.deref(owner.definitions.word(form=word)))
+        expected_rows = {owner._csw_row_of(owner.interpret.forward(owner.interpret.word_for_form(word)))
                          for word in ('hello', 'loving', 'world', 'there')}
         assert set(seen) == expected_rows
     finally:

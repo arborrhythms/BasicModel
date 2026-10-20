@@ -139,7 +139,7 @@ class TestProvisioning(unittest.TestCase):
         asserted = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
         definitions = store.relations(T.REL_DEF).tolist()
         self.assertEqual(len(asserted), 3)
-        self.assertTrue(definitions)
+        self.assertFalse(definitions)  # No supplied object definitions.
         self.assertEqual(len(store), len(asserted) + len(definitions))
         self.assertEqual(store.ideas().tolist(), asserted)
         self.assertEqual(store.relations().tolist(), definitions)

@@ -110,7 +110,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     rule, 'argin'+str(role+1), operand['order'], implicit=True)
                 binding = (binding_order is not None and binding_order >= 0
                            and binding_mode not in ('kind', 'generic'))
-                if getattr(program, 'close_references', False) and binding_order == 1 and binding:
+                chosen_antecedent = (native(reference) and reference != selected['ref'])
+                if (getattr(program, 'close_references', False) and binding_order == 1
+                        and binding and not chosen_antecedent):
                     # An enclosing operation cannot re-bind a deferred
                     # individual. Only its mint/bind/pronoun operator supplies
                     # the request; the close decides it with the predicate.

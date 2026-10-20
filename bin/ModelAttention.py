@@ -111,8 +111,9 @@ def native_word_poles(model, spans, forms, known):
         getattr(ws.subspace.what, 'primitive_properties', None), raw, whole_spans), live_spans)
     native = owner._cs_field_concept_ids[:field.shape[0]]
     native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
-    objects = [[owner.definitions.objects(word) if (word := owner.definitions.word(form=form))
-                is not None else () for form in row[:width]] for row in forms]
+    objects = [[((word,) if owner.interpret.no_object(word) else owner.definitions.objects(word))
+                if (word := owner.interpret.word_for_form(form)) is not None else ()
+                for form in row[:width]] for row in forms]
     alternatives = max(1, max((len(values) for row in objects for values in row), default=0))
     wanted = native.new_tensor([[list(values)+[-1]*(alternatives-len(values)) for values in row]
                                for row in objects])
@@ -191,7 +192,7 @@ def stage_input(model):
             end=hi
             form=surface.decode('latin1')
             row.append((lo,hi) if surface else (0,0))
-            seen.append(bool(surface) and definitions.word(form=form) is not None)
+            seen.append(bool(surface) and owner.interpret.word_for_form(form) is not None)
             if form and form not in vocabulary:vocabulary[form]=len(vocabulary)
             ids.append(vocabulary.get(form,-1));names.append(form)
         extents.append(row);known.append(seen);identities.append(ids);forms.append(names)

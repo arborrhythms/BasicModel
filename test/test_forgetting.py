@@ -342,7 +342,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         model.dispatch_soft_reset()
         model.post_tick_compact()
     try:
-        document('first', ['cat', 'dog', 'bird', 'horse'])
+        document('first', ['cat', 'dog', 'bird', 'horse'] * 2)
         report = store.last_forgetting_report
         assert int(store.forget_passes) == 1
         assert report['before'] >= 8 and report['after'] == len(store) == 6

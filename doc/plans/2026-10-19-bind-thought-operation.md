@@ -237,3 +237,20 @@ plus the activation field, the intersection computed on read. Gates:
 G1–G3 unchanged, the 18 reference-close cases ported to the new scorer,
 both decomposition certificates in both arms, toy G0 on production
 [0, 1] codes first.
+
+### 6.3 The row audit for step 1b (Alec, 2026-10-20)
+
+The decided row shape is in
+[two truths §1, "The row, field by field"](../specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided).
+Step 1b carries its audit: every field of `TernaryTruthStore` and every
+sidecar key is kept (slots, `.when`, `truth_plus`/`truth_minus`, access
+count, `surprise`), moved (document and stream to context wholes;
+`source_trust`/`origin` to attribution or the lanes; binding keys to
+`bind`; estimate keys to the predictor; `stream` to the reader), made a
+rebuildable cache (the indexes, the fingerprint), or deleted (the rest),
+each with a one-line receipt entry. `.when` becomes model time,
+sinusoidally encoded, with the ladder's range checked against the run
+and an assertion that composition never reads it. LTM1 carries no
+identity column: a bound participant exists only in LTM3's three
+references, and a *de dicto* idea's world is a context whole like the
+document, not a column.

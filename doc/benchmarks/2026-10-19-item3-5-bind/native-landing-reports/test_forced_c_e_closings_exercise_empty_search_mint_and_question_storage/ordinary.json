@@ -1,0 +1,47 @@
+[
+  {
+    "epoch": 1,
+    "source": 0,
+    "row_id": 8948744451572026815,
+    "address": [
+      "ltm",
+      "address-v1",
+      8948744451572026815
+    ],
+    "open": [],
+    "forward": [],
+    "episode": true,
+    "departure": 12,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 1,
+    "row_id": -4585456175311977023,
+    "address": [
+      "ltm",
+      "address-v1",
+      -4585456175311977023
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        19
+      ]
+    ],
+    "episode": true,
+    "departure": -1,
+    "query_open": [
+      [
+        "referent",
+        0
+      ]
+    ]
+  }
+]

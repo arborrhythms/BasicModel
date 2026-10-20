@@ -163,10 +163,11 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
     rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
     expected=dict(intersection=3,union=3,conjunction=3,disjunction=3,product=3,sum=3,
-        **{'not':1,'non':1},adverb=1,preposition=2,surface=2,bind=2,compound=2,
+        **{'not':1,'non':1},adverb=1,preposition=2,surface=2,compound=2,
         lower=2,definite=2,lower_unary=1,definite_unary=1,
         preposition_unary=1,surface_unary=1,verb=1,
         lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0)
+    assert 'bind' not in rules  # Bind is a thought operation, with no compose face.
     assert rules['adverb'].head_role == 1
     for name,mask in expected.items():
         r=rules[name];arity=len(r.rhs_symbols)

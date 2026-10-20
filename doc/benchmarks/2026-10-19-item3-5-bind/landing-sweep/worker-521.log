@@ -1,0 +1,17 @@
+..F...                                                                   [100%]
+=================================== FAILURES ===================================
+________ test_native_pole_read_omits_padding_without_changing_evidence _________
+test/test_one_attention.py:426: in test_native_pole_read_omits_padding_without_changing_evidence
+    assert known.any()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method any of Tensor object at 0x129f89f40>()
+E    +    where <built-in method any of Tensor object at 0x129f89f40> = tensor([[False, False, False, False, False, False, False, False]]).any
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_native_pole_read_omits_padding_without_changing_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_native_pole_read_omits_padding_without_changing_evidence
+1 failed, 5 passed, 1 warning in 2.78s

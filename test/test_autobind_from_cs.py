@@ -23,6 +23,7 @@ import sys
 import unittest
 
 import torch
+from Spaces import _concept_alloc_of
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -115,12 +116,12 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         pid_grid = torch.tensor([[pid]], dtype=torch.long)
         vec_event = seed.view(1, 1, -1)
         # Snapshot the SS taxonomy size before the call.
-        size_before = len(cs.definitions.word_ids)
+        size_before = len(_concept_alloc_of(cs).word_forms)
         extent = len(ps_store.bytes_for(pid))
         cs.wholeSpace_ref._staged_analysis_spans = torch.tensor([[[0, extent]]])
         cs._maybe_autobind_words(pid_grid, vec_event,
             tile_spans=[[(0, extent)]], percept_store=ps_store)
-        size_after = len(cs.definitions.word_ids)
+        size_after = len(_concept_alloc_of(cs).word_forms)
         self.assertGreater(
             size_after, size_before,
             "autobind from CS should have admitted a native word concept",
@@ -140,9 +141,9 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         pid_grid = torch.tensor([[-1, -1]], dtype=torch.long)
         vec_event = torch.zeros(1, 2, D)
         ws = m._concept_owner()
-        size_before = len(cs.definitions.word_ids)
+        size_before = len(_concept_alloc_of(cs).word_forms)
         cs._maybe_autobind_words(pid_grid, vec_event)
-        size_after = len(cs.definitions.word_ids)
+        size_after = len(_concept_alloc_of(cs).word_forms)
         self.assertEqual(size_before, size_after,
                          "all-sentinel pid grid should be a no-op")
 
