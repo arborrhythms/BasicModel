@@ -202,9 +202,13 @@ graded form of what an adjective does, and `intersection` the crisp form.
 ### 3.3 `bind`
 
 *Decided 2026-10-19 (Alec):* `bind` is one operation of the **thought**
-grammar, called once per referent; forward = the close-time resolver
+grammar, called once per site; forward = the close-time resolver
 (`ReferenceClose`), reverse = the description or determiner re-emitted; the
-binary compose-side layer below is deleted. Record in todo item 3.5.
+binary compose-side layer below is deleted once the pronoun site replaces
+its route. A site is an open role in the verb's frame (an expected
+participant unfilled: the elided case), an operand with no object of its
+own (the pronoun case), or a definite phrase (the cue). Record in todo
+item 3.5.
 
 Alec, 2026-09-29: "Should 'bind' be handled within the grammar?"
 

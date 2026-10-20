@@ -6158,8 +6158,13 @@ class BasicModel(BaseModel):
                     return True
             return False
 
-        def can_conclude(current):
-            return not needs_episode(current) or not meter.remaining or search_exhausted()
+        def can_conclude(current, actions):
+            # Negating a held description supplies no missing reference.
+            # A menu containing only this self-inverse operation cannot
+            # advance an open region; it must also offer an honest conclude.
+            advances = any(action is not None and action.semantic_id != 'not' for action in actions)
+            return (not needs_episode(current) or not meter.remaining
+                    or search_exhausted() or (bool(actions) and not advances))
 
         def execute(current, *, actions=None, evidence_context=None,
                     action=unselected):
@@ -6176,7 +6181,8 @@ class BasicModel(BaseModel):
             if state is None or state.forced:
                 return exhausted(current)
             if actions is None:
-                actions = tuple(candidates(current, state)) + ((None,) if can_conclude(current) else ())
+                actions = tuple(candidates(current, state))
+                actions += ((None,) if can_conclude(current, actions) else ())
             else:
                 actions = tuple(actions)
             if action is unselected:
@@ -6185,11 +6191,11 @@ class BasicModel(BaseModel):
                     level=state.level, pressure=state.pressure,
                     evidence=evidence_context, work=meter)
             elif action not in actions:
-                if action is None and not can_conclude(current):
+                if action is None and not can_conclude(current, actions):
                     raise ValueError('cannot conclude with open references and work remaining')
                 raise ValueError("selected thought chose an unavailable action")
             if action is None:
-                if not can_conclude(current):
+                if not can_conclude(current, actions):
                     raise ValueError("cannot conclude with open references and work remaining")
                 if not meter.consume("controller"):
                     return exhausted(current)
@@ -6327,11 +6333,13 @@ class BasicModel(BaseModel):
                     outcome = exhausted(current) if outcome is None else outcome
                 else:
                     value = current if outcome is None else outcome['meaning']
+                    available = tuple(candidates(value, state))
+                    conclusion = (None,) if can_conclude(value, available) else ()
                     if outcome is None:
-                        actions = tuple(candidates(value, state)) + ((None,) if can_conclude(value) else ())
+                        actions = available + conclusion
                         evidence_context = None
                     else:
-                        actions = ((None,) if can_conclude(value) else ()) + tuple(candidates(value, state))
+                        actions = conclusion + available
                         evidence_context = outcome['evidence']
                     if not actions:
                         # With no legal operation there is no further work.
@@ -6353,7 +6361,7 @@ class BasicModel(BaseModel):
                             continuation=(current, outcome, tuple(parents)),
                             clock=(initial_spend, episode, recorded_spend))
                     if action is None and outcome is not None:
-                        if not can_conclude(value):
+                        if not can_conclude(value, actions):
                             raise ValueError('cannot conclude with open references and work remaining')
                         if meter.consume('controller'):
                             if search_exhausted():
@@ -6372,6 +6380,7 @@ class BasicModel(BaseModel):
                             current, outcome = outcome['child'], None
                             continue
                         current = outcome['meaning']
+                        complete = action is None
                 if complete:
                     if not parents:
                         return outcome
@@ -20029,6 +20038,33 @@ class BasicModel(BaseModel):
         self._sentence_reader_observation = dict(presented=presented_read,
             comparison=dict(mse=self._sentence_answer_raw_cost.detach(),
                             predictions=self._sentence_answer_predictions.detach()))
+        if getattr(self.inputSpace.data, 'answer_mode', None) == 'binding':
+            # A binding task judges the referent, not how well an untrained
+            # surface reader regenerates the whole question. Before a closing
+            # episode an unfilled referent costs one; after a checked filling
+            # the same scorer used by ThoughtAnswer gives exact identity zero.
+            # Both output readers above retain their ordinary training graphs.
+            from BindingAnswers import cost as binding_cost
+            questions = self._sentence_answer_questions
+            data = self.inputSpace.data
+            values = []
+            for row, meaning in enumerate(observation['meanings']):
+                answer = data.what(questions[row]) if row < len(questions) else None
+                values.append(cost.new_zeros(()) if not bool(active[row]) or answer is None
+                    or not answer.available else cost.new_ones(()) if meaning is None else
+                    binding_cost(self, meaning, answer.what, stream=row))
+                if (registry is not None and bool(active[row]) and meaning is not None
+                        and answer is not None and answer.available
+                        and observation.get('reference_plans')):
+                    resolver = self._concept_owner().components.reference_close
+                    loss = resolver.answer_loss(observation['reference_plans'][row], meaning, answer.what)
+                    if loss is not None:
+                        registry.add('expectation.reference_mentions',
+                            torch.nn.functional.one_hot(cost.new_tensor(row, dtype=torch.long),
+                                len(observation['meanings'])).to(cost) * loss,
+                            category='expectation', weight=resolver.components.weight)
+            cost = torch.stack(values)
+            self._sentence_reader_observation['binding'] = cost.detach()
         self._sentence_answer_cost = cost
         return cost
 

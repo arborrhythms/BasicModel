@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_operators_round2e.py::test_comparison_copies_tied_parameters_without_rng_and_restores_presentation",
+    "test/test_operators_round2e.py::test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once",
+    "test/test_operators_round2e.py::test_sentence_advantage_reads_comparison_and_optimizer_owns_both"
+  ],
+  "completed": [
+    "test/test_operators_round2e.py::test_comparison_copies_tied_parameters_without_rng_and_restores_presentation",
+    "test/test_operators_round2e.py::test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once",
+    "test/test_operators_round2e.py::test_sentence_advantage_reads_comparison_and_optimizer_owns_both"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_round2e.py::test_comparison_copies_tied_parameters_without_rng_and_restores_presentation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014721499988809228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2e.py::test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002280500018969178,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2e.py::test_sentence_advantage_reads_comparison_and_optimizer_owns_both",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 34.41272895806469,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 34.363s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

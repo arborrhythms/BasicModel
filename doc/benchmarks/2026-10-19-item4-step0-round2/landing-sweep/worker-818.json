@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+    "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+    "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+    "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+    "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what"
+  ],
+  "completed": [
+    "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+    "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+    "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+    "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+    "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013417167123407125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00030645914375782013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033766706474125385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003532920964062214,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002878329250961542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031120795756578445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004706659819930792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033774995245039463,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

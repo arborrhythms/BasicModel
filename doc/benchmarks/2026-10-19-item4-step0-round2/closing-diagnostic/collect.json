@@ -1,0 +1,16 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

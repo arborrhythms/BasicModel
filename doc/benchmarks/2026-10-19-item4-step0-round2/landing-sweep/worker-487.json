@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_native_attention_field.py::test_native_reads_one_supported_word_and_charges_only_kept_trial",
+    "test/test_native_attention_field.py::test_new_run_resets_trial_scratch_even_if_the_body_raises",
+    "test/test_native_attention_field.py::test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit",
+    "test/test_native_attention_field.py::test_native_candidate_departure_credits_only_scorer_parameters",
+    "test/test_native_attention_field.py::test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces",
+    "test/test_native_attention_field.py::test_decomposition_targets_follow_actual_reversed_candidate_reads"
+  ],
+  "completed": [
+    "test/test_native_attention_field.py::test_native_reads_one_supported_word_and_charges_only_kept_trial",
+    "test/test_native_attention_field.py::test_new_run_resets_trial_scratch_even_if_the_body_raises",
+    "test/test_native_attention_field.py::test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit",
+    "test/test_native_attention_field.py::test_native_candidate_departure_credits_only_scorer_parameters",
+    "test/test_native_attention_field.py::test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces",
+    "test/test_native_attention_field.py::test_decomposition_targets_follow_actual_reversed_candidate_reads"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_native_attention_field.py::test_native_reads_one_supported_word_and_charges_only_kept_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.4065457498654723,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n[BasicModel] Activated aligned codebook prefix 16 -> 32 rows (physical capacity 32; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_native_attention_field.py::test_new_run_resets_trial_scratch_even_if_the_body_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06619804096408188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_native_attention_field.py::test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.7097695840056986,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_native_attention_field.py::test_native_candidate_departure_credits_only_scorer_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.8021609170828015,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_native_attention_field.py::test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010154999326914549,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_native_attention_field.py::test_decomposition_targets_follow_actual_reversed_candidate_reads",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.618114458862692,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

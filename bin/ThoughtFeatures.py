@@ -63,7 +63,7 @@ def semantic_metadata(meanings):
             isinstance(item, tuple) and len(item) == 2 and item[0] in
             ('_evidence_pair', '_open_references', '_thought_witnesses',
              '_producing_operation', '_query_relation', '_query_exclude',
-             '_formation_records', '_formation_reason'))), meaning.roles),
+             '_formation_records', '_formation_reason', '_reference_mentions'))), meaning.roles),
         field(meaning.scope, meaning.roles)))
         for meaning in meanings)
 

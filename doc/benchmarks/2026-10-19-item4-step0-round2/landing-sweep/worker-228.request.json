@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-10-19-item5-start.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/2017-jang-gumbel-softmax.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/2019-kim-compound-pcfg.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/2022-yang-rank-space-pcfg.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/forest-regularization.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/reports/Expectation outside attention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/computational_theories.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-228.recycle.json"
+}

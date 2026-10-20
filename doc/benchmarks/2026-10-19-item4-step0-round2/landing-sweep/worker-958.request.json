@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+    "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-958.recycle.json"
+}

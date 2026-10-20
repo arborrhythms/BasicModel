@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-1000.recycle.json"
+}

@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/audits.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/measurements.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/triage.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-shared-gates/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-shared-gates/audits.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review10.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review11.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review12.md]"
+  ],
+  "completed": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/audits.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/measurements.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/triage.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-shared-gates/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-shared-gates/audits.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review10.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review11.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review12.md]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/audits.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006493751425296068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/measurements.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014625000767409801,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/triage.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006217919290065765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-shared-gates/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004019590560346842,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-shared-gates/audits.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004512909799814224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review10.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009996669832617044,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review11.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009296250063925982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review12.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009517080616205931,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

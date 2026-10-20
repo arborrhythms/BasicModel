@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_discourse_space.py::TestActivationOwner::test_bounded_context_and_row_reset",
+    "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+    "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-178.recycle.json"
+}

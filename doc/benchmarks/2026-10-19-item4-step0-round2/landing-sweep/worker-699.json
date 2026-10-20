@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_registration_drift.py::test_registration_loss_decreases_on_toy_corpus",
+    "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+    "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+    "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order"
+  ],
+  "completed": [
+    "test/test_registration_drift.py::test_registration_loss_decreases_on_toy_corpus",
+    "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+    "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+    "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_registration_drift.py::test_registration_loss_decreases_on_toy_corpus",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02946329186670482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01822462514974177,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020200832979753613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012802375014871359,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

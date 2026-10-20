@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered",
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ps_storage_is_separate_from_ws_codebook",
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ws_write_does_not_leak_into_ps_rows"
+  ],
+  "completed": [
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered",
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ps_storage_is_separate_from_ws_codebook",
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ws_write_does_not_leak_into_ps_rows"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.025718166958540678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ps_storage_is_separate_from_ws_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01576145808212459,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ws_write_does_not_leak_into_ps_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0156293751206249,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review13.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review14-addendum.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review14.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review15.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review16.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review17.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review18.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review19.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review20.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review22.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-operators-checkpoint.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-review13-design-hold.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/audits.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/remaining-failures.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-05-operators-update/README.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-022.recycle.json"
+}

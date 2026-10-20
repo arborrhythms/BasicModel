@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_attention_lesson.py::test_part_supervision_scores_missing_and_extra_leaves_after_decoding",
+    "test/test_attention_lesson.py::test_targets_cannot_change_the_prompt_need"
+  ],
+  "completed": [
+    "test/test_attention_lesson.py::test_part_supervision_scores_missing_and_extra_leaves_after_decoding",
+    "test/test_attention_lesson.py::test_targets_cannot_change_the_prompt_need"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_attention_lesson.py::test_part_supervision_scores_missing_and_extra_leaves_after_decoding",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011842125095427036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_lesson.py::test_targets_cannot_change_the_prompt_need",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001248749904334545,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

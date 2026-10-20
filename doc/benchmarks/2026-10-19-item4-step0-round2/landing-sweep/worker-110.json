@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+    "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]"
+  ],
+  "completed": [
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+    "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+    "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+    "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019681124947965145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[2-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010725375032052398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01601299992762506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010297082830220461,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016083457972854376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_production_snap_background_is_neither[8-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009748541982844472,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0071535001043230295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008587875170633197,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

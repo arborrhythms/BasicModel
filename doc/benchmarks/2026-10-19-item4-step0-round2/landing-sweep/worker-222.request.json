@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-18-harness-gating/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-18-occupation-flow/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-18-occupation-flow/tables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-18-parts-of-speech/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-18-parts-of-speech/tables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-expectation/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-expectation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-expectation/native_protocol.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-222.recycle.json"
+}

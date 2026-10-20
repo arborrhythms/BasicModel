@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_primed_reverse_integration.py::test_unprimed_disjunction_picks_larger_norm",
+    "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
+    "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
+    "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+    "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+    "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref"
+  ],
+  "completed": [
+    "test/test_primed_reverse_integration.py::test_unprimed_disjunction_picks_larger_norm",
+    "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
+    "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
+    "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+    "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+    "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_unprimed_disjunction_picks_larger_norm",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001256957883015275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006897079292684793,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005514589138329029,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006592499557882547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00039312499575316906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00042470917105674744,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

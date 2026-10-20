@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[True]",
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence"
+  ],
+  "completed": [
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[True]",
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00413504196330905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013844999484717846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022779102437198162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021216599270701408,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019241590052843094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00047108414582908154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012479210272431374,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003788331523537636,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

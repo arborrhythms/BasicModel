@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-02-item6-9-reconstruction/measurements.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-02-item6-9-reconstruction/ports.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-02-item6-9-reconstruction/triage.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-closing/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-closing/audits.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-corrections/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-item6-9-free-readback/README.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-208.recycle.json"
+}

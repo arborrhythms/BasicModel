@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-True-step]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-1.5-grammar]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-1.5-step]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-True-grammar]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-True-step]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-1.5-grammar]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-1.5-step]",
+    "test/test_chooser_architecture.py::test_xml_grammar_factory_wires_width_depth[0-1-8]"
+  ],
+  "completed": [
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-True-step]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-1.5-grammar]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-1.5-step]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-True-grammar]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-True-step]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-1.5-grammar]",
+    "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-1.5-step]",
+    "test/test_chooser_architecture.py::test_xml_grammar_factory_wires_width_depth[0-1-8]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-True-step]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001240831334143877,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-1.5-grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010491604916751385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[hidden-1.5-step]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.350012987852097e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-True-grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011620786972343922,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-True-step]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010145921260118484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-1.5-grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001069589052349329,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_direct_heads_reject_nonpositive_capacity[depth-1.5-step]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010291696526110172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_chooser_architecture.py::test_xml_grammar_factory_wires_width_depth[0-1-8]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028163751121610403,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

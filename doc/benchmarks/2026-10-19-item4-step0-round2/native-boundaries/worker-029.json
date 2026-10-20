@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/decomposition-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/review-request.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/answer-cost-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-12-compiled-reverse-loops.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-14-answer-path-ownership-and-training.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-15-next-sentence-as-the-production-objective.md]"
+  ],
+  "completed": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/decomposition-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/review-request.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/answer-cost-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-12-compiled-reverse-loops.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-14-answer-path-ownership-and-training.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-15-next-sentence-as-the-production-objective.md]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021958304569125175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004666668828576803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/decomposition-cause.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012674997560679913,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/review-request.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001663330476731062,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001784160267561674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/answer-cost-cause.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010904204100370407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023991684429347515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005927078891545534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013875006698071957,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001823750790208578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006493751425296068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022354209795594215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005455000791698694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-12-compiled-reverse-loops.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010057918261736631,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-14-answer-path-ownership-and-training.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00036391615867614746,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-15-next-sentence-as-the-production-objective.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005526625085622072,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

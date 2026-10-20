@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips",
+    "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division"
+  ],
+  "completed": [
+    "test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips",
+    "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020247919019311666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024608313106000423,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-002.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-002.json"
+  ],
+  "pid": 67487,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1306036168,
+  "elapsed_seconds": 11.71735474979505,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-002.log"
+}

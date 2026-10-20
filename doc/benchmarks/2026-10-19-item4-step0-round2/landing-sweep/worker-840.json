@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula"
+  ],
+  "completed": [
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005206249188631773,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018170801922678947,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014732498675584793,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002234999556094408,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.966688230633736e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020025018602609634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013375002890825272,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009719589725136757,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

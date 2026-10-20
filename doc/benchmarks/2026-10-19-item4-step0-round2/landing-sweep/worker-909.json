@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_transform_chooser_parity.py::test_anchordot_is_a_transform_chooser",
+    "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract",
+    "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum",
+    "test/test_transform_chooser_parity.py::test_unary_score_zero_apply_ops",
+    "test/test_transform_chooser_parity.py::test_binary_score_matches_raw_einsum",
+    "test/test_transform_chooser_parity.py::test_binary_score_no_pairs",
+    "test/test_transform_chooser_parity.py::test_layers_use_a_stateless_chooser_no_state_dict_keys"
+  ],
+  "completed": [
+    "test/test_transform_chooser_parity.py::test_anchordot_is_a_transform_chooser",
+    "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract",
+    "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum",
+    "test/test_transform_chooser_parity.py::test_unary_score_zero_apply_ops",
+    "test/test_transform_chooser_parity.py::test_binary_score_matches_raw_einsum",
+    "test/test_transform_chooser_parity.py::test_binary_score_no_pairs",
+    "test/test_transform_chooser_parity.py::test_layers_use_a_stateless_chooser_no_state_dict_keys"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_anchordot_is_a_transform_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.383284486830235e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 8.974992670118809e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013799159787595272,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_unary_score_zero_apply_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017799995839595795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_binary_score_matches_raw_einsum",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004899578634649515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_binary_score_no_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013566692359745502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_layers_use_a_stateless_chooser_no_state_dict_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015261669177561998,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

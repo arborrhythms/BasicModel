@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+    "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+    "test/test_cs_symbol_table.py::test_interpret_word_structure",
+    "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+    "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+    "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+    "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+    "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity"
+  ],
+  "completed": [
+    "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+    "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+    "test/test_cs_symbol_table.py::test_interpret_word_structure",
+    "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+    "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+    "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+    "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+    "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005035375012084842,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031165408436208963,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_structure",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004490708000957966,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_singleton_concept_is_idempotent_unit_set",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031526670791208744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_singleton_populates_one_untyped_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034906251821666956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_idempotent_per_key",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0037324591539800167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0039350411389023066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_cs_symbol_table.py::test_object_symbol_is_refinable_not_yet_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0032036250922828913,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

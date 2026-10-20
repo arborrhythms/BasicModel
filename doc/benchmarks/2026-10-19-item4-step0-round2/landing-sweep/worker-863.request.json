@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_tetralemma_leaf.py::test_walk_to_leaf_reference_and_stored_row[corner0]",
+    "test/test_tetralemma_leaf.py::test_walk_to_leaf_reference_and_stored_row[corner1]",
+    "test/test_tetralemma_leaf.py::test_walk_to_leaf_reference_and_stored_row[corner2]",
+    "test/test_tetralemma_leaf.py::test_walk_to_leaf_reference_and_stored_row[corner3]",
+    "test/test_tetralemma_leaf.py::test_walk_to_leaf_reference_and_stored_row[corner4]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair0-right_pair0]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair1-right_pair1]",
+    "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair2-right_pair2]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-863.recycle.json"
+}

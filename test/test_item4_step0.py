@@ -41,23 +41,22 @@ def test_initial_reference_candidates_are_uniform_and_the_difference_can_learn(c
 
 
 @pytest.mark.parametrize('count', (2, 7, 257))
-def test_enabled_prime_preserves_the_initial_binding_band_for_any_menu(count):
+def test_enabled_prime_is_uncapped_for_every_candidate_menu(count):
     from types import SimpleNamespace
     from Language import OperationSelectionLayer
     owner = SimpleNamespace(d_model=8)
     candidates = torch.randn(2, count, 8)
     prime = torch.randn(2, 8) * 100
-    # Opposite extremes exercise the bound independent of the random draw.
+    # Opposite extremes demonstrate that content neutrality does not cap
+    # the independently declared expectation prior.
     candidates[:, 0] = prime
     candidates[:, 1] = -prime
-    bias = OperationSelectionLayer.prime_bias(owner, candidates, prime, binding_choices=True)
-    ratio = bias.softmax(-1) * count
-    assert bool(((ratio >= .9) & (ratio <= 1.1)).all())
+    bias = OperationSelectionLayer.prime_bias(owner, candidates, prime)
+    expected = torch.einsum('bad,bd->ba',
+        torch.nn.functional.normalize(candidates, dim=-1), prime)
+    torch.testing.assert_close(bias, expected, rtol=0, atol=0)
     assert bool((bias[:, 0] > bias[:, 1]).all())
-    # A conditional subset must satisfy the same contract; duplicate keys
-    # and arbitrary legal-menu masks cannot bypass the log-odds bound.
-    ratio = bias[:, ::2].softmax(-1) * bias[:, ::2].shape[-1]
-    assert bool(((ratio >= .9) & (ratio <= 1.1)).all())
+    assert bool((bias[:, 0] - bias[:, 1] > 1).all())
 
 
 def test_episode_state_audit_does_not_materialize_sparse_capacity(monkeypatch):
@@ -78,6 +77,60 @@ def test_episode_state_audit_does_not_materialize_sparse_capacity(monkeypatch):
     changed = torch.sparse_coo_tensor(indices, values + .25, shape)
     assert module.value_digest(original) == module.value_digest(reordered)
     assert module.value_digest(original) != module.value_digest(changed)
+
+
+def test_binding_judge_scores_referent_while_surface_readers_keep_their_training(monkeypatch):
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from Models import BasicModel
+    from Meaning import ConceptualMeaning
+    from Layers import Error
+    from ThoughtReferences import question
+    base = question(ConceptualMeaning.from_description(torch.ones(4)))
+    correct = replace(base, role_refs=(('sym', 5), None, None),
+                      bindings={'_bound_roles': (('referent', 0),)})
+    wrong = replace(correct, role_refs=(('sym', 7), None, None))
+    owner = SimpleNamespace(word_concepts=lambda _: (5,), _csw_row_of=lambda _: 0,
+        similarity_codebook=SimpleNamespace(lookup_rows=lambda *args, **kwargs: torch.ones(1, 4)))
+    data = SimpleNamespace(answer_mode='binding',
+        what=lambda question: SimpleNamespace(available=True, what='target'))
+    model = SimpleNamespace(inputSpace=SimpleNamespace(data=data), _concept_owner=lambda: owner,
+        symbolSpace=SimpleNamespace(ltm_store=None), _sentence_answer_questions=(0, 1, 2))
+    surface = torch.tensor([2., 0., .1], requires_grad=True)
+    def reader(model, *args, registry=None):
+        model._sentence_answer_raw_cost = surface
+        model._sentence_answer_predictions = surface[:, None]
+        registry.add('surface', surface, objective='output')
+        return surface
+    monkeypatch.setattr(BasicModel, '_sentence_reader_error', reader)
+    registry = Error(row_mask=torch.ones(3, dtype=torch.bool))
+    result = BasicModel._sentence_answer_error(model, None, 0,
+        torch.ones(3, dtype=torch.bool), dict(meanings=[correct, wrong, base]), registry=registry)
+    assert result.tolist() == [0., .5, 1.]
+    registry.total(objective='output').sum().backward()
+    assert surface.grad.tolist() == [1., 1., 1.]
+
+
+def test_open_region_with_only_negation_offers_conclude(monkeypatch):
+    from test_item6_2_thinking import world, run
+    from ThoughtReferences import question, open_slots
+    from Queries import ThoughtOperationCandidate
+    import ThoughtStream
+    model, registry, store, (a, b, c) = world()
+    root = question(registry.form('isPart', a, open_roles=('argin2',)))
+    request = registry.form('not', root)
+    action = ThoughtOperationCandidate(registry.operation_spec('not'), request, ())
+    monkeypatch.setattr(ThoughtStream, 'candidates', lambda *args, **kwargs: (action,))
+    menus = []
+    def choose(_root, _active, actions, **kwargs):
+        menus.append(tuple(None if item is None else item.semantic_id for item in actions))
+        assert None in actions
+        return None
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    result = run(model, root, work_budget=512)
+    assert menus == [('not', None)]
+    assert result.work.spent < 512 and open_slots(result.meaning)
+    assert [r.operation for r in result.records if r.kind == 'thought'] == ['conclude']
 
 
 @pytest.mark.parametrize('kind', ('anchordot', 'mlp'))

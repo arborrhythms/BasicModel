@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-True]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-True]",
+    "test/test_contractive_linear.py::test_square_W_Winverse_identity",
+    "test/test_contractive_linear.py::test_binary_right_inverse",
+    "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps"
+  ],
+  "completed": [
+    "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[True-True]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
+    "test/test_contractive_linear.py::test_square_roundtrip[False-True]",
+    "test/test_contractive_linear.py::test_square_W_Winverse_identity",
+    "test/test_contractive_linear.py::test_binary_right_inverse",
+    "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018796791089698672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007307501509785652,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006057501304894686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007269999478012323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_roundtrip[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000621583079919219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_square_W_Winverse_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006013750098645687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_binary_right_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006175001617521048,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004644084023311734,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

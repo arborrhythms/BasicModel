@@ -17,36 +17,32 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 4's reviewed mechanism close-out is published at source
-`fdeef42b8` on `codex/item4-repair` ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
-Alec's defaults are all four gains zero, selection prime on and φ=.5;
-the declared enabled-prediction parity comparison and the whole §14 file
-complete. The single full sweep and scoped repairs are recorded separately.
-The original failed learning run stays open at Item 0. The distribution
-bound and .0517 paired-cost counterexample pass scoped repairs before 3.5 in
-[one outstanding-gates receipt](doc/benchmarks/2026-10-19-item4-step0/README.md),
-on `codex/item4-step0`. Independent 5.5 gates remain unchanged.
-All 16 standing XOR cases pass with every level enabled and in the matched
-zero-gain arm. The one-successor decomposition certificate fails in both
-arms after its API and memory repairs; it is a blocker in this round, before
-review resolution and the single landing sweep. It is not deferred to 3.5
-or relabeled as a learning gate.
-Item 5's landing remains BasicModel `9207f5e03` / WikiOracle `929e4a8`.
+**Current:** Step 0 round 2 on `codex/item4-step0` resolves the reviewed
+candidate's mechanism failures. The prime is ON and uncapped; defaults
+remain P/S/R/D=0 and φ=.5. Certificate (b) measures only the chooser's own
+content score under the declared parity configuration, with form and
+expectation held out. The whole §14 file completes with its copular
+prerequisite skip. Both unchanged decomposition certificates pass in both
+gain arms, from their original recorded initializations. The paired
+reconstruction invariant also passes. The single landing sweep completed
+with one empty-menu controller regression; its repair passes 113 scoped
+checks, with the copular prerequisite skip, and both decomposition
+certificates pass again in both gain arms. Publication to both mains
+follows, before Item 3.5 starts.
+Evidence and causes are in the
+[round-2 receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md).
+The accepted 16/16 XOR measurements in each gain arm remain in the
+[first-round receipt](doc/benchmarks/2026-10-19-item4-step0/README.md).
 
-**Before 3.5 (Alec, 2026-10-19: "we need to get them passing"):** item
-4's carried mechanism failures are not carried again — spec §9 gate 1
-(XOR fixtures now measured at all levels; one math-chain blocker remains), the
-`.0517` paired zero-cost invariant, the initial-binding distribution
-bound — as step 0 of the
-[first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19).
-Both local and remote `main`s now name the published Item 4 heads:
-BasicModel `3ad4056e4`, WikiOracle `9d81ec0`.
 **Necessary deferral, accepted after evaluation:** the copular-identity
 certificate needs its producing lesson. Item 3.5 owns stage 4e → NP
 continuation → copular identity → artifact registration and unchanged c
 certificate. No producing artifact exists; the October 18 decision withdrew
 the proposed one-equality-hop reader patch in favor of this phase gate.
 The unconditional column-copula mechanism certificate stays in this round.
+Graded versus shuffled (§9.6), derivation-optimality, long-run collapse and
+the original failed native learning run remain at Item 0. Independent 5.5
+learning gates remain separate. No extra training or regrade closes them.
 
 **Next mechanism:** Item **3.5**, on a new branch after Item 4 publication,
 in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
@@ -56,11 +52,6 @@ difference; then the remaining 5.5 mechanisms. Each has its own receipt.
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns.
 
-**Item 4 publication:** source `fdeef42b8` includes every BasicModel edit,
-including the newer LTM1/LTM3, occurrence, Philosophy and todo changes.
-The closing receipt is `3ad4056e4`; WikiOracle bump `9d81ec0` names it.
-The pre-existing parent nanochat pointer is preserved outside Item 4; it
-is the only unrelated parent-tree change, not an uncommitted BasicModel edit.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -239,12 +230,13 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   immediate failure is different: its filled reference points to an order-one
   child associated with `the`, with no lexical path to `five`. All assertions
   remain unchanged; no repair or learning claim is made.
-- b's initial binding-distribution repair awaits review and the landing
-  sweep in the [outstanding-gates round](doc/benchmarks/2026-10-19-item4-step0/README.md).
-  Neutral candidate initialization and bounded prime odds address the cause;
-  controlled retained contexts guarantee coverage beside the unchanged
-  32-document audit. Scoped range .930257–1.077537 meets the unchanged
-  .9–1.1 band. The earlier .848586–1.179175 failure remains in its receipt.
+- b's reviewed initial binding-distribution repair awaits publication in
+  [Step 0 round 2](doc/benchmarks/2026-10-19-item4-step0-round2/README.md).
+  Candidate initialization is neutral. The production prime is uncapped;
+  the certificate measures the own content term with form and expectation
+  held out, under parity. Controlled retained contexts guarantee coverage
+  beside the 32-document audit. Scoped range 1.0–1.000000030 meets the
+  unchanged .9–1.1 band. Earlier measurements remain in their receipts.
 - The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
   adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
   failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
@@ -457,8 +449,9 @@ Work is on `main`; Claude approves the preparation landing. **No constituent
 or identity learning claim.**
 The balanced identity corpus and grader remain the measurement; the earlier
 factorial/confounded recovery belongs to order 2. Keep the inverse, order-CE,
-relation-trace, MM grammar, compiled-retention and c findings above, and the
-paired zero-cost counterexample. Acceptance retires mechanisms by decision,
+relation-trace, MM grammar, compiled-retention and c findings above.
+Step 0 owns and repairs the paired zero-cost counterexample.
+Acceptance retires mechanisms by decision,
 not by a passing identity lesson.
 
 - **5.5. Where and when a sentence occurred; tense, aspect, the preposition
@@ -568,7 +561,23 @@ not by a passing identity lesson.
      forward is the existing close-time resolver (`ReferenceClose`:
      STM individuals or a new one, by signature, follow-up credit and
      salience — the evidence still chooses whom), its reverse re-emits the
-     description or determiner; the vestigial binary `bind` layer in
+     description or determiner. **A site** (Claude's reading of the code,
+     2026-10-19, confirmed by Alec) is any of three, none a word class:
+     (1) an **open role** in the verb's frame — the verb column fired and
+     an expected participant (the resolver's predicate-association counts)
+     unfilled — which is the elided subject or object, with no word at
+     all; (2) an operand that interprets to **no object of its own** (two
+     truths §3.5's pronoun: empty explanation, resolved by prediction,
+     recency, role and the learned surface cue); (3) a **definite** phrase,
+     today's only cue, kept as one source among three. The vestigial
+     `ContextualBindLayer` is deleted only once source (2) replaces its
+     pronoun route. Called once per site; `bind` adds no scorer — the
+     resolver's five features (explanation, prediction, recency, the two
+     roles) and cue policy are its forward. **Concrete design:**
+     [bind thought operation plan](doc/plans/2026-10-19-bind-thought-operation.md)
+     (declaration, executor over a `ReferenceClose.score` refactor, the
+     three sites in code terms incl. role-keyed associations and
+     `expected_roles` for elision, order of work, gates G1–G3); the vestigial binary `bind` layer in
      `Language.py` (left operand returned, reverse raises; the retired
      nearest-left rule of [catalogue §3.3](doc/specs/2026-09-29-operator-catalogue.md#33-bind))
      is deleted. This supersedes the 5.5 plan's pending choice (a)/(b) on
@@ -838,8 +847,9 @@ not by a passing identity lesson.
    The VP teacher and order-2 kinds are not built. Do not start another native
    identity run before stage 4e passes. Retain stored-idea recovery beyond two
    words, order CE, relation trace 2/4, free readback 0/4, MM grammar recovery,
-   compiled retention, c's marker-headed `five` and the paired zero-cost
-   counterexample as named gates, not completed learning.
+   compiled retention and c's marker-headed `five` as named gates, not
+   completed learning. The paired zero-cost invariant is repaired by Step 0,
+   with its original counterexample preserved in the receipt.
 
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).

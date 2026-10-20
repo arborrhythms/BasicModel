@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_below_count_threshold",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_resets_stats"
+  ],
+  "completed": [
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_below_count_threshold",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_resets_stats"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002540408167988062,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_higher_order_below_count_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001410418190062046,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004314332967624068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015309168957173824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_flush_and_promote_resets_stats",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020379999186843634,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

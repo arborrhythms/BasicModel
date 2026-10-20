@@ -40,7 +40,6 @@ def retained_bank_distributions(model):
                      torch.zeros_like(identities), identities, buffer.new_ones(1, 2))
             scope = torch.stack((torch.zeros_like(identities), identities), -1)
             with patch.object(language, '_reference_bank', bank, create=True), \
-                    patch.object(layer, '_expectation_prime', points[0][None], create=True), \
                     binding_distributions() as observed, torch.no_grad():
                 language.choose_operation(state, torch.ones(1, device=like.device, dtype=torch.bool),
                     slots=1, sample=False, reference_scope=scope, policy_grad=False)
@@ -57,11 +56,28 @@ def binding_distributions():
     records = []
 
     def observed(module, x, **kwargs):
-        result = original(module, x, **kwargs)
         data = kwargs.get('reference_data')
         if not data or not data.get('binding_choices'):
-            return result
-        logits = result[2]['logits'].detach().cpu()
+            return original(module, x, **kwargs)
+        # Observe the existing chooser before occupation/form priors,
+        # reduction pressure and the expectation prime are added. Selection
+        # still uses the complete ordinary logits; this is only a measurement.
+        scored = {}
+        def capture(label, function):
+            def call(*args, **options):
+                result = function(*args, **options)
+                scored[label] = result[1].detach().cpu()
+                return result
+            return call
+        with patch.object(module.chooser, 'score_binary',
+                capture('binary', module.chooser.score_binary)), \
+                patch.object(module.chooser, 'score_unary',
+                capture('unary', module.chooser.score_unary)):
+            result = original(module, x, **kwargs)
+        complete = result[2]['logits'].detach().cpu()
+        logits = torch.cat((scored['binary'].flatten(1), scored['unary'].flatten(1),
+                            complete.new_zeros(len(x), 1)), -1)
+        logits = logits.masked_fill(~torch.isfinite(complete), -torch.inf)
         selected = result[2]['action'].detach().cpu()
         nr, width = len(data['binary_ops']), x.shape[1]
         for label, positions, offset, arity in (
@@ -92,6 +108,8 @@ def binding_distributions():
                         records.append(dict(row=row, position=position, arity=arity,
                             operation=operation, role=role, other=other,
                             alternatives=alternatives, probabilities=probability.tolist(),
+                            measured_term='chooser_content',
+                            complete_probabilities=complete[row, actions].softmax(0).tolist(),
                             selected=int(selected[row]), actions=actions))
         return result
 

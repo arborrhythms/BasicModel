@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown"
+  ],
+  "completed": [
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008256958099082112,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004137917188927531,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004606541944667697,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004014167003333569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0037865829654037952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004087749868631363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005048917140811682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006653707940131426,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

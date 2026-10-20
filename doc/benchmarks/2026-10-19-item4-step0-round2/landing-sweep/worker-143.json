@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[cpu]",
+    "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[mps]",
+    "test/test_contextual_concept_codebook.py::test_dictionary_is_included_once_in_optimizer_groups",
+    "test/test_contextual_concept_codebook.py::test_parameter_preserves_frozen_capacity_and_state_dict_storage"
+  ],
+  "completed": [
+    "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[cpu]",
+    "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[mps]",
+    "test/test_contextual_concept_codebook.py::test_dictionary_is_included_once_in_optimizer_groups",
+    "test/test_contextual_concept_codebook.py::test_parameter_preserves_frozen_capacity_and_state_dict_storage"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[cpu]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012337921652942896,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[mps]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06279529095627367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_dictionary_is_included_once_in_optimizer_groups",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00040866690687835217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_contextual_concept_codebook.py::test_parameter_preserves_frozen_capacity_and_state_dict_storage",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00039637484587728977,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

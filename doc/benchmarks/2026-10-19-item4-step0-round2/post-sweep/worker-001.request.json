@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/post-sweep/worker-001.recycle.json"
+}

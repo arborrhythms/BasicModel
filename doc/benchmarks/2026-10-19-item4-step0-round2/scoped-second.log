@@ -1,0 +1,7 @@
+[collect] 4 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 2.4s; peak 0.25 GiB
+[worker-000] 48 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 0; 134.1s; peak 4.08 GiB
+Result: passed, exit 0; 48/48 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/scoped-second/result.json
+Skipped phase certificates: copular_identity: 1

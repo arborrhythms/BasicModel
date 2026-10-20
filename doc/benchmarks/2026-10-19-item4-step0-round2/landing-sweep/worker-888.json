@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+    "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+    "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+    "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+    "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+    "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces"
+  ],
+  "completed": [
+    "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+    "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+    "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+    "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+    "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+    "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+    "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005825420375913382,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[True-False-True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031587504781782627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026295892894268036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00034604198299348354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005254161078482866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023645814508199692,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025008292868733406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004829416051506996,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

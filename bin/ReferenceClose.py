@@ -164,6 +164,70 @@ class ReferenceClose(nn.Module):
         return ((*owned, self.store.occurrence_of(row))
                 if '_individual_context' in data else owned)
 
+    def logits(self, features, cue, *, supervised=False):
+        """One factored score for selection and mention-ranking credit.
+
+        Supervision updates the form and content terms. Prediction, recency
+        and roles still condition the distribution, with held weights.
+        """
+        policy = self.policy.clone()
+        if supervised:
+            policy = torch.cat((policy[:1], policy[1:].detach()))
+        content = features[:, 0] * policy[0]
+        expectation = features[:, 1] * policy[1]
+        salience = features[:, 2:] @ policy[2:]
+        form = (features[:, 2:] * (cue @ self.cue_policy.clone())).sum(-1)
+        return content + expectation + salience + form
+
+    def mention_loss(self, record, correct):
+        """Negative log marginal mass of all known correct antecedents.
+
+        No selected argmax becomes a label. If the known answer was outside
+        the retained menu there is no supervised update to that menu.
+        """
+        candidates = record['candidates']
+        gold = torch.tensor([identity in correct for identity in candidates],
+                            device=self.policy.device, dtype=torch.bool)
+        if not bool(gold.any()):
+            return None
+        features = torch.as_tensor(record['features'], device=self.policy.device,
+                                   dtype=self.policy.dtype).detach()
+        cue = torch.as_tensor(record['cue'], device=self.policy.device,
+                             dtype=self.policy.dtype).detach()
+        logits = self.logits(features, cue, supervised=True)
+        return logits.logsumexp(0) - logits[gold].logsumexp(0)
+
+    def answer_loss(self, plan, meaning, word):
+        """A supplied answer labels only the reference roles it answers."""
+        from ThoughtReferences import bindings
+        data = bindings(meaning)
+        roles = {role for kind, role in (*data.get('_open_references', ()),
+                 *data.get('_bound_roles', ())) if kind == 'referent'}
+        correct = set(self.components.owner.word_concepts(word))
+        losses = [self.mention_loss(item, correct) for item in plan['items']
+                  if item['role'] in roles and item['features'] is not None]
+        losses = [value for value in losses if value is not None]
+        return torch.stack(losses).sum() if losses else None
+
+    def resolved(self, row, role, reference, errors):
+        """A later fill trains the recorded menu for this exact occurrence."""
+        from ThoughtReferences import bindings
+        records = bindings(self.store.meaning_of(row)).get('_reference_mentions', ())
+        correct = {reference}
+        target = self.store.index_of_row(reference)
+        if target is not None:
+            correct.add(int(self.store.refs[target, 0]))
+        losses = []
+        with torch.enable_grad():
+            for held_role, record in records:
+                if held_role == role:
+                    loss = self.mention_loss(dict(record), correct)
+                    if loss is not None:
+                        losses.append(loss)
+            if losses:
+                errors.add('expectation.reference_mentions', torch.stack(losses).sum(),
+                           category='expectation', weight=self.components.weight)
+
     def preview(self, clause, frames, *, document=None, position=None):
         """One decision per constituent; no allocation, writes or statistics."""
         if position is not None and frames:
@@ -201,7 +265,9 @@ class ReferenceClose(nn.Module):
                     content.new_tensor(-recency / max(1, len(ids))),
                     content.new_tensor(candidate['role'] / 2), content.new_tensor(role / 2))))
                 choices.append(identity)
-            selected, probabilities = None, None
+            selected, probabilities, phi = None, None, None
+            if features:
+                phi = torch.stack(features).to(self.policy)
             if mode == 'mint':
                 # A trial-local handle is not a durable identity. It allows
                 # later constituents of this same close to bind the new one.
@@ -215,11 +281,10 @@ class ReferenceClose(nn.Module):
                 if features:
                     cost = cost + torch.stack(features)[:, 0].amax().clamp(0, 1)
             elif features:
-                phi = torch.stack(features).to(self.policy)
                 # Both trial graphs precede either optimizer step. Own the
                 # parameter values used by this graph, as the shared chooser
                 # does, while retaining their gradient connection.
-                logits = phi @ self.policy.clone() + (phi[:, 2:] * (cue @ self.cue_policy.clone())).sum(-1)
+                logits = self.logits(phi, cue)
                 probabilities = logits.softmax(0)
                 index = int(logits.detach().argmax())
                 selected = choices[index]
@@ -233,6 +298,7 @@ class ReferenceClose(nn.Module):
                 cost = cost + 1
             items.append(dict(node=node, mode=mode, content=content, predicate=predicate,
                 role=role, selected=selected, candidates=tuple(choices),
+                features=phi, cue=cue,
                 probabilities=probabilities, leaves=request['leaves']))
         return dict(items=items, cost=cost, records=records)
 
@@ -338,7 +404,7 @@ class ReferenceClose(nn.Module):
         store, dictionary = self.store, self.components.nouns
         from Occurrence import document_digest
         document = document_digest(document).hex()
-        addresses, audit, allocated = [], [], {}
+        addresses, audit, allocated, mentions = [], [], {}, []
         for item_number, item in enumerate(plan['items']):
             index = written.get(id(item['written_node']))
             if index is None and item['written_node'] is plan['prepared_root']:
@@ -361,6 +427,15 @@ class ReferenceClose(nn.Module):
                 predicate=None if predicate_row is None else store.occurrence_of(predicate_row), mint=item['mode'] == 'mint',
                 initial=reference)
             self._metadata(index, '_individual_context', context)
+            if item['features'] is not None:
+                # Retain detached sufficient inputs on the occurrence, not a
+                # live graph or a separate pending-reference cache.
+                record = dict(candidates=tuple(allocated.get(identity, identity)
+                    for identity in item['candidates']),
+                    features=item['features'].detach().cpu().tolist(),
+                    cue=item['cue'].detach().cpu().tolist())
+                mentions.append((item['role'], record))
+                self._metadata(index, '_reference_mentions', ((0, record),))
             plan['records'][address] = index, context
             addresses.append(store.occurrence_of(index))
             if reference is not None:
@@ -376,6 +451,8 @@ class ReferenceClose(nn.Module):
                     'individual_capacity_exhausted' if item['mode'] == 'mint' or isinstance(item['selected'], tuple)
                     else 'no_accessible_individual')))
         self._metadata(row, '_individual_occurrences', tuple(addresses))
+        if mentions:
+            self._metadata(row, '_reference_mentions', tuple(mentions))
         self.revise(plan['records'])
         self.last_audit = tuple(audit)
 

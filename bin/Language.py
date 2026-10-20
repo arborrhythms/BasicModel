@@ -6803,21 +6803,10 @@ class OperationSelectionLayer(nn.Module):
         return torch.where(depth > 0, self.reduce_pressure * (
             depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
 
-    def prime_bias(self, candidates, prime, *, binding_choices=False):
-        """Positive selection prior, with bounded odds for reference variants.
-
-        An untrained reference chooser is neutral within each operation.
-        Its external prior must preserve the [.9, 1.1]-of-uniform contract
-        for any retained menu. A logit span <= log(1.1) bounds every
-        conditional probability ratio to [1/1.1, 1.1]. Scale the whole
-        prior, preserving its ordering and sign; learned logits are unbounded.
-        """
+    def prime_bias(self, candidates, prime):
+        """The uncapped expectation prior, separate from the chooser's content."""
         bias = torch.einsum('bad,bd->ba',
             F.normalize(candidates.detach()[..., :self.d_model], dim=-1), prime.to(candidates))
-        if binding_choices:
-            span = bias.amax(-1, keepdim=True) - bias.amin(-1, keepdim=True)
-            bound = math.log(1.1)
-            bias = bias * (bound / span.clamp_min(bound))
         return bias.detach()
 
     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
@@ -6973,8 +6962,7 @@ class OperationSelectionLayer(nn.Module):
             logits = logits + score_delta
         prime = getattr(self, '_expectation_prime', None)
         if prime is not None:
-            bias = self.prime_bias(candidates, prime, binding_choices=bool(
-                reference_data is not None and reference_data.get('binding_choices')))
+            bias = self.prime_bias(candidates, prime)
             logits = logits + bias
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-598.recycle.json"
+}

@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed"
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009591749869287014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01568016712553799,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.028268333058804274,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010870749829337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013732250081375241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009037334006279707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008484957972541451,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008453959133476019,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

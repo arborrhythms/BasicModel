@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-sum]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-sum]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[2]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[7]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+    "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training",
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]"
+  ],
+  "completed": [
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-sum]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-sum]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[2]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[7]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+    "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training",
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-conjunction]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008479170501232147,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-disjunction]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000249041011556983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-sum]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00039537507109344006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-conjunction]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002482910640537739,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-disjunction]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026616593822836876,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-sum]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002861248794943094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011299042031168938,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008028747979551554,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005485420115292072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002709999680519104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001827920787036419,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002137920819222927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005181250162422657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010303750168532133,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01876812521368265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0017185418400913477,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

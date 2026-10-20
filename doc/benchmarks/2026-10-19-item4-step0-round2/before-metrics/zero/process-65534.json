@@ -1,0 +1,39 @@
+{
+  "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]": {
+    "seed": 4199722147,
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.0,
+      "symbolExpectationGain": 0.0,
+      "rowExpectationGain": 0.0,
+      "documentExpectationGain": 0.0
+    },
+    "constructors": [
+      {
+        "index": 0,
+        "scope": "common per-stage constructor",
+        "parameters": 121,
+        "gains": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prime": true,
+        "initial_parameters_equal_to_recorded_run": true
+      }
+    ],
+    "reads": {
+      "P": {
+        "calls": 1,
+        "with_prior": 0,
+        "coordinates": 32,
+        "below_one": 0,
+        "minimum": 1.0,
+        "maximum": 1.0
+      }
+    }
+  }
+}

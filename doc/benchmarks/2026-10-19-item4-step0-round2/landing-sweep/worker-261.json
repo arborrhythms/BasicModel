@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_kind.py::test_grammatical_kind_does_not_train_a_second_expectation_head",
+    "test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree"
+  ],
+  "completed": [
+    "test/test_expectation_kind.py::test_grammatical_kind_does_not_train_a_second_expectation_head",
+    "test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_kind.py::test_grammatical_kind_does_not_train_a_second_expectation_head",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005059167044237256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011559159029275179,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

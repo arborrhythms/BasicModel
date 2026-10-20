@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_property_tiling.py::test_char_class_letter",
+    "test/test_property_tiling.py::test_char_class_digit",
+    "test/test_property_tiling.py::test_char_class_whitespace",
+    "test/test_property_tiling.py::test_char_class_punct",
+    "test/test_property_tiling.py::test_char_class_or_union",
+    "test/test_property_tiling.py::test_complement_is_the_other_whole",
+    "test/test_property_tiling.py::test_layer_matches_function",
+    "test/test_property_tiling.py::test_batched"
+  ],
+  "completed": [
+    "test/test_property_tiling.py::test_char_class_letter",
+    "test/test_property_tiling.py::test_char_class_digit",
+    "test/test_property_tiling.py::test_char_class_whitespace",
+    "test/test_property_tiling.py::test_char_class_punct",
+    "test/test_property_tiling.py::test_char_class_or_union",
+    "test/test_property_tiling.py::test_complement_is_the_other_whole",
+    "test/test_property_tiling.py::test_layer_matches_function",
+    "test/test_property_tiling.py::test_batched"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_letter",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003070840612053871,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_digit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001555420458316803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_whitespace",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012749992311000824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_punct",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001244591549038887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_char_class_or_union",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012620794586837292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_complement_is_the_other_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001509580761194229,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_layer_matches_function",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022375001572072506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_property_tiling.py::test_batched",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012308289296925068,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

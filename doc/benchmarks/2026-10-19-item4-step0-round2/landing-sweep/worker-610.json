@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[5]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[1]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[2]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[3]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[2]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[3]"
+  ],
+  "completed": [
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[5]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[1]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[2]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[3]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[2]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[3]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024582501500844955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012415419332683086,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012890000361949205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013472498394548893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012029169593006372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012696250341832638,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_monotone_transport[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012040829751640558,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_monotone_transport[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012750839814543724,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

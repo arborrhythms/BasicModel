@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_util_device.py::TestCudaSanityChecks::test_cpu_default_does_not_interpose_a_python_device_mode",
+    "test/test_util_device.py::TestCudaSanityChecks::test_effective_compile_mode_version_gates_mps_workaround",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_cuda_index",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_cuda_unavailable_raises",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_gpu_falls_back_to_mps",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_invalid_name_raises",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_mps_unavailable_raises",
+    "test/test_util_device.py::TestCudaSanityChecks::test_rewrite_inductor_cmd_line_quotes_spacey_prefix"
+  ],
+  "completed": [
+    "test/test_util_device.py::TestCudaSanityChecks::test_cpu_default_does_not_interpose_a_python_device_mode",
+    "test/test_util_device.py::TestCudaSanityChecks::test_effective_compile_mode_version_gates_mps_workaround",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_cuda_index",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_cuda_unavailable_raises",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_gpu_falls_back_to_mps",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_invalid_name_raises",
+    "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_mps_unavailable_raises",
+    "test/test_util_device.py::TestCudaSanityChecks::test_rewrite_inductor_cmd_line_quotes_spacey_prefix"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_cpu_default_does_not_interpose_a_python_device_mode",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027179112657904625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_effective_compile_mode_version_gates_mps_workaround",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020741717889904976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_cuda_index",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038641621358692646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_cuda_unavailable_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004088750574737787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_gpu_falls_back_to_mps",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038950005546212196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_invalid_name_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001775000710040331,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_mps_unavailable_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001924161333590746,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_util_device.py::TestCudaSanityChecks::test_rewrite_inductor_cmd_line_quotes_spacey_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001671668142080307,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

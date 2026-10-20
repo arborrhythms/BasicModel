@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+  ],
+  "completed": [
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005192749900743365,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0038286661729216576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004126959014683962,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.17008745786733925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.1703488330822438,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033719998318701982,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

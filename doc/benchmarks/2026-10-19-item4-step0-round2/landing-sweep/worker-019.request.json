@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_attention_lesson.py::test_part_supervision_scores_missing_and_extra_leaves_after_decoding",
+    "test/test_attention_lesson.py::test_targets_cannot_change_the_prompt_need"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-019.recycle.json"
+}

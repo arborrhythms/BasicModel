@@ -1,0 +1,106 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact"
+  ],
+  "completed": [
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact": "stage3"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_clock_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.1181287090294063,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.151s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.149s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.128s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.124s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.123s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.122s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.123s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.125s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.126s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_offset_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.5591206660028547,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.125s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.130s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_stream_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.205532249994576,
+      "message": "",
+      "stdout": "[BasicModel] Activated aligned codebook prefix 16 -> 32 rows (physical capacity 32; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.349s)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_interleaving",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.9210648329462856,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=0.599s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_preposition_idempotence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013973542023450136,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_surface_inverses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.888669041916728,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012518625007942319,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": "stage3",
+      "duration": 5.164597583934665,
+      "message": "",
+      "stdout": "Grammar checkpoint: 41 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt\n  Keys in model but missing from file: 18 (initialized fresh)\r\n[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

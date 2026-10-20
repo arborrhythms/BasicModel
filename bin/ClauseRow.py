@@ -140,6 +140,14 @@ def attach_clause_index(model, store, space):
 
     store.configure_clause_index(concept_point=concept_point,
         predicate_kind=predicate_relation, preflight=lambda count: space_ref()._preflight_concept_allocation(count, context='clause taxonomy'))
+    def reference_resolved(row, role, reference):
+        owner = space_ref()
+        current = getattr(owner, '_model', None)
+        components = getattr(owner, 'components', None)
+        if (current is not None and components is not None
+                and getattr(current, '_sentence_training', False)):
+            components.reference_close.resolved(row, role, reference, current.errors)
+    object.__setattr__(store, '_reference_resolved', reference_resolved)
     from ConceptIndex import ClauseTaxonomyPlan, rebuild_ltm_taxonomy
     object.__setattr__(store, '_clause_index_plan',
         lambda clause: ClauseTaxonomyPlan(space_ref(), store, clause))
@@ -686,6 +694,10 @@ class ClauseRows:
                 old_refs[role] = reference
             self.refs[row].copy_(old_refs)
             self._update_semantic_fingerprint(row)
+            notify = getattr(self, '_reference_resolved', None)
+            if notify is not None:
+                for role, _ in selected:
+                    notify(row, role, reference)
             completed.append(row)
         return tuple(completed)
 
@@ -707,6 +719,9 @@ class ClauseRows:
         data['_pending'] = bool(open_slots(resolved))
         self.upsert_resolved(row, replace(resolved, bindings=data))
         self.refs[row, role] = reference
+        notify = getattr(self, '_reference_resolved', None)
+        if notify is not None:
+            notify(row, role, reference)
         return True
 
     def upsert_resolved(self, row, meaning):

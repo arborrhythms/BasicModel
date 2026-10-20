@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_signal_router_layer.py::test_layer_forward_shapes",
+    "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
+    "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops"
+  ],
+  "completed": [
+    "test/test_signal_router_layer.py::test_layer_forward_shapes",
+    "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
+    "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_layer_forward_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0029729160014539957,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016081915935501456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000986000057309866,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

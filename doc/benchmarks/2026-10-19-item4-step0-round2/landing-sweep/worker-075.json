@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_clarifications.py::test_consistency_default_scalar",
+    "test/test_clarifications.py::test_consistency_report_part_opposite_sign",
+    "test/test_clarifications.py::test_consistency_report_no_contradiction_when_same_sign",
+    "test/test_clarifications.py::test_consistency_ignores_within_truth_both",
+    "test/test_clarifications.py::test_suggest_clarifications_template",
+    "test/test_clarifications.py::test_suggest_clarifications_missing_source_fallback",
+    "test/test_clarifications.py::test_assess_contested_vs_silent"
+  ],
+  "completed": [
+    "test/test_clarifications.py::test_consistency_default_scalar",
+    "test/test_clarifications.py::test_consistency_report_part_opposite_sign",
+    "test/test_clarifications.py::test_consistency_report_no_contradiction_when_same_sign",
+    "test/test_clarifications.py::test_consistency_ignores_within_truth_both",
+    "test/test_clarifications.py::test_suggest_clarifications_template",
+    "test/test_clarifications.py::test_suggest_clarifications_missing_source_fallback",
+    "test/test_clarifications.py::test_assess_contested_vs_silent"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_clarifications.py::test_consistency_default_scalar",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005346669349819422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clarifications.py::test_consistency_report_part_opposite_sign",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031216698698699474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clarifications.py::test_consistency_report_no_contradiction_when_same_sign",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002012921031564474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clarifications.py::test_consistency_ignores_within_truth_both",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001388750970363617,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clarifications.py::test_suggest_clarifications_template",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019516702741384506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clarifications.py::test_suggest_clarifications_missing_source_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018637487664818764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clarifications.py::test_assess_contested_vs_silent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002952080685645342,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

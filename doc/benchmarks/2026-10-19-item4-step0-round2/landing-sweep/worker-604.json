@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_calls_reverse_not_forward",
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_averages_pairs",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_empty_passthrough",
+    "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+    "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse"
+  ],
+  "completed": [
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_calls_reverse_not_forward",
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_averages_pairs",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_empty_passthrough",
+    "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+    "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_calls_reverse_not_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001224579755216837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026245787739753723,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_averages_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00037420797161757946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013733399100601673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001952077727764845,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_empty_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010404200293123722,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016958313062787056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013445899821817875,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_objective_optimizer_resume.py::test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty"
+  ],
+  "completed": [
+    "test/test_objective_optimizer_resume.py::test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_objective_optimizer_resume.py::test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013964708195999265,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

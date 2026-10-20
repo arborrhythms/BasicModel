@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]",
+    "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
+    "test/test_symbolize_layer.py::test_quantization_is_removed_from_declared_thought_capabilities",
+    "test/test_symbolize_layer.py::test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]"
+  ],
+  "completed": [
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]",
+    "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
+    "test/test_symbolize_layer.py::test_quantization_is_removed_from_declared_thought_capabilities",
+    "test/test_symbolize_layer.py::test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003055830020457506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016008294187486172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002127089537680149,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_quantization_is_removed_from_declared_thought_capabilities",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001367088407278061,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013656625058501959,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018866709433495998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014783302322030067,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

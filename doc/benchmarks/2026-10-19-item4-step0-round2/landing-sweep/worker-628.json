@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+    "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte"
+  ],
+  "completed": [
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
+    "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+    "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006934590637683868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003347909078001976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004117919597774744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006788750179111958,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

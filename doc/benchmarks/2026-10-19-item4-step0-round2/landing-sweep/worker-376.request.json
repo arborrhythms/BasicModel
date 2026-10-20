@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.4]",
+    "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[1.0]",
+    "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+    "test/test_item4_repair.py::test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view",
+    "test/test_item4_repair.py::test_retention_surprise_counts_omission_but_not_empty_bank_padding",
+    "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[0.0]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-376.recycle.json"
+}

@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-repair/seed23-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/decomposition-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0/review-request.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-item4-step0-round2/answer-cost-cause.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-19-np-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/checkpoints/2026-09-17-production-spec/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-07-16-sparse-subspace-carrier-design.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-08-what-spec-deliverables.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking-codex-draft.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-10-meronomy-fold-ladder.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-12-compiled-reverse-loops.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-14-answer-path-ownership-and-training.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-15-next-sentence-as-the-production-objective.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-029.recycle.json"
+}

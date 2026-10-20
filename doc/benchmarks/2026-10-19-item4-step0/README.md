@@ -1,5 +1,10 @@
 # Item 4 outstanding gates before Item 3.5
 
+This is the reviewed first-round candidate record. The
+[second round](../2026-10-19-item4-step0-round2/README.md) removes the prime
+cap, applies Alec's revised certificate (b), and repairs both decomposition
+mechanisms. Results below remain the measurements of this earlier source.
+
 Baseline: BasicModel `3ad4056e4`, WikiOracle `9d81ec0`. Both mains now
 name these published Item 4 heads. Work is on `codex/item4-step0`.
 

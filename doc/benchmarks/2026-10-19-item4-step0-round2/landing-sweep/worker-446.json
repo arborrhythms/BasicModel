@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_dataset.py::test_generator_invariants[1]",
+    "test/test_math_dataset.py::test_generator_invariants[2]",
+    "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems",
+    "test/test_math_dataset.py::test_positions_are_independent_of_answers_and_premise_order_varies",
+    "test/test_math_dataset.py::test_data_what_supervised_returns_the_onehot_answer",
+    "test/test_math_dataset.py::test_xor_dataset_is_unchanged",
+    "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators0]",
+    "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators1]"
+  ],
+  "completed": [
+    "test/test_math_dataset.py::test_generator_invariants[1]",
+    "test/test_math_dataset.py::test_generator_invariants[2]",
+    "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems",
+    "test/test_math_dataset.py::test_positions_are_independent_of_answers_and_premise_order_varies",
+    "test/test_math_dataset.py::test_data_what_supervised_returns_the_onehot_answer",
+    "test/test_math_dataset.py::test_xor_dataset_is_unchanged",
+    "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators0]",
+    "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators1]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_dataset.py::test_generator_invariants[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.12158025009557605,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_generator_invariants[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.2073908329475671,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033940840512514114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_positions_are_independent_of_answers_and_premise_order_varies",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004140499979257584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_data_what_supervised_returns_the_onehot_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007871249690651894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_xor_dataset_is_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013533304445445538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011566251050680876,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011382920201867819,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

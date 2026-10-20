@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_canonical_shape.py::test_canonical_shape_table",
+    "test/test_canonical_shape.py::test_mandatory_codebook_space_roles",
+    "test/test_canonical_shape.py::test_unknown_section_raises"
+  ],
+  "completed": [
+    "test/test_canonical_shape.py::test_canonical_shape_table",
+    "test/test_canonical_shape.py::test_mandatory_codebook_space_roles",
+    "test/test_canonical_shape.py::test_unknown_section_raises"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_canonical_shape.py::test_canonical_shape_table",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016024988144636154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_canonical_shape.py::test_mandatory_codebook_space_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.587500244379044e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_canonical_shape.py::test_unknown_section_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.104213677346706e-05,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

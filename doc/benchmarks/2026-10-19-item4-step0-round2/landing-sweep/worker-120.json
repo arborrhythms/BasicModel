@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+    "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]"
+  ],
+  "completed": [
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+    "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+    "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+    "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+    "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017616688273847103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013329205103218555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011479202657938004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_cost_counts_distinct_concepts_not_occurrences_capacity_or_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022922090720385313,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018565829377621412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009056250564754009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008153331000357866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006189998239278793,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

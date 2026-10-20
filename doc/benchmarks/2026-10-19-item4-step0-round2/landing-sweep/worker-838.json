@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+    "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
+    "test/test_symbolic_heat_retrieval.py::TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity"
+  ],
+  "completed": [
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+    "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
+    "test/test_symbolic_heat_retrieval.py::TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018229580018669367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011795805767178535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010229088366031647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001008340623229742,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.82498750090599e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006268329452723265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005147920455783606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006279589142650366,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

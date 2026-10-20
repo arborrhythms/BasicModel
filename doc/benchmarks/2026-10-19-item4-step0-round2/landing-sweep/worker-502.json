@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+    "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+    "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+    "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+    "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+    "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner"
+  ],
+  "completed": [
+    "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+    "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+    "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+    "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+    "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+    "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023396875010803342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02655666694045067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015209083911031485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.35434379195794463,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0202649999409914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008448000065982342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012511667096987367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02090787491761148,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

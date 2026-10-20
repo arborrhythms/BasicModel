@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_to_serializable_returns_list_of_dicts",
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lift_rule_fields",
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lower_rule_fields",
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_fields_are_primitive_types",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_builder_returns_expected_shape",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_classifies_nonterminals_vs_pos",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_has_root_node_at_ref_id_zero",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_class_nodes_under_root"
+  ],
+  "completed": [
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_to_serializable_returns_list_of_dicts",
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lift_rule_fields",
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lower_rule_fields",
+    "test/test_knowledge_artifact_writer.py::test_grammar_signatures_fields_are_primitive_types",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_builder_returns_expected_shape",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_classifies_nonterminals_vs_pos",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_has_root_node_at_ref_id_zero",
+    "test/test_knowledge_artifact_writer.py::test_taxonomy_class_nodes_under_root"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_grammar_signatures_to_serializable_returns_list_of_dicts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003407921176403761,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lift_rule_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015520909801125526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lower_rule_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014233402907848358,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_grammar_signatures_fields_are_primitive_types",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001437920145690441,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_taxonomy_builder_returns_expected_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022887508384883404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_taxonomy_classifies_nonterminals_vs_pos",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001653342042118311,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_taxonomy_has_root_node_at_ref_id_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018954207189381123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_knowledge_artifact_writer.py::test_taxonomy_class_nodes_under_root",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016145803965628147,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

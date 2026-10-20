@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mereology.py::TestPeaceful::test_in_range",
+    "test/test_mereology.py::TestPeaceful::test_no_truth_layer_is_unknown",
+    "test/test_mereology.py::TestPeaceful::test_uneven_luminosity_lowers_peace",
+    "test/test_mereology.py::TestPeaceful::test_valence_bias_is_not_peaceful"
+  ],
+  "completed": [
+    "test/test_mereology.py::TestPeaceful::test_in_range",
+    "test/test_mereology.py::TestPeaceful::test_no_truth_layer_is_unknown",
+    "test/test_mereology.py::TestPeaceful::test_uneven_luminosity_lowers_peace",
+    "test/test_mereology.py::TestPeaceful::test_valence_bias_is_not_peaceful"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_mereology.py::TestPeaceful::test_in_range",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006253749597817659,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereology.py::TestPeaceful::test_no_truth_layer_is_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011999998241662979,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereology.py::TestPeaceful::test_uneven_luminosity_lowers_peace",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026537501253187656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereology.py::TestPeaceful::test_valence_bias_is_not_peaceful",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018683378584682941,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

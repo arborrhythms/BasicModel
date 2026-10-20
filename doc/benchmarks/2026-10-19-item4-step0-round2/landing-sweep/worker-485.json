@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_multi_optimizer_surface.py::test_state_view_covers_every_child",
+    "test/test_multi_optimizer_surface.py::test_add_param_group_goes_to_the_dense_child_and_flattens",
+    "test/test_multi_optimizer_surface.py::test_state_dict_has_torch_views_and_round_trips"
+  ],
+  "completed": [
+    "test/test_multi_optimizer_surface.py::test_state_view_covers_every_child",
+    "test/test_multi_optimizer_surface.py::test_add_param_group_goes_to_the_dense_child_and_flattens",
+    "test/test_multi_optimizer_surface.py::test_state_dict_has_torch_views_and_round_trips"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_multi_optimizer_surface.py::test_state_view_covers_every_child",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01616391586139798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_multi_optimizer_surface.py::test_add_param_group_goes_to_the_dense_child_and_flattens",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000647667096927762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_multi_optimizer_surface.py::test_state_dict_has_torch_views_and_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010291249491274357,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

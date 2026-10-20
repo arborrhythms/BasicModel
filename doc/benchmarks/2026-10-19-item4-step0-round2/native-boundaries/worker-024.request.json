@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-item6-5/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-math-chain/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-math-chain/failure-analysis.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-meaning-toy/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final/measurement-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final/when-readers.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final-b/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/construction-review.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/identity-report.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/measurement-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/operator-geometry.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/precision-geometry.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/reader-trajectories.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-round3a/test-port-notes.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-024.recycle.json"
+}

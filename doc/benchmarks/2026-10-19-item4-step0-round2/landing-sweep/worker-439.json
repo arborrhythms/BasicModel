@@ -1,0 +1,41 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 6.233318708837032e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_decomposition.py', 9, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 4.9042049795389175e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_decomposition.py', 9, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

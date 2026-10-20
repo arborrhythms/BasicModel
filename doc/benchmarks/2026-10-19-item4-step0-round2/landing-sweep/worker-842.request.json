@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_symbolize_layer.py::test_binary_symbolize_has_no_class_export_or_dispatch_registration",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[compose]",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[generate]",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[thought]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[symbolize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[what]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[true]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[lookup]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-842.recycle.json"
+}

@@ -1,0 +1,7 @@
+[collect] 4 selectors; limit 600s, 8.0 GiB
+[collect] exit 0; 2.4s; peak 0.25 GiB
+[worker-000] 47 selectors; limit 600s, 8.0 GiB
+[worker-000] exit 1; 190.8s; peak 3.85 GiB
+Result: test_failure, exit 1; 47/47 cases completed.
+doc/benchmarks/2026-10-19-item4-step0-round2/scoped-first/result.json
+Skipped phase certificates: copular_identity: 1

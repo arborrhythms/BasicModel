@@ -156,15 +156,25 @@ def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match()
     assert free.role_mask.tolist() == [True,True,True]
 
 
-def test_ordinary_initial_binding_distribution_includes_every_retained_candidate(tmp_path, eager_reading):
-    """Certificate b: unforced distribution, with empirical openings reported."""
+def test_ordinary_initial_binding_distribution_includes_every_retained_candidate(tmp_path, eager_reading, monkeypatch):
+    """Certificate b: own content neutrality; form and expectation are exempt."""
     import json
+    from pathlib import Path
+    from util import XMLConfig
     from binding_distribution_probe import binding_distributions, retained_bank_distributions
     from math_chain_ordinary import ordinary_model, train_documents, stage, observer_class
     from math_chain_corpus import ChainDocument
     from MathChainTraining import present
+    parity = json.loads((Path(__file__).parent/'fixtures/item4-parity.json').read_text())
+    parse = XMLConfig._parse_xml
+    def configured(path):
+        result = parse(path)
+        result.setdefault('architecture', {}).setdefault('training', {}).update(parity['training'])
+        return result
+    monkeypatch.setattr(XMLConfig, '_parse_xml', staticmethod(configured))
     model = ordinary_model(tmp_path)
     try:
+        assert not model.expectation_prime_enabled
         # Existing candidates require an existing situation. Read real
         # documents without an optimizer, then prove the chooser is still
         # at initialization before the training certificate starts.
@@ -202,7 +212,9 @@ def test_ordinary_initial_binding_distribution_includes_every_retained_candidate
         assert records
         ratios = [p*len(item['alternatives']) for item in records for p in item['probabilities']]
         retained = sum(sum(value not in (0,-2) for value in item['alternatives']) for item in records)
-        report = dict(forced=False, conditional_band=[.9,1.1], alternatives_relative_to_uniform=[min(ratios),max(ratios)],
+        report = dict(forced=False, configuration='test/fixtures/item4-parity.json',
+            measured_term='chooser_content', held_out_terms=['form', 'expectation'],
+            conditional_band=[.9,1.1], alternatives_relative_to_uniform=[min(ratios),max(ratios)],
             initialization_documents=len(provision_documents), retained_premise_counts=[1,2,3,4],
             controlled_retained_menus=len(retained_records),
             initialization_read_menus=len(prior_records),

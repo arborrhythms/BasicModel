@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_sentence_retention.py::test_capacity_requires_room_for_new_estimate_and_observation",
+    "test/test_sentence_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "completed": [
+    "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_sentence_retention.py::test_capacity_requires_room_for_new_estimate_and_observation",
+    "test/test_sentence_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005828459048643708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0035726670175790787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_capacity_requires_room_for_new_estimate_and_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007924791891127825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014476249925792217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012827909085899591,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,62 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]"
+  ],
+  "completed": [
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]"
+  ],
+  "slow_selected": [
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.18443991686217487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.2603111669886857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10052979202009737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.0001258330885320902,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_input_byte_addresses.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

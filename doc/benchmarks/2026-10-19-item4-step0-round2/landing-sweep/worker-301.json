@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_constructs",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init"
+  ],
+  "completed": [
+    "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_constructs",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+    "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_identity_init",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs",
+    "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002236959058791399,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002482919953763485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013800840824842453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008072499185800552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006863749586045742,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lift_butterfly_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010470000561326742,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012591597624123096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006927500944584608,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/native-boundaries/worker-001.recycle.json"
+}

@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_pi2_sigma2_folds.py::test_unary_roundtrip_interior",
+    "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
+    "test/test_pi2_sigma2_folds.py::test_sigma_roundtrip_at_zero_corner",
+    "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+    "test/test_pi2_sigma2_folds.py::test_gradients_flow_through_fold",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive"
+  ],
+  "completed": [
+    "test/test_pi2_sigma2_folds.py::test_unary_roundtrip_interior",
+    "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
+    "test/test_pi2_sigma2_folds.py::test_sigma_roundtrip_at_zero_corner",
+    "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+    "test/test_pi2_sigma2_folds.py::test_gradients_flow_through_fold",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_roundtrip_interior",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018045830074697733,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007099579088389874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_roundtrip_at_zero_corner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006179590709507465,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005471250042319298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_gradients_flow_through_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011815042002126575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016592908650636673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_recommender_reversible",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013736658729612827,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001812500413507223,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

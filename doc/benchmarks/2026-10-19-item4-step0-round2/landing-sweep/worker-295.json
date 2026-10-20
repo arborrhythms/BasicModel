@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves"
+  ],
+  "completed": [
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003660419024527073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000392083078622818,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009083328768610954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002874170895665884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002952918875962496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004308749921619892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002027079463005066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002340420614928007,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

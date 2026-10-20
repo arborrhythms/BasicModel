@@ -3121,3 +3121,48 @@ The scoped link recheck passed **4/4** after restoring the companion path:
 Params, Testing, the plan and the forgetting spec
 (`output/item5-repair-links-20261019/result.json`). The default result remains
 unchanged, and the paired zero-cost counterexample remains carried under item 0.
+
+## Item 4 Step 0, second repair round (2026-10-19)
+
+The [round receipt](benchmarks/2026-10-19-item4-step0-round2/README.md)
+resolves the reviewed `c4e3520a2` mechanism failures. The production prime
+is on and uncapped. Under parity, certificate (b) measures the existing
+chooser's own content score with form and expectation held out: 5,204
+menus and 3,864 retained alternatives lie at **1.0–1.000000030** of
+uniform, inside the unchanged [.9, 1.1] band. Known antecedents train the
+existing form/content terms by marginal likelihood.
+
+At the original one-successor initialization, **4199722147**, sentence A
+had compared whole-question surface reconstruction before the episode.
+The [component diagnosis](benchmarks/2026-10-19-item4-step0-round2/answer-cost-cause.md)
+records the old 1.92 versus 1.05 and the repaired binding judge. After
+the proof, the correct binding costs **0**, versus **.66483945** for the
+wrong departure. An open reference whose menu contains only self-inverse
+negation can conclude without pretending it found an antecedent.
+
+Both unchanged decomposition certificates pass in both gain arms,
+with constructor parameters matched to the original runs. All eight
+companion questions have the required bindings and witnessed chains.
+The complete §14/scoped selection finishes **47 passed, one copular
+prerequisite skip**. The final boundary selection passes **475/475**,
+including the original paired reconstruction certificate and all five
+compiled-boundary cases. The earlier first scoped run's two failures
+remain in the receipt alongside their repairs and later results.
+
+The single standard landing sweep completes **5,861 cases: 5,540 passed,
+322 skipped, one existing XFAIL, one failure**, in **1,353.24 seconds**.
+The paired reconstruction and common-constructor PerceptMoments cases
+pass. Peak worker/aggregate memory is **2.88/7.55 GiB**, within 8/28 GiB.
+The empty-menu failure exposed that the new `not advances` condition was
+also true when there were no operations. Its repair requires a nonempty
+menu, preserving the original `no_legal_operation` finish. Scoped
+controller/reference checks and the complete §14 file finish **113 passed,
+one copular skip** after that repair. Both unchanged decomposition
+certificates pass again in both original arms (**4/4**); all eight companion
+questions retain their correct bindings, witnessed chains and work counts.
+The final certificate (b) observation has 3,320 menus and 3,864 retained
+alternatives in the same **1.0–1.000000030** band. There is no second full
+sweep. The copular
+producing lesson remains after stage 4e in Item 3.5. Graded/shuffled,
+derivation-optimality, long-run collapse and the separate 5.5 learning
+track remain open; no failed learning run is resumed or regraded.

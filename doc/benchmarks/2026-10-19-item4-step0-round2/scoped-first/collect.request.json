@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_item4_step0.py",
+    "test/test_reference_mentions.py",
+    "test/test_reference_close.py",
+    "test/test_math_chain_section14.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}
