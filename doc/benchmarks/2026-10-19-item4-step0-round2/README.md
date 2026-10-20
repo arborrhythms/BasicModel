@@ -1,6 +1,9 @@
 # Step 0, second repair round
 
 Branch: `codex/item4-step0`, from reviewed candidate `c4e3520a2`.
+Landing source: **`bfc834d79359efd6be493d401e92f87732b18acf`**.
+The closing receipt follows that source; both mains advance to this landing
+before `codex/item3-5-first-pass` starts.
 This directory owns this round's diagnostics and gates. The first-round
 [receipt](../2026-10-19-item4-step0/README.md) remains the record of its
 measurements, including failures. No learning run is resumed or regraded.
@@ -59,7 +62,7 @@ their captured output.
 | Final affected boundaries | `native-boundaries`: **475/475 pass**, including the original paired reconstruction certificate, controller/credit checks, all four eager/compiled gain-boundary cases and documentation links. |
 | One full landing sweep | Completed **5,861/5,861**: **5,540 passed, 322 skipped, one existing XFAIL, one failure**. Both common-constructor PerceptMoments coverage and the original paired reconstruction certificate pass. Runtime 1,353.24 s; peak worker/aggregate memory 2.88/7.55 GiB within 8/28 GiB limits. Full result in `landing-sweep/result.json`, compact [summary](landing-summary.json). |
 | Repair after the sweep | The empty-menu regression below has a one-condition repair; the whole §14 file and affected controller/reference checks complete **113 passed, one copular skip**. Both unchanged decomposition certificates then pass in both original arms, **4/4**. No second full sweep. |
-| Publication | Pending: branch commit/push, fast-forward BasicModel main, WikiOracle submodule bump and fast-forward its main. |
+| Publication | Source `bfc834d79` plus this closing receipt: branch push and fast-forward BasicModel main, followed by the WikiOracle submodule bump and fast-forward of its main. All BasicModel working-tree edits, including Alec's newer plan/spec/todo edits, are included. |
 | Item 3.5 | Starts only after that publication, on a separate branch, in the plan's listed order. |
 | Copular identity certificate | Remains prerequisite-skipped until its producing lesson, after stage 4e in Item 3.5. No one-hop reader shortcut. |
 | Item 0 | Graded versus shuffled §9.6, derivation-optimality rate and long-run collapse/exposure remain explicitly carried. |

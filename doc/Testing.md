@@ -3125,7 +3125,8 @@ unchanged, and the paired zero-cost counterexample remains carried under item 0.
 ## Item 4 Step 0, second repair round (2026-10-19)
 
 The [round receipt](benchmarks/2026-10-19-item4-step0-round2/README.md)
-resolves the reviewed `c4e3520a2` mechanism failures. The production prime
+records landing source **`bfc834d79`**, resolving the reviewed `c4e3520a2`
+mechanism failures. The production prime
 is on and uncapped. Under parity, certificate (b) measures the existing
 chooser's own content score with form and expectation held out: 5,204
 menus and 3,864 retained alternatives lie at **1.0–1.000000030** of

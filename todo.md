@@ -17,29 +17,17 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Step 0 round 2 on `codex/item4-step0` resolves the reviewed
-candidate's mechanism failures. The prime is ON and uncapped; defaults
-remain P/S/R/D=0 and φ=.5. Certificate (b) measures only the chooser's own
-content score under the declared parity configuration, with form and
-expectation held out. The whole §14 file completes with its copular
-prerequisite skip. Both unchanged decomposition certificates pass in both
-gain arms, from their original recorded initializations. The paired
-reconstruction invariant also passes. The single landing sweep completed
-with one empty-menu controller regression; its repair passes 113 scoped
-checks, with the copular prerequisite skip, and both decomposition
-certificates pass again in both gain arms. Publication to both mains
-follows, before Item 3.5 starts.
-Evidence and causes are in the
-[round-2 receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md).
-The accepted 16/16 XOR measurements in each gain arm remain in the
-[first-round receipt](doc/benchmarks/2026-10-19-item4-step0/README.md).
+**Current:** Step 0's mechanism gates are complete at `bfc834d79`
+([receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md)).
+Both mains receive that source and its closing receipt before work starts
+on `codex/item3-5-first-pass`. Production keeps the prime ON and uncapped,
+P/S/R/D=0 and φ=.5.
 
 **Necessary deferral, accepted after evaluation:** the copular-identity
 certificate needs its producing lesson. Item 3.5 owns stage 4e → NP
 continuation → copular identity → artifact registration and unchanged c
 certificate. No producing artifact exists; the October 18 decision withdrew
 the proposed one-equality-hop reader patch in favor of this phase gate.
-The unconditional column-copula mechanism certificate stays in this round.
 Graded versus shuffled (§9.6), derivation-optimality, long-run collapse and
 the original failed native learning run remain at Item 0. Independent 5.5
 learning gates remain separate. No extra training or regrade closes them.
@@ -230,13 +218,6 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   immediate failure is different: its filled reference points to an order-one
   child associated with `the`, with no lexical path to `five`. All assertions
   remain unchanged; no repair or learning claim is made.
-- b's reviewed initial binding-distribution repair awaits publication in
-  [Step 0 round 2](doc/benchmarks/2026-10-19-item4-step0-round2/README.md).
-  Candidate initialization is neutral. The production prime is uncapped;
-  the certificate measures the own content term with form and expectation
-  held out, under parity. Controlled retained contexts guarantee coverage
-  beside the 32-document audit. Scoped range 1.0–1.000000030 meets the
-  unchanged .9–1.1 band. Earlier measurements remain in their receipts.
 - The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
   adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
   failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
@@ -855,6 +836,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 4 Step 0 — carried invariants and gates:** `bfc834d79`; all-level XOR/math comparison, paired reconstruction, uncapped prime/content-neutrality certificate, mention-ranking credit, one full sweep and scoped empty-menu repair ([receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md)).
 
 - **Item 4 — expectation mechanism:** `fdeef42b8` on `codex/item4-repair`; approved defaults, enabled parity measurement, whole §14 completion, one full sweep and scoped repairs ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)). Failed learning and carried Item 0/5.5 gates remain open.
 
