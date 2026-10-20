@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_candidate_attention.py::test_layer_scores_one_value_per_candidate_and_keeps_reader_inputs_fixed",
+    "test/test_candidate_attention.py::test_scorer_compiles_with_ordinary_parameter_gradients",
+    "test/test_candidate_attention.py::test_retained_two_word_scorer_preserves_candidate_differences",
+    "test/test_candidate_attention.py::test_shared_context_magnitude_cannot_saturate_the_retained_scorer",
+    "test/test_candidate_attention.py::test_support_admits_negative_evidence_and_zero_has_no_pathwise_choice_gradient",
+    "test/test_candidate_attention.py::test_invalid_scorer_width[0]",
+    "test/test_candidate_attention.py::test_invalid_scorer_width[-1]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-072.recycle.json"
+}

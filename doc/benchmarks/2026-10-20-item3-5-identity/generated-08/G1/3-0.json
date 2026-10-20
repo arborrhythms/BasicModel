@@ -1,0 +1,10 @@
+{
+  "case": "3-0",
+  "text": "a horse ; a cat ; the horse",
+  "expected": 12,
+  "chosen": 12,
+  "pair": [
+    0.8807970285415649,
+    0.11920297145843506
+  ]
+}

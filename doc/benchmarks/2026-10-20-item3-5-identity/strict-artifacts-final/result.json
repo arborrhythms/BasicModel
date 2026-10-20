@@ -1,0 +1,180 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+  ],
+  "completed": [
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-001.json"
+      ],
+      "pid": 15055,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 767854152,
+      "elapsed_seconds": 5.688825875055045,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]"
+      ],
+      "completed": [
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": "np_definite",
+          "duration": 0.9384217080660164,
+          "message": "test/test_parts_of_speech.py:333: in test_artifact_restoration_retains_weights_and_occupation_state_exactly\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/phase_artifacts.py:107: in restore\n    result = loader(phase_registry.resolve(phase_artifact.path))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_parts_of_speech.py:333: in <lambda>\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/identity_experiment.py:224: in restore_warmup\n    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5133: in load_weights\n    self._restore_structural_extras(\nbin/Models.py:4451: in _restore_structural_extras\n    components.migrate_identity_rows()\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/IndependentComponents.py:515: in migrate_identity_rows\n    refold(self.owner, identity)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:111: in refold\n    value = torch.maximum(value, coordinates(owner, store.point_of_row(int(store.row_ids[row]))))\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:36: in coordinates\n    raise ValueError('identity content requires native concept coordinates in [0, 1]')\nE   ValueError: identity content requires native concept coordinates in [0, 1]",
+          "stdout": "Grammar checkpoint: 2867 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-definite-restored-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-002.json"
+      ],
+      "pid": 15056,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 767608392,
+      "elapsed_seconds": 6.659376750001684,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+      ],
+      "completed": [
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": "np_description",
+          "duration": 0.9477239998523146,
+          "message": "test/test_parts_of_speech.py:333: in test_artifact_restoration_retains_weights_and_occupation_state_exactly\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/phase_artifacts.py:107: in restore\n    result = loader(phase_registry.resolve(phase_artifact.path))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_parts_of_speech.py:333: in <lambda>\n    restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/identity_experiment.py:224: in restore_warmup\n    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5133: in load_weights\n    self._restore_structural_extras(\nbin/Models.py:4451: in _restore_structural_extras\n    components.migrate_identity_rows()\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/IndependentComponents.py:515: in migrate_identity_rows\n    refold(self.owner, identity)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:111: in refold\n    value = torch.maximum(value, coordinates(owner, store.point_of_row(int(store.row_ids[row]))))\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:36: in coordinates\n    raise ValueError('identity content requires native concept coordinates in [0, 1]')\nE   ValueError: identity content requires native concept coordinates in [0, 1]",
+          "stdout": "Grammar checkpoint: 3171 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/np-description-flow-20261018/trained.ckpt\n  Keys in model but missing from file: 15 (initialized fresh)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-000.json"
+      ],
+      "pid": 15054,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 852067960,
+      "elapsed_seconds": 7.74994391691871,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact"
+      ],
+      "completed": [
+        "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": "stage3",
+          "duration": 1.4891453341115266,
+          "message": "test/test_item55_mechanisms.py:502: in test_nested_wholes_from_stage3_artifact\n    restore_phase(lambda path: restore_warmup(model, path, restore))\ntest/phase_artifacts.py:107: in restore\n    result = loader(phase_registry.resolve(phase_artifact.path))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item55_mechanisms.py:502: in <lambda>\n    restore_phase(lambda path: restore_warmup(model, path, restore))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/identity_experiment.py:224: in restore_warmup\n    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5133: in load_weights\n    self._restore_structural_extras(\nbin/Models.py:4451: in _restore_structural_extras\n    components.migrate_identity_rows()\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/IndependentComponents.py:515: in migrate_identity_rows\n    refold(self.owner, identity)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:111: in refold\n    value = torch.maximum(value, coordinates(owner, store.point_of_row(int(store.row_ids[row]))))\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:36: in coordinates\n    raise ValueError('identity content requires native concept coordinates in [0, 1]')\nE   ValueError: identity content requires native concept coordinates in [0, 1]",
+          "stdout": "Grammar checkpoint: 2761 declared migrations\r\n[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt\n  Keys in model but missing from file: 18 (initialized fresh)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 300.0,
+    "suite_seconds": 600.0,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final",
+  "elapsed_seconds": 12.150670666014776,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2305954808,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/collect.json"
+    ],
+    "pid": 15045,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428377288,
+    "elapsed_seconds": 3.7130097921472043,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/strict-artifacts-final/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {
+        "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact": "stage3",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+        "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact": "stage3",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]": "np_definite",
+    "test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]": "np_description"
+  }
+}

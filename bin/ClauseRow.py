@@ -130,6 +130,9 @@ def attach_clause_index(model, store, space):
 
     store_ref = weakref.ref(store)
     object.__setattr__(space, '_clause_store_ref', store_ref)
+    present = getattr(model, 'present', None)
+    if callable(present) and hasattr(model, 'when_time'):
+        object.__setattr__(store, '_model_present', present)
 
     def concept_point(cid):
         owner = space_ref()

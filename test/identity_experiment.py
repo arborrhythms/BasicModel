@@ -51,6 +51,21 @@ def identification(dictionary, value, atoms, *, source_limit):
                 total=len(atoms), correct=int(hits.sum()))
 
 
+def native_matrix(component):
+    return (torch.stack([component.column_point(cid) for cid in component.individual_ids])
+            if component.individual_ids else component.owner.similarity_codebook.W[:0]).detach()
+
+
+def native_identification(component, value, atoms):
+    from IdentityRows import meet_ratios
+    matrix = native_matrix(component).to(value)
+    active = meet_ratios(value[None], matrix)[0] >= .9
+    match = meet_ratios(atoms[:,None], matrix[None])[1] >= .9
+    hits = (match & active[None] & atoms.sum(-1).gt(0)[:,None]).any(-1)
+    return dict(hits=hits.tolist(), active_columns=[cid for cid, live in
+        zip(component.individual_ids, active) if bool(live)], total=len(atoms), correct=int(hits.sum()))
+
+
 def noun_frame(roles):
     """Historical order-two recovery measurement, not individual identification."""
     if roles.shape[-2] != 3:
@@ -216,34 +231,6 @@ def restore_warmup(model, path, restore):
         migrate=getattr(type(module),'migrate_expectation_checkpoint',None)
         if migrate is not None:migrate(module,saved,name+'.')
     current=model.state_dict()
-    # The native loader rebuilds pre-role resolver counts from retained
-    # occurrences once. Do not overwrite that migration with the old envelope.
-    from IndependentComponents import _unpack_state
-    from ThoughtReferences import bindings
-    for key,value in tuple(saved.items()):
-        if not key.endswith('reference_close._extra_state'):
-            continue
-        previous,actual=_unpack_state(value),_unpack_state(current[key])
-        if previous.get('version',1)>=2:
-            continue
-        for name in ('seen','cooccurrence','predicates','total'):
-            torch.testing.assert_close(actual[name],previous[name],rtol=0,atol=0)
-        resolver=model.get_submodule(key[:-len('._extra_state')])
-        associations={}
-        for row in range(len(resolver.store)):
-            context=bindings(resolver.store.meaning_of(row)).get('_individual_context')
-            if context is None:continue
-            context=dict(context)
-            atoms=resolver.support(resolver.coordinates(resolver.store.point_of_row(
-                int(resolver.store.row_ids[row]))))
-            heads=resolver.support(resolver._predicate(context))
-            for atom in atoms:
-                for head in heads:
-                    pair=(atom,head,context['role'])
-                    associations[pair]=associations.get(pair,0.)+int(resolver.store.witness_count[row])
-        assert actual['version']==2 and actual['associations']==associations
-        saved[key]=current[key].detach().clone()
-        drift[key]=dict(schema_migration='role counts v2 from retained occurrences')
     # The native loader authenticates and migrates pre-Item-4 estimate
     # sidecars. Restoring their old fingerprint bytes would undo that
     # migration while leaving the new sidecar in place, corrupting the next
@@ -390,9 +377,10 @@ def observed_rows(model):
             component=model._concept_owner().components
             chart=component._ready()
             words=model._tensor_pushed_ideas.detach()
-            saved[int(sid)]=[dict(value=None if meaning is None else recovery_value(chart,meaning,result['clauses'][b]).clone(),
-                words=chart.expand(chart.project(words[b])).clone(),
-                source_limit=component.source_limit(result['clauses'][b]))
+            saved[int(sid)]=[dict(value=None if meaning is None else component.reference_close.coordinates(
+                result['clauses'][b].point if result['clauses'][b] is not None else meaning.roles[0]),
+                words=torch.stack([component.reference_close.coordinates(word) for word in words[b]]),
+                source_limit=component.source_capacity)
                 for b,meaning in enumerate(result['meanings'])]
         return result
     def read_bank(active,like):
@@ -440,7 +428,7 @@ def present_documents(model, docs, *, optimizer=None, labels=None, recovery_labe
                     metric=dict(hits=[False]*len(label['atoms']),active_columns=[],total=len(label['atoms']),correct=0,unavailable=True)
                 else:
                     atoms=observed['words'][label['positions']]
-                    metric=identification(component.nouns,observed['value'],atoms,source_limit=observed['source_limit'])
+                    metric=native_identification(component,observed['value'],atoms)
                     metric['unavailable']=False
                     for name,atom in zip(label['atoms'],atoms):atom_examples.setdefault(name,atom.detach())
                 results.append(dict(id=doc['id'],**label,**metric))
@@ -458,7 +446,7 @@ def recovery_summary(rows, component, atoms):
     for name in (*KINDS,*PROPERTIES,*VERBS):
         hits=[h for r in rows for a,h in zip(r['atoms'],r['hits']) if a==name]
         by_atom[name]=dict(correct=sum(hits),total=len(hits),identification=sum(hits)/max(1,len(hits)))
-    merges=[]; matrix=component.nouns.matrix().detach()
+    merges=[]; matrix=native_matrix(component)
     names=[a for a in (*KINDS,*PROPERTIES,*VERBS) if a in atoms]
     atom_matrix=F.normalize(torch.stack([atoms[a] for a in names]),dim=-1) if names else matrix[:0]
     clean=(atom_matrix@matrix.T).abs().ge(.9).any(0) if names else torch.zeros(len(matrix),dtype=torch.bool)
@@ -466,10 +454,10 @@ def recovery_summary(rows, component, atoms):
         if kind not in atoms or prop not in atoms:continue
         merged=F.normalize(F.normalize(atoms[kind],dim=-1)+F.normalize(atoms[prop],dim=-1),dim=-1)
         matched=(matrix@merged).abs().ge(.9)&~clean
-        merges.append(dict(kind=kind,property=prop,columns=[cid for cid,hit in zip(component.nouns.ids,matched) if bool(hit)]))
+        merges.append(dict(kind=kind,property=prop,columns=[cid for cid,hit in zip(component.individual_ids,matched) if bool(hit)]))
     return dict(correct=correct,total=total,identification=correct/max(1,total),by_atom=by_atom,
         unavailable_rows=sum(r['unavailable'] for r in rows),columns=len(matrix),clean_columns=int(clean.sum()),merges=merges,
-        merged_pairs=sum(bool(m['columns']) for m in merges),pending=len(component.nouns._pending))
+        merged_pairs=sum(bool(m['columns']) for m in merges),pending=0)
 
 
 def branch(folder, warm, name):
@@ -493,12 +481,12 @@ def branch(folder, warm, name):
             if not signal['nonzero_basis_rows'] or not signal['nonzero_observation_rows']:
                 raise RuntimeError('the restored warm-up supplied no nonzero component meaning signal')
             optimizer=model.getOptimizer(lr=.003)
-            component=model._concept_owner().components; before=set(component.nouns.ids)
+            component=model._concept_owner().components; before=set(component.individual_ids)
             with admission_ablation(model,off) as admission:
                 if category=='recovery':
                     streams,labels=recovery_data()
                     present_documents(model,streams[corpus],optimizer=optimizer,log=folder)
-                    minted=set(component.nouns.ids)-before
+                    minted=set(component.individual_ids)-before
                     model._concept_owner()._online_learning_frozen=True
                     rows,_,atoms=present_documents(model,streams['heldout'],recovery_labels=labels,log=folder)
                     report=recovery_summary(rows,component,atoms)
@@ -512,14 +500,14 @@ def branch(folder, warm, name):
                     # determiner/same-kind presentations, in this order.
                     lessons=shared+pronouns+determiner
                     present_documents(model,lessons,optimizer=optimizer,log=folder)
-                    minted=set(component.nouns.ids)-before
+                    minted=set(component.individual_ids)-before
                     model._concept_owner()._online_learning_frozen=True
                     docs,labels=load_split('eval');rev,revlabels=load_split('reversed_eval');labels.update(revlabels)
                     rows,evidence,_=present_documents(model,docs+rev,labels=labels,log=folder)
                     report=dict(summary=summarize(rows),results=rows,training_documents=len(lessons),evaluation_documents=len(docs+rev))
                     save(folder/'observations.json',evidence)
                 report.update(branch=name,gate='off' if off else 'on',admission=dict(admission),columns_minted=len(minted),
-                    columns=len(component.nouns.ids),admission_drops=component.admission_drops,completed=True)
+                    columns=len(component.individual_ids),admission_drops=component.admission_drops,completed=True)
                 save(folder/'results.json',report)
             model.save_weights(str(folder/'final.ckpt'))
         except Exception:

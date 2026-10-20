@@ -1,5 +1,10 @@
 # Parts of speech: one order-2 set per operand slot, taught one operation at a time
 
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](../plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](2026-10-08-expectation-at-every-level.md).
+> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
+> - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
+
+
 > **Status:** specification, 2026-10-18, written by Claude from Alec's
 > decisions in conversation on 2026-10-17 and 2026-10-18 under item 5.5's
 > learning sequence (stage 4e). **Decided** is Alec's decision; *Claude's

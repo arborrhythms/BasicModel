@@ -158,7 +158,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
             roles, occupied = disc._canonical_meaning(
                 expected['observed'][b], expected['observed_depths'][b], expected['layout'],
                 None if expected['roles'] is None else expected['roles'][b])
-            depth, payload, mask = disc._inter_context[b][-1]
+            depth, payload, mask = disc._read_context(b)[0][-1]
             assert depth == int(occupied.sum())
             torch.testing.assert_close(payload, roles)
             torch.testing.assert_close(mask, occupied)

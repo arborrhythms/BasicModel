@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_operators_round2.py::test_field_scope_resolves_witnesses_acquired_by_later_descent[5-pair2]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-0.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-0.5]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-1.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.5]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-1.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-1.0-0.0]"
+  ],
+  "completed": [
+    "test/test_operators_round2.py::test_field_scope_resolves_witnesses_acquired_by_later_descent[5-pair2]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-0.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-0.5]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-1.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.5]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-1.0]",
+    "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-1.0-0.0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_round2.py::test_field_scope_resolves_witnesses_acquired_by_later_descent[5-pair2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0046825839672237635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020229590591043234,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00042945798486471176,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-0.0-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004421249032020569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003446249756962061,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00035012513399124146,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032808398827910423,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[1.0-1.0-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003436249680817127,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

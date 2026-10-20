@@ -32,8 +32,10 @@ def singleton_report(model):
 
 
 def columns(component):
-    return [dict(column=identity, witnesses=sorted(component.nouns._witnesses.get(identity, ())))
-            for identity in component.nouns.ids]
+    from IdentityRows import witnesses
+    store = component.owner._closed_clause_store()
+    return [dict(column=identity, witnesses=[store.occurrence_of(row) for row in witnesses(component.owner, identity)])
+            for identity in component.individual_ids]
 
 
 @contextmanager
@@ -88,7 +90,7 @@ def identity(model, folder, current, records):
                + [d for d in train if labels[d['id']]['family'] in ('determiner', 'same_kind')])
     assert len(lessons) == 136
     component = model._concept_owner().components
-    before = set(component.nouns.ids)
+    before = set(component.individual_ids)
     current.clear(); current.update(phase='identity-training')
     optimizer = model.getOptimizer(lr=.003)
     with admission_ablation(model, False) as admission:

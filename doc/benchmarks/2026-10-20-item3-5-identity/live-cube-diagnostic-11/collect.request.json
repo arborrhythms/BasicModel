@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

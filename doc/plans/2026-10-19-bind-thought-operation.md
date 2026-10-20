@@ -153,7 +153,8 @@ over **short-term concepts** until a concept is minted.
 **What `bind` reads, from the major structures only:**
 - content: the request's fold point against each candidate's point (a
   short-term concept in STM, or a minted concept row), in concept
-  coordinates — containment first, then distance; no chart;
+  coordinates — containment through the meet (§6.1); no distance, no
+  chart;
 - location: the request's band against the candidate's band;
 - expectation: the prime (a read of the symbol field) and the verb's
   participants read from LTM rows' identity columns (rebuildable cache if
@@ -162,7 +163,9 @@ over **short-term concepts** until a concept is minted.
 - form: the word's percept and symbol;
 - the combining weights are `bind`'s own parameters.
 
-**Row shape (amends the two-truths amendment's storage note):** one
+**Row shape (superseded by §6.3 and the two-truths row table: one slot,
+`.when`, the two truth lanes, the access count, `surprise`; LTM1 has no
+identity column and no address columns):** one
 concept slot, the identity column, the address columns. The identity
 column names minted symbols only; while a participant is short-term the
 column is empty and its identity is the inference above. A fused LTM1
@@ -193,7 +196,12 @@ candidate by the codes' accident, containment through the meet did not.
   has a learned region; the test is the candidate's containment in it.
   This replaces the `cue_policy` matrix with a region per form, learned
   by exposure.
-- **STM stays an index.** STM holds the addresses (`.where`, `.when`) of
+- **STM is STM1 (Alec, 2026-10-20): one wide, invertible concept vector
+  per entry**, at item 3's content width `D` (derived now for STM only),
+  beside the index. The temporary identity is the wide vector, invertible
+  to its parts, not a centroid; the meet is computed on the wide vectors;
+  the close narrows to the LTM1 concept. For `bind`, STM holds the
+  addresses (`.where`, `.when`) of
   the most recent rows — eight is the right order (Cowan; Miller) — plus
   the symbol activation field the prime and the chooser already read. The
   candidate's full region is read from its LTM1 occurrence row's slot at
@@ -254,3 +262,22 @@ and an assertion that composition never reads it. LTM1 carries no
 identity column: a bound participant exists only in LTM3's three
 references, and a *de dicto* idea's world is a context whole like the
 document, not a column.
+
+### 6.4 Artifacts in retired coordinates, and STM1 (Alec, 2026-10-20)
+
+Codex's step 1b loader found the three registered phase artifacts
+(`stage3`, `np_definite`, `np_description`) holding identity occurrence
+points in the retired signed-chart coordinates; the unrecoverable rows are
+signed relation-address values with no derivation and no cached content —
+the abolished "reference inside the content" form
+([migration-hold](../benchmarks/2026-10-20-item3-5-identity/migration-hold.md)).
+Decided: **strict rejection is the loader's permanent behaviour** for
+retired coordinates; **no lossy conversion**; the three artifacts are
+**retired** — unregistered from the phase registry, their files archived
+beside their receipts and never read — and **regenerated only when their
+lessons are next needed** (stage 4e and the NP continuation, in 3.5).
+Step 1b publishes without them; their certificates stay prerequisite-
+skipped until then. **STM1** (§6.1) is adopted so this class of loss does
+not recur: identity content held in STM is a wide, invertible vector, and
+what a lesson writes is recoverable by inversion. The width derivation
+for STM is pulled into step 1b from item 3; LTM1 stays at concept width.

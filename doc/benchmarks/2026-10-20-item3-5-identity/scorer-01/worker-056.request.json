@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-056.recycle.json"
+}

@@ -2,7 +2,9 @@
 
 > **Status:** specification, 2026-09-30, written by Claude from Alec's
 > decisions in conversation on 2026-09-30; **revised 2026-10-03 (§0): `.when`
-> stays in percepts and concepts as the sentence's index in its document,
+> stays in percepts and concepts as the sentence's index in its document
+> *(revised again 2026-10-20: model time in a row column; symbols are
+> situated, concepts keep only the `.where` extent — see the head of §0)*,
 > and the address is content over the bands.** Todo item **5.5**, after item 6
 > and before item 5: "So 5.5?" Codex implements; Claude reviews. It closes
 > the last group of the [operator catalogue](2026-09-29-operator-catalogue.md#9-the-order-of-the-pass)
@@ -14,6 +16,31 @@
 > the repository and nothing in it was edited for them.
 
 ## 0. Revision of 2026-10-03: `.when` stays, and the address is content *(decided, Alec)*
+
+**Revision of 2026-10-20 (Alec; supersedes this section's *value* and
+*carrier* for `.when`, and §12's restatement of it):** `.when` is **model
+time, sinusoidally encoded**, and it is a **column of the row that
+composition never reads** — not a band stamped inside the concept. The
+situated side of the shared index carries it: **symbols have `.where` and
+`.when`** (every symbol activation is at a place and a time); the
+**concept** is the fold over its occurrences and keeps `.where`'s extent,
+never the clock; lowering a concept one order reattaches the time. So §3.2
+as first written (percepts and concepts carry no `.when`) is right about
+concepts and §0's 2026-10-03 reversal is right about percepts and symbols;
+what neither had is the column. The ladder's range covers the run, so
+phases are never reused (todo item 3). What §0 decided about the
+**address** stands and is strengthened: the address is content over the
+bands, the **document is a context whole** in WholeSpace (an individual
+minted at its first sentence, §12) whose trace the sentence's concept
+carries through attention's region, and so is the **stream or batch**,
+which is how two rows at one model time in different streams differ; no
+document key, sentence index or content digest is a row column. Order
+within a document is the order of `.when` among the rows carrying that
+document's trace; rows of different streams are ordered by the clock too,
+but that order carries no meaning (§12). Where the text below says
+"the sentence's index within its document", read "model time, in the
+column". Record: [two truths §1, "The row, field by field"](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided).
+
 
 
 **Implementation note, operators round 4a-0 (2026-10-07; review pending).**
@@ -170,6 +197,8 @@ the clock defect and allow the model to address its own LTM."
 
 * A memory row's `.where` is its **document**; its `.when` is the
   sentence's **index within that document**, starting from 1.
+  *(2026-10-20: `.when` is model time in the row's column; the document is
+  a context whole in the content; see the revision at the head of §0.)*
 * "Instead of batch indexing, use document indexing, since multiple
   documents within a batch don't have an order relation." Two documents
   have no order relation; sentences within one document do.
@@ -259,7 +288,9 @@ sentence's concepts see every part and whole (3.4). Text configurations do
 not keep a plain `serial` or `parallel` schedule. Under interleave a
 batch's rows are consecutive sentences (`InterleaveCursor.next_tick`), so a
 row's `.when` comes from the sentence's index in its document, never from
-the order in which a batch row happens to read it.
+the order in which a batch row happens to read it. *(2026-10-20: the
+column is model time; the stream is a context whole, so the batch row that
+read it is in the content, not in the column.)*
 
 ## 4. Tense and aspect: prepositions of the verb phrase with no preposition written *(decided)*
 
@@ -352,7 +383,7 @@ rule (words and rules, Pinker 1999); "went" is found to be "go" plus the
 past by its code, not by a table.
 
 **One `surface` operator** *(Alec: "It feels better to have a surface()
-operator that does one or more of these suboperations")*, with four
+operator that does one or more of these suboperations")*, (2026-10-20: two remain — absorb and transpose; split and insert left the grammar in §12, §13.1) with four
 declared suboperations, each the reverse of another, so reconstruction
 through the grammar's reverse stays exact:
 
@@ -481,6 +512,9 @@ conflicts with §0–§7, this amendment governs.
   book in front of the face), so a document is not a `.where` region and
   takes no whole row; §3.4's situation wholes in WholeSpace and the
   remaining "documents as situation codes in content" are withdrawn in that
+  form *(2026-10-20: and return as **context wholes** — the document and the
+  stream as individuals in WholeSpace whose trace the concept carries
+  through attention's region; see the head of §0)* —
   form. What tells a book apart is its history: the cover was looked at
   before the pages. **The model reads its context from LTM**: its own
   history (below) and the content queries of §0.
@@ -490,7 +524,9 @@ conflicts with §0–§7, this amendment governs.
   not ordered with each other. *Decided (Alec, 2026-10-17, after the landing
   review):* a row that is merely updated by re-witnessing does not move; its
   place in the history is its first occurrence. `.when` stays the sentence's index within its
-  document (§0). The stream's history chain replaces every reader of the
+  document (§0) *— superseded 2026-10-20: `.when` is model time in the
+  row's column, never read by composition; see the revision at the head of
+  §0.* The stream's history chain replaces every reader of the
   global clock: the recency chain and the occurrence centroid's weight.
   *Claude's reading, to be confirmed:* a document is then an individual of
   the referent ladder, minted at its first sentence and bound by continuity,
@@ -843,7 +879,7 @@ each argument an idea or a REF to a row. Parthood and kind membership are
 not rows but folds in the main tree (meronomy, taxonomy). So the *de re*
 reading writes membership evidence — Alec in the set of running things in
 the kept worlds — and the *de dicto* reading writes the fused point of
-`[Alec runs]` as an LTM1 row with the world `W` as an address column. No new row kind is needed for the modal.
+`[Alec runs]` as an LTM1 row whose concept carries the world `W` as a context whole, as it carries the document (no address column). No new row kind is needed for the modal.
 Each `S` has its noun phrase, verb phrase and world, defaulting to
 everything, occurs and all possible worlds (§14.4); `[Alec]` and
 `[running things]` are such sentences with their defaults, and the modal
@@ -896,7 +932,7 @@ Every sentence has the three, and each default is the top of its algebra:
 | phrase | default | the top of | a word narrows it by |
 |---|---|---|---|
 | NP | everything | the part lattice: the whole field, the all-ones attention mask | restriction (words as restrictors, 2026-09-28) |
-| VP | exists | the change group: the identity element `e`, asserted | a change: an element other than `e` |
+| VP | exists — read as *occurs* (§14.4) | the change group: the identity element `e`, asserted | a change: an element other than `e` |
 | MP | in all possible worlds | the possibility lattice: every world | selection: the indicative keeps the actual world; "might" keeps a set containing it; "must" keeps every accessible world |
 
 So the empty sentence asserts that everything exists in all possible
@@ -904,7 +940,7 @@ worlds — the field before any word, attention wide open — and a sentence
 is read as a narrowing from there in each of the three. This resolves two
 things above:
 
-- **"Exists" is `e` asserted.** The default VP is the identity element
+- **"Exists", read as "occurs", is `e` asserted.** The default VP is the identity element
   with evidence in the for lane; an *undefined* verb is `e` with no lane
   filled. "Remain" and "stay" are "exists" said of a span. The two lanes
   keep the three apart, which is the only place the "undefined is the

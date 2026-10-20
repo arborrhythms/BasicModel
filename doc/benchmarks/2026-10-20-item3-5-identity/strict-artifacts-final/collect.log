@@ -1,0 +1,5 @@
+test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_definite]
+test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly[np_description]
+
+3 tests collected in 2.06s

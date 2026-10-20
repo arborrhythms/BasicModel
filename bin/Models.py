@@ -4012,7 +4012,7 @@ class BaseModel(Mereology, nn.Module):
         alloc_fields = (
             "placement", "raised", "singletons", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
-            "testimony_current", "reclaimed_seats", "ltm_edges",
+            "testimony_current", "reclaimed_seats", "ltm_edges", "individuals", "form_regions",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4170,7 +4170,7 @@ class BaseModel(Mereology, nn.Module):
         fields = (
             "placement", "raised", "singletons", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
-            "testimony_current", "reclaimed_seats", "ltm_edges",
+            "testimony_current", "reclaimed_seats", "ltm_edges", "individuals", "form_regions",
         )
         for name in fields:
             if name not in saved:
@@ -4448,7 +4448,7 @@ class BaseModel(Mereology, nn.Module):
                 migrate_meta_definitions(cs, legacy)
             components = getattr(cs, 'components', None)
             if components is not None:
-                components.reference_close.migrate_role_associations()
+                components.migrate_identity_rows()
 
         what_history = extras.get("what_history")
         if what_history is not None:
@@ -5875,7 +5875,7 @@ class BasicModel(BaseModel):
         discourse = getattr(getattr(self, "symbolSpace", None), "expectation", None)
         chains = getattr(discourse, "_inter_context", ())
         if limit and row < len(chains):
-            for depth, payload, mask in list(chains[row])[-limit:]:
+            for depth, payload, mask in discourse._read_context(row)[0][-limit:]:
                 if not work.consume("context_record"):
                     break
                 if payload.shape == active.roles.shape and torch.is_tensor(mask):
@@ -6731,7 +6731,6 @@ class BasicModel(BaseModel):
         valid = selected >= 0
         codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0), streams=True).clone()
         sparse_forms = torch.where(valid[..., None], codes, torch.zeros_like(codes)).detach().clone()
-        codes = owner.interpret.binding_atoms(codes)
         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
         weights = torch.where(valid, weights, torch.zeros_like(weights))
@@ -11771,7 +11770,6 @@ class BasicModel(BaseModel):
         k = min(int(atoms.shape[1]), W, int(rows.shape[1]))
         da = min(int(atoms.shape[-1]), D)
         content = atoms[:, :k, :da].to(device=like.device, dtype=like.dtype)
-        content = self._concept_owner().interpret.binding_atoms(content)
         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
             act = activations.reshape(B, -1)[:, :k].to(
                 device=like.device, dtype=like.dtype).unsqueeze(-1)
@@ -12126,9 +12124,6 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(rows) and rows.shape == atoms.shape[:2]):
             raise RuntimeError("tied reconstruction requires a staged concept lookup bank")
         bank = atoms.to(reference).clone()
-        interpretation = getattr(self._concept_owner(), 'interpret', None)
-        if interpretation is not None:
-            bank = interpretation.binding_atoms(bank)
         bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
         return bank, rows.detach().to(reference.device).ge(0).clone()
 
@@ -12148,9 +12143,6 @@ class BasicModel(BaseModel):
                 and int(bank_bytes.shape[0]) == B
                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
             bank = atoms.to(device=reference.device, dtype=reference.dtype).clone()
-            interpretation = getattr(self._concept_owner(), 'interpret', None)
-            if interpretation is not None:
-                bank = interpretation.binding_atoms(bank)
             valid = bank_valid.detach().to(device=reference.device).clone()
             rows = getattr(isp, "_ar_concept_lookup_rows", None)
             if torch.is_tensor(rows) and rows.shape == bank.shape[:2]:
@@ -12420,9 +12412,6 @@ class BasicModel(BaseModel):
         atoms = lookup(rows.clamp_min(0).to(torch.long))
         if not (torch.is_tensor(atoms) and atoms.dim() == 3):
             return reference
-        interpretation = getattr(owner, 'interpret', None)
-        if interpretation is not None:
-            atoms = interpretation.binding_atoms(atoms)
         da = min(int(atoms.shape[-1]), D)
         indexed = (rows >= 0).reshape(B, W, 1).to(device=reference.device)
         atoms = atoms[..., :da].to(device=reference.device, dtype=reference.dtype)
@@ -13276,7 +13265,7 @@ class BasicModel(BaseModel):
         return disc.consume_inter_loss()
 
     def present(self) -> int:
-        """Serialized count of processed batches; no semantic reader."""
+        """Serialized processing time, stamped in a new occurrence's column."""
         return int(self.when_time)
 
     def _advance_when_time(self):
@@ -13790,8 +13779,8 @@ class BasicModel(BaseModel):
         # Advance the serialized model clock once per PROCESSED batch (this
         # point is past the no-batch early raise, so it ticks exactly once on
         # BOTH the train and inference paths regardless of which return fires
-        # below). This is only a step count; source positions
-        # have already been staged independently for event .when bands.
+        # below). New occurrence rows stamp this processing time in their
+        # separate .when column; source addresses are staged independently.
         # The mode schedule's internal context read does not consume an
         # external batch. Compose's sentence trials run inside this one tick.
         if not exploration_trial:
@@ -19637,7 +19626,7 @@ class BasicModel(BaseModel):
                 document, position = source_at(self, b, int(sid))
                 plans.append(resolver.preview(clause,
                     () if disc is None else tuple(disc.situation_references(b)),
-                    document=document, position=position))
+                    document=document, position=position, stream=b))
             result['reference_plans'] = plans
         return result
 
@@ -20596,7 +20585,7 @@ class BasicModel(BaseModel):
             if types is not None:
                 required = torch.cat((required, types.identities.flatten(1)), 1)
             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
-        inventory = torch.tensor(() if components is None else components.nouns.ids,
+        inventory = torch.tensor(() if components is None else components.individual_ids,
                                  dtype=torch.long, device=like.device)
         inventory = torch.unique(torch.cat((inventory, ids[valid])))
         interpreter, associations = None, None

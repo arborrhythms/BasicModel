@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.030480375047773123,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

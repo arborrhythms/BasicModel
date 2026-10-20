@@ -17,7 +17,8 @@ from test_cs_sparse_weights import _cs
 
 
 class SentenceFixture:
-    def __init__(self, monkeypatch):
+    def __init__(self, monkeypatch, *, native_cube=False):
+        self.native_cube = native_cube
         self.cs = _cs(nS=512, order=5)
         self.grammar = Language.Grammar()
         self.grammar.load_from_grammar_file('complete.grammar')
@@ -55,7 +56,10 @@ class SentenceFixture:
             # These certificates supply object meanings. A bare new form
             # alone now deliberately remains an unbound reference site.
             obj = self.cs.new_concept()
-            self.cs._csw_concept_row(0, obj)
+            seat = self.cs._csw_concept_row(0, obj)
+            if self.native_cube:
+                with torch.no_grad():
+                    self.cs.similarity_codebook.W[seat].copy_(torch.eye(8)[len(self.words) % 8])
             self.cs.interpret.define(wid, obj)
             self.words[word] = wid, self.cs.interpret.forward(wid)
         return self.words[word][1]

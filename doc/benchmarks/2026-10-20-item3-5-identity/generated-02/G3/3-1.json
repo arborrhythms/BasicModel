@@ -1,0 +1,20 @@
+{
+  "case": "3-1",
+  "text": "cat chases",
+  "expected": 12,
+  "chosen": 12,
+  "open_roles": [
+    [
+      "referent",
+      0
+    ],
+    [
+      "relation",
+      1
+    ]
+  ],
+  "pair": [
+    1.0,
+    0.0
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-142.recycle.json"
+}

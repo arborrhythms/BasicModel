@@ -48,10 +48,14 @@ them, and what is a row at all**
 - **A row has three positions: argument, kind, argument.** The kind is a
   relation that takes a truth as an argument — `DEF` (word DEF object),
   attribution (*he said REF*), the conditional (*if S then S*) — and each
-  outer position holds either an idea or a **REF** to another row. The
-  definition is one such row, as `Interpret.define` already writes it
-  (`rel_type = REL_DEF`, refs `[word, −1, obj]`); the definition index is
-  the two-way lookup over those rows' refs, not a separate store. "The
+  outer position holds a **symbol reference** (a minted idea's symbol, an
+  individual's, a word's) — *as finally decided below under "LTM1 and
+  LTM3": references are to symbols, never to rows*. The definition is one
+  such row, as `Interpret.define` already writes it (today with a REL code
+  in the middle and refs `[word, −1, obj]`; after the row amendment the
+  middle reference is the kind and there is no `rel_type`); the definition
+  index is the two-way lookup over those rows' references, a rebuildable
+  cache, not the record. "The
   DEF table" therefore lives in STM/LTM, and the same three positions
   serve multi-clause sentences and conditionals. The three positions are
   not reducible to one: a single position cannot carry two arguments
@@ -74,16 +78,15 @@ them, and what is a row at all**
   surprise acts on it as now. (The name says one slot, one concept — not
   "absolute as all concepts".) **LTM3** holds **three symbol references**
   — argument, kind, argument — so it remembers only known concepts; the
-  definition, attribution and conditional rows live here. **STM** keeps
-  three concept-width slots, because composition works on the operands'
-  vectors while the sentence is open. **The path to a concept is
+  definition, attribution and conditional rows live here. **STM is STM1** (Alec, 2026-10-20): each of its entries (about eight) holds **one wide concept vector** — at the content width where the fold is invertible, item 3's `D ≈ c·k·log N`, derived now for STM only — plus the index of recent rows and the symbol activation field. The temporary identity of the open sentence is that wide vector, **invertible to its parts**, not a centroid; `bind`'s meet is computed on the wide vectors; the close narrows the wide vector to the LTM1 concept, so the expensive width lives only in STM's few entries and LTM stays at concept width. Identity content a lesson writes is therefore always recoverable by inversion, which is what the retired signed-chart artifacts lacked. **The path to a concept is
   recurrence in LTM1:** a row remembered several times (the store's
   re-witnessing count) is minted as a concept row and a symbol at the
   shared index — the type criterion of nested admission and the minting of
   markers on recurrence, applied to ideas; only then can LTM3 reference
   it, and `bind` (item 3.5) resolves among minted individuals. A *de
-  dicto* modal idea is an LTM1 row with the world as an address column,
-  as the document address is. Psychologically LTM1 is the episodic trace
+  dicto* modal idea is an LTM1 row whose concept carries the world's trace
+  as a **context whole**, exactly as it carries the document's (the row
+  table below: no address columns). Psychologically LTM1 is the episodic trace
   and LTM3 the index over cortical codes (Tulving; Teyler & DiScenna),
   with minting on recurrence as consolidation.
 - **The row, field by field (Alec, 2026-10-20; decided after a walk
@@ -102,6 +105,29 @@ them, and what is a row at all**
 
   Nothing else. `.where` is already inside the concept's reserved band
   and needs no column unless an index independent of content is wanted.
+  *Two notes for the step 1b audit:* the per-dimension *withheld* mark of
+  `non` (expectation spec §4.6) is content — a mark beside the lanes in the
+  concept — not a column; and `IntraSentenceLayer`/`intraLossWeight`, still
+  live in code, are outside the one-predictor design and are retired or
+  justified there.
+  **`.when` and the orders (Alec, 2026-10-20):** a percept is situated —
+  every perceptual activation is at a place and a time — so a concept
+  read one order down, as one of its occurrences, carries both `.where`
+  and `.when`; the concept itself, the fold over its occurrences, keeps
+  the extent in `.where` (contiguity needs it) and never the clock. The
+  row is that relation stored: the slot holds the concept, the `.when`
+  column holds the clock of the occurrence, and lowering the row's
+  concept one order reattaches it. Composition works at the concept's
+  order and never sees the column; a question that asks *when* lowers to
+  the occurrence and does. A particular event is not a concept with a
+  time inside it but a concept with few occurrences, so lowering lands on
+  a definite time. In one phrase (Alec): **symbols have them** — the
+  symbol is the situated side of the shared index (this activation, at
+  this place, at this time) and the concept the abstracted side; every
+  activation in the symbol field carries `.where` and `.when`, the row's
+  `.when` column is that of the symbol activation written, and a minted
+  individual's occurrences are its symbol's situated activations while
+  its concept row is their unsituated fold.
   The **document** returns to WholeSpace as a context whole: an
   individual minted at its first sentence (§12 of the occurrence spec),
   whose activation is in the field while its sentences are read, so
@@ -162,7 +188,7 @@ row is written when the S endings, so anything that refers to it (a later
 like any other row (§3.2). Trust is about *assertion* and is decided
 separately (§4).
 
-**A bare NP** has an implicit VP, the tense-only existence copula
+**A bare NP** has an implicit VP — *occurs* (2026-10-20: the identity element asserted; "exists" is read as "occurs" since ideas do not exist, occurrence spec §14.4) — which this paragraph called the tense-only existence copula
 (`exist`). As an LTM idea it is the concept row itself: eternal by
 construction, since concepts carry one code and no location band. A
 located occurrence ("cat!", here and now) is an idea with the tense-only

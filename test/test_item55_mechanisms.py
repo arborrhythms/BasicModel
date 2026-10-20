@@ -23,6 +23,8 @@ def _serial_read(tmp_path, clock=0, offset=0):
     model.when_time.fill_(clock)
     model._tensor_peer_while_eager = True
     model.checkpoint_every_batches = 0
+    store = model.symbolSpace.ltm_store
+    initial_rows, initial_clock = len(store), int(store.model_clock)
     try:
         programs = []
         for text in ('cat sat','cat ran'):
@@ -40,6 +42,7 @@ def _serial_read(tmp_path, clock=0, offset=0):
         assert torch.is_tensor(answer), 'certificate needs an actual model answer'
         return dict(programs=[p.actions.detach().clone() for p in programs],
             rows={k:v.detach().clone() for k,v in store.state_dict().items()},
+            initial_rows=initial_rows, initial_clock=initial_clock, count=len(store),
             content=store.slots[:len(store)].detach().clone(), answer=answer.detach().clone())
     finally:
         model.End()
@@ -98,9 +101,13 @@ def _stream_code_banks(tmp_path,monkeypatch):
 
 @pytest.mark.usefixtures('eager_reading')
 def test_clock_independence(tmp_path):
+    from RowTime import encoder
     baseline = None
     for clock in CLOCKS:
         value = _serial_read(tmp_path, clock=clock)
+        times = encoder().decode_index(value['rows']['when'][value['initial_rows']:value['count']])
+        assert times.numel() and int(value['rows']['model_clock']) == max(
+            value['initial_clock'], int(times.max())+1)
         if baseline is None:
             baseline = value
             continue
@@ -108,7 +115,17 @@ def test_clock_independence(tmp_path):
         for a,b in zip(value['programs'],baseline['programs']):
             torch.testing.assert_close(a,b,rtol=0,atol=0)
         assert value['rows'].keys() == baseline['rows'].keys()
+        assert (value['initial_rows'],value['count']) == (baseline['initial_rows'],baseline['count'])
         for name in value['rows']:
+            if name == 'model_clock':
+                continue  # Verified against the actual write times above.
+            if name == 'when':
+                before, after = value['initial_rows'], value['count']
+                torch.testing.assert_close(value['rows'][name][:before],baseline['rows'][name][:before],rtol=0,atol=0)
+                torch.testing.assert_close(value['rows'][name][after:],baseline['rows'][name][after:],rtol=0,atol=0)
+                expected = encoder().decode_index(baseline['rows'][name][before:after])+clock
+                torch.testing.assert_close(times,expected,rtol=0,atol=0)
+                continue
             torch.testing.assert_close(value['rows'][name],baseline['rows'][name],rtol=0,atol=0,msg=name)
         torch.testing.assert_close(value['answer'],baseline['answer'],rtol=0,atol=0)
 
@@ -160,7 +177,7 @@ def test_stream_chain(tmp_path,monkeypatch):
     restored = TernaryTruthStore(4,capacity=8)
     restored.load_state_dict(store.state_dict())
     assert torch.equal(restored.stream,store.stream)
-    # The production closing supplies stream witnesses and document-local time.
+    # The production closing supplies stream witnesses and model processing time.
     from test_native_attention_field import _model
     model = _model(tmp_path,monkeypatch)
     model.candidate_attention = None
@@ -176,9 +193,9 @@ def test_stream_chain(tmp_path,monkeypatch):
                     torch.tensor(list(document_digest(doc)))).all(-1) for doc in ('a','b')]).any(0)
                 observations=roots.nonzero().flatten()
                 assert observations.numel()==2
-                assert torch.equal(model.when_encoding.decode_index(live.when[observations]),
-                                   live.sentence_index[observations])
                 if documents==('a','b'):
+                    from RowTime import encoder
+                    assert encoder().decode_index(live.when[observations]).tolist() == [model.present()]*2
                     before={key:getattr(live,key)[observations].clone()
                             for key in ('row_ids','when','sentence_index')}
                     witnesses=live.witness_count[observations].clone()

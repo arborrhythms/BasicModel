@@ -34,6 +34,19 @@ def exclude_replaced_occurrences(store, identities, valid, document, position):
 
 
 @dataclass(frozen=True)
+class SituationAddress:
+    """STM retains an occurrence address; its current region lives in LTM."""
+    occurrence: tuple
+
+    def detached(self):
+        return self
+
+    def read(self, store):
+        index = None if store is None else store._index_occurrences.get(self.occurrence)
+        return None if index is None else SituationFrame.from_row(store.row(index))
+
+
+@dataclass(frozen=True)
 class SituationFrame:
     depth: int
     roles: torch.Tensor

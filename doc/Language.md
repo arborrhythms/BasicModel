@@ -1,5 +1,13 @@
 # Language
 
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
+> - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+
+
 The live grammar is owned by `LanguageSpace` in `bin/Language.py`.
 The September 28 item 7 revision stores a sentence's end state and discards
 its temporary reading record after reconstruction and the explore trial.
@@ -306,16 +314,16 @@ fabricating a split would corrupt the reconstruction.
 | `adverb` | 2 | CS | VP eigenmodifier (`apply_adverb`) | **not dispatchable** (`reverse_dispatchable = False`; lossy) |
 | `lower` | 2 | CS | intersection fold within the current order (internal PiLayer; DET); selects a particular under 11c's reference orders | `Ops.lowerReverseAll` w/ basis ($\to$ intersectionReverse); `_pi.generate` without |
 | `preposition` | 2 | CS | `.where`-relation refinement of NP/VP | `(x, x)` with the `.where` rotation undone (content-exact, marker-lossy) |
-| `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) |
-| `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) |
+| `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) | *(2026-10-19: deleted; `bind` is a thought operation, once per site — bind plan)* |
+| `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) | *(superseded: tense is `position` over the verb phrase's phases; no concept carries a `.when` band — occurrence §4, §13)* |
 | `aspect` | 1 | CS | identity (rewrite() planned; not a live rule) | identity |
 | `morphology` | 1 | CS | surface inflection $\to$ `.when` (tense/aspect feature ops) | analyzes features, undoes aspect ops in reverse order, then tense |
 | `symbolize` | 2 | CS | pure `(left + right) / 2` composition; no word/object admission | `(parent/2, parent/2)` numerical split; no store lookup |
 | `conjunction` | 2 | SS | product binding; same reference is identity | reverse and generate: bounded pair search through compose; no basis → raise |
 | `disjunction` | 2 | SS | probabilistic sum `(norm(x)+norm(y)-norm(x)*norm(y))*unit(x+y-x*y)` | reverse and generate: bounded pair search through compose; no basis → raise |
-| `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity |
-| `isEqual` | 2 | SS | legacy identity-assertion truth bivector | **raise** (max-fold not bijective) |
-| `isPart` | 2 | SS | legacy parthood-assertion truth bivector | **raise** (A's identity not preserved) |
+| `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity | *(retired; the default VP is *occurs* — occurrence §14.4)* |
+| `isEqual` | 2 | SS | legacy identity-assertion truth bivector | **raise** (max-fold not bijective) | *(equality is singleton membership in the taxonomy, 2026-10-20)* |
+| `isPart` | 2 | SS | legacy parthood-assertion truth bivector | **raise** (A's identity not preserved) | *(parthood is a fold in the meronomy/taxonomy, not a row, 2026-10-20)* |
 | `part` | 2 | CS | returns the encompassing parent (parthood learned by codebook geometry) | **raise** (A's identity not preserved) |
 | `whole` | 2 | CS | converse of `part` (PartLayer subclass) | **raise** (same) |
 | `equal` | 2 | CS | geometric mutual-parthood on concept bivectors (Layers.EqualLayer) | lossy `(parent, parent)` pseudo-inverse |
@@ -797,11 +805,11 @@ learned credit.
 | word class | what it does | index |
 |---|---|---|
 | noun, adjective | narrows which thing | |
-| determiner | individuates: "a" mints, "the" binds, "every" does not lower | thing |
+| determiner | individuates: "a" mints, "the" binds, "every" does not lower *(2026-10-19: a cue input to `bind`, the only binder)* | thing |
 | verb, adverb | narrows which stretch of time, and what changes | |
-| tense, aspect | individuates the time | time |
+| tense, aspect | individuates the time *(`position` over the verb phrase's phases)* | time |
 | conditional | narrows which alternatives are in play | |
-| modal | individuates: "might" some, "must" all | alternative |
+| modal | individuates: "might" some, "must" all *(`position` with a world as object; default all possible worlds — occurrence §14.3–§14.4)* | alternative |
 
 **Which operators commute.** One that acts the same on any domain commutes
 with the others (*fake*, *wooden*, *noble*). One that reads its scale from

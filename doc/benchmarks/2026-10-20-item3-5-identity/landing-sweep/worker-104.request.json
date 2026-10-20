@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_compose_operations.py::test_reservoir_keeps_each_eligible_round_with_probability_one_over_k",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-104.recycle.json"
+}

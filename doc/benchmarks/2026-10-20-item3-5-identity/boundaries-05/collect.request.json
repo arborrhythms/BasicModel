@@ -1,0 +1,20 @@
+{
+  "selectors": [
+    "test/test_identity_rows.py",
+    "test/test_sentence_references.py",
+    "test/test_sentence_expectation.py",
+    "test/test_expectation_defaults.py",
+    "test/test_negative_expectation.py",
+    "test/test_expectation_retention.py",
+    "test/test_compiled_expectation_boundary.py",
+    "test/test_math_chain_section14.py",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_bind_thought.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

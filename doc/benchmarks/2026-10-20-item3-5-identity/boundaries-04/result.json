@@ -1,0 +1,1679 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+    "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+    "test/test_identity_rows.py::test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows",
+    "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+    "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+    "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+    "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+    "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+    "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+    "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+    "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+    "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+    "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+    "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+    "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+    "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+    "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
+    "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+    "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+    "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+    "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+    "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+    "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+    "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+    "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+    "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+    "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+    "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+    "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+    "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "completed": [
+    "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+    "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+    "test/test_identity_rows.py::test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows",
+    "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+    "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+    "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+    "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+    "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+    "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+    "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+    "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+    "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+    "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+    "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+    "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+    "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+    "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
+    "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+    "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+    "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+    "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+    "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+    "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+    "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+    "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+    "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+    "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+    "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+    "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+    "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+    "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+    "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+    "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-000.json"
+      ],
+      "pid": 1389,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440485184,
+      "elapsed_seconds": 4.332386000081897,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+        "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+        "test/test_identity_rows.py::test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows",
+        "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+        "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+        "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+        "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time"
+      ],
+      "completed": [
+        "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+        "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+        "test/test_identity_rows.py::test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows",
+        "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+        "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+        "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+        "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.019901250023394823,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006946000037714839,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_rows.py::test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00796270789578557,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00290545797906816,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0033708340488374233,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0011949590407311916,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005264041945338249,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-001.json"
+      ],
+      "pid": 1390,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 434177368,
+      "elapsed_seconds": 5.296126125147566,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+      ],
+      "completed": [
+        "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002230999991297722,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000746874837204814,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004130839370191097,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00107216602191329,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.004260999849066138,
+          "message": "test/test_sentence_references.py:100: in test_predictor_context_carries_owned_reference_without_a_memory_read\n    assert len(anchors) == 1 and anchors[0].row_id == int(store.row_ids[row])\nE   assert (0 == 1)\nE    +  where 0 = len(())",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012216583825647831,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00014783302322030067,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0075762090273201466,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-002.json"
+      ],
+      "pid": 1392,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 515261808,
+      "elapsed_seconds": 6.26808787509799,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+        "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+        "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+        "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+        "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+        "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+        "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+        "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+        "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+        "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+        "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+        "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+        "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+        "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+        "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+        "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+        "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+        "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+        "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004830833990126848,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002233249833807349,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014986249152570963,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0025820829905569553,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0024968748912215233,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0018546250648796558,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012245374964550138,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.04149716696701944,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.017145291902124882,
+          "message": "test/test_sentence_expectation.py:125: in test_streaming_and_packed_boundary_use_same_full_roles\n    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,\ntest/reading_fixtures.py:271: in commit_reading\n    cost, pending = discourse.sentence_prediction_cost(\nbin/Layers.py:10831: in sentence_prediction_cost\n    prediction = self.expect_next_meaning(b)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0019103328231722116,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00010966602712869644,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0011452911421656609,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009380420669913292,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001107166986912489,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006734998896718025,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00011004204861819744,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-003.json"
+      ],
+      "pid": 1393,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 501597432,
+      "elapsed_seconds": 7.238732541911304,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+        "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses"
+      ],
+      "completed": [
+        "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+        "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003766958136111498,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001538330689072609,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.261021208949387,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.7870102499146014,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-005.json"
+      ],
+      "pid": 1395,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 593544632,
+      "elapsed_seconds": 8.166531625203788,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+        "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+        "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+        "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+        "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+        "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+        "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+        "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+        "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+        "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+        "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+        "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+        "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+        "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+        "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.016059957910329103,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021944590844213963,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0408448341768235,
+          "message": "test/test_negative_expectation.py:62: in test_declared_not_is_a_thought_act_not_an_observation\n    result = model.run_selected_thought(request,work_budget=32)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.027460874989628792,
+          "message": "test/test_negative_expectation.py:91: in test_expectation_updates_predictors_outside_the_departure_comparison\n    test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch)\ntest/test_item6_2_thinking.py:301: in test_expectation_trains_predictor_without_moving_departure_chooser\n    run(model,goal,work_budget=64)\ntest/test_item6_2_thinking.py:44: in run\n    return model.run_selected_thought(q, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.007896416122093797,
+          "message": "test/test_negative_expectation.py:99: in test_metadata_comes_from_the_preceding_occurrence_not_the_target\n    observe(discourse, prior.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.0001112909521907568,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_negative_expectation.py', 114, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006744833197444677,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007855207892134786,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0060411670710891485,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014500420074909925,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.007632042048498988,
+          "message": "test/test_negative_expectation.py:201: in test_disabling_expectation_erases_pending_credit_and_starts_cold\n    discourse.expect_next_meaning(record=True)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.008086458081379533,
+          "message": "test/test_negative_expectation.py:216: in test_open_question_and_nested_what_spare_the_same_role\n    observe(discourse, meaning.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.01345916697755456,
+          "message": "test/test_negative_expectation.py:238: in test_anticipation_ignores_incoming_staging_and_other_streams\n    before = discourse.expect_next_meaning(record=True)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.008484709076583385,
+          "message": "test/test_negative_expectation.py:254: in test_nested_object_mask_reads_a_later_thought_on_the_shared_budget\n    observe(discourse, meaning.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.008087000111117959,
+          "message": "test/test_negative_expectation.py:254: in test_nested_object_mask_reads_a_later_thought_on_the_shared_budget\n    observe(discourse, meaning.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.008107457775622606,
+          "message": "test/test_negative_expectation.py:280: in test_generate_sentence_uses_positive_prediction_only_as_generate_seed\n    prediction = discourse.expect_next_meaning()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-004.json"
+      ],
+      "pid": 1394,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1048921864,
+      "elapsed_seconds": 9.667914625024423,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+        "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+        "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+        "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+        "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+        "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+        "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+        "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+        "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+        "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+        "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+        "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+        "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005305917002260685,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002661457983776927,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00180741585791111,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00112745794467628,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.22594337491318583,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.21035079192370176,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.20731791690923274,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003207919653505087,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 1.5297633751761168,
+          "message": "test/test_expectation_defaults.py:124: in test_native_runtime_reports_pairs_without_accumulating_or_updating\n    result, _ = model.runBatch(\nbin/Models.py:13495: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13651: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14031: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8746: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10113: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8431: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8209: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23874: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17102: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22426: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21978: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20631: in _run_sentence_word_bricks\n    disc.predict_next_end_state(b)\nbin/Layers.py:10815: in predict_next_end_state\n    prediction = self.expect_next_meaning(b)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00012425007298588753,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_expectation_defaults.py', 143, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00010312511585652828,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_expectation_defaults.py', 187, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.7012479580007493,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012675458798184991,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.18209691694937646,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-006.json"
+      ],
+      "pid": 1449,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434226520,
+      "elapsed_seconds": 4.330864917021245,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+        "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+        "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+        "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+        "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+        "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+        "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+        "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+        "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012482834048569202,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00012295786291360855,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_negative_expectation.py', 308, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016315421089529991,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00028958311304450035,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002588750794529915,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003909999504685402,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003986666211858392,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01736420812085271,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006678749341517687,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-007.json"
+      ],
+      "pid": 1450,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 502695160,
+      "elapsed_seconds": 5.298719041980803,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+        "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+        "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+      ],
+      "completed": [
+        "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+        "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+        "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.004199791932478547,
+          "message": "test/test_expectation_retention.py:61: in test_retained_estimate_links_its_external_observation_and_restores\n    _observe(discourse, observed, document)\ntest/test_expectation_retention.py:36: in _observe\n    discourse.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0019885830115526915,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021118749864399433,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-008.json"
+      ],
+      "pid": 1451,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436929880,
+      "elapsed_seconds": 6.2632719171233475,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+      ],
+      "completed": [
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00010574981570243835,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_expectation_boundary.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.479179814457893e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_expectation_boundary.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.950002327561378e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_expectation_boundary.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.012509740889072e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_expectation_boundary.py', 6, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.039744958048686385,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-009.json"
+      ],
+      "pid": 1452,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2036484712,
+      "elapsed_seconds": 25.68898395798169,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001958375098183751,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009256249759346247,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0023299171589314938,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.03415645891800523,
+          "message": "test/test_math_chain_section14.py:91: in test_one_empty_region_query_permits_conclude_and_only_source_mints\n    result = run(model, root, work_budget=32)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item6_2_thinking.py:44: in run\n    return model.run_selected_thought(q, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:228: in write\n    index = write(model, value, row=row, _active=active, _bound=bound)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.011783333029597998,
+          "message": "test/test_math_chain_section14.py:91: in test_one_empty_region_query_permits_conclude_and_only_source_mints\n    result = run(model, root, work_budget=32)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_item6_2_thinking.py:44: in run\n    return model.run_selected_thought(q, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004180839750915766,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.07771699992008507,
+          "message": "test/test_math_chain_section14.py:122: in test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge\n    run(model, goal, work_budget=64)\ntest/test_item6_2_thinking.py:44: in run\n    return model.run_selected_thought(q, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0014321249909698963,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 9.670807048678398e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 159, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": "copular_identity",
+          "duration": 0.00038424995727837086,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 234, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 6.642068916931748,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 5.63075029104948,
+          "message": "test/test_math_chain_section14.py:401: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\ntest/forced_math_grammar.py:33: in run_batch\n    return batch(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13495: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13651: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14031: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8746: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10113: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8431: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8209: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23874: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17102: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22426: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21978: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20937: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20853: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19838: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19627: in _sentence_observation\n    plans.append(resolver.preview(clause,\nbin/ReferenceClose.py:395: in preview\n    content = self.coordinates(node.point)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:55: in coordinates\n    return coordinates(self.components.owner, point)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:36: in coordinates\n    raise ValueError('identity content requires native concept coordinates in [0, 1]')\nE   ValueError: identity content requires native concept coordinates in [0, 1]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 5.167554083047435,
+          "message": "test/test_math_chain_section14.py:401: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:80: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\ntest/forced_math_grammar.py:33: in run_batch\n    return batch(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13495: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13651: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14031: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8746: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10113: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8431: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8209: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23874: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17102: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22426: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21978: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20937: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20853: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19838: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19627: in _sentence_observation\n    plans.append(resolver.preview(clause,\nbin/ReferenceClose.py:395: in preview\n    content = self.coordinates(node.point)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:55: in coordinates\n    return coordinates(self.components.owner, point)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:36: in coordinates\n    raise ValueError('identity content requires native concept coordinates in [0, 1]')\nE   ValueError: identity content requires native concept coordinates in [0, 1]",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-010.json"
+      ],
+      "pid": 1453,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 871909488,
+      "elapsed_seconds": 34.64781825011596,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 29.95302841695957,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 29.273s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.317s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.316s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.316s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.316s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 6,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04",
+  "elapsed_seconds": 47.76234041596763,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "skipped_certificates_by_phase": {
+    "copular_identity": [
+      {
+        "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 234, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')"
+      }
+    ]
+  },
+  "peak_aggregate_memory_bytes": 3135430696,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/collect.json"
+    ],
+    "pid": 1364,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 465798368,
+    "elapsed_seconds": 3.8380334998946637,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/boundaries-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+        "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+        "test/test_identity_rows.py::test_forgetting_does_not_subtract_but_reassignment_refolds_retained_rows",
+        "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+        "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+        "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+        "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+        "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+        "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+        "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+        "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+        "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+        "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+        "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+        "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+        "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+        "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+        "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+        "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+        "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+        "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+        "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+        "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_heads_have_explicit_fresh_activation_migration",
+        "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+        "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+        "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+        "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
+        "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
+        "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+        "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+        "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
+        "test/test_expectation_defaults.py::test_fixed_prior_changing_target_changes_residual_not_estimate",
+        "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
+        "test/test_expectation_defaults.py::test_all_padding_is_not_an_external_observation",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]",
+        "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]",
+        "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+        "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+        "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+        "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+        "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+        "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+        "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+        "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+        "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+        "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+        "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+        "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+        "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+        "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+        "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+        "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.0]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[0.5]",
+        "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+        "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
+        "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+        "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+        "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
+        "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+        "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+        "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+        "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+  }
+}

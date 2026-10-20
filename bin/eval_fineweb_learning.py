@@ -94,7 +94,7 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
                 questions=(What.present(0, split='validation'),))
         if not discourse._inter_context[0]:
             raise ValueError('held-out input produced no complete prediction context')
-        _depth, roles, mask = discourse._inter_context[0][-1]
+        _depth, roles, mask = discourse._read_context(0)[0][-1]
         roles, mask = roles.detach().cpu(), mask.detach().cpu()
         groups.setdefault(doc, []).append((roles, mask))
         if pending is not None and previous_doc == doc:

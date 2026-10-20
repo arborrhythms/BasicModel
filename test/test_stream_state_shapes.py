@@ -14,6 +14,7 @@ def _attention_model(keys):
     chooser = OperationSelectionLayer(d_model=width)
     owner = SimpleNamespace(
         definitions=SimpleNamespace(word=lambda **kwargs: None),
+        interpret=SimpleNamespace(word_for_form=lambda form: None),
         similarity_codebook=None, priming_weights=lambda **kwargs: None)
     return SimpleNamespace(
         inputSpace=SimpleNamespace(

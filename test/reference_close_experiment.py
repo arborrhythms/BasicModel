@@ -46,7 +46,7 @@ def run(args):
             if args.smoke:
                 lessons, docs = lessons[:4], docs[:4]
             component = model._concept_owner().components
-            before = set(component.nouns.ids)
+            before = set(component.individual_ids)
             optimizer = model.getOptimizer(lr=.003)
             observe = model._sentence_observation
             reference_readings = []
@@ -76,7 +76,7 @@ def run(args):
                 columns_minted=[c for c in columns(component) if c['column'] not in before],
                 summary=summarize(results), results=results, elapsed_seconds=time.monotonic()-started,
                 policy=component.reference_close.policy.detach().tolist(),
-                cue_policy_norm=float(component.reference_close.cue_policy.detach().norm()))
+                form_regions=len(component.owner._concept_allocator.form_regions))
             save(args.out/'results.json', report)
             save(args.out/'observations.json', observations)
             save(args.out/'kept-programs.json', records)

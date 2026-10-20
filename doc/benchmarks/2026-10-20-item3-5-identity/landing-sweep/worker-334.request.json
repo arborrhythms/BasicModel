@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_identity_corpus.py::test_saved_corpus_matches_generator_and_keeps_labels_out_of_text",
+    "test/test_identity_corpus.py::test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[train]",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[eval]",
+    "test/test_identity_corpus.py::test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_labels",
+    "test/test_identity_corpus.py::test_same_kind_later_properties_use_the_original_verb_forms",
+    "test/test_identity_corpus.py::test_imperfect_determiners_and_content_conflicts_have_separate_evidence",
+    "test/test_identity_corpus.py::test_neither_candidate_control_has_identical_text_for_both_hidden_answers"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-334.recycle.json"
+}

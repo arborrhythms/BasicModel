@@ -1,0 +1,16 @@
+......F.                                                                 [100%]
+=================================== FAILURES ===================================
+___ test_type_family_snapshot_uses_learned_membership_and_row_local_priming ____
+test/test_stored_idea_generation.py:169: in test_type_family_snapshot_uses_learned_membership_and_row_local_priming
+    result = primed_type_families(owner, heat, limit=1)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:136: in primed_type_families
+    nouns = set(() if components is None else components.individual_ids)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'individual_ids'
+=========================== short test summary info ============================
+FAILED test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming
+1 failed, 7 passed in 7.22s

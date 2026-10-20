@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-054.recycle.json"
+}

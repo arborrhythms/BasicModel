@@ -260,18 +260,6 @@ class InterpretLayer(GrammarLayer):
         index.rebuild()
         self._identity_revision = identity.revision
 
-    def binding_atoms(self, atoms):
-        model = getattr(self.owner, '_model', None)
-        store = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
-        identity = getattr(store, 'identity', None)
-        if identity is None or atoms.shape[-1] < identity.width:
-            return atoms
-        form = atoms[..., :identity.width]
-        sparse = ((form == 0) | (form == 1)).all(-1)
-        # A resolved live reference is already a conceptual direction. Only
-        # sparse native forms take the word-identity projection.
-        return torch.where(sparse[..., None], identity.binding(atoms), atoms)
-
     @torch.no_grad()
     def define(self, word, obj, *, description=None):
         """The sole writer of word DEF object. Operands name, never copy, codes."""
@@ -306,7 +294,6 @@ class InterpretLayer(GrammarLayer):
                                    address=definition_key(word, obj))
         store.refs[row] = store.refs.new_tensor([word, -1, obj])
         store.row_ids[row] = int(store.address_keys[row])
-        store.when[row].zero_()  # Definitions are unlocated, never clock-stamped.
         store._definition_rows[int(store.address_keys[row])] = description
         store._update_semantic_fingerprint(row)
         index.add(row)
@@ -365,7 +352,7 @@ class InterpretLayer(GrammarLayer):
             if object_atoms is None or presence is None or evidence is None:
                 raise ValueError('interpret tensor face requires the resolved object bank')
             width = object_atoms.shape[-1]
-            return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+            return torch.cat((self.activate(object_atoms, presence,
                                            evidence=evidence), word[..., width:]), -1)
         from Spaces import _concept_alloc_of
         cs, word = self.owner, int(word)

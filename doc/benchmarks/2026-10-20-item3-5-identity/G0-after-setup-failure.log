@@ -1,0 +1,10 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/g0_after.py", line 95, in <module>
+    if __name__=='__main__':run()
+                            ^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/g0_after.py", line 77, in run
+    compose_carrier=measure(points({word:owner.interpret.activate(point, 1.)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InterpretLayer.activate() missing 1 required keyword-only argument: 'evidence'

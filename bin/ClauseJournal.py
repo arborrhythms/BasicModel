@@ -46,6 +46,18 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     if frames is None:
         raise ValueError('the open reading has no numerical operation journal')
     stack = []
+    def region(node):
+        """Read the declared meaning without replaying numerical operators."""
+        if not node['has_point']:
+            return None
+        while node['children']:
+            semantic = getattr(node['rule'], 'semantic_operand', None)
+            if semantic is None:
+                break
+            node = node['children'][semantic]
+            if not node['has_point']:
+                return None
+        return node['value']
     def metadata(words):
         # These are input identification poles, never the source's authority.
         evidence = program.leaf_evidence
@@ -186,9 +198,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 if order == 1 and mode in ('mint', 'bind', 'pronoun'):
                     description = operands[index]
                     cue = operands[1-index] if arity == 2 else None
-                    parent['close_request'] = dict(mode=mode, leaves=description['leaves'],
-                        cue=None if cue is None else cue['value'],
-                        content=description['value'] if mode == 'pronoun' else parent['value'])
+                    content = region(description)
+                    if content is not None:
+                        parent['close_request'] = dict(mode=mode, leaves=description['leaves'],
+                            cue=None if cue is None else region(cue), content=content)
         stack.append(parent)
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
@@ -291,6 +304,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         excluded = False
         mode = 'assertive'
         def close_member(item, *, referent=True):
+            if not item['has_point']:
+                return None
             current = item
             request = current.get('close_request')
             while request is None and current['children']:
@@ -314,7 +329,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             forward = head(item).get('forward_identity')
             if forward is not None:
                 request = dict(request, forward_identity=forward)
-            point = request['content'] if current is item else item['value']
+            point = request['content'] if current is item or request.get('leaf') else region(item)
+            if point is None:
+                return None
             return Clause(ConceptualMeaning.from_description(point), point=point,
                 subject_word_id=subject_word_id(item), order=1,
                 evidence=metadata(item['leaves'])['evidence'], **bands(item),

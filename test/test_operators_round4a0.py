@@ -259,10 +259,11 @@ def test_checkpoint_can_grow_capacity_without_changing_an_address():
     restored.load_semantic_extras(copy.deepcopy(source.semantic_extras()))
     assert restored.capacity == 8 and len(restored) == 2
     assert restored.occurrence_of(1) == source.occurrence_of(1)
-    from Spaces import WhenEncoding
-    encoder = WhenEncoding(n_when=4).set_capacity(8)
-    torch.testing.assert_close(restored.when[:2], encoder.encode(torch.tensor([1, 1])))
+    from RowTime import encoder
+    torch.testing.assert_close(restored.when[:2], source.when[:2], rtol=0, atol=0)
+    assert encoder().decode_index(restored.when[:2]).tolist() == [0, 1]
     assert write(restored, 'three') == 2
+    assert int(encoder().decode_index(restored.when[2])) == 2
 
 
 def test_serving_source_is_conversation_and_turn_and_replay_is_stable():

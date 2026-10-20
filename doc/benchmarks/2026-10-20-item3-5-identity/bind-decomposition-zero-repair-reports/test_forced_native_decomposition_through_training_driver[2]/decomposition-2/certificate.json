@@ -1,0 +1,10573 @@
+{
+  "forced": true,
+  "successors": 2,
+  "attention_budget": 768,
+  "premise_budget": 0,
+  "episodes": [
+    {
+      "row": 0,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "after": [
+        [
+          "ltm",
+          "address-v1",
+          -5390593051580753525
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "open": [],
+      "metadata": {
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_derived_binding": true,
+        "_direct_binding": false,
+        "_equality": true,
+        "_evidence_pair": [
+          0.25167274475097656,
+          0.0
+        ],
+        "_formation_records": [
+          [
+            [
+              "choice",
+              "open"
+            ],
+            [
+              "probability",
+              0.004000737797468901
+            ],
+            [
+              "reference",
+              0
+            ],
+            [
+              "role",
+              0
+            ]
+          ],
+          [
+            [
+              "choice",
+              "bind"
+            ],
+            [
+              "probability",
+              0.004000737797468901
+            ],
+            [
+              "reference",
+              36556512062118279
+            ],
+            [
+              "role",
+              2
+            ]
+          ]
+        ],
+        "_forward_references": [],
+        "_open_references": [],
+        "_pending": false,
+        "_producing_operation": "query",
+        "_query_occurrence": [
+          "ltm",
+          "address-v1",
+          727254342014639336
+        ],
+        "_reference_sites": [
+          [
+            0,
+            [
+              [
+                "content",
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "cue",
+                [
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "leaves",
+                [
+                  0
+                ]
+              ],
+              [
+                "predicate",
+                [
+                  -0.1433536857366562,
+                  -0.016209250316023827,
+                  -0.009981951676309109,
+                  -0.20675376057624817,
+                  -0.1425502449274063,
+                  -0.0959198996424675,
+                  0.04537821561098099,
+                  0.08156221359968185,
+                  -0.11983802914619446,
+                  0.01338233519345522,
+                  0.09422487765550613,
+                  0.09756685048341751,
+                  0.06752486526966095,
+                  -0.22198958694934845,
+                  0.05004872754216194,
+                  -0.049072615802288055,
+                  0.015816275030374527,
+                  0.01818762719631195,
+                  -0.04536337032914162,
+                  0.13631433248519897,
+                  0.26190847158432007,
+                  -0.12796112895011902,
+                  -0.17150117456912994,
+                  0.008447305299341679,
+                  0.03385421633720398,
+                  -0.06174246594309807,
+                  0.08259911090135574,
+                  0.182587131857872,
+                  0.013178539462387562,
+                  -0.021218931302428246,
+                  -0.07391399890184402,
+                  0.09364568442106247,
+                  0.11990312486886978,
+                  -0.006850535981357098,
+                  -0.1664203703403473,
+                  0.14100781083106995,
+                  -0.08170099556446075,
+                  -0.0006209586863406003,
+                  -0.02217341959476471,
+                  -0.17275021970272064,
+                  -0.16459938883781433,
+                  0.028646979480981827,
+                  0.014781441539525986,
+                  0.07106012105941772,
+                  0.04493728280067444,
+                  0.040445372462272644,
+                  0.061765704303979874,
+                  -0.001483272877521813,
+                  0.0330771841108799,
+                  0.07509907335042953,
+                  0.09929081052541733,
+                  -0.15368430316448212,
+                  0.0410502627491951,
+                  0.08098003268241882,
+                  0.1323862075805664,
+                  -0.008327932097017765,
+                  -0.04811934381723404,
+                  0.031234484165906906,
+                  0.1138598769903183,
+                  -0.0437302403151989,
+                  0.248725026845932,
+                  0.024659473448991776,
+                  -0.13383863866329193,
+                  -0.01707310788333416,
+                  -0.07922744005918503,
+                  -0.05836758017539978,
+                  0.03894994407892227,
+                  -0.045628439635038376,
+                  0.14392761886119843,
+                  -0.09041503816843033,
+                  0.03072185628116131,
+                  -0.04723626375198364,
+                  -0.0014792861184105277,
+                  -0.08399728685617447,
+                  0.127004474401474,
+                  -0.12606500089168549,
+                  -0.08807751536369324,
+                  -0.06381375342607498,
+                  0.056409209966659546,
+                  0.004744261037558317,
+                  -0.007068079896271229,
+                  -0.08333786576986313,
+                  -0.13345608115196228,
+                  0.049485813826322556,
+                  -0.1929478943347931,
+                  -0.005211294163018465,
+                  -0.06823066622018814,
+                  -0.04686467722058296,
+                  -0.037070754915475845,
+                  -0.11820398271083832,
+                  -0.15327998995780945,
+                  0.10979747772216797,
+                  -0.015929758548736572,
+                  0.09902039170265198,
+                  -0.06599075347185135,
+                  0.04546811804175377,
+                  0.06030331924557686,
+                  -0.11032876372337341,
+                  -0.003002113662660122,
+                  -0.04741332307457924,
+                  0.022992612794041634,
+                  0.011717962101101875,
+                  -0.21016241610050201,
+                  -0.0714479610323906
+                ]
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ]
+        ],
+        "_source_evidence": [
+          0.0,
+          0.0
+        ],
+        "_thought_witnesses": [
+          [
+            "ltm",
+            "address-v1",
+            -7073482342302946062
+          ],
+          [
+            "thought",
+            "address-v1",
+            -4371918772617186273
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -7023624750166981130
+          ]
+        ]
+      },
+      "work": 455,
+      "state_diff": {
+        "changed": [
+          "._last_thought_comparison",
+          "._last_thought_score_function",
+          "._thought_ordinals",
+          "._walk_audit",
+          "._walk_observations",
+          "._walk_previous",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+          "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._texts",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.stream",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+          "what_memory._address_sources",
+          "what_memory._episode_live",
+          "what_memory._thought_next_id",
+          "what_memory._what_slots"
+        ],
+        "unexpected": [],
+        "changed_old_rows": [
+          73
+        ],
+        "source_row": 73,
+        "added_row_kinds": [
+          "inference",
+          "inference"
+        ]
+      },
+      "trace": [
+        {
+          "kind": "begin",
+          "operation": "",
+          "level": 0,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              36556512062118279
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -7073482342302946062
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  36556512062118279
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4270664060288490240
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -7073482342302946062)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  36556512062118279
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4270664060288490240
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 4270664060288490240)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -9175907689862703869
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  529151510578265732
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 529151510578265732)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  3057112487014745644
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 3057112487014745644)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -9175907689862703869)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 36556512062118279)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 1,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -9175907689862703869
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -2665308685209777297
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -9175907689862703869
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7633956485184375524
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -2665308685209777297)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -9175907689862703869
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7633956485184375524
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 7633956485184375524)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -5805465447979123738
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2858572964608824915
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2858572964608824915)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  9179237696221181572
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 9179237696221181572)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -5805465447979123738)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -9175907689862703869)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 2,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -5805465447979123738
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 2,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -6232129093768098519
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -5805465447979123738
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  1051528970146070729
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -6232129093768098519)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -5805465447979123738
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  1051528970146070729
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 1051528970146070729)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -5805465447979123738)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 2,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              1051528970146070729
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -5805465447979123738
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              1051528970146070729
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -5805465447979123738
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -6232129093768098519
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -5805465447979123738
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  1051528970146070729
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -6232129093768098519)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -5805465447979123738
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  1051528970146070729
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 1051528970146070729)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -5805465447979123738)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -9079460300639678427
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2006133249356361574
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2384664961071294889
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -9079460300639678427)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2006133249356361574
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2384664961071294889
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2384664961071294889)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2006133249356361574)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  1051528970146070729
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  1592384574761990074
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 1592384574761990074)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  5789961872504939394
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 5789961872504939394)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 1051528970146070729)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              2384664961071294889
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -9175907689862703869
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              2384664961071294889
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -9175907689862703869
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -9079460300639678427
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2006133249356361574
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2384664961071294889
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -9079460300639678427)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2006133249356361574
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2384664961071294889
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2384664961071294889)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2006133249356361574)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  1051528970146070729
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  1592384574761990074
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 1592384574761990074)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  5789961872504939394
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 5789961872504939394)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 1051528970146070729)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -7023624750166981130
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -4901282443787335934
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5390593051580753525
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -7023624750166981130)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -4901282443787335934
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5390593051580753525
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -5390593051580753525)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -4901282443787335934)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2384664961071294889
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6518162126603716972
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 6518162126603716972)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3640325875201140345
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3640325875201140345)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2384664961071294889)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -5390593051580753525
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              36556512062118279
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "finish",
+          "operation": "finish",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -5390593051580753525
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              36556512062118279
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -7023624750166981130
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -4901282443787335934
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5390593051580753525
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -7023624750166981130)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -4901282443787335934
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5390593051580753525
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -5390593051580753525)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -4901282443787335934)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2384664961071294889
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6518162126603716972
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 6518162126603716972)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3640325875201140345
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3640325875201140345)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2384664961071294889)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "row": 1,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "after": [
+        [
+          "ltm",
+          "address-v1",
+          7257692495190677228
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "open": [],
+      "metadata": {
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_derived_binding": true,
+        "_direct_binding": false,
+        "_equality": true,
+        "_evidence_pair": [
+          0.25167274475097656,
+          0.0
+        ],
+        "_formation_records": [
+          [
+            [
+              "choice",
+              "open"
+            ],
+            [
+              "probability",
+              0.004000905901193619
+            ],
+            [
+              "reference",
+              0
+            ],
+            [
+              "role",
+              0
+            ]
+          ],
+          [
+            [
+              "choice",
+              "bind"
+            ],
+            [
+              "probability",
+              0.004000905901193619
+            ],
+            [
+              "reference",
+              1169438612409251238
+            ],
+            [
+              "role",
+              2
+            ]
+          ]
+        ],
+        "_forward_references": [],
+        "_open_references": [],
+        "_pending": false,
+        "_producing_operation": "query",
+        "_query_occurrence": [
+          "ltm",
+          "address-v1",
+          -6248425793460033670
+        ],
+        "_reference_sites": [
+          [
+            0,
+            [
+              [
+                "content",
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "cue",
+                [
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "leaves",
+                [
+                  0
+                ]
+              ],
+              [
+                "predicate",
+                [
+                  -0.1433536857366562,
+                  -0.016209250316023827,
+                  -0.009981951676309109,
+                  -0.20675376057624817,
+                  -0.1425502449274063,
+                  -0.0959198996424675,
+                  0.04537821561098099,
+                  0.08156221359968185,
+                  -0.11983802914619446,
+                  0.01338233519345522,
+                  0.09422487765550613,
+                  0.09756685048341751,
+                  0.06752486526966095,
+                  -0.22198958694934845,
+                  0.05004872754216194,
+                  -0.049072615802288055,
+                  0.015816275030374527,
+                  0.01818762719631195,
+                  -0.04536337032914162,
+                  0.13631433248519897,
+                  0.26190847158432007,
+                  -0.12796112895011902,
+                  -0.17150117456912994,
+                  0.008447305299341679,
+                  0.03385421633720398,
+                  -0.06174246594309807,
+                  0.08259911090135574,
+                  0.182587131857872,
+                  0.013178539462387562,
+                  -0.021218931302428246,
+                  -0.07391399890184402,
+                  0.09364568442106247,
+                  0.11990312486886978,
+                  -0.006850535981357098,
+                  -0.1664203703403473,
+                  0.14100781083106995,
+                  -0.08170099556446075,
+                  -0.0006209586863406003,
+                  -0.02217341959476471,
+                  -0.17275021970272064,
+                  -0.16459938883781433,
+                  0.028646979480981827,
+                  0.014781441539525986,
+                  0.07106012105941772,
+                  0.04493728280067444,
+                  0.040445372462272644,
+                  0.061765704303979874,
+                  -0.001483272877521813,
+                  0.0330771841108799,
+                  0.07509907335042953,
+                  0.09929081052541733,
+                  -0.15368430316448212,
+                  0.0410502627491951,
+                  0.08098003268241882,
+                  0.1323862075805664,
+                  -0.008327932097017765,
+                  -0.04811934381723404,
+                  0.031234484165906906,
+                  0.1138598769903183,
+                  -0.0437302403151989,
+                  0.248725026845932,
+                  0.024659473448991776,
+                  -0.13383863866329193,
+                  -0.01707310788333416,
+                  -0.07922744005918503,
+                  -0.05836758017539978,
+                  0.03894994407892227,
+                  -0.045628439635038376,
+                  0.14392761886119843,
+                  -0.09041503816843033,
+                  0.03072185628116131,
+                  -0.04723626375198364,
+                  -0.0014792861184105277,
+                  -0.08399728685617447,
+                  0.127004474401474,
+                  -0.12606500089168549,
+                  -0.08807751536369324,
+                  -0.06381375342607498,
+                  0.056409209966659546,
+                  0.004744261037558317,
+                  -0.007068079896271229,
+                  -0.08333786576986313,
+                  -0.13345608115196228,
+                  0.049485813826322556,
+                  -0.1929478943347931,
+                  -0.005211294163018465,
+                  -0.06823066622018814,
+                  -0.04686467722058296,
+                  -0.037070754915475845,
+                  -0.11820398271083832,
+                  -0.15327998995780945,
+                  0.10979747772216797,
+                  -0.015929758548736572,
+                  0.09902039170265198,
+                  -0.06599075347185135,
+                  0.04546811804175377,
+                  0.06030331924557686,
+                  -0.11032876372337341,
+                  -0.003002113662660122,
+                  -0.04741332307457924,
+                  0.022992612794041634,
+                  0.011717962101101875,
+                  -0.21016241610050201,
+                  -0.0714479610323906
+                ]
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ]
+        ],
+        "_source_evidence": [
+          0.0,
+          0.0
+        ],
+        "_thought_witnesses": [
+          [
+            "ltm",
+            "address-v1",
+            8645209901537042726
+          ],
+          [
+            "thought",
+            "address-v1",
+            -2081044890645923821
+          ],
+          [
+            "ltm",
+            "address-v1",
+            915628823600079846
+          ]
+        ]
+      },
+      "work": 465,
+      "state_diff": {
+        "changed": [
+          "._last_thought_comparison",
+          "._last_thought_score_function",
+          "._thought_ordinals",
+          "._walk_audit",
+          "._walk_observations",
+          "._walk_previous",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+          "symbolSpace.subspace.layers.2._ltm_store._native_reference_token",
+          "symbolSpace.subspace.layers.2._ltm_store._native_row_index",
+          "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._texts",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.stream",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+          "what_memory._address_sources",
+          "what_memory._episode_live",
+          "what_memory._thought_next_id",
+          "what_memory._what_slots"
+        ],
+        "unexpected": [],
+        "changed_old_rows": [
+          76
+        ],
+        "source_row": 76,
+        "added_row_kinds": [
+          "inference",
+          "inference"
+        ]
+      },
+      "trace": [
+        {
+          "kind": "begin",
+          "operation": "",
+          "level": 0,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              1169438612409251238
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                8645209901537042726
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  1169438612409251238
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7314337024493912573
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 8645209901537042726)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  1169438612409251238
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7314337024493912573
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -7314337024493912573)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3699945898062710154
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5232158266161451980
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -5232158266161451980)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2203588237704432953
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2203588237704432953)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 3699945898062710154)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 1169438612409251238)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 1,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              3699945898062710154
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                5470063546494718613
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3699945898062710154
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6747823803460716279
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 5470063546494718613)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3699945898062710154
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6747823803460716279
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 6747823803460716279)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2705101607248375929
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -858633418133361999
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -858633418133361999)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3060015360379950460
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3060015360379950460)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2705101607248375929)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 3699945898062710154)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 2,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              2705101607248375929
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 2,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                8381266856007118480
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2705101607248375929
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4775008119892885209
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 8381266856007118480)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2705101607248375929
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4775008119892885209
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 4775008119892885209)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2705101607248375929)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 2,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              4775008119892885209
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              2705101607248375929
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              4775008119892885209
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              2705101607248375929
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                8381266856007118480
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2705101607248375929
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4775008119892885209
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 8381266856007118480)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2705101607248375929
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4775008119892885209
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 4775008119892885209)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2705101607248375929)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -6134105345827764934
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3636037243564185798
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2743706888756963855
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -6134105345827764934)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3636037243564185798
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2743706888756963855
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -2743706888756963855)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 3636037243564185798)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  4775008119892885209
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2978252387839614557
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2978252387839614557)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6217434233614889184
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6217434233614889184)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 4775008119892885209)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -2743706888756963855
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              3699945898062710154
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -2743706888756963855
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              3699945898062710154
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -6134105345827764934
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3636037243564185798
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2743706888756963855
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -6134105345827764934)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3636037243564185798
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2743706888756963855
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -2743706888756963855)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 3636037243564185798)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  4775008119892885209
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2978252387839614557
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2978252387839614557)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6217434233614889184
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6217434233614889184)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 4775008119892885209)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                915628823600079846
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -3515939789301525596
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7257692495190677228
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 915628823600079846)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -3515939789301525596
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7257692495190677228
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 7257692495190677228)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -3515939789301525596)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -2743706888756963855
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3857288540628621330
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3857288540628621330)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3860616307439933303
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3860616307439933303)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2743706888756963855)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              7257692495190677228
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              1169438612409251238
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "finish",
+          "operation": "finish",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              7257692495190677228
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              1169438612409251238
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                915628823600079846
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -3515939789301525596
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7257692495190677228
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 915628823600079846)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -3515939789301525596
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7257692495190677228
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 7257692495190677228)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -3515939789301525596)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -2743706888756963855
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3857288540628621330
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3857288540628621330)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3860616307439933303
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -3860616307439933303)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2743706888756963855)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "menus": [
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        36556512062118279
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        36556512062118279
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4270664060288490240
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -9175907689862703869
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -9175907689862703869
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -9175907689862703869
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          7633956485184375524
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -9175907689862703869
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -5805465447979123738
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -5805465447979123738
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -5805465447979123738
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          1051528970146070729
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -5805465447979123738
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -9175907689862703869
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          7633956485184375524
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -9175907689862703869
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -9175907689862703869
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          2384664961071294889
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -9175907689862703869
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        36556512062118279
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4270664060288490240
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        36556512062118279
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -5390593051580753525
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -9175907689862703869
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          2384664961071294889
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -9175907689862703869
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -9175907689862703869
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          2384664961071294889
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -9175907689862703869
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        36556512062118279
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4270664060288490240
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        36556512062118279
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4270664060288490240
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          36556512062118279
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1169438612409251238
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1169438612409251238
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -7314337024493912573
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3699945898062710154
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3699945898062710154
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3699945898062710154
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6747823803460716279
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3699945898062710154
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        2705101607248375929
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          2705101607248375929
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        2705101607248375929
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4775008119892885209
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          2705101607248375929
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3699945898062710154
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6747823803460716279
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3699945898062710154
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3699945898062710154
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -2743706888756963855
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3699945898062710154
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1169438612409251238
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -7314337024493912573
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1169438612409251238
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          7257692495190677228
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3699945898062710154
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6747823803460716279
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3699945898062710154
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1169438612409251238
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -7314337024493912573
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1169438612409251238
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -7314337024493912573
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1169438612409251238
+        ]
+      ],
+      "chosen": null
+    }
+  ],
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": -6232129093768098519,
+      "address": [
+        "ltm",
+        "address-v1",
+        -6232129093768098519
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 17,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 6,
+      "row_id": 8381266856007118480,
+      "address": [
+        "ltm",
+        "address-v1",
+        8381266856007118480
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 0,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 1,
+      "row_id": -2665308685209777297,
+      "address": [
+        "ltm",
+        "address-v1",
+        -2665308685209777297
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 3,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 7,
+      "row_id": 5470063546494718613,
+      "address": [
+        "ltm",
+        "address-v1",
+        5470063546494718613
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 9,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 2,
+      "row_id": -7073482342302946062,
+      "address": [
+        "ltm",
+        "address-v1",
+        -7073482342302946062
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 24,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 8,
+      "row_id": 8645209901537042726,
+      "address": [
+        "ltm",
+        "address-v1",
+        8645209901537042726
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 48,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 3,
+      "row_id": -9079460300639678427,
+      "address": [
+        "ltm",
+        "address-v1",
+        -9079460300639678427
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 18,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 9,
+      "row_id": -6134105345827764934,
+      "address": [
+        "ltm",
+        "address-v1",
+        -6134105345827764934
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 24,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 4,
+      "row_id": -7023624750166981130,
+      "address": [
+        "ltm",
+        "address-v1",
+        -7023624750166981130
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 29,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 10,
+      "row_id": 915628823600079846,
+      "address": [
+        "ltm",
+        "address-v1",
+        915628823600079846
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 27,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 5,
+      "row_id": 727254342014639336,
+      "address": [
+        "ltm",
+        "address-v1",
+        727254342014639336
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 20,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 11,
+      "row_id": -6248425793460033670,
+      "address": [
+        "ltm",
+        "address-v1",
+        -6248425793460033670
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 48,
+      "query_open": []
+    }
+  ],
+  "grammar_choices": [
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "equal",
+      "action": 18,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "equal",
+      "action": 18,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -19
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -19
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "verb",
+      "action": 35,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 48,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "equal",
+      "action": 19,
+      "forced_departure": true,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "equal",
+      "action": 18,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          32,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -19
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 74,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -19
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [],
+      "right": [
+        "z"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [],
+      "right": [
+        "z"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "lift",
+      "action": 249,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "lift",
+      "action": 249,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 224,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 224,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "lift",
+      "action": 249,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "lift",
+      "action": 249,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          12
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 263,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 288,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          -1
+        ],
+        [
+          8,
+          14
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 170,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          32,
+          0
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 224,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          17
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 338,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "z"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "z"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "z"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "z"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "verb",
+      "action": 707,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "verb",
+      "action": 707,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "lift",
+      "action": 680,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "lift",
+      "action": 680,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 707,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 707,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 644,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 644,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "verb",
+      "action": 709,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -26
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "lift",
+      "action": 680,
+      "forced_departure": false,
+      "scope": [
+        [
+          9,
+          18
+        ],
+        [
+          0,
+          17
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "z"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 707,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          21,
+          -28
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 744,
+      "forced_departure": false,
+      "scope": [
+        [
+          25,
+          -28
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 644,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -28
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 818,
+      "forced_departure": false,
+      "scope": [
+        [
+          37,
+          0
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "lift",
+      "action": 1090,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "lift",
+      "action": 1090,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          21
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          21
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 1080,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 1080,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -20
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          21,
+          -20
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          21,
+          -20
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ],
+        [
+          21,
+          -20
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -26
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          21
+        ],
+        [
+          21,
+          -20
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          21,
+          -26
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 1080,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          21
+        ],
+        [
+          21,
+          -20
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          25,
+          -26
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 1082,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -30
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 1082,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -26
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          19
+        ],
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "lift",
+      "action": 1088,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "lift",
+      "action": 1088,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          18
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "five"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "five"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 1080,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 1080,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "verb",
+      "action": 1107,
+      "forced_departure": true,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "five"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          22
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 1064,
+      "forced_departure": true,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 1080,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          22
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "five"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -31
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          24
+        ],
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "verb",
+      "action": 1123,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          24
+        ],
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          20
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 1168,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          20
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "equal",
+      "action": 1047,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "equal",
+      "action": 1047,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "ask",
+      "action": 1173,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -22
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 1173,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -22
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -22
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -22
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "equal",
+      "action": 1028,
+      "forced_departure": true,
+      "scope": [
+        [
+          0,
+          20
+        ],
+        [
+          0,
+          23
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "ask",
+      "action": 1173,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -22
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -22
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 1173,
+      "forced_departure": false,
+      "scope": [
+        [
+          37,
+          0
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 1258,
+      "forced_departure": false,
+      "scope": [
+        [
+          37,
+          0
+        ]
+      ],
+      "left": [],
+      "right": []
+    }
+  ]
+}

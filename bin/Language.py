@@ -484,10 +484,10 @@ class Grammar:
          'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
          'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
          'effect_reads', 'field_eligible', 'order_delta', 'case_head_role',
-         'footprint_reads', 'footprint_writes', 'determiner_mode', 'substrate', 'mandatory'],
+         'footprint_reads', 'footprint_writes', 'determiner_mode', 'substrate', 'mandatory', 'semantic_operand'],
     )
     RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0,
-                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0, (), (), None, False, False)
+                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0, (), (), None, False, False, None)
 
     @staticmethod
     def _declared_rule(rule):
@@ -500,7 +500,7 @@ class Grammar:
         implementation = implementation or {'pi': PiLayer, 'sigma': SigmaLayer}.get(rule.method_name, GrammarLayer)
         fields = ('clause_form', 'head_role', 'relation_kind', 'scope_transparent',
                   'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
-                  'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory')
+                  'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory', 'semantic_operand')
         from Queries import THOUGHT_EXECUTORS
         from AccessibleMind import OperatorEffects, OperatorFootprint
         descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
@@ -3057,7 +3057,6 @@ class LiftLayer(GrammarLayer):
             else:
                 self._adv_edit = None
                 self.register_parameter('_adv_shift', None)
-            self._adverb_purchase = None
 
             # VERB eig-spectrum OPERATOR (Stage 1; doc/old/2026-06-20-idea-
             # decoder.md "VP parameterization"). When <verbSpectrum> is on, the
@@ -3090,7 +3089,6 @@ class LiftLayer(GrammarLayer):
             self._lex_gate = None
             self._adverb_eig_edit = False
             self._adv_edit = None
-            self._adverb_purchase = None
             self._verb_spectrum = False
             self._verb_spec = None
             self.register_parameter('_adv_shift', None)
@@ -3197,9 +3195,6 @@ class LiftLayer(GrammarLayer):
         if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
             return vp_content
         gain = self._adverb_log_gain(adv_what)
-        if not torch.compiler.is_compiling():
-            with torch.no_grad():
-                self._adverb_purchase = (vp_content != 0).to(vp_content).mean(-1)
         shift = torch.tanh(F.linear(adv_what.to(self._adv_shift), self._adv_shift))
         return self._verb_rail_transform(vp_content, gain, shift)
 

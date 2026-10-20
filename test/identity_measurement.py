@@ -305,7 +305,7 @@ def run(args):
                     if doc['id'] in done:continue
                     obs=dict(references={},error='not run after native batch failure')
                     observed.append(dict(id=doc['id'],**obs)); results.append(score_document(labels[doc['id']],obs))
-            component_columns=len(model._concept_owner().components.nouns.ids)
+            component_columns=len(model._concept_owner().components.individual_ids)
         finally:model.End()
     controls={name:summarize([score_document(labels[d['id']],control_observation(labels[d['id']],name))
                             for d in texts]) for name in ('oracle','recent')}

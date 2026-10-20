@@ -105,7 +105,11 @@ class MereologicalCodes(nn.Module):
         cb = self.owner.similarity_codebook
         rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
         with torch.no_grad():
-            cb.W.zero_()
+            from IdentityRows import cache_rows
+            retained = cache_rows(self.owner)
+            clear = torch.ones(len(cb.W), dtype=torch.bool, device=cb.W.device)
+            clear[list(retained)] = False
+            cb.W[clear] = 0
             if rows:
                 cb.lookup_rows(torch.tensor(rows, device=cb.W.device))
 
@@ -253,10 +257,15 @@ class MereologicalCodes(nn.Module):
                 out[row_index[row], start:start+k] = mean[:k]
                 out[row_index[row], start+self.reserved_pairs:start+self.reserved_pairs+k] = mean[k:]
         components = getattr(owner, 'components', None)
-        if components is not None and (components.nouns.ids or components.verbs.ids):
+        from IdentityRows import cache_rows
+        retained = set(cache_rows(owner))
+        for row in unique:
+            if row in retained:
+                out[row_index[row]] = cached[row]
+        if components is not None and components.verbs.ids:
             for row in unique:
                 identity = owner.concept_id_at_row(row)
-                if identity in (*components.nouns.ids, *components.verbs.ids):
+                if identity in components.verbs.ids:
                     point = components.column_point(identity)
                     if point is not None:
                         out[row_index[row], self.percept_event_width:] = point[self.percept_event_width:].to(out)

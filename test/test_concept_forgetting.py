@@ -186,14 +186,14 @@ def test_only_unreferenced_zero_relevance_column_is_pruned():
     from IndependentComponents import ColumnDictionary
     cs = _cs(8)
     cid, _ = concept(cs)
-    nouns, verbs = ColumnDictionary(16), ColumnDictionary(24)
-    nouns.directions[str(cid)] = torch.nn.Parameter(torch.zeros(16))
-    nouns.relevance[str(cid)] = torch.nn.Parameter(torch.tensor(0.))
-    cs.components.nouns, cs.components.verbs = nouns, verbs
+    verbs = ColumnDictionary(24)
+    verbs.directions[str(cid)] = torch.nn.Parameter(torch.zeros(24))
+    verbs.relevance[str(cid)] = torch.nn.Parameter(torch.tensor(0.))
+    cs.components.verbs = verbs
     with pytest.warns(RuntimeWarning, match='no safely redundant'):
         assert reclaim_concepts(cs, retained=[cid])['reclaimed'] == 0
     assert reclaim_concepts(cs)['retired'] == (cid,)
-    assert str(cid) not in nouns.directions and str(cid) not in nouns.relevance
+    assert str(cid) not in verbs.directions and str(cid) not in verbs.relevance
 
 
 def test_component_coordinates_protect_referenced_seats():
@@ -201,12 +201,12 @@ def test_component_coordinates_protect_referenced_seats():
     cs = _cs(8)
     first, row = concept(cs)
     second, other = concept(cs)
-    nouns, verbs = ColumnDictionary(16), ColumnDictionary(24)
-    direction = torch.zeros(16)
+    verbs = ColumnDictionary(24)
+    direction = torch.zeros(24)
     direction[[row, other]] = 1
-    nouns.directions['99'] = torch.nn.Parameter(direction)
-    nouns.relevance['99'] = torch.nn.Parameter(torch.tensor(1.))
-    cs.components.nouns, cs.components.verbs = nouns, verbs
+    verbs.directions['99'] = torch.nn.Parameter(direction)
+    verbs.relevance['99'] = torch.nn.Parameter(torch.tensor(1.))
+    cs.components.verbs = verbs
     with pytest.warns(RuntimeWarning, match='no safely redundant'):
         assert reclaim_concepts(cs)['reclaimed'] == 0
 

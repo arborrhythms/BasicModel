@@ -1,0 +1,37 @@
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_mm_grammar_part_under_disjunction_closes_at_full_inventory ________
+test/test_sentence_identity.py:83: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+    entry = f.program(('disjunction', ('part', 'cat', 'animal'), 'sleeps'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:85: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in <genexpr>
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in visit
+    values = tuple(visit(child) for child in children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:80: in <genexpr>
+    values = tuple(visit(child) for child in children)
+                   ^^^^^^^^^^^^
+test/test_clause_acceptance.py:71: in visit
+    obj = self.noun(node)
+          ^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:60: in noun
+    if self.native_cube:
+       ^^^^^^^^^^^^^^^^
+E   AttributeError: 'SentenceFixture' object has no attribute 'native_cube'
+=============================== warnings summary ===============================
+test/test_sentence_identity.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_identity.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+1 failed, 4 passed, 1 warning in 2.76s

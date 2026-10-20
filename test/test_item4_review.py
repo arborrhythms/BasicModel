@@ -45,7 +45,7 @@ def test_native_activated_word_is_observed_by_handle_with_both_lanes(tmp_path,mo
     atoms=model.inputSpace._ar_word_object_atoms[:,0]
     lanes=atoms.new_tensor([[.6,.2],[0.,.8]])
     values=model._concept_owner().interpret.forward(atoms,object_atoms=atoms,
-        presence=atoms.new_ones(2),evidence=lanes)
+        presence=atoms.new_tensor([.75,.5]),evidence=lanes)
     depth=torch.ones(2,dtype=torch.long)
     state=(values[:,None],depth,torch.zeros(2,1,dtype=torch.long),torch.zeros(2,1,dtype=torch.long),ids[:,None],atoms.new_ones(2,1))
     field=SymbolField(head,strength=.5,epsilon=1e-6,saturation='clip')

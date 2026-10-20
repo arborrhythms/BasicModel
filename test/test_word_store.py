@@ -742,7 +742,7 @@ def _surface_byte_cost(m, reference, target):
     ready, atoms, values, valid = m._snapshot_tables(reference)
     target_ready, target_bytes, target_valid = target
     return m._byte_word_cost(
-        m._concept_owner().interpret.binding_atoms(reference[:, 0]), torch.tensor(0, device=reference.device),
+        reference[:, 0], torch.tensor(0, device=reference.device),
         atoms, values, valid, target_bytes, target_valid, ready and target_ready)
 
 

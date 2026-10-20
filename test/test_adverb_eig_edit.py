@@ -94,9 +94,13 @@ def test_untrained_adverb_is_noop():
     try:
         lyr = LiftLayer(nInput=_D, nOutput=_D)
         vp, adv = _vp_and_adv()
+        before = dict(vars(lyr))
         out = lyr.apply_adverb(vp, adv)
         assert torch.allclose(out, vp, atol=1e-5)
-        assert lyr._adverb_purchase is not None         # diagnostic stashed
+        # Thought candidate evaluation is a read: it cannot leave diagnostic
+        # tensors on the live model outside the episode's allowed write set.
+        assert vars(lyr).keys() == before.keys()
+        assert all(vars(lyr)[name] is value for name, value in before.items())
         _strong_edit(lyr)
         out_strong = lyr.apply_adverb(vp, adv)
         assert float((out_strong - vp).abs().max()) > 0.1

@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1] _
+test/test_reference_close.py:77: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'configure_clause_index'
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]
+1 failed in 2.36s

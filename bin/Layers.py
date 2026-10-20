@@ -5752,6 +5752,8 @@ class ConceptAllocator:
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
         self.ltm_edges = {}              # (parent, part) -> supporting LTM occurrences
+        self.individuals = set()         # native concept seats holding occurrence folds
+        self.form_regions = {}          # native form -> native learned-region concept
         self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
         self._order_cap = order_cap      # () -> max ramsified order S
@@ -8729,6 +8731,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('where', torch.zeros(capacity, 4))
         self.register_buffer('when', torch.zeros(capacity, 4))
+        self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
         self.register_buffer('truth_schema', torch.tensor(9, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
@@ -9368,6 +9371,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             for name, value in migrations.items():
                 state_dict[prefix + name] = value
         self._migrate_address_tensors(state_dict, prefix)
+        from RowTime import migrate
+        migrate(self, state_dict, prefix)
         self._semantic_rows = {}
         self._texts = []
         self._expectation_rows = {}
@@ -9515,12 +9520,6 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             content_key=content_key, key=address)
         if previous is None and len(self) >= self.capacity:
             raise OverflowError(f'LTM capacity {self.capacity} exhausted; forgetting is required')
-        from Spaces import WhenEncoding
-        encoder = getattr(self, '_address_encoding', None)
-        if encoder is None:
-            encoder = WhenEncoding(n_when=4).set_capacity(max(self.capacity, position + 1))
-        if position >= encoder.maxVal - 1:
-            raise ValueError('sentence index exceeds the configured document period')
         meaning = self.bind_constituents(meaning, reserve=int(previous is None), stream=stream,
                                          parent_address=(document, position, content))
         n = len(self) if previous is None else previous
@@ -9552,7 +9551,9 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.document_keys[n] = self.document_keys.new_tensor(list(document))
         self.sentence_content_keys[n] = self.sentence_content_keys.new_tensor(list(content))
         self.sentence_index[n] = position
-        self.when[n] = encoder.encode(position).to(self.when)
+        from RowTime import stamp
+        if previous is None:
+            self.when[n] = stamp(self)
         self.witness_count[n] += 1
         self._semantic_rows[identifier] = {key: meaning.metadata()[key]
                                           for key in ("role_refs", "bindings", "scope")}
@@ -10693,12 +10694,9 @@ class SymbolExpectation(Layer):
         pending = self._inter_last_meaning[b]
         if not refresh and pending is not None:
             return pending.prediction
-        chain = list(self._inter_context[b])
-        lanes = list(self._inter_context_lanes[b])
-        identities = list(self._inter_context_ids[b])
-        occurrences = list(self._inter_context_occurrences[b])
-        if len(chain) != len(occurrences):
+        if len(self._inter_context[b]) != len(self._inter_context_occurrences[b]):
             raise RuntimeError('expectation context occurrence view is out of sync')
+        chain, lanes, identities, occurrences = self._read_context(b)
         if work is not None:
             work.require('record', len(chain))
         if not chain or not len(self._bank_keys):
@@ -10727,7 +10725,7 @@ class SymbolExpectation(Layer):
             self._inter_last_meaning[b] = _PendingMeaningExpectation(prediction,
                 tuple(dict.fromkeys(x for x in (*occurrences, *frame_occurrences) if x is not None)),
                 ('external', document), document, inputs,
-                tuple(reference_frames))
+                tuple(self._address_frame(frame) for frame in reference_frames))
         return prediction
 
     def _activation_target(self, prediction, roles, occupied, lanes=None, identities=None):
@@ -10917,8 +10915,37 @@ class SymbolExpectation(Layer):
         return max((len(chain) for chain in self._inter_context), default=0)
 
     def latest(self, b=0):
-        chain = self._inter_context[int(b)]
-        return None if not chain else chain[-1][1]
+        chain, _, _, _ = self._read_context(int(b))
+        return None if not chain else tuple(chain[-1])[1]
+
+    def _address_frame(self, frame):
+        from ReferenceContext import SituationAddress
+        store = self._ltm_store
+        index = None if store is None else store.index_of_row(frame.row_id)
+        if index is None:
+            raise ValueError('STM reference must name a retained LTM occurrence')
+        return SituationAddress(store.occurrence_of(index))
+
+    def _read_context(self, b):
+        from ReferenceContext import SituationAddress
+        from Meaning import symbol_identities
+        chain, lanes, identities, occurrences = [], [], [], []
+        for value, lane, ids, occurrence in zip(self._inter_context[b],
+                self._inter_context_lanes[b], self._inter_context_ids[b],
+                self._inter_context_occurrences[b], strict=True):
+            if isinstance(value, SituationAddress):
+                frame = value.read(self._ltm_store)
+                if frame is None:
+                    continue
+                index = self._ltm_store._index_occurrences[value.occurrence]
+                meaning = self._ltm_store.meaning_of(index)
+                pair = (float(self._ltm_store.c_plus[index]), float(self._ltm_store.c_minus[index]))
+                value, lane, ids = frame, pair, symbol_identities(meaning)
+            chain.append(value)
+            lanes.append(lane)
+            identities.append(ids)
+            occurrences.append(occurrence)
+        return chain, lanes, identities, occurrences
 
 
 
@@ -10970,22 +10997,21 @@ class SymbolExpectation(Layer):
         store = self._ltm_store
         index = None if store is None else store._index_occurrences.get(occurrence)
         if index is not None and int(store.row_ids[index]) not in (-1, 0):
-            from ReferenceContext import SituationFrame
-            depth, roles, occupied = context[-1]
-            point = store.slots[index, 0] if int(store.rel_type[index]) == store.REL_NONE else None
-            context[-1] = SituationFrame(depth, roles, occupied, int(store.row_ids[index]),
-                                         None if point is None else point.detach().clone(),
-                                         where=store.where[index].detach().clone(),
-                                         when=store.when[index].detach().clone())
+            from ReferenceContext import SituationAddress
+            context[-1] = SituationAddress(occurrence)
+            self._inter_context_lanes[b][-1] = None
+            self._inter_context_ids[b][-1] = None
+            self._inter_last_meaning[b] = None
 
 
     def situation_references(self, b=0):
-        """Only the bounded frames the predictor already holds; no LTM read."""
-        from ReferenceContext import SituationFrame
+        """Materialize only the recent addresses the predictor already holds."""
+        from ReferenceContext import SituationAddress
         pending = self._inter_last_meaning[int(b)]
         retrieved = () if pending is None else pending.frames
-        frames = [value for value in (*self._inter_context[int(b)], *retrieved)
-                  if isinstance(value, SituationFrame)]
+        frames = [frame for value in (*self._inter_context[int(b)], *retrieved)
+                  if isinstance(value, SituationAddress)
+                  and (frame := value.read(self._ltm_store)) is not None]
         return tuple(frames[-self._inter_chain_window:])
 
 
@@ -11066,9 +11092,9 @@ class SymbolExpectation(Layer):
         Pending predictions cannot carry credit across parameter versions.
         """
         for b, chain in enumerate(self._inter_context):
-            from ReferenceContext import SituationFrame
+            from ReferenceContext import SituationAddress, SituationFrame
             self._inter_context[b] = collections.deque(
-                (value.detached() if isinstance(value, SituationFrame) else
+                (value.detached() if isinstance(value, (SituationAddress, SituationFrame)) else
                  (value[0], value[1].detach(), value[2]) for value in chain),
                 maxlen=self._inter_chain_window)
         self._inter_last_meaning = [

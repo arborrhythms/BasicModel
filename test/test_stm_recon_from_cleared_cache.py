@@ -366,7 +366,7 @@ def test_topk_recovered_words_overlap_input():
         overlap = 0.0
     else:
         owner = model._concept_owner()
-        W = owner.interpret.binding_atoms(owner.similarity_codebook.getW())
+        W = owner.similarity_codebook.getW()
         topk = _topk_decode(W, recon)
         overlap = _topk_overlap(fwd_idx, topk)
         overlap = 0.0 if overlap is None else overlap

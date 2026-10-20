@@ -51,10 +51,10 @@ def test_mint_rekeys_existing_word_and_checkpoints_without_global_rng():
     restored.store.load_state_dict(bank.store.state_dict())
     restored.store.load_vocab_extras(bank.store.vocab_extras())
     assert restored.audit() == bank.audit()
-    assert torch.equal(restored.projection, bank.projection)
+    assert not hasattr(restored, 'projection') and not hasattr(bank, 'binding')
 
 
-def test_fixed_atoms_survive_optimizer_and_projection_is_only_binding_view():
+def test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube():
     bank = identity_bank()
     ids = bank.admit(b'hello')
     before = bank.form(b'hello')
@@ -64,11 +64,10 @@ def test_fixed_atoms_survive_optimizer_and_projection_is_only_binding_view():
     optimizer.step()
     torch.testing.assert_close(bank.store._basis.lookup_rows(torch.tensor(ids)).amax(0), before, rtol=0, atol=0)
     other = identity_bank()
-    assert torch.equal(bank.projection, other.projection)
+    assert not hasattr(bank, 'projection') and not hasattr(other, 'projection')
     assert not list(bank.parameters())
-    dense = bank.binding(before)
-    assert dense[:64].norm() > 0 and dense[64:].count_nonzero() == 0
-    assert (dense[:64] < 0).any()
+    assert bool(((before >= 0) & (before <= 1)).all())
+    assert before[:64].norm() > 0 and before[64:].count_nonzero() == 5
     assert bank.read(before) == b'hello'
 
 
@@ -182,7 +181,7 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0():
             row = owner._csw_row_of(obj)
             sparse = owner.similarity_codebook.lookup_rows(row)
             torch.testing.assert_close(sparse[:96],identity.form(word),rtol=0,atol=0)
-            dense.append(owner.interpret.binding_atoms(sparse))
+            dense.append(sparse)
         for layer in [ConjunctionLayer(), DisjunctionLayer()]:
             roots = torch.stack([layer.compose(dense[a],dense[b]) for a,b in [(0,1),(0,3),(2,1),(2,3)]])
             assert (roots.norm(dim=-1)>0).all()

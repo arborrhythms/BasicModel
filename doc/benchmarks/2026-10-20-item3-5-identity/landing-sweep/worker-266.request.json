@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-266.recycle.json"
+}

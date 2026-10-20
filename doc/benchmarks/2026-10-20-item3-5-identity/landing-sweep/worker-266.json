@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge"
+  ],
+  "completed": [
+    "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+    "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+    "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+    "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+    "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+    "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+    "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+    "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001235709059983492,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0127058329526335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006797909736633301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033664999064058065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034593751188367605,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027166702784597874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009194160811603069,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004528749268501997,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

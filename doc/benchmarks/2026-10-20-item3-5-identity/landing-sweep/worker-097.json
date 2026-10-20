@@ -1,0 +1,51 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compiled_operator_diagonal.py::test_ldu_diagonal_cond_backward_is_dense_and_exact",
+    "test/test_compiled_operator_diagonal.py::test_functional_ldu_cond_backward_is_dense_and_exact",
+    "test/test_compiled_operator_diagonal.py::test_free_candidate_search_compiles_backward_through_native_operators"
+  ],
+  "completed": [
+    "test/test_compiled_operator_diagonal.py::test_ldu_diagonal_cond_backward_is_dense_and_exact",
+    "test/test_compiled_operator_diagonal.py::test_functional_ldu_cond_backward_is_dense_and_exact",
+    "test/test_compiled_operator_diagonal.py::test_free_candidate_search_compiles_backward_through_native_operators"
+  ],
+  "slow_selected": [
+    "test/test_compiled_operator_diagonal.py::test_free_candidate_search_compiles_backward_through_native_operators"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_operator_diagonal.py::test_ldu_diagonal_cond_backward_is_dense_and_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.8317110838834196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_operator_diagonal.py::test_functional_ldu_cond_backward_is_dense_and_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.15937249991111457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_operator_diagonal.py::test_free_candidate_search_compiles_backward_through_native_operators",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00012558302842080593,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_operator_diagonal.py', 32, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

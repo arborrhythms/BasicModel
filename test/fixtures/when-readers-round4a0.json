@@ -27,25 +27,6 @@
       "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
     },
     {
-      "file": "bin/IndependentComponents.py",
-      "function": "IndependentComponents.situated_point",
-      "previous_absolute_time": false,
-      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature.",
-      "attributes": [
-        "when"
-      ]
-    },
-    {
-      "file": "bin/Interpret.py",
-      "function": "InterpretLayer.define",
-      "attributes": [
-        "when"
-      ],
-      "role": "writer",
-      "previous_absolute_time": true,
-      "now": "Definitions are unlocated; their when band is zero."
-    },
-    {
       "file": "bin/Language.py",
       "function": "SymbolSpace._publish_symbol_snapshot",
       "attributes": [
@@ -64,15 +45,6 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "SymbolExpectation.bind_observation_occurrence",
-      "previous_absolute_time": false,
-      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature.",
-      "attributes": [
-        "when"
-      ]
     },
     {
       "file": "bin/Layers.py",
@@ -242,7 +214,7 @@
       "file": "bin/Queries.py",
       "function": "ThoughtLTMCapability.relation_evidence",
       "previous_absolute_time": false,
-      "now": "Read event endpoint .when on the shared thought meter; compare only within one document.",
+      "now": "Read model-time event endpoints on the shared thought meter; compare within one document, and refuse an unknown legacy time.",
       "attributes": [
         "when"
       ]
@@ -251,7 +223,7 @@
       "file": "bin/ReferenceContext.py",
       "function": "SituationFrame.detached",
       "previous_absolute_time": false,
-      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature.",
+      "now": "Copy the row model-time column as provenance; it is never part of a concept or compose operand.",
       "attributes": [
         "when"
       ]
@@ -835,6 +807,16 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "stamp",
+      "attributes": [
+        "when"
+      ],
+      "role": "writer",
+      "previous_absolute_time": false,
+      "now": "New rows stamp model processing time in a separate sinusoidal column; re-witnessing preserves the first stamp."
     }
   ],
   "dynamic_readers": [

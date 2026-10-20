@@ -1,0 +1,50 @@
+{
+  "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]": {
+    "seed": 4199722147,
+    "constructors": [
+      {
+        "parameters": 120,
+        "equal_to_zero": true,
+        "unequal": [],
+        "changed_from_step1": [
+          "conceptualSpaces.0.layers.4.reference_close.cue_policy",
+          "conceptualSpaces.0.layers.4.reference_close.policy"
+        ]
+      }
+    ],
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5,
+      "seed": 4199722147
+    }
+  },
+  "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]": {
+    "seed": 2428440506,
+    "constructors": [
+      {
+        "parameters": 120,
+        "equal_to_zero": true,
+        "unequal": [],
+        "changed_from_step1": [
+          "conceptualSpaces.0.layers.4.reference_close.cue_policy",
+          "conceptualSpaces.0.layers.4.reference_close.policy"
+        ]
+      }
+    ],
+    "configuration": {
+      "sentenceExpectation": true,
+      "expectationPrime": true,
+      "explorationUniformFraction": 0.5,
+      "perceptExpectationGain": 0.5,
+      "symbolExpectationGain": 0.5,
+      "rowExpectationGain": 0.5,
+      "documentExpectationGain": 0.5,
+      "seed": 2428440506
+    }
+  }
+}

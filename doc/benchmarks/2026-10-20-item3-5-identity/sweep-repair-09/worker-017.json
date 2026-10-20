@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+    "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+    "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+    "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
+    "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True]"
+  ],
+  "completed": [
+    "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+    "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+    "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+    "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
+    "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005492791999131441,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008345418609678745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.20665587484836578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.1845001669134945,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.8364140829071403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0019332498777657747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00118591682985425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008985409513115883,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

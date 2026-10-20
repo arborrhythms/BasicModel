@@ -74,8 +74,7 @@ def protected_concepts(owner, store, retained=()):
         protected.update(_integers(interpretation._pending))
     components = getattr(owner, 'components', None)
     if components is not None:
-        vectors = [(2, value) for value in components.nouns.directions.values()]
-        vectors += [(3, value) for value in components.verbs.directions.values()]
+        vectors = [(3, value) for value in components.verbs.directions.values()]
         vectors += [(3, value) for value in components._innovations.values()]
         for lanes, vector in vectors:
             used = vector.detach().reshape(lanes, int(owner.nVectors)).abs().sum(0).nonzero().flatten()
@@ -216,8 +215,9 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
         store = getattr(owner, '_definition_store', None)
     protected = protected_concepts(owner, store, retained)
     components = getattr(owner, 'components', None)
-    dictionaries = [] if components is None else [components.nouns, components.verbs]
-    individual_ids = {int(cid) for dictionary in dictionaries for cid in dictionary.directions}
+    dictionaries = [] if components is None else [components.verbs]
+    individual_ids = set(alloc.individuals) | set(alloc.form_regions.values())
+    individual_ids.update(int(cid) for dictionary in dictionaries for cid in dictionary.directions)
     groups, rows, magnitudes = {}, {}, {}
     definitions = _definition_rows(layer)
     # Unlike duplicate matching, unused-mint eligibility excludes every
@@ -273,6 +273,8 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
             if base <= row < base + next_row:
                 layer._row_next[base] = row - base
         alloc.drop(cid)
+        alloc.individuals.discard(cid)
+        alloc.form_regions = {key: value for key, value in alloc.form_regions.items() if cid not in (key, value)}
         alloc.raised.discard(cid)
         alloc.singletons.discard(cid)
         alloc.reference_orders.pop(cid, None)

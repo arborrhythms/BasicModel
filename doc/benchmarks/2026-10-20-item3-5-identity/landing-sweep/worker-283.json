@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_forgetting.py::test_age_is_per_stream_and_rewitnessing_does_not_refresh",
+    "test/test_forgetting.py::test_trigger_interval_and_age_select_oldest_without_moving_addresses",
+    "test/test_forgetting.py::test_value_terms_outweigh_age[trust]",
+    "test/test_forgetting.py::test_value_terms_outweigh_age[utility]",
+    "test/test_forgetting.py::test_source_trust_is_separate_from_both_evidence",
+    "test/test_forgetting.py::test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age",
+    "test/test_forgetting.py::test_dissonance_drops_weaker_opposition_not_intrinsic_both",
+    "test/test_forgetting.py::test_protected_and_live_roots_survive_and_block_unsafe_target"
+  ],
+  "completed": [
+    "test/test_forgetting.py::test_age_is_per_stream_and_rewitnessing_does_not_refresh",
+    "test/test_forgetting.py::test_trigger_interval_and_age_select_oldest_without_moving_addresses",
+    "test/test_forgetting.py::test_value_terms_outweigh_age[trust]",
+    "test/test_forgetting.py::test_value_terms_outweigh_age[utility]",
+    "test/test_forgetting.py::test_source_trust_is_separate_from_both_evidence",
+    "test/test_forgetting.py::test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age",
+    "test/test_forgetting.py::test_dissonance_drops_weaker_opposition_not_intrinsic_both",
+    "test/test_forgetting.py::test_protected_and_live_roots_survive_and_block_unsafe_target"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_forgetting.py::test_age_is_per_stream_and_rewitnessing_does_not_refresh",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0032001668587327003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_trigger_interval_and_age_select_oldest_without_moving_addresses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004422124940901995,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_value_terms_outweigh_age[trust]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003420625114813447,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 0.30000001192092896, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_value_terms_outweigh_age[utility]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002575499936938286,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 0.30000001192092896, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_source_trust_is_separate_from_both_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012175841256976128,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014888339210301638,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 2, 'after': 1, 'target': 1, 'cutoff': 1.5499999523162842, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_dissonance_drops_weaker_opposition_not_intrinsic_both",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001079958165064454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_protected_and_live_roots_survive_and_block_unsafe_target",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0035551670007407665,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 8, 'target': 5, 'cutoff': None, 'deleted_by_origin': {0: 0, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 6, 'target_reached': False}\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,5 +1,14 @@
 # Philosophy
 
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
+> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
+
+
 This document maps the model's machinery onto three philosophical accounts
 of cognition: Kant's analysis/synthesis pair, Ramsey's treatment of
 theoretical structure, and Buddhist epistemology (pramana theory). The
@@ -1699,10 +1708,9 @@ a relation fills three symbol references (LTM3), the kind a relation that takes 
 argument (definition, attribution, conditional) and each argument an idea
 or a reference; parthood and kinds are folds in the main tree, not rows
 (2026-10-19). A modal sentence read
-*de re* writes `S REL S` (`[Alec] part-of [running things] in the kept
-worlds`) and read *de dicto* writes `S` located in those worlds, and
+*de re* is `S REL S` written as **membership evidence** in the taxonomy (`[Alec]` in `[running things]` in the kept worlds — a fold, not a row) and read *de dicto* writes `S` located in those worlds (the world a context whole like the document), and
 either way the identity's history is untouched. Every sentence has a noun phrase, a verb phrase and a modal phrase, each
-defaulting to the top of its algebra — everything, exists, in all possible
+defaulting to the top of its algebra — everything, *occurs* (read for "exists"), in all possible
 worlds — so that the empty sentence asserts that everything exists
 everywhere, which is attention wide open, and every word narrows one of
 the three (Alec, 2026-10-19). The two

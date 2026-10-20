@@ -10551,8 +10551,7 @@ class PartSpace(Space):
                 self.percept_store.identity = WordIdentity(self.percept_store,
                     pair_dim=self.nDim-32,
                     ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
-                    length_dim=32,
-                    binding_dim=min(self.nDim, int(TheXMLConfig.space(section, 'identityBindingDim', default=64))))
+                    length_dim=32)
         # Numeric carriers have no lexical dictionary. Native text prototype
         # storage has one optimizer owner; admission preserves its moments.
         self._optimize_radix_codebook = self.percept_store is not None

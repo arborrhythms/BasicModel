@@ -1,0 +1,134 @@
+{
+  "binary": [
+    {
+      "index": 0,
+      "name": "part",
+      "semantic_operand": null
+    },
+    {
+      "index": 1,
+      "name": "whole",
+      "semantic_operand": null
+    },
+    {
+      "index": 2,
+      "name": "equal",
+      "semantic_operand": null
+    },
+    {
+      "index": 3,
+      "name": "implies",
+      "semantic_operand": null
+    },
+    {
+      "index": 4,
+      "name": "intersection",
+      "semantic_operand": null
+    },
+    {
+      "index": 5,
+      "name": "union",
+      "semantic_operand": null
+    },
+    {
+      "index": 6,
+      "name": "sum",
+      "semantic_operand": null
+    },
+    {
+      "index": 7,
+      "name": "product",
+      "semantic_operand": null
+    },
+    {
+      "index": 8,
+      "name": "lift",
+      "semantic_operand": null
+    },
+    {
+      "index": 9,
+      "name": "verb",
+      "semantic_operand": null
+    },
+    {
+      "index": 10,
+      "name": "compound",
+      "semantic_operand": null
+    },
+    {
+      "index": 11,
+      "name": "adverb",
+      "semantic_operand": null
+    },
+    {
+      "index": 12,
+      "name": "lower",
+      "semantic_operand": null
+    },
+    {
+      "index": 13,
+      "name": "lower",
+      "semantic_operand": null
+    },
+    {
+      "index": 14,
+      "name": "lower",
+      "semantic_operand": null
+    },
+    {
+      "index": 15,
+      "name": "preposition",
+      "semantic_operand": 1
+    },
+    {
+      "index": 16,
+      "name": "surface",
+      "semantic_operand": 1
+    },
+    {
+      "index": 17,
+      "name": "transpose",
+      "semantic_operand": null
+    },
+    {
+      "index": 18,
+      "name": "conjunction",
+      "semantic_operand": null
+    },
+    {
+      "index": 19,
+      "name": "disjunction",
+      "semantic_operand": null
+    }
+  ],
+  "unary": [
+    {
+      "index": 0,
+      "name": "generic"
+    },
+    {
+      "index": 1,
+      "name": "ask"
+    },
+    {
+      "index": 2,
+      "name": "non"
+    },
+    {
+      "index": 3,
+      "name": "lower_unary"
+    },
+    {
+      "index": 4,
+      "name": "definite_unary"
+    },
+    {
+      "index": 5,
+      "name": "preposition_unary"
+    },
+    {
+      "index": 6,
+      "name": "surface_unary"
+    }
+  ]
+}

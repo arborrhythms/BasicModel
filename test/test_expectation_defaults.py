@@ -130,8 +130,10 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         assert metrics["observations"] == 2
         assert metrics["predicted_targets"] == 1
         assert metrics["activation_mse"] >= 0
-        assert all(not value.requires_grad for chain in discourse._inter_context
-                   for _, value, _ in chain)
+        from ReferenceContext import SituationAddress
+        assert all(isinstance(value, SituationAddress) for chain in discourse._inter_context for value in chain)
+        assert all(not frame.roles.requires_grad for b in range(discourse._batch)
+                   for frame in discourse.situation_references(b))
         for parameter, value in zip(discourse.parameters(), before):
             torch.testing.assert_close(parameter, value)
     finally:

@@ -871,7 +871,7 @@ class ThoughtLTMCapability:
                 work.require('record')
                 frames.append(SituationFrame.from_row(store.row(index)))
                 seen.add(int(store.row_ids[index]))
-        return resolver.bind_site(meaning, role, tuple(frames))
+        return resolver.bind_site(meaning, role, tuple(frames), stream=row)
 
     def held_frames(self, limit=32):
         memory = object.__getattribute__(self, '_ThoughtLTMCapability__memory')
@@ -1105,11 +1105,12 @@ class ThoughtLTMCapability:
                     if not torch.equal(store.document_keys[first], store.document_keys[last]):
                         incomplete.append('incomparable_event_documents')
                         continue
-                    from Spaces import WhenEncoding
-                    encoder = getattr(store, '_address_encoding', None)
-                    if encoder is None:
-                        encoder = WhenEncoding(n_when=4).set_capacity(store.capacity)
-                    onset = encoder.decode_index(store.when[endpoints])
+                    from RowTime import encoder
+                    times = store.when[endpoints]
+                    if not bool(times.ne(0).any(-1).all()):
+                        incomplete.append('unknown_event_time')
+                        continue
+                    onset = encoder().decode_index(times)
                     if int(onset[0]) > int(onset[1]):
                         incomplete.append('reversed_event_order')
                         continue

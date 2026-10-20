@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stream_state_shapes.py::test_word_references_clear_on_forward_start_and_document_reset",
+    "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[orders]",
+    "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[evidence]",
+    "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[orders]",
+    "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[evidence]",
+    "test/test_stream_state_shapes.py::test_rejected_taxonomy_resize_does_not_partially_resize_its_owner",
+    "test/test_stream_state_shapes.py::test_recall_batch_shape_cannot_change_before_reset",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_only_the_finished_rows_priming"
+  ],
+  "completed": [
+    "test/test_stream_state_shapes.py::test_word_references_clear_on_forward_start_and_document_reset",
+    "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[orders]",
+    "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[evidence]",
+    "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[orders]",
+    "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[evidence]",
+    "test/test_stream_state_shapes.py::test_rejected_taxonomy_resize_does_not_partially_resize_its_owner",
+    "test/test_stream_state_shapes.py::test_recall_batch_shape_cannot_change_before_reset",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_only_the_finished_rows_priming"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_word_references_clear_on_forward_start_and_document_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000719917006790638,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[orders]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007685830350965261,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[evidence]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003629170823842287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[orders]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0140220420435071,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[evidence]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013704202137887478,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_rejected_taxonomy_resize_does_not_partially_resize_its_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00040545803494751453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_recall_batch_shape_cannot_change_before_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016470788978040218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_document_reset_clears_only_the_finished_rows_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002730409614741802,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

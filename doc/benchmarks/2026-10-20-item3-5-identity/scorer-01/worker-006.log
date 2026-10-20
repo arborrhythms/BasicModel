@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_empty_close_has_no_policy_gradient_or_store_side_effect _________
+test/test_reference_close.py:115: in test_empty_close_has_no_policy_gradient_or_store_side_effect
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'configure_clause_index'
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect
+1 failed in 2.40s

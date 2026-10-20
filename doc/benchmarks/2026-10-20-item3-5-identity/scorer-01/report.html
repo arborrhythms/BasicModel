@@ -1,0 +1,225 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 59/59 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01836233399808407</pre></td><td><pre>test/test_reference_close.py:57: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018345291959121823</pre></td><td><pre>test/test_reference_close.py:77: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02077666693367064</pre></td><td><pre>test/test_reference_close.py:77: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018180124927312136</pre></td><td><pre>test/test_reference_close.py:77: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018178042024374008</pre></td><td><pre>test/test_reference_close.py:77: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02112599997781217</pre></td><td><pre>test/test_reference_close.py:104: in test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018119540996849537</pre></td><td><pre>test/test_reference_close.py:115: in test_empty_close_has_no_policy_gradient_or_store_side_effect
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.013462290866300464</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02089500008150935</pre></td><td><pre>test/test_reference_close.py:150: in test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.019051874987781048</pre></td><td><pre>test/test_reference_close.py:171: in test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0011686249636113644</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.03517245803959668</pre></td><td><pre>test/test_reference_close.py:225: in test_deferred_reference_request_survives_kept_trial_detachment
+    scored = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.029126917012035847</pre></td><td><pre>test/test_reference_close.py:255: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance
+    clause = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.029131499817594886</pre></td><td><pre>test/test_reference_close.py:255: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance
+    clause = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01779000018723309</pre></td><td><pre>test/test_reference_mentions.py:29: in test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+    resolver, _, _, plan = context()
+                           ^^^^^^^^^
+test/test_reference_mentions.py:14: in context
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018326374934986234</pre></td><td><pre>test/test_reference_mentions.py:46: in test_supplied_answer_labels_only_its_role_without_reselecting_the_menu
+    resolver, _, atoms, plan = context()
+                               ^^^^^^^^^
+test/test_reference_mentions.py:14: in context
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018330999882891774</pre></td><td><pre>test/test_reference_mentions.py:66: in test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph
+    resolver, store, atoms, plan = context()
+                                   ^^^^^^^^^
+test/test_reference_mentions.py:14: in context
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;configure_clause_index&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.001139374915510416</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.028385542100295424</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02914358302950859</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.030634916853159666</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.028947165934368968</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.029221958946436644</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.030490041011944413</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.028493500081822276</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02846058295108378</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.030925416154786944</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02822095900774002</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.028658624971285462</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0298462500795722</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0321967089548707</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03332962514832616</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03220245777629316</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03140604100190103</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03142862510867417</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02709562494419515</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03195700002834201</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.031357415951788425</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.033829583087936044</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03152362513355911</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03152641607448459</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.034346040803939104</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0351046659052372</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03356670890934765</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03740883292630315</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.034504499984905124</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.035729666939005256</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.036301458021625876</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03537825006060302</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.034022165928035975</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.035456875106319785</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.030480375047773123</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.020891916938126087</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02741745812818408</pre></td><td><pre>test/test_bind_thought.py:271: in test_bind_cost_trains_existing_form_and_content_only_after_kept_commit
+    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
+test/test_reference_close.py:32: in form_exposure
+    owner.similarity_codebook.W[row].copy_(cue)
+E   RuntimeError: a view of a leaf Variable that requires grad is being used in an in-place operation.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.024674334097653627</pre></td><td><pre>test/test_bind_thought.py:292: in test_paired_bind_trials_use_r_plus_a_with_no_work_reward
+    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
+test/test_reference_close.py:32: in form_exposure
+    owner.similarity_codebook.W[row].copy_(cue)
+E   RuntimeError: a view of a leaf Variable that requires grad is being used in an in-place operation.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.021212708903476596</pre></td><td><pre>test/test_bind_thought.py:348: in test_selected_open_formation_keeps_one_site_and_its_objectless_cue
+    clause = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.021202374948188663</pre></td><td><pre>test/test_bind_thought.py:368: in test_pending_subject_keeps_its_composed_predicate_when_stored
+    clause = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.019400916062295437</pre></td><td><pre>test/test_bind_thought.py:396: in test_objectless_predicate_keeps_its_identity_in_the_ended_compound
+    clause = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:419: in recover
+    left, left_ref = operand(operands[0], sentence=relation == &#x27;implies&#x27;,
+bin/ClauseJournal.py:388: in operand
+    child = recover(item, cache_operands=relation is not None or cache_operands)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:468: in recover
+    child = recover(operands[1], cache_operands=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01947025000117719</pre></td><td><pre>test/test_bind_thought.py:396: in test_objectless_predicate_keeps_its_identity_in_the_ended_compound
+    clause = finish_clause(f.language, program, registry=f.registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:721: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:419: in recover
+    left, left_ref = operand(operands[0], sentence=relation == &#x27;implies&#x27;,
+bin/ClauseJournal.py:388: in operand
+    child = recover(item, cache_operands=relation is not None or cache_operands)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:468: in recover
+    child = recover(operands[1], cache_operands=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:591: in recover
+    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:122: in expected_roles
+    rows = self._participants().get(self._predicate_key(self.coordinates(predicate)),())
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre></pre></td></tr></table></body></html>

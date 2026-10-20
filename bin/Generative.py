@@ -133,7 +133,7 @@ def primed_type_families(space, heat, *, limit):
     width = book.W.shape[-1]
     rows = heat.new_full((B, 3 * int(limit)), -1, dtype=torch.long)
     components = getattr(space, 'components', None)
-    nouns = set(() if components is None else components.nouns.ids)
+    nouns = set(() if components is None else components.individual_ids)
     verbs = set(() if components is None else components.verbs.ids)
     for b in range(B):
         grouped = [[], [], []]
@@ -153,9 +153,6 @@ def primed_type_families(space, heat, *, limit):
     valid = rows >= 0
     if bool(valid.any()):
         codes = book.lookup_rows(rows.clamp_min(0),streams=True).detach()
-        interpretation = getattr(space, 'interpret', None)
-        if interpretation is not None:
-            codes = interpretation.binding_atoms(codes)
         codes = torch.where(valid[..., None], codes, 0.)
     else:
         codes = heat.new_zeros(B, 3 * int(limit), width)

@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles"
+  ],
+  "completed": [
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 67.33292712504044,
+      "message": "test/test_math_chain.py:194: in test_native_worked_document_trains_unforced_without_numeric_oracles\n    report = present(model, split='train', optimizer=model.getOptimizer(lr=.001))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\nbin/Models.py:13495: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13651: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14031: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8746: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10113: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8431: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8209: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23874: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17102: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22426: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21978: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20937: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20853: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19838: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19627: in _sentence_observation\n    plans.append(resolver.preview(clause,\nbin/ReferenceClose.py:420: in preview\n    individuals = self.individuals(records)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:205: in individuals\n    result[identity] = dict(content=self.coordinates(content),value=content.detach(),role=context['role'],\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:55: in coordinates\n    return coordinates(self.components.owner, point)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:36: in coordinates\n    raise ValueError('identity content requires native concept coordinates in [0, 1]')\nE   ValueError: identity content requires native concept coordinates in [0, 1]",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=4.051s)\r\nbatch = 2 (\u0394=5.361s)\r\nbatch = 3 (\u0394=1.006s)\r\nbatch = 4 (\u0394=5.446s)\r\nbatch = 5 (\u0394=19.460s)\r\nbatch = 6 (\u0394=12.007s)\r\nbatch = 7 (\u0394=14.293s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

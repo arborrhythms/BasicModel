@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them _
+test/test_reference_close.py:57: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+    resolver, store, atoms = fixture()
+                             ^^^^^^^^^
+test/test_reference_close.py:22: in fixture
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'configure_clause_index'
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+1 failed in 2.40s

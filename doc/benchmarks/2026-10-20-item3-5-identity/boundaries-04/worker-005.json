@@ -1,0 +1,194 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed"
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed"
+  ],
+  "slow_selected": [
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016059957910329103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021944590844213963,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0408448341768235,
+      "message": "test/test_negative_expectation.py:62: in test_declared_not_is_a_thought_act_not_an_observation\n    result = model.run_selected_thought(request,work_budget=32)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.027460874989628792,
+      "message": "test/test_negative_expectation.py:91: in test_expectation_updates_predictors_outside_the_departure_comparison\n    test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch)\ntest/test_item6_2_thinking.py:301: in test_expectation_trains_predictor_without_moving_departure_chooser\n    run(model,goal,work_budget=64)\ntest/test_item6_2_thinking.py:44: in run\n    return model.run_selected_thought(q, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5968: in run_selected_thought\n    commit(self, result, row=row)\nbin/ThoughtStream.py:344: in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtStream.py:265: in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9556: in append_meaning\n    self.when[n] = stamp(self)\n                   ^^^^^^^^^^^\nbin/RowTime.py:16: in stamp\n    tick = int(store.model_clock) if source is None else int(source())\n                                                             ^^^^^^^^\nbin/Models.py:13269: in present\n    return int(self.when_time)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'when_time'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.007896416122093797,
+      "message": "test/test_negative_expectation.py:99: in test_metadata_comes_from_the_preceding_occurrence_not_the_target\n    observe(discourse, prior.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.0001112909521907568,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_negative_expectation.py', 114, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006744833197444677,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007855207892134786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0060411670710891485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014500420074909925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.007632042048498988,
+      "message": "test/test_negative_expectation.py:201: in test_disabling_expectation_erases_pending_credit_and_starts_cold\n    discourse.expect_next_meaning(record=True)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.008086458081379533,
+      "message": "test/test_negative_expectation.py:216: in test_open_question_and_nested_what_spare_the_same_role\n    observe(discourse, meaning.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.01345916697755456,
+      "message": "test/test_negative_expectation.py:238: in test_anticipation_ignores_incoming_staging_and_other_streams\n    before = discourse.expect_next_meaning(record=True)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.008484709076583385,
+      "message": "test/test_negative_expectation.py:254: in test_nested_object_mask_reads_a_later_thought_on_the_shared_budget\n    observe(discourse, meaning.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.008087000111117959,
+      "message": "test/test_negative_expectation.py:254: in test_nested_object_mask_reads_a_later_thought_on_the_shared_budget\n    observe(discourse, meaning.roles)\ntest/test_sentence_expectation.py:29: in observe\n    model.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.008107457775622606,
+      "message": "test/test_negative_expectation.py:280: in test_generate_sentence_uses_positive_prediction_only_as_generate_seed\n    prediction = discourse.expect_next_meaning()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

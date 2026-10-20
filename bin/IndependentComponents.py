@@ -1,10 +1,9 @@
-"""Individual signatures and legacy sparse coding of change coordinates.
+"""Native individual folds and legacy sparse coding of change coordinates.
 
-The dictionaries contain order-one concepts. Their addresses name columns;
-addresses and word spellings never enter a numerical score. Only B retains
-a sparse-coding objective; A stores the signatures and
-witnesses allocated and revised by the reference closing.
-A individuals are admitted at a kept close; B retains recurring innovations.
+Individuals occupy ordinary concept rows; their witnesses are retained LTM
+occurrences. Only B owns a dictionary and a sparse-coding objective, pending
+its temporal-difference teacher. Addresses and word spellings never enter
+a numerical identity score.
 """
 from dataclasses import dataclass
 import io
@@ -311,7 +310,6 @@ class IndependentComponents(nn.Module):
         self.weight = float(weight)
         self.capacity = int(owner.nVectors)
         options = dict(prior_scale=prior_scale, mint_threshold=mint_threshold, recurrence=recurrence)
-        self.nouns = ColumnDictionary(2 * self.capacity)
         self.verbs = SparseDictionary(3 * self.capacity, max_sources=1, **options)
         self._innovations = {}
         self._chart = None
@@ -358,35 +356,33 @@ class IndependentComponents(nn.Module):
             self.begin_forward()
         return self._chart
 
+    @property
+    def individual_ids(self):
+        from IdentityRows import individuals
+        return individuals(self.owner)
+
     def column_point(self, identity):
+        from IdentityRows import point
         from MeaningCodes import defined_code
-        chart = self._ready()
+        if identity in self.individual_ids:
+            return point(self.owner, identity)
         key = str(int(identity))
-        if key in self.nouns.directions:
-            direction = F.normalize(self.nouns.directions[key], dim=-1)
-            point = chart.render(direction.index_select(-1, chart.features))
-            return defined_code(point, self.nouns.witness_count(identity))
-        if key in self.verbs.directions and self.nouns.ids:
-            rows = torch.tensor([self.owner._csw_row_of(cid) for cid in self.nouns.ids],
-                                device=chart.features.device, dtype=torch.long)
+        if key in self.verbs.directions and self.individual_ids:
+            rows = torch.tensor([self.owner._csw_row_of(cid) for cid in self.individual_ids],
+                                device=self.owner.similarity_codebook.W.device, dtype=torch.long)
             changes = self.verbs.directions[key].reshape(3, self.capacity).index_select(-1, rows)
-            point = chart.render(changes.sum(0) @ self.nouns.matrix(chart.features))
-            return defined_code(point, self.verbs.witness_count(identity))
+            axes = torch.stack([point(self.owner, cid) for cid in self.individual_ids])
+            return defined_code(changes.sum(0) @ axes, self.verbs.witness_count(identity))
         return None
 
     def innovation(self, observation, prediction):
-        """Per-role innovation in A's coordinates; no difference between poles."""
-        # Legacy B coordinates are projections onto a detached signature
-        # snapshot, not sparse identification or an independence loss on A.
-        # The per-individual temporal-difference teacher remains deferred.
-        chart = self._ready()
-        axes = self.nouns.matrix(chart.features).detach()
-        observed = chart.project(observation) @ axes.T.to(observation)
-        expected = chart.project(prediction) @ axes.T.to(prediction)
-        values = observed - expected
-        rows = [self.owner._csw_row_of(cid) for cid in self.nouns.ids]
+        """Legacy B's residual against native individual rows; no identity chart."""
+        from IdentityRows import point
+        axes = F.normalize(torch.stack([point(self.owner, cid) for cid in self.individual_ids]), dim=-1)
+        values = (observation - prediction) @ axes.T.to(observation)
+        rows = [self.owner._csw_row_of(cid) for cid in self.individual_ids]
         if any(row is None for row in rows):
-            raise RuntimeError('an identity column has lost its native conceptual row')
+            raise RuntimeError('an identity has lost its native conceptual row')
         indices = torch.tensor(rows, dtype=torch.long, device=values.device).expand(3, -1)
         return values.new_zeros(3, self.capacity).scatter(-1, indices, values).flatten()
 
@@ -402,7 +398,7 @@ class IndependentComponents(nn.Module):
             loss = like.new_zeros(())
             if meaning is not None and bool(active[b]):
                 prediction = predictions[b] if predictions is not None else None
-                if prediction is not None and self.nouns.ids:
+                if prediction is not None and self.individual_ids:
                     residual = self.innovation(meaning.roles, prediction.roles.detach())
                     loss = self.verbs.loss(torch.cat((changes, residual[None]), 0))
                 elif len(changes):
@@ -411,29 +407,21 @@ class IndependentComponents(nn.Module):
         return torch.stack(losses)
 
     @torch.no_grad()
-    def _allocate(self, direction, *, verb=False):
+    def _allocate_change(self, direction):
         from Spaces import _concept_alloc_of
         owner = self.owner
         try:
             owner._preflight_concept_row(1)
-            owner._preflight_concept_allocation(1, context='independent component')
+            owner._preflight_concept_allocation(1, context='change component')
         except RuntimeError:
             self.admission_drops += 1
             return None
         identity = owner.new_concept()
         alloc = _concept_alloc_of(owner)
         alloc.reference_orders[identity] = 1
-        # Event-coordinate constituents declare the native concept's order;
-        # learned coefficients are exclusively the dictionary's parameters.
-        support = direction.reshape(3 if verb else 2, self.capacity).abs().sum(0).nonzero().flatten()
-        if not verb:
-            for row in support.tolist():
-                event = owner.concept_id_at_row(row)
-                if event is not None:
-                    alloc.add(identity, 'part', ('sym', event))
         alloc.settle(identity)
         if owner._csw_concept_row(1, identity) is None:
-            raise RuntimeError('component inventory changed after its allocation preflight')
+            raise RuntimeError('component inventory changed after allocation preflight')
         return identity
 
     @torch.no_grad()
@@ -450,11 +438,11 @@ class IndependentComponents(nn.Module):
         # A's individuals were admitted from the kept NP occurrences at this
         # close. Whole-row residual recurrence is not individual identity.
         # The deferred order-two mechanism owns cross-document recurrence.
-        if prediction is not None and self.nouns.ids:
+        if prediction is not None and self.individual_ids:
             residual = self.innovation(meaning.roles.detach(), prediction.roles.detach())
             self._innovations[identity] = residual.detach().cpu()
             self.verbs.observe(residual, witness=witness,
-                allocate=lambda direction: self._allocate(direction, verb=True))
+                allocate=self._allocate_change)
         model = getattr(self.owner, '_model', None)
         if model is not None:
             model.__dict__.setdefault('_fresh_synthesis_params', []).extend(
@@ -462,7 +450,7 @@ class IndependentComponents(nn.Module):
 
     def candidate_frames(self, frames):
         """Columns and their latest situated witness, without reading more LTM."""
-        if not self.nouns.ids:
+        if not self.individual_ids:
             return ()
         result = {}
         store = self.owner._closed_clause_store()
@@ -477,7 +465,7 @@ class IndependentComponents(nn.Module):
                 index = store.index_of_row(address)
                 if index is not None and int(store.order[index]) == 1:
                     identity = int(store.refs[index, 0])
-                    if identity in self.nouns.ids:
+                    if identity in self.individual_ids:
                         result.pop(identity, None)
                         result[identity] = frame
         return tuple(result.items())[-self.source_capacity:]
@@ -497,7 +485,9 @@ class IndependentComponents(nn.Module):
         derived = getattr(getattr(self.owner, 'similarity_codebook', None), 'mereology', None)
         if derived is not None:
             start, end = derived.percept_width, derived.percept_event_width
-            bands = [value.detach().to(point).flatten() for value in (frame.where, frame.when)
+            # The stored model-time column is provenance, never a compose
+            # operand. Only spatial continuity can enter this reserved band.
+            bands = [value.detach().to(point).flatten() for value in (frame.where,)
                      if value is not None]
             if bands:
                 evidence = torch.cat(bands)
@@ -508,7 +498,25 @@ class IndependentComponents(nn.Module):
         return point
 
     def pruning_candidates(self):
-        return dict(nouns=self.nouns.pruning_candidates(), verbs=self.verbs.pruning_candidates())
+        return dict(verbs=self.verbs.pruning_candidates())
+
+    @torch.no_grad()
+    def migrate_identity_rows(self):
+        """One-time checkpoint conversion after native rows have been restored."""
+        from IdentityRows import allocator, coordinates, refold, witnesses
+        identities = self.__dict__.pop('_migrating_individuals', ())
+        alloc = allocator(self.owner)
+        for identity in identities:
+            row = self.owner._csw_row_of(identity)
+            if row is None:
+                raise ValueError('retained individual has no native concept seat')
+            alloc.individuals.add(identity)
+            if witnesses(self.owner, identity):
+                refold(self.owner, identity)
+            else:
+                # Forgotten observations leave the last native fold intact.
+                coordinates(self.owner, self.owner.similarity_codebook.W[row])
+        self.reference_close._participant_cache = None
 
     def get_extra_state(self):
         return _pack_state(dict(version=1, innovations=self._innovations, admission_drops=self.admission_drops))

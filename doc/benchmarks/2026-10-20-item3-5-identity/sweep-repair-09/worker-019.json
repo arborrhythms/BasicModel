@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[None]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[rows1]",
+    "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+    "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+    "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]"
+  ],
+  "completed": [
+    "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[None]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[rows1]",
+    "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+    "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+    "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013248999835923314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[None]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011851125163957477,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[rows1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.649991989135742e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026762508787214756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020545790903270245,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021812506020069122,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017729192040860653,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012812484055757523,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

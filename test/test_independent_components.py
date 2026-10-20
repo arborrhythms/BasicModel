@@ -1,6 +1,8 @@
 """Item 6.5 mechanism certificates; no passing seed is selected."""
 import itertools
 from types import SimpleNamespace
+from dataclasses import replace
+from IdentityRows import witness_count
 
 import pytest
 import torch
@@ -235,17 +237,12 @@ def test_event_chart_excludes_address_bands_and_preserves_evidence_poles():
 
 
 def component_fixture():
-    from IndependentComponents import IndependentComponents, EventChart
-    owner = SimpleNamespace(nVectors=8, nWhat=4, stm=SimpleNamespace(capacity=8),
-                            _csw_row_of=lambda identity: identity + 3)
-    model = IndependentComponents(owner, weight=.1, prior_scale=.05, mint_threshold=.2)
-    model._chart = EventChart(torch.arange(4), torch.eye(4), capacity=8, content_width=4)
-    for index in range(2):
-        identity = index + 1
-        model.nouns.directions[str(identity)] = torch.nn.Parameter(
-            model._chart.expand(torch.cat((torch.eye(4)[index], torch.zeros(4)))))
-        model.nouns.relevance[str(identity)] = torch.nn.Parameter(torch.tensor(1.))
-        model.nouns._witnesses[identity] = set(range(4))
+    from test_cs_sparse_weights import _cs
+    from IdentityRows import mint
+    owner = _cs(nS=32, order=2, dim=4)
+    model = owner.components
+    for value in torch.eye(4)[:2]:
+        mint(owner, value)
     return model
 
 
@@ -260,9 +257,10 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     owner = columns.owner
     owner._closed_clause_store = lambda: store
     owner._order0_inventory_row = lambda physical: physical < 4
-    owner.similarity_codebook = SimpleNamespace(W=torch.eye(4), lookup_rows=lambda rows,**kw: torch.eye(4)[rows])
-    monkeypatch.setattr(Spaces, '_concept_alloc_of', lambda _: SimpleNamespace(
-        layer=lambda: SimpleNamespace(_tensor_row_keys={i: i for i in range(4)})))
+    for i in range(4):
+        cid = owner.new_concept()
+        seat = owner._csw_concept_row(0, cid)
+        with torch.no_grad(): owner.similarity_codebook.W[seat].copy_(torch.eye(4)[i])
     prediction = SimpleNamespace(roles=torch.zeros(3, 4))
     columns.begin_forward()
     expected = columns.cost([meaning], [prediction], torch.tensor([True]))
@@ -282,20 +280,24 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
 def test_continuity_is_binding_evidence_and_never_a_column_signature():
     from IndependentComponents import EventChart
     from ReferenceContext import SituationFrame
-    columns = component_fixture()
-    basis = torch.zeros(4, 12)
-    basis[:, 4:8] = torch.eye(4)
-    columns._chart = EventChart(torch.arange(4), basis, capacity=8, content_width=12,
-                                meaning_start=4, meaning_pairs=4)
-    columns.owner.similarity_codebook = SimpleNamespace(mereology=SimpleNamespace(
+    from test_cs_sparse_weights import _cs
+    from IdentityRows import mint
+    owner = _cs(nS=32, order=2, dim=12)
+    columns = owner.components
+    value = torch.zeros(12); value[4] = 1.
+    identity = mint(owner, value)
+    object.__setattr__(owner.similarity_codebook, 'mereology', SimpleNamespace(
         percept_width=0, percept_event_width=4))
-    identity = columns.nouns.ids[0]
+    identity = columns.individual_ids[0]
     original = columns.column_point(identity).detach().clone()
     frame = SituationFrame(1, torch.zeros(3, 12), torch.tensor([True, False, False]),
                            91, None, where=torch.tensor([2., 3.]), when=torch.tensor([8., 9.]))
     located = columns.situated_point(identity, frame)
-    torch.testing.assert_close(located[:4], torch.tensor([2., 3., 8., 9.]))
-    torch.testing.assert_close(columns._chart.project(located), columns._chart.project(original))
+    torch.testing.assert_close(located[:4], torch.tensor([2., 3., 0., 0.]))
+    torch.testing.assert_close(located[4:], original[4:])
+    # Changing only the retained model-time column cannot enter composition.
+    changed = columns.situated_point(identity, replace(frame, when=torch.tensor([99., 100.])))
+    torch.testing.assert_close(changed, located, rtol=0, atol=0)
     torch.testing.assert_close(columns.column_point(identity), original)
 
 
@@ -349,7 +351,7 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         from test_reference_close import close
         close(columns.reference_close, code[0], torch.zeros_like(code[0]), 'mint', (),
               document='native-columns', sentence=0)
-        identity, = columns.nouns.ids
+        identity, = columns.individual_ids
         assert _concept_alloc_of(owner).order_of(identity) == 1
         assert owner._csw_row_of(identity) != event_row
         read = owner.similarity_codebook.lookup_rows(torch.tensor(owner._csw_row_of(identity)))
@@ -365,20 +367,20 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         from IndependentComponents import IndependentComponents
         restored = IndependentComponents(owner, weight=.1, prior_scale=.05, mint_threshold=.2)
         restored.load_state_dict(state)
-        assert restored.nouns.ids == (identity,)
-        torch.testing.assert_close(restored.nouns.matrix(), columns.nouns.matrix())
-        assert restored.nouns.witness_count(identity) == 1
+        assert restored.individual_ids == (identity,)
+        torch.testing.assert_close(restored.column_point(identity), columns.column_point(identity))
+        assert witness_count(owner, identity) == 1
         path = tmp_path / 'admitted-columns.ckpt'
         model.save_weights(path)
         restored_model, _ = Models.BaseModel.from_config(str(config), data=TheData)
         try:
             assert restored_model.load_weights(path, strict=True, require_match=True)
             restored_owner = restored_model._concept_owner()
-            assert restored_owner.components.nouns.ids == (identity,)
+            assert restored_owner.components.individual_ids == (identity,)
             assert restored_owner._csw_row_of(identity) == owner._csw_row_of(identity)
-            assert restored_owner.components.nouns.witness_count(identity) == 1
-            torch.testing.assert_close(restored_owner.components.nouns.matrix(),
-                                       columns.nouns.matrix())
+            assert witness_count(restored_owner, identity) == 1
+            torch.testing.assert_close(restored_owner.components.column_point(identity),
+                                       columns.column_point(identity))
         finally:
             restored_model.End()
             restored_model.symbolSpace.soft_reset()
@@ -428,7 +430,7 @@ def test_greedy_support_stops_when_an_extra_column_worsens_remainder():
 def test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures():
     from Meaning import ConceptualMeaning
     columns = component_fixture()
-    assert all(not hasattr(columns.nouns, name) for name in ('encode', 'loss', 'observe'))
+    assert not hasattr(columns, 'nouns')
     roles = torch.eye(4)[:3].clone().requires_grad_()
     meaning = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool))
     prediction = SimpleNamespace(roles=torch.zeros_like(roles))
@@ -437,6 +439,6 @@ def test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures():
     witness(columns.verbs, innovation)
     columns.cost([meaning], [prediction], torch.tensor([True])).sum().backward()
     assert roles.grad is not None and roles.grad.abs().sum() > 0
-    assert all(parameter.grad is None for parameter in columns.nouns.parameters())
+    assert all("nouns" not in name for name, _ in columns.named_parameters())
     assert any(parameter.grad is not None and parameter.grad.abs().sum() > 0
                for parameter in columns.verbs.parameters())

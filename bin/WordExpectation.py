@@ -44,12 +44,12 @@ def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_p
     # The word read begins with the already observed field/STM. Incoming
     # words join this context only after their own causal prediction.
     for row in range(B):
-        chain = owner._inter_context[row] if row < len(owner._inter_context) else ()
+        chain, lane_history, _, _ = (owner._read_context(row)
+            if row < len(owner._inter_context) else ((), (), (), ()))
         if not chain:
             continue
         values = torch.stack([value.to(words) for _, value, _ in chain]).flatten(0, 1)
         occupied = torch.stack([mask.to(words.device) for _, _, mask in chain]).flatten()
-        lane_history = owner._inter_context_lanes[row]
         pairs = torch.stack([words.new_tensor((1.,0.) if pair is None else pair).expand(3,2)
             for pair in lane_history]).flatten(0,1)
         source[row] = symbol_activations(bank[row:row+1],values[None],occupied[None],pairs[None])[0]

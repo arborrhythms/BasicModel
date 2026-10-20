@@ -2,8 +2,8 @@
 
 Atom rows and word rows belong to the existing RadixLayer. Their codes are
 fixed functions of atom bytes, not parameters. Only a recorded collision
-may extend a minted atom's deterministic bit stream. Binding uses a separate
-fixed dense view; indexes and reconstruction retain the sparse form.
+may extend a minted atom's deterministic bit stream. Composition, identity
+and reconstruction share the native cube coordinates.
 """
 import hashlib
 from contextlib import contextmanager
@@ -12,7 +12,6 @@ from functools import lru_cache
 import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 
 def resolve_identity_layout(config):
@@ -32,12 +31,9 @@ def resolve_identity_layout(config):
     pair = int(ps.setdefault('identityPairDim', 64))
     ones = int(ps.setdefault('identityOnes', 3))
     length = int(ps.setdefault('identityLengthDim', 32))
-    dense = int(ps.setdefault('identityBindingDim', 64))
-    if pair < ones or ones < 1 or length != 32 or dense < 1:
-        raise ValueError('identity requires D >= s > 0, L = 32 and a positive binding width')
+    if pair < ones or ones < 1 or length != 32:
+        raise ValueError('identity requires D >= s > 0, L = 32')
     width = pair + length
-    if dense > width:
-        raise ValueError('binding width must fit the reserved form block')
     old_ps = int(ps.get('nDim', 0))
     old_cs = int(config.get('ConceptualSpace', {}).get('nDim', old_ps)) or old_ps
     form_event = width + sum(canonical_shape('PartSpace'))
@@ -86,18 +82,14 @@ class WordIdentity(nn.Module):
     PREFIX = b'\x00identity/atom/'
     WORD_PREFIX = b'\x00identity/form/'
 
-    def __init__(self, store, pair_dim=64, ones=3, length_dim=32, binding_dim=64):
+    def __init__(self, store, pair_dim=64, ones=3, length_dim=32):
         super().__init__()
         object.__setattr__(self, 'store', store)
         self.pair_dim, self.ones = int(pair_dim), int(ones)
-        self.length_dim, self.binding_dim = int(length_dim), int(binding_dim)
+        self.length_dim = int(length_dim)
         self.width = self.pair_dim + self.length_dim
         if store.dim != self.width or not 0 < self.ones <= self.pair_dim:
             raise ValueError('Radix identity bank width must be D + L, with 0 < s <= D')
-        seed = int.from_bytes(hashlib.sha256(b'word-identity-projection-v1').digest()[:8], 'little')
-        # A local generator cannot move any training's initialization stream.
-        matrix = np.random.default_rng(seed).normal(size=(self.width, self.binding_dim))
-        self.register_buffer('projection', torch.tensor(matrix / self.binding_dim**.5, dtype=torch.float32))
         self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
         self.word_keys = {}
         self.mints = []
@@ -327,12 +319,6 @@ class WordIdentity(nn.Module):
         return assemble_pairs([value for kind, value in parts if kind == 'pair'],
                               max(lengths), index=self, form=form)
 
-    def binding(self, atoms):
-        """Preserve the event/meaning layout while changing only code direction."""
-        projected = atoms[..., :self.width] @ self.projection.to(atoms)
-        return torch.cat((F.pad(projected, (0, self.width-self.binding_dim)),
-                          atoms[..., self.width:]), -1)
-
     def vocab_extras(self):
         return dict(atoms=self.atoms, bits=self.bits, words=self.words,
                     word_rows=self.word_rows, mints=self.mints, revision=self.revision,
@@ -359,7 +345,7 @@ class WordIdentity(nn.Module):
             supersets = lists[0].intersection(*lists[1:])
             comparable.extend((word, other) for other in sorted(supersets) if other != word)
         return dict(vocabulary=[text_of(w) for w in words], pair_dim=self.pair_dim,
-            length_dim=self.length_dim, ones=self.ones, binding_dim=self.binding_dim,
+            length_dim=self.length_dim, ones=self.ones,
             collisions=len(words)-len({self.key(v) for v in forms.values()}),
             containment_pairs=[(text_of(a), text_of(b)) for a, b in comparable],
             containment_violations=sum(bool((forms[a] > forms[b]).any()) for a,b in comparable),

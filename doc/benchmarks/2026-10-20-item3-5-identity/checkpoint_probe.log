@@ -1,0 +1,30 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+Grammar checkpoint: 2761 declared migrations
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:10856: UserWarning: retired sentence/ARMA heads migrated to a fresh shared activation predictor
+  warnings.warn('retired sentence/ARMA heads migrated to a fresh shared activation predictor', UserWarning)
+[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt
+  Keys in model but missing from file: 18 (initialized fresh)
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt
+[
+  {
+    "identity": 67,
+    "seat": 38,
+    "cached_range": [
+      0.0,
+      0.0
+    ],
+    "definitions": "(('sym', 14), ('sym', 18), ('sym', 20), ('sym', 22), ('sym', 24), ('sym', 26), ('sym', 28), ('sym', 30), ('sym', 32), ('sym', 34), ('sym', 36), ('sym', 38), ('sym', 42), ('sym', 44), ('sym', 46), ('sym', 48), ('sym', 50), ('sym', 52), ('sym', 54), ('sym', 56), ('sym', 58), ('sym', 64))",
+    "members": []
+  },
+  {
+    "identity": 68,
+    "seat": 39,
+    "cached_range": [
+      0.0,
+      0.0
+    ],
+    "definitions": "(('sym', 14), ('sym', 16), ('sym', 18), ('sym', 20), ('sym', 22), ('sym', 24), ('sym', 26), ('sym', 28), ('sym', 30), ('sym', 32), ('sym', 34), ('sym', 36), ('sym', 38), ('sym', 42), ('sym', 44), ('sym', 46), ('sym', 48), ('sym', 50), ('sym', 52), ('sym', 54), ('sym', 56), ('sym', 58), ('sym', 64))",
+    "members": []
+  }
+]

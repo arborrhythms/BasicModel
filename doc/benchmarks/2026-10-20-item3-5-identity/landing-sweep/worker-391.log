@@ -1,0 +1,72 @@
+F.F....F                                                                 [100%]
+=================================== FAILURES ===================================
+___________________________ test_clock_independence ____________________________
+test/test_item55_mechanisms.py:112: in test_clock_independence
+    torch.testing.assert_close(value['rows'][name],baseline['rows'][name],rtol=0,atol=0,msg=name)
+E   AssertionError: when
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.152s)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.135s)
+______________________________ test_stream_chain _______________________________
+test/test_item55_mechanisms.py:179: in test_stream_chain
+    assert torch.equal(model.when_encoding.decode_index(live.when[observations]),
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10a7493a0>(tensor([0, 0]), tensor([1, 1]))
+E    +    where <built-in method equal of type object at 0x10a7493a0> = torch.equal
+E    +    and   tensor([0, 0]) = decode_index(tensor([[1.0972e-09, 1.0000e+00, 1.1505e-03, 1.0000e+00],\n        [1.0972e-09, 1.0000e+00, 1.1505e-03, 1.0000e+00]]))
+E    +      where decode_index = DocumentWhenEncoding().decode_index
+E    +        where DocumentWhenEncoding() = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=104, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)\n).when_encoding
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+___________________ test_nested_wholes_from_stage3_artifact ____________________
+test/test_item55_mechanisms.py:485: in test_nested_wholes_from_stage3_artifact
+    restore_phase(lambda path: restore_warmup(model, path, restore))
+test/phase_artifacts.py:107: in restore
+    result = loader(phase_registry.resolve(phase_artifact.path))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item55_mechanisms.py:485: in <lambda>
+    restore_phase(lambda path: restore_warmup(model, path, restore))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/identity_experiment.py:224: in restore_warmup
+    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5133: in load_weights
+    self._restore_structural_extras(
+bin/Models.py:4451: in _restore_structural_extras
+    components.migrate_identity_rows()
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/IndependentComponents.py:515: in migrate_identity_rows
+    refold(self.owner, identity)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:111: in refold
+    value = torch.maximum(value, coordinates(owner, store.point_of_row(int(store.row_ids[row]))))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError('identity content requires native concept coordinates in [0, 1]')
+E   ValueError: identity content requires native concept coordinates in [0, 1]
+----------------------------- Captured stdout call -----------------------------
+Grammar checkpoint: 2761 declared migrations
+[BasicModel] Weight file partial -- /Users/arogers/github/WikiOracle/basicmodel/output/stage4e-student-order-20261017/order.ckpt
+  Keys in model but missing from file: 18 (initialized fresh)
+=============================== warnings summary ===============================
+test/test_item55_mechanisms.py::test_clock_independence
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:10856: UserWarning: retired sentence/ARMA heads migrated to a fresh shared activation predictor
+    warnings.warn('retired sentence/ARMA heads migrated to a fresh shared activation predictor', UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item55_mechanisms.py::test_clock_independence - AssertionErr...
+FAILED test/test_item55_mechanisms.py::test_stream_chain - assert False
+FAILED test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact
+3 failed, 5 passed, 2 warnings in 10.49s

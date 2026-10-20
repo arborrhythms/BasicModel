@@ -64,6 +64,7 @@ def test_mm_grammar_part_under_disjunction_closes_at_full_inventory(monkeypatch)
     from pathlib import Path
     model, _, _ = _fresh_model(str(Path(_PROJECT) / 'data/MM_grammar.xml'))
     f = object.__new__(SentenceFixture)
+    f.native_cube = False
     f.cs, f.grammar, f.registry = model._concept_owner(), Language.TheGrammar, model.grammatical_thoughts
     f.language = model.languageSpace
     f.binary, f.unary = f.language._compose_binary_rules, f.language._compose_unary_rules

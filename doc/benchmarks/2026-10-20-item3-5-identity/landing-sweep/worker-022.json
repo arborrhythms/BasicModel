@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+    "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+    "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+    "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity"
+  ],
+  "completed": [
+    "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+    "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+    "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+    "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+    "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01350350002758205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000218207947909832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004732920788228512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001607921440154314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011175009422004223,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001067090779542923,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010341708548367023,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00028266687877476215,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

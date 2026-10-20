@@ -24,15 +24,15 @@ from test_basicmodel import _populate_test_config
 _D = 8
 
 
-def _cs(nS=64, order=3):
+def _cs(nS=64, order=3, dim=_D):
     nP = 4
     _populate_test_config(
-        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
-        wordDim=_D, outputDim=_D,
+        inputDim=dim, perceptDim=dim, conceptDim=dim, symbolDim=dim,
+        wordDim=dim, outputDim=dim,
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
+    cs = Spaces.ConceptualSpace([nP, dim], [nS, dim], [nS, dim])
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
     return with_definitions(cs)

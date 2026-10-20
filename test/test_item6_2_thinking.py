@@ -379,7 +379,10 @@ def test_answer_credit_is_complete_before_document_end():
 def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known):
     model,registry,store,(a,b,c)=world()
     events=[]
+    tick=[0]
+    object.__setattr__(store,'_model_present',lambda:tick[0])
     for ref,position in zip((a,b),positions):
+        tick[0]=position
         value=replace(ConceptualMeaning.from_description(registry._payload(ref)),role_refs=(ref,None,None))
         index=store.append_meaning(value,kind='fact',evidence=(.8,.1),document_key='events',sentence_index=position)
         events.append(store.occurrence_of(index))
@@ -397,6 +400,27 @@ def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known
     if known:
         assert evidence_pair(result.meaning)==pytest.approx((.8,0.))
         assert set(events).issubset(bindings(result.meaning)['_thought_witnesses'])
+
+
+def test_event_implication_cannot_invent_an_order_for_unknown_legacy_time():
+    from Queries import ThoughtLTMCapability
+    from QueryWork import QueryWorkBudget
+    _,registry,store,(a,b,_)=world()
+    events=[]
+    for ref in (a,b):
+        value=replace(ConceptualMeaning.from_description(registry._payload(ref)),role_refs=(ref,None,None))
+        row=store.append_meaning(value,kind='fact',evidence=(.8,.1),document_key='events')
+        events.append(store.occurrence_of(row))
+    rule=registry.form('implies',a,b,mode='assertive')
+    rule=replace(rule,role_refs=(events[0],rule.role_refs[1],events[1]))
+    store.append_meaning(rule,kind='fact',rel_type=store.REL_IMPLIES,evidence=(1.,0.))
+    store.when[store._index_occurrences[events[0]]].zero_()
+    reader=ThoughtLTMCapability(store=lambda:store,equal=lambda *_:None,tau_id=.5)
+    result=reader.relation_evidence('implies',*events,max_records=16,work=QueryWorkBudget(16))
+    assert result['frames'] == ()
+    assert (result['support_true'],result['support_false']) == (0.,0.)
+    assert result['incomplete'] == ('unknown_event_time',)
+    assert result['records_scanned'] == len(store)+2
 
 
 def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):

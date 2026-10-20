@@ -1,0 +1,20 @@
+{
+  "selectors": [
+    "test/test_definition_rows.py",
+    "test/test_item4_review.py",
+    "test/test_item6_2_thinking.py",
+    "test/test_item55_mechanisms.py",
+    "test/test_math_chain.py",
+    "test/test_operators_round4a0.py",
+    "test/test_sentence_compose.py",
+    "test/test_sentence_identity.py",
+    "test/test_stored_idea_generation.py",
+    "test/test_stream_state_shapes.py",
+    "test/test_bind_thought.py",
+    "test/test_identity_rows.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

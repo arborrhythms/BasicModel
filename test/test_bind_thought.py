@@ -13,7 +13,6 @@ import pytest
 import torch
 
 from ClauseRow import Clause
-from IndependentComponents import EventChart
 from Meaning import ConceptualMeaning
 from ReferenceContext import SituationFrame, reference_requests
 from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
@@ -24,7 +23,7 @@ from reading_fixtures import record_reading
 
 
 def native(monkeypatch):
-    f = SentenceFixture(monkeypatch)
+    f = SentenceFixture(monkeypatch, native_cube=True)
     model, _, _, _ = world()
     object.__setattr__(model, 'conceptualSpace', f.cs)
     object.__setattr__(model, 'grammatical_thoughts', f.registry)
@@ -37,8 +36,6 @@ def native(monkeypatch):
     f.next_sentence = 0
     f.atoms = torch.eye(8)
     f.resolver = f.cs.components.reference_close
-    f.cs.components._chart = EventChart(torch.arange(8), f.atoms,
-        capacity=f.cs.nVectors, content_width=8)
     return f
 
 
@@ -238,19 +235,55 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
                                     result.records) if a.semantic_id == 'bind']
 
 
-def test_role_association_load_migration_is_once_from_retained_occurrences(monkeypatch):
-    from IndependentComponents import _pack_state
+def test_participant_cache_rebuilds_from_retained_identity_rows(monkeypatch):
     f = native(monkeypatch)
-    occurrence(f, f.atoms[0], f.atoms[4], role=2)
-    state = dict(seen={}, cooccurrence={}, associations={(0, 4): 100.},
-                 predicates={}, total=0.)
-    f.resolver.set_extra_state(_pack_state(state))
-    assert not f.resolver.associations
-    f.resolver.migrate_role_associations()
-    assert f.resolver.associations and all(key[2] == 2 for key in f.resolver.associations)
-    saved = dict(f.resolver.associations)
-    f.resolver.migrate_role_associations()
-    assert f.resolver.associations == saved
+    for _ in range(4):
+        occurrence(f, f.atoms[0], f.atoms[4], role=2)
+    assert f.resolver.expected_roles(f.atoms[4]) == (2,)
+    saved = f.resolver._participants()
+    f.resolver._participant_cache = None
+    assert f.resolver._participants() == saved
+    for row in range(len(f.store)):
+        f.store.refs[row, 0] = -1
+    assert f.resolver.expected_roles(f.atoms[4]) == ()
+
+
+@pytest.mark.parametrize('has_antecedent', (False, True))
+def test_bind_rejects_self_and_containing_occurrences_before_selection(monkeypatch, has_antecedent):
+    f = native(monkeypatch)
+    missing, _ = occurrence(f, f.atoms[0], f.atoms[4], mode='bind')
+    target = f.store.occurrence_of(missing)
+    before = f.store.slots[missing].clone()
+    # These unminted candidates have perfect content coverage, but each
+    # would make the kept NP part of itself through typed role edges.
+    child = target
+    for position in range(2):
+        meaning = replace(ConceptualMeaning.from_description(f.atoms[0]),
+                          role_refs=(child,None,None))
+        row = f.store.append_meaning(meaning, order=1, document_key='ancestors',
+                                    sentence_index=position)
+        child = f.store.occurrence_of(row)
+        f.frames.append(SituationFrame.from_row(f.store.row(row)))
+    expected = None
+    if has_antecedent:
+        row = f.store.append_meaning(ConceptualMeaning.from_description(f.atoms[0]*.5),
+                                    order=1, document_key='independent')
+        expected = f.store.occurrence_of(row)
+        f.frames.append(SituationFrame.from_row(f.store.row(row)))
+    query = f.store.meaning_of(missing)
+    query = replace(query,bindings=dict(bindings(query),_query_occurrence=target))
+    result = execute(f,query)
+    assert result.evidence['binding_candidates'] == (() if expected is None else (expected,))
+    if expected is None:
+        assert open_slots(result.value) == (('referent',0),)
+        assert (result.support_true,result.support_false) == (0.,0.)
+    else:
+        assert result.value.role_refs[0] == expected
+        f.resolver.commit_bindings(SimpleNamespace(
+            records=(SimpleNamespace(kind='thought',result=result),)))
+        assert f.store.meaning_of(missing).role_refs[0] == expected
+        assert not open_slots(f.store.meaning_of(missing))
+    torch.testing.assert_close(f.store.slots[missing],before,rtol=0,atol=0)
 
 
 def test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access(monkeypatch):
@@ -272,6 +305,8 @@ def test_bind_cost_trains_existing_form_and_content_only_after_kept_commit(monke
     f = native(monkeypatch)
     occurrence(f, f.atoms[0], f.atoms[4])
     occurrence(f, f.atoms[1], f.atoms[5])
+    from test_reference_close import form_exposure
+    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
     before = {name: value.clone() for name, value in f.resolver.named_parameters()}
     result = execute(f, site(f, f.atoms[0], predicate=f.atoms[4], cue=f.atoms[7]))
     for name, value in f.resolver.named_parameters():
@@ -284,13 +319,15 @@ def test_bind_cost_trains_existing_form_and_content_only_after_kept_commit(monke
     assert loss is not None and loss.requires_grad
     loss.backward()
     assert f.resolver.policy.grad.abs().sum() > 0
-    assert f.resolver.cue_policy.grad.abs().sum() > 0
+    assert f.resolver.policy.grad[4].abs() > 0
 
 
 def test_paired_bind_trials_use_r_plus_a_with_no_work_reward(monkeypatch):
     f = native(monkeypatch)
     occurrence(f, f.atoms[0], f.atoms[4])
     occurrence(f, f.atoms[1], f.atoms[5])
+    from test_reference_close import form_exposure
+    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
     meaning = site(f, f.atoms[0], predicate=f.atoms[4], cue=f.atoms[7])
     # Force only the operation ordering, retaining native logits, departure,
     # execution, scoring, comparison, and kept commit.
@@ -330,7 +367,7 @@ def test_paired_bind_trials_use_r_plus_a_with_no_work_reward(monkeypatch):
     loss = f.model.errors.total(objective='expectation')
     assert loss is not None and loss.requires_grad
     loss.backward()
-    assert f.resolver.cue_policy.grad.abs().sum() > 0
+    assert f.resolver.policy.grad[4].abs() > 0
 
 
 def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypatch):

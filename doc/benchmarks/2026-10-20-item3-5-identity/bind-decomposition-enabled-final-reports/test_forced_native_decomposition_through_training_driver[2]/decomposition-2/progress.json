@@ -1,0 +1,4262 @@
+{
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": 7947332420032343000,
+      "address": [
+        "ltm",
+        "address-v1",
+        7947332420032343000
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 17,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 6,
+      "row_id": -3780258207137205181,
+      "address": [
+        "ltm",
+        "address-v1",
+        -3780258207137205181
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 0,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 1,
+      "row_id": -2412804408005276221,
+      "address": [
+        "ltm",
+        "address-v1",
+        -2412804408005276221
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 3,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 7,
+      "row_id": 5949758667496929018,
+      "address": [
+        "ltm",
+        "address-v1",
+        5949758667496929018
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 9,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 2,
+      "row_id": -2642127781952414326,
+      "address": [
+        "ltm",
+        "address-v1",
+        -2642127781952414326
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 24,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 8,
+      "row_id": 962400579389471755,
+      "address": [
+        "ltm",
+        "address-v1",
+        962400579389471755
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 48,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 3,
+      "row_id": -4819106991961954760,
+      "address": [
+        "ltm",
+        "address-v1",
+        -4819106991961954760
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 18,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 9,
+      "row_id": -8663140193477537358,
+      "address": [
+        "ltm",
+        "address-v1",
+        -8663140193477537358
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 24,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 4,
+      "row_id": -961456441668243839,
+      "address": [
+        "ltm",
+        "address-v1",
+        -961456441668243839
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 29,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 10,
+      "row_id": 8207909751213630807,
+      "address": [
+        "ltm",
+        "address-v1",
+        8207909751213630807
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 27,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 5,
+      "row_id": 8455957327220571244,
+      "address": [
+        "ltm",
+        "address-v1",
+        8455957327220571244
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 20,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 11,
+      "row_id": -5595935090248634390,
+      "address": [
+        "ltm",
+        "address-v1",
+        -5595935090248634390
+      ],
+      "open": [],
+      "forward": [],
+      "episode": true,
+      "departure": 48,
+      "query_open": []
+    }
+  ],
+  "episodes": [
+    {
+      "row": 0,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "after": [
+        [
+          "ltm",
+          "address-v1",
+          4450795965993500354
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "open": [],
+      "metadata": {
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_derived_binding": true,
+        "_direct_binding": false,
+        "_equality": true,
+        "_evidence_pair": [
+          0.25167274475097656,
+          0.0
+        ],
+        "_formation_records": [
+          [
+            [
+              "choice",
+              "open"
+            ],
+            [
+              "probability",
+              0.004000743385404348
+            ],
+            [
+              "reference",
+              0
+            ],
+            [
+              "role",
+              0
+            ]
+          ],
+          [
+            [
+              "choice",
+              "bind"
+            ],
+            [
+              "probability",
+              0.004000743385404348
+            ],
+            [
+              "reference",
+              1652909074161086337
+            ],
+            [
+              "role",
+              2
+            ]
+          ]
+        ],
+        "_forward_references": [],
+        "_open_references": [],
+        "_pending": false,
+        "_producing_operation": "query",
+        "_query_occurrence": [
+          "ltm",
+          "address-v1",
+          8455957327220571244
+        ],
+        "_reference_sites": [
+          [
+            0,
+            [
+              [
+                "content",
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "cue",
+                [
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "leaves",
+                [
+                  0
+                ]
+              ],
+              [
+                "predicate",
+                [
+                  -0.1433536857366562,
+                  -0.016209250316023827,
+                  -0.009981951676309109,
+                  -0.20675376057624817,
+                  -0.1425502449274063,
+                  -0.0959198996424675,
+                  0.04537821561098099,
+                  0.08156221359968185,
+                  -0.11983802914619446,
+                  0.01338233519345522,
+                  0.09422487765550613,
+                  0.09756685048341751,
+                  0.06752486526966095,
+                  -0.22198958694934845,
+                  0.05004872754216194,
+                  -0.049072615802288055,
+                  0.015816275030374527,
+                  0.01818762719631195,
+                  -0.04536337032914162,
+                  0.13631433248519897,
+                  0.26190847158432007,
+                  -0.12796112895011902,
+                  -0.17150117456912994,
+                  0.008447305299341679,
+                  0.03385421633720398,
+                  -0.06174246594309807,
+                  0.08259911090135574,
+                  0.182587131857872,
+                  0.013178539462387562,
+                  -0.021218931302428246,
+                  -0.07391399890184402,
+                  0.09364568442106247,
+                  0.11990312486886978,
+                  -0.006850535981357098,
+                  -0.1664203703403473,
+                  0.14100781083106995,
+                  -0.08170099556446075,
+                  -0.0006209586863406003,
+                  -0.02217341959476471,
+                  -0.17275021970272064,
+                  -0.16459938883781433,
+                  0.028646979480981827,
+                  0.014781441539525986,
+                  0.07106012105941772,
+                  0.04493728280067444,
+                  0.040445372462272644,
+                  0.061765704303979874,
+                  -0.001483272877521813,
+                  0.0330771841108799,
+                  0.07509907335042953,
+                  0.09929081052541733,
+                  -0.15368430316448212,
+                  0.0410502627491951,
+                  0.08098003268241882,
+                  0.1323862075805664,
+                  -0.008327932097017765,
+                  -0.04811934381723404,
+                  0.031234484165906906,
+                  0.1138598769903183,
+                  -0.0437302403151989,
+                  0.248725026845932,
+                  0.024659473448991776,
+                  -0.13383863866329193,
+                  -0.01707310788333416,
+                  -0.07922744005918503,
+                  -0.05836758017539978,
+                  0.03894994407892227,
+                  -0.045628439635038376,
+                  0.14392761886119843,
+                  -0.09041503816843033,
+                  0.03072185628116131,
+                  -0.04723626375198364,
+                  -0.0014792861184105277,
+                  -0.08399728685617447,
+                  0.127004474401474,
+                  -0.12606500089168549,
+                  -0.08807751536369324,
+                  -0.06381375342607498,
+                  0.056409209966659546,
+                  0.004744261037558317,
+                  -0.007068079896271229,
+                  -0.08333786576986313,
+                  -0.13345608115196228,
+                  0.049485813826322556,
+                  -0.1929478943347931,
+                  -0.005211294163018465,
+                  -0.06823066622018814,
+                  -0.04686467722058296,
+                  -0.037070754915475845,
+                  -0.11820398271083832,
+                  -0.15327998995780945,
+                  0.10979747772216797,
+                  -0.015929758548736572,
+                  0.09902039170265198,
+                  -0.06599075347185135,
+                  0.04546811804175377,
+                  0.06030331924557686,
+                  -0.11032876372337341,
+                  -0.003002113662660122,
+                  -0.04741332307457924,
+                  0.022992612794041634,
+                  0.011717962101101875,
+                  -0.21016241610050201,
+                  -0.0714479610323906
+                ]
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ]
+        ],
+        "_source_evidence": [
+          0.0,
+          0.0
+        ],
+        "_thought_witnesses": [
+          [
+            "ltm",
+            "address-v1",
+            -2642127781952414326
+          ],
+          [
+            "thought",
+            "address-v1",
+            -4303133899191245140
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -961456441668243839
+          ]
+        ]
+      },
+      "work": 455,
+      "state_diff": {
+        "changed": [
+          "._last_thought_comparison",
+          "._last_thought_score_function",
+          "._thought_ordinals",
+          "._walk_audit",
+          "._walk_observations",
+          "._walk_previous",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+          "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._texts",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.stream",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+          "what_memory._address_sources",
+          "what_memory._episode_live",
+          "what_memory._thought_next_id",
+          "what_memory._what_slots"
+        ],
+        "unexpected": [],
+        "changed_old_rows": [
+          73
+        ],
+        "source_row": 73,
+        "added_row_kinds": [
+          "inference",
+          "inference"
+        ]
+      },
+      "trace": [
+        {
+          "kind": "begin",
+          "operation": "",
+          "level": 0,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              1652909074161086337
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -2642127781952414326
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  1652909074161086337
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6948904130318211142
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -2642127781952414326)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  1652909074161086337
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6948904130318211142
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 6948904130318211142)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  5178435807030042619
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6413451679339225063
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6413451679339225063)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7933024063550116410
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 7933024063550116410)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 5178435807030042619)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 1652909074161086337)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 1,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              5178435807030042619
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -2412804408005276221
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  5178435807030042619
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4501038951427053874
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -2412804408005276221)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  5178435807030042619
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4501038951427053874
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 4501038951427053874)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6444055085866713394
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -4200986216304803216
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -4200986216304803216)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  6506295388264663816
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 6506295388264663816)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6444055085866713394)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 5178435807030042619)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 2,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -6444055085866713394
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 2,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                7947332420032343000
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6444055085866713394
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7342630987689137431
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 7947332420032343000)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6444055085866713394
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7342630987689137431
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 7342630987689137431)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6444055085866713394)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 2,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              7342630987689137431
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -6444055085866713394
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              7342630987689137431
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -6444055085866713394
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                7947332420032343000
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6444055085866713394
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7342630987689137431
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 7947332420032343000)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6444055085866713394
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  7342630987689137431
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 7342630987689137431)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6444055085866713394)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -4819106991961954760
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2282161376234451330
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -337915414870306403
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -4819106991961954760)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2282161376234451330
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -337915414870306403
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -337915414870306403)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2282161376234451330)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  7342630987689137431
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -1476289677716600344
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -1476289677716600344)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  8269798774012374579
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 8269798774012374579)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 7342630987689137431)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -337915414870306403
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              5178435807030042619
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -337915414870306403
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              5178435807030042619
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -4819106991961954760
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2282161376234451330
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -337915414870306403
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -4819106991961954760)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  2282161376234451330
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -337915414870306403
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -337915414870306403)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 2282161376234451330)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  7342630987689137431
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -1476289677716600344
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -1476289677716600344)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  8269798774012374579
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 8269798774012374579)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 7342630987689137431)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -961456441668243839
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  658509805642334144
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4450795965993500354
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -961456441668243839)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  658509805642334144
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4450795965993500354
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 4450795965993500354)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 658509805642334144)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -337915414870306403
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2112379363563781500
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2112379363563781500)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2322680252480517796
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2322680252480517796)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -337915414870306403)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              4450795965993500354
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              1652909074161086337
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "finish",
+          "operation": "finish",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              4450795965993500354
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              1652909074161086337
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -961456441668243839
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  658509805642334144
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4450795965993500354
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -961456441668243839)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  658509805642334144
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  4450795965993500354
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 4450795965993500354)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 658509805642334144)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -337915414870306403
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2112379363563781500
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2112379363563781500)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2322680252480517796
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2322680252480517796)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -337915414870306403)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "row": 1,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "after": [
+        [
+          "ltm",
+          "address-v1",
+          -6827976248348987213
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "open": [],
+      "metadata": {
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_derived_binding": true,
+        "_direct_binding": false,
+        "_equality": true,
+        "_evidence_pair": [
+          0.25167274475097656,
+          0.0
+        ],
+        "_formation_records": [
+          [
+            [
+              "choice",
+              "open"
+            ],
+            [
+              "probability",
+              0.0040009114891290665
+            ],
+            [
+              "reference",
+              0
+            ],
+            [
+              "role",
+              0
+            ]
+          ],
+          [
+            [
+              "choice",
+              "bind"
+            ],
+            [
+              "probability",
+              0.0040009114891290665
+            ],
+            [
+              "reference",
+              3807294595960111183
+            ],
+            [
+              "role",
+              2
+            ]
+          ]
+        ],
+        "_forward_references": [],
+        "_open_references": [],
+        "_pending": false,
+        "_producing_operation": "query",
+        "_query_occurrence": [
+          "ltm",
+          "address-v1",
+          -5595935090248634390
+        ],
+        "_reference_sites": [
+          [
+            0,
+            [
+              [
+                "content",
+                [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "cue",
+                [
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.9844298362731934,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "leaves",
+                [
+                  0
+                ]
+              ],
+              [
+                "predicate",
+                [
+                  -0.1433536857366562,
+                  -0.016209250316023827,
+                  -0.009981951676309109,
+                  -0.20675376057624817,
+                  -0.1425502449274063,
+                  -0.0959198996424675,
+                  0.04537821561098099,
+                  0.08156221359968185,
+                  -0.11983802914619446,
+                  0.01338233519345522,
+                  0.09422487765550613,
+                  0.09756685048341751,
+                  0.06752486526966095,
+                  -0.22198958694934845,
+                  0.05004872754216194,
+                  -0.049072615802288055,
+                  0.015816275030374527,
+                  0.01818762719631195,
+                  -0.04536337032914162,
+                  0.13631433248519897,
+                  0.26190847158432007,
+                  -0.12796112895011902,
+                  -0.17150117456912994,
+                  0.008447305299341679,
+                  0.03385421633720398,
+                  -0.06174246594309807,
+                  0.08259911090135574,
+                  0.182587131857872,
+                  0.013178539462387562,
+                  -0.021218931302428246,
+                  -0.07391399890184402,
+                  0.09364568442106247,
+                  0.11990312486886978,
+                  -0.006850535981357098,
+                  -0.1664203703403473,
+                  0.14100781083106995,
+                  -0.08170099556446075,
+                  -0.0006209586863406003,
+                  -0.02217341959476471,
+                  -0.17275021970272064,
+                  -0.16459938883781433,
+                  0.028646979480981827,
+                  0.014781441539525986,
+                  0.07106012105941772,
+                  0.04493728280067444,
+                  0.040445372462272644,
+                  0.061765704303979874,
+                  -0.001483272877521813,
+                  0.0330771841108799,
+                  0.07509907335042953,
+                  0.09929081052541733,
+                  -0.15368430316448212,
+                  0.0410502627491951,
+                  0.08098003268241882,
+                  0.1323862075805664,
+                  -0.008327932097017765,
+                  -0.04811934381723404,
+                  0.031234484165906906,
+                  0.1138598769903183,
+                  -0.0437302403151989,
+                  0.248725026845932,
+                  0.024659473448991776,
+                  -0.13383863866329193,
+                  -0.01707310788333416,
+                  -0.07922744005918503,
+                  -0.05836758017539978,
+                  0.03894994407892227,
+                  -0.045628439635038376,
+                  0.14392761886119843,
+                  -0.09041503816843033,
+                  0.03072185628116131,
+                  -0.04723626375198364,
+                  -0.0014792861184105277,
+                  -0.08399728685617447,
+                  0.127004474401474,
+                  -0.12606500089168549,
+                  -0.08807751536369324,
+                  -0.06381375342607498,
+                  0.056409209966659546,
+                  0.004744261037558317,
+                  -0.007068079896271229,
+                  -0.08333786576986313,
+                  -0.13345608115196228,
+                  0.049485813826322556,
+                  -0.1929478943347931,
+                  -0.005211294163018465,
+                  -0.06823066622018814,
+                  -0.04686467722058296,
+                  -0.037070754915475845,
+                  -0.11820398271083832,
+                  -0.15327998995780945,
+                  0.10979747772216797,
+                  -0.015929758548736572,
+                  0.09902039170265198,
+                  -0.06599075347185135,
+                  0.04546811804175377,
+                  0.06030331924557686,
+                  -0.11032876372337341,
+                  -0.003002113662660122,
+                  -0.04741332307457924,
+                  0.022992612794041634,
+                  0.011717962101101875,
+                  -0.21016241610050201,
+                  -0.0714479610323906
+                ]
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ]
+        ],
+        "_source_evidence": [
+          0.0,
+          0.0
+        ],
+        "_thought_witnesses": [
+          [
+            "ltm",
+            "address-v1",
+            962400579389471755
+          ],
+          [
+            "thought",
+            "address-v1",
+            2255871754082477156
+          ],
+          [
+            "ltm",
+            "address-v1",
+            8207909751213630807
+          ]
+        ]
+      },
+      "work": 465,
+      "state_diff": {
+        "changed": [
+          "._last_thought_comparison",
+          "._last_thought_score_function",
+          "._thought_ordinals",
+          "._walk_audit",
+          "._walk_observations",
+          "._walk_previous",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_by_address",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+          "symbolSpace.subspace.layers.2._ltm_store._native_reference_token",
+          "symbolSpace.subspace.layers.2._ltm_store._native_row_index",
+          "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._texts",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.grammatical_mode",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.refs",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.rel_type",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.stream",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.surprise",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+          "what_memory._address_sources",
+          "what_memory._episode_live",
+          "what_memory._thought_next_id",
+          "what_memory._what_slots"
+        ],
+        "unexpected": [],
+        "changed_old_rows": [
+          76
+        ],
+        "source_row": 76,
+        "added_row_kinds": [
+          "inference",
+          "inference"
+        ]
+      },
+      "trace": [
+        {
+          "kind": "begin",
+          "operation": "",
+          "level": 0,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              3807294595960111183
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                962400579389471755
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3807294595960111183
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -4619546351779013493
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 962400579389471755)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  3807294595960111183
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -4619546351779013493
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -4619546351779013493)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6948296484779622453
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2177916904904401273
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2177916904904401273)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -2553921331843287202
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -2553921331843287202)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6948296484779622453)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', 3807294595960111183)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 1,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -6948296484779622453
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                5949758667496929018
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6948296484779622453
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3249837127116334224
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 5949758667496929018)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6948296484779622453
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -3249837127116334224
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -3249837127116334224)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -360496535194285474
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  2562479061746427782
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', 2562479061746427782)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -8344315687160114806
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -8344315687160114806)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -360496535194285474)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6948296484779622453)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 2,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -360496535194285474
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 2,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -3780258207137205181
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -360496535194285474
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7036425255347909359
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -3780258207137205181)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -360496535194285474
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7036425255347909359
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -7036425255347909359)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -360496535194285474)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 2,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -7036425255347909359
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -360496535194285474
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -7036425255347909359
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -360496535194285474
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -3780258207137205181
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -360496535194285474
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7036425255347909359
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -3780258207137205181)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -360496535194285474
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7036425255347909359
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -7036425255347909359)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -360496535194285474)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -8663140193477537358
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1270934821813057435
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6478302147352025488
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -8663140193477537358)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1270934821813057435
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6478302147352025488
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6478302147352025488)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -1270934821813057435)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -7036425255347909359
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -751482458913656346
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -751482458913656346)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5310191816203625282
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -5310191816203625282)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -7036425255347909359)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 1,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -6478302147352025488
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -6948296484779622453
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -6478302147352025488
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              -6948296484779622453
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                -8663140193477537358
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1270934821813057435
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6478302147352025488
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', -8663140193477537358)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -1270934821813057435
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6478302147352025488
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6478302147352025488)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -1270934821813057435)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -7036425255347909359
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -751482458913656346
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -751482458913656346)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5310191816203625282
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -5310191816203625282)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -7036425255347909359)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                8207909751213630807
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -7452936609433205431
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6827976248348987213
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 8207909751213630807)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -7452936609433205431
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6827976248348987213
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6827976248348987213)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -7452936609433205431)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6478302147352025488
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7199102250757440346
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -7199102250757440346)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5295753526015820188
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -5295753526015820188)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6478302147352025488)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -6827976248348987213
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              3807294595960111183
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "finish",
+          "operation": "finish",
+          "level": 0,
+          "refs": [
+            [
+              "ltm",
+              "address-v1",
+              -6827976248348987213
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "ltm",
+              "address-v1",
+              3807294595960111183
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "ltm",
+                "address-v1",
+                8207909751213630807
+              ],
+              "refs": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -7452936609433205431
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6827976248348987213
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('ltm', 'address-v1', 8207909751213630807)": {
+              "kind": 1,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -7452936609433205431
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -6827976248348987213
+                ]
+              ],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -6827976248348987213)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            },
+            "('ltm', 'address-v1', -7452936609433205431)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "ltm",
+                  "address-v1",
+                  -6478302147352025488
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -7199102250757440346
+                ]
+              ],
+              "constructor": [
+                "lift",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -7199102250757440346)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  18
+                ],
+                [
+                  "ltm",
+                  "address-v1",
+                  -5295753526015820188
+                ]
+              ],
+              "constructor": [
+                "verb",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -5295753526015820188)": {
+              "kind": 0,
+              "operands": [
+                [
+                  "sym",
+                  19
+                ]
+              ],
+              "constructor": [
+                "reference",
+                true
+              ]
+            },
+            "('ltm', 'address-v1', -6478302147352025488)": {
+              "kind": 0,
+              "operands": [],
+              "constructor": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "menus": [
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6948904130318211142
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5178435807030042619
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4501038951427053874
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5178435807030042619
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6444055085866713394
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6444055085866713394
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6444055085866713394
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          7342630987689137431
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6444055085866713394
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4501038951427053874
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5178435807030042619
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -337915414870306403
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5178435807030042619
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6948904130318211142
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          4450795965993500354
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -337915414870306403
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5178435807030042619
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      "env": [
+        0,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -337915414870306403
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          5178435807030042619
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6948904130318211142
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          6948904130318211142
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          1652909074161086337
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -4619546351779013493
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6948296484779622453
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6948296484779622453
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6948296484779622453
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -3249837127116334224
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6948296484779622453
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -360496535194285474
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -360496535194285474
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -360496535194285474
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -7036425255347909359
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -360496535194285474
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6948296484779622453
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -3249837127116334224
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6948296484779622453
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6948296484779622453
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -6478302147352025488
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6948296484779622453
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -4619546351779013493
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -6827976248348987213
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        -6948296484779622453
+      ],
+      "env": [
+        1,
+        "z"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -3249837127116334224
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -6948296484779622453
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -4619546351779013493
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "ltm",
+          "address-v1",
+          -4619546351779013493
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "ltm",
+          "address-v1",
+          3807294595960111183
+        ]
+      ],
+      "chosen": null
+    }
+  ],
+  "source_readings": {
+    "(0, 0)": [
+      [
+        "ltm",
+        "address-v1",
+        -6444055085866713394
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        7342630987689137431
+      ]
+    ],
+    "(1, 0)": [
+      [
+        "ltm",
+        "address-v1",
+        -360496535194285474
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -7036425255347909359
+      ]
+    ],
+    "(0, 1)": [
+      [
+        "ltm",
+        "address-v1",
+        5178435807030042619
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        4501038951427053874
+      ]
+    ],
+    "(1, 1)": [
+      [
+        "ltm",
+        "address-v1",
+        -6948296484779622453
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -3249837127116334224
+      ]
+    ],
+    "(0, 2)": [
+      [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        6948904130318211142
+      ]
+    ],
+    "(1, 2)": [
+      [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -4619546351779013493
+      ]
+    ],
+    "(0, 3)": [
+      [
+        "ltm",
+        "address-v1",
+        2282161376234451330
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -337915414870306403
+      ]
+    ],
+    "(1, 3)": [
+      [
+        "ltm",
+        "address-v1",
+        -1270934821813057435
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -6478302147352025488
+      ]
+    ],
+    "(0, 4)": [
+      [
+        "ltm",
+        "address-v1",
+        658509805642334144
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        4450795965993500354
+      ]
+    ],
+    "(1, 4)": [
+      [
+        "ltm",
+        "address-v1",
+        -7452936609433205431
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        -6827976248348987213
+      ]
+    ],
+    "(0, 5)": [
+      [
+        "ltm",
+        "address-v1",
+        4450795965993500354
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        1652909074161086337
+      ]
+    ],
+    "(1, 5)": [
+      [
+        "ltm",
+        "address-v1",
+        -6827976248348987213
+      ],
+      [
+        "sym",
+        4010033338316264258
+      ],
+      [
+        "ltm",
+        "address-v1",
+        3807294595960111183
+      ]
+    ]
+  }
+}

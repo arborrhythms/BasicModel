@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from ClauseRow import Clause
-from IndependentComponents import EventChart, ColumnDictionary
+from IdentityRows import witness_count
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
@@ -14,20 +14,26 @@ from ReferenceContext import SituationFrame
 
 
 def fixture():
-    width, capacity = 12, 64
-    atoms = torch.eye(width)
-    chart = EventChart(torch.arange(width), atoms, capacity=capacity, content_width=width)
-    store = TernaryTruthStore(width, capacity=512)
-    nouns = ColumnDictionary(2*capacity)
-    owner = SimpleNamespace(nWhat=width, _closed_clause_store=lambda: store)
-    component = SimpleNamespace(owner=owner, capacity=capacity, nouns=nouns, _ready=lambda: chart)
-    def allocate(value):
-        return 100 + len(nouns.ids)
-    component._allocate = allocate
-    resolver = ReferenceClose(component)
-    store.configure_clause_index(concept_point=lambda cid: chart.render(
-        nouns.directions[str(cid)][chart.features]) if cid in nouns.ids else None)
-    return resolver, store, atoms
+    from test_cs_sparse_weights import _cs
+    from IdentityRows import point
+    owner = _cs(nS=512, order=3, dim=12)
+    store = TernaryTruthStore(12, capacity=512)
+    import weakref
+    object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
+    resolver = owner.components.reference_close
+    store.configure_clause_index(concept_point=lambda cid: point(owner, cid))
+    return resolver, store, torch.eye(12)
+
+
+@torch.no_grad()
+def form_exposure(resolver, cue, content):
+    """A native form and an earlier known exposure, with no optimized fit."""
+    from IdentityRows import expose_form
+    owner = resolver.components.owner
+    word = owner.interpret.lookup_word([101], (), form='fixture-cue')
+    row = owner._csw_row_of(word)
+    owner.similarity_codebook.W[row].copy_(cue)
+    expose_form(owner, cue, content)
 
 
 def close(resolver, point, predicate, mode, frames, *, document, sentence, selected=None):
@@ -74,9 +80,9 @@ def test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding(ki
     resolver, store, atoms = fixture()
     noun, black, white, runs, sleeps = atoms[kind], *atoms[4:8]
     # Evidence teaches exclusivity; no color/word identities enter the owner.
-    for _ in range(8):
-        resolver._learn(resolver.coordinates(noun+black), resolver.coordinates(runs))
-        resolver._learn(resolver.coordinates(noun+white), resolver.coordinates(sleeps))
+    for i in range(8):
+        for point, pred, label in ((noun+black, runs, 'a'), (noun+white, sleeps, 'b')):
+            close(resolver, point, pred, 'bind', (), document=('exclusion', label), sentence=i)
     for document, second, distinct in (('mint-pair', 'mint', True), ('one', 'bind', False),
                                       ('revisable', 'bind', True)):
         frames, occurrences = [], []
@@ -102,7 +108,7 @@ def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():
     frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (), document='a', sentence=0)
     before = store.refs.clone()
     _, missing, plan = close(resolver, torch.zeros(12), atoms[6], 'pronoun', (), document='b', sentence=0)
-    assert plan['items'][0]['reference'] is None and len(resolver.components.nouns.ids) == 1
+    assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 1
     assert int(store.refs[store.index_of_row(missing), 0]) == -1
     torch.testing.assert_close(store.refs[:store.index_of_row(missing)], before[:store.index_of_row(missing)])
     assert resolver.last_audit[0]['missing_reason'] == 'no_accessible_individual'
@@ -123,7 +129,7 @@ def test_empty_close_has_no_policy_gradient_or_store_side_effect():
     assert store._semantic_rows == metadata and resolver.last_audit == ()
     torch.testing.assert_close(store.metadata_required, required, rtol=0, atol=0)
     torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
-    assert resolver.total == 0 and not resolver.components.nouns.ids
+    assert not resolver.components.individual_ids and not resolver._participants()
 
 
 def test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction():
@@ -159,7 +165,7 @@ def test_revision_merges_three_accessible_groups_transitively_across_cued_docume
     resolver.revise(resolver.accessible(frames))
     assert len({int(store.refs[store.index_of_row(a), 0]) for a in addresses}) == 1
     assert int(store.refs[store.index_of_row(inaccessible), 0]) == outside
-    assert sum(bool(w) for w in resolver.components.nouns._witnesses.values()) == 2
+    assert sum(bool(witness_count(resolver.components.owner, cid)) for cid in resolver.components.individual_ids) == 2
     for address, point in before.items():
         torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
 
@@ -171,16 +177,17 @@ def test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cue
         frame, _, _ = close(resolver, atoms[sentence], atoms[6+sentence], 'mint', frames,
                             document='credit', sentence=sentence)
         frames.append(frame)
+    form_exposure(resolver, atoms[4], atoms[0])
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=1,
                     reference_request=request)
     plans = [resolver.preview(clause, frames) for _ in range(2)]
-    optimizer = torch.optim.SGD([*resolver.parameters(), *resolver.components.nouns.parameters()], lr=.01)
+    optimizer = torch.optim.SGD(resolver.parameters(), lr=.01)
     for plan in plans:
         optimizer.zero_grad()
         plan['cost'].backward()
         assert resolver.policy.grad[2:].abs().sum() > 0
-        assert resolver.cue_policy.grad.abs().sum() > 0
+        assert resolver.policy.grad[4].abs() > 0
         optimizer.step()
 
 
@@ -214,7 +221,7 @@ def test_deferred_reference_request_survives_kept_trial_detachment(monkeypatch):
     from reading_fixtures import record_reading
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
-    f = SentenceFixture(monkeypatch)
+    f = SentenceFixture(monkeypatch, native_cube=True)
     program = record_reading(f.language, replace(
         f.program(('lift', ('lower', 'cue', 'object'), 'predicate')),
         leaf_orders=torch.tensor([0, 0, 0]), close_references=True))
@@ -236,7 +243,7 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
     from ReferenceContext import binding_spec, result_order
-    f = SentenceFixture(monkeypatch)
+    f = SentenceFixture(monkeypatch, native_cube=True)
     for rule in f.binary:
         mode = rule.determiner_mode
         if mode not in ('mint', 'bind', 'kind'):
@@ -260,20 +267,18 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     # The real conceptual allocator and clause taxonomy accept a first
     # mention immediately, including with statistical learning frozen.
     component = f.cs.components
-    component._chart = EventChart(program.word_rows, program.leaves,
-        capacity=component.capacity, content_width=8)
     resolver = component.reference_close
     f.cs._online_learning_frozen = True
     plan = resolver.preview(clause, ())
-    before = component.nouns.ids
+    before = component.individual_ids
     kept = resolver.prepare(clause, plan)
-    assert component.nouns.ids == before
+    assert component.individual_ids == before
     written = {}
     row = f.store.write_clause(kept, document_key='native', sentence_index=0, written_rows=written)
     resolver.commit(plan, row, written, document='native', position=0, training=False)
     identity = resolver.last_audit[0]['reference']
-    assert identity in component.nouns.ids and f.cs._concept_source_order(identity) == 1
-    assert component.nouns.witness_count(identity) == 1 and not hasattr(component.nouns, 'observe')
+    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1
+    assert witness_count(f.cs, identity) == 1 and not hasattr(component, 'nouns')
     occurrence = resolver.last_audit[0]['occurrence']
     assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
     restored = TernaryTruthStore(8, capacity=64)

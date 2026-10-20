@@ -1,0 +1,196 @@
+..FFFs....FFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+____________ test_declared_not_is_a_thought_act_not_an_observation _____________
+test/test_negative_expectation.py:62: in test_declared_not_is_a_thought_act_not_an_observation
+    result = model.run_selected_thought(request,work_budget=32)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5968: in run_selected_thought
+    commit(self, result, row=row)
+bin/ThoughtStream.py:344: in commit
+    index = write(model, result.meaning, row=row)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtStream.py:265: in write
+    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9556: in append_meaning
+    self.when[n] = stamp(self)
+                   ^^^^^^^^^^^
+bin/RowTime.py:16: in stamp
+    tick = int(store.model_clock) if source is None else int(source())
+                                                             ^^^^^^^^
+bin/Models.py:13269: in present
+    return int(self.when_time)
+               ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'when_time'
+_____ test_expectation_updates_predictors_outside_the_departure_comparison _____
+test/test_negative_expectation.py:91: in test_expectation_updates_predictors_outside_the_departure_comparison
+    test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch)
+test/test_item6_2_thinking.py:301: in test_expectation_trains_predictor_without_moving_departure_chooser
+    run(model,goal,work_budget=64)
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5968: in run_selected_thought
+    commit(self, result, row=row)
+bin/ThoughtStream.py:344: in commit
+    index = write(model, result.meaning, row=row)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtStream.py:265: in write
+    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9556: in append_meaning
+    self.when[n] = stamp(self)
+                   ^^^^^^^^^^^
+bin/RowTime.py:16: in stamp
+    tick = int(store.model_clock) if source is None else int(source())
+                                                             ^^^^^^^^
+bin/Models.py:13269: in present
+    return int(self.when_time)
+               ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'when_time'
+_______ test_metadata_comes_from_the_preceding_occurrence_not_the_target _______
+test/test_negative_expectation.py:99: in test_metadata_comes_from_the_preceding_occurrence_not_the_target
+    observe(discourse, prior.roles)
+test/test_sentence_expectation.py:29: in observe
+    model.predict_and_observe_stm_end_state(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10811: in predict_and_observe_stm_end_state
+    self.expect_next_meaning(b)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+_______ test_disabling_expectation_erases_pending_credit_and_starts_cold _______
+test/test_negative_expectation.py:201: in test_disabling_expectation_erases_pending_credit_and_starts_cold
+    discourse.expect_next_meaning(record=True)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+____________ test_open_question_and_nested_what_spare_the_same_role ____________
+test/test_negative_expectation.py:216: in test_open_question_and_nested_what_spare_the_same_role
+    observe(discourse, meaning.roles)
+test/test_sentence_expectation.py:29: in observe
+    model.predict_and_observe_stm_end_state(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10811: in predict_and_observe_stm_end_state
+    self.expect_next_meaning(b)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+_________ test_anticipation_ignores_incoming_staging_and_other_streams _________
+test/test_negative_expectation.py:238: in test_anticipation_ignores_incoming_staging_and_other_streams
+    before = discourse.expect_next_meaning(record=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+____ test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1] _____
+test/test_negative_expectation.py:254: in test_nested_object_mask_reads_a_later_thought_on_the_shared_budget
+    observe(discourse, meaning.roles)
+test/test_sentence_expectation.py:29: in observe
+    model.predict_and_observe_stm_end_state(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10811: in predict_and_observe_stm_end_state
+    self.expect_next_meaning(b)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+____ test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64] ____
+test/test_negative_expectation.py:254: in test_nested_object_mask_reads_a_later_thought_on_the_shared_budget
+    observe(discourse, meaning.roles)
+test/test_sentence_expectation.py:29: in observe
+    model.predict_and_observe_stm_end_state(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10811: in predict_and_observe_stm_end_state
+    self.expect_next_meaning(b)
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+____ test_generate_sentence_uses_positive_prediction_only_as_generate_seed _____
+test/test_negative_expectation.py:280: in test_generate_sentence_uses_positive_prediction_only_as_generate_seed
+    prediction = discourse.expect_next_meaning()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10699: in expect_next_meaning
+    chain, lanes, identities, occurrences = self._read_context(b)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10942: in _read_context
+    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)
+                              ^^^^^^^^^^^^^^^^
+E   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'
+=============================== warnings summary ===============================
+test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+FAILED test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison
+FAILED test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target
+FAILED test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold
+FAILED test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role
+FAILED test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams
+FAILED test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]
+FAILED test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]
+FAILED test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed
+9 failed, 6 passed, 1 skipped, 1 warning in 5.08s

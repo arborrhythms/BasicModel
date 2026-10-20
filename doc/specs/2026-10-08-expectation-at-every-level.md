@@ -1,7 +1,7 @@
 # Item 4 (formerly 4.5): expectation at every level — a gain field, surprise as the signal
 
 *Draft rev 5, 2026-10-19 (Claude, from Alec's direction on 2026-10-08/09 and
-his five decisions on 2026-10-19). Item 4 is now being implemented on `main`;
+his five decisions on 2026-10-19). Item 4 closed as a mechanism on 2026-10-20 (gates at item 0);
 [the execution record](../plans/2026-10-19-item4-start.md) distinguishes
 implementation, mechanism checks and open learning gates. §8 records the
 decisions and the questions still open; §7's toys run before the hand-off
@@ -191,7 +191,7 @@ candidate in the working tree built from this revision
 `Expectation.py` (the gain carrier of §4.1, the percept moments of row P,
 one shared activation predictor for S/R/D, the `φ`-mix proposal law),
 `SymbolField.py`, per-level gains and the new parameters in `model.xsd`.
-Codex's record states item 4 is not complete; Claude's review is in the
+Item 4 has since closed as a mechanism (step 0 round 2, 2026-10-20); Claude's reviews are in the
 execution record's last section and in §8 below.
 
 *Rev 5 note (verified 2026-10-19 at `9207f5e`):* `word_distribution` is
@@ -341,7 +341,7 @@ With no expectation of perceptual *content* (row P predicts a mean and a
 variance, never a percept, rev 5), a hallucination cannot be a percept
 predicted into existence. It is a **concept conceived without perceptual
 evidence**: the estimate entering comprehension with the sign it has in
-production (§2.6.3, reafference — positive in `<generate>`, negative in
+production (§2.6.3, reafference — positive in `<generate>`; in comprehension, since rev 5, not a negative sign but the gain: the prime is positive into selection and what was predicted is attenuated; the old wording "negative in
 comprehension). The two directions already exist; hallucination is the
 production sign where the comprehension sign belongs, or an estimate whose
 `for` lane is filled where attention found nothing. Imagery and dreaming are
@@ -522,10 +522,13 @@ Alec: "if we see a cat, and the cat is fully expected, then it will be as
 if no cat is seen unless higher-order awareness has access to the
 expectation." It has it in three ways, the third an amendment:
 
-1. **The store.** The estimate row is written before the observation row
-   and linked both ways, and the closing keeps `o`
-   ([ExpectationRetention](../ExpectationRetention.md)): pointer and tag; the
-   residual is a change of origin, not a loss.
+1. **The store, and the predictor.** The closing keeps `o`; the estimate
+   is retained by the predictor as its last estimate per address (the row
+   amendment of 2026-10-20 moves the estimate keys out of the row:
+   [two truths §1, "The row, field by field"](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided));
+   the pair of estimate and observation is still readable
+   ([ExpectationRetention](../ExpectationRetention.md)), so the residual is
+   a change of origin, not a loss.
 2. **The primed field.** The expected activation is written positively into
    the field the chooser and mask read (§4.7), so the next level receives
    the cat twice: as the prime, top-down and present before the cat
@@ -640,7 +643,7 @@ the age-appropriate order.
 
 ### 5.4 The corpus (decided, Alec, 2026-10-08: "a bit of this with 4.5, and a bit before the final train")
 
-- **In 4.5:** a small graded set built for the gate — the standing fixtures'
+- **In item 4 (then 4.5):** a small graded set built for the gate — the standing fixtures'
   vocabulary arranged so each item requires one more round than the items
   before it, read in that order and also shuffled. The gate is the difference
   (§9). This is the Viterbi principle measured in the model, not only the toy.

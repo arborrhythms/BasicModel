@@ -119,6 +119,7 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
     packed.set_symbol_bank(torch.eye(packed.concept_dim))
     streaming = copy.deepcopy(packed)
     packed._ltm_store = f.store if consolidated else None
+    streaming._ltm_store = packed._ltm_store
     from reading_fixtures import commit_reading
     costs = []
     for sid, entry in enumerate(entries):
@@ -130,6 +131,9 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
             layout='infix', role_masks=[meanings[t].role_mask],
             sentence_kinds=['idea'], documents=['a'],
             evidence=[finish_reading(f.language, entries[t], registry=f.registry).evidence])
+        if consolidated:
+            rows = [i for i in range(len(f.store)) if f.store.row(i)['kind'] == 'observation']
+            streaming.bind_observation_occurrence(0, f.store.occurrence_of(rows[t]))
     assert streaming._inter_loss_count == 1
     torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
     torch.testing.assert_close(packed.expect_next_meaning().roles,
@@ -145,7 +149,7 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
         estimate_index = kinds.index('estimate')
         assert kinds[estimate_index+1] == 'observation'
         assert packed._ltm_store.expectation_pair(estimate_index)['source_occurrences'] == (packed._ltm_store.row(0)['occurrence'],)
-        # The predictor sees the pre-fusion roles; the row keeps its point.
+        # Future context reads the committed fused point through its address.
         torch.testing.assert_close(packed._ltm_store.meaning_of(0).roles[0], entries[0].end_state[0])
         assert packed._ltm_store.meaning_of(0).role_mask.tolist() == [True, False, False]
 

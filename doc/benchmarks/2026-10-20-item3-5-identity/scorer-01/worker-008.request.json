@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-008.recycle.json"
+}

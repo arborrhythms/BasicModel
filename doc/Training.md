@@ -1,5 +1,11 @@
 # Training
 
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+
+
 The current cross-architecture reference is
 [Gradient flow across the architecture](GradientFlow.md): what each objective
 trains, where gradients stop, and how optimizer ownership is audited.
@@ -650,7 +656,7 @@ reconstructs through its understanding. Grammar-free configurations retain
 perceptual reconstruction. A sentence with no admitted surface candidate has
 no reconstruction term and is counted. Gradient projection and its helpers
 are retired. Reconstruction precedence applies in trial selection: explore
-must have strictly lower reconstruction; ties keep greedy. Neither answer
+must have strictly lower reconstruction; ties keep greedy *(superseded 2026-10-19: keep and credit both read `R + A` — expectation spec rev 5 §5.2, §8)*. Neither answer
 nor expectation is compared. The answer reader trains only on kept trial
 rows; a wholly discarded trial supplies no reader step.
 

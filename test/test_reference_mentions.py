@@ -7,7 +7,7 @@ from ClauseRow import Clause
 from Layers import Error
 from Meaning import ConceptualMeaning
 from ThoughtReferences import bindings, question
-from test_reference_close import fixture, close
+from test_reference_close import fixture, close, form_exposure
 
 
 def context():
@@ -18,6 +18,7 @@ def context():
         frame, _, _ = close(resolver, atoms[index], atoms[index+6], 'mint', frames,
                             document='mentions', sentence=index)
         frames.append(frame)
+    form_exposure(resolver, atoms[4], atoms[0])
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
                     order=1, reference_request=request)
@@ -34,8 +35,8 @@ def test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only
     torch.testing.assert_close(loss, expected)
     loss.backward()
     assert resolver.policy.grad[0] != 0
-    assert resolver.policy.grad[1:].tolist() == [0., 0., 0., 0.]
-    assert bool(resolver.cue_policy.grad.ne(0).any())
+    assert resolver.policy.grad[[2,3,5,6,7]].tolist() == [0.] * 5
+    assert bool(resolver.policy.grad[4].ne(0))
     assert resolver.mention_loss(item, {-999}) is None
     all_correct = resolver.mention_loss(item, set(item['candidates']))
     assert float(all_correct) == 0.
@@ -82,7 +83,7 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
     loss = errors.total(objective='expectation')
     assert loss is not None and loss.requires_grad
     loss.backward()
-    assert bool(resolver.cue_policy.grad.ne(0).any())
+    assert bool(resolver.policy.grad[4].ne(0))
     assert resolver.policy.grad[0] != 0
     # Filling it twice cannot produce duplicate credit.
     assert not store.fill_slot(row, 0, correct, atoms[1])

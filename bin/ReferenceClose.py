@@ -1,16 +1,16 @@
 """Individual membership at a kept close, with access-bounded revision.
 
 Operations decide mint versus bind. This owner decides only *which* accessible
-individual explains a binding. Its coordinates are the existing event chart
-and A columns; it has no vocabulary, POS list, kind inventory or text parser.
+individual explains a binding. Its inputs are native concept rows and accessible LTM occurrences.
+It has no identity dictionary, event chart or text parser.
 Trial plans are read-only. Occurrence points are immutable under revision.
 """
 from dataclasses import replace
-import math
+import hashlib
 
 import torch
 from torch import nn
-from torch.nn import functional as F
+from IdentityRows import meet_ratios
 
 
 def constituents(clause):
@@ -32,14 +32,11 @@ class ReferenceClose(nn.Module):
     def __init__(self, components):
         super().__init__()
         object.__setattr__(self, 'components', components)
-        # Membership and prediction start usable; salience and surface cues
-        # start neutral and are credited by the same closing evidence.
-        self.policy = nn.Parameter(torch.tensor([1., 1., 0., 0., 0.]))
-        derived = getattr(getattr(components.owner, 'similarity_codebook', None), 'mereology', None)
-        form_width = int(components.owner.nWhat) if derived is None else int(derived.percept_event_width)
-        self.cue_policy = nn.Parameter(torch.zeros(form_width, 3))
-        self.seen, self.cooccurrence, self.associations, self.predicates = {}, {}, {}, {}
-        self.total = 0.
+        # G0: added defining parts enlarge the native code support. Request
+        # coverage therefore ties underspecified re-mentions at initialization;
+        # candidate coverage remains a separately trainable content feature.
+        self.policy = nn.Parameter(torch.tensor([0., 1., 1., 1., 0., 0., 0., 0.]))
+        self._participant_cache = None
         self.last_audit = ()
 
     @property
@@ -54,109 +51,123 @@ class ReferenceClose(nn.Module):
         return reference
 
     def coordinates(self, point):
-        chart = self.components._ready()
-        if point is None:
-            return chart.basis.new_zeros(2 * self.components.capacity)
-        return chart.expand(chart.project(point.detach()))
+        from IdentityRows import coordinates
+        return coordinates(self.components.owner, point)
 
-    def _evidence(self, value):
-        # A's native coordinates are correlations with the event chart. Read
-        # coefficients through that same chart's Gram solve, so crosstalk is
-        # not treated as an observed property. This creates no second learned
-        # dictionary and leaves the sparse objective's coordinate system intact.
-        chart = self.components._ready()
-        gram = getattr(chart, '_reference_gram', None)
-        if gram is None:
-            gram = chart.basis @ chart.basis.T
-            chart._reference_gram = gram
-            chart._reference_gram_inverse = torch.linalg.pinv(gram.float()).to(gram)
-        count = len(chart.rows)
-        if not count:
-            return torch.zeros_like(value)
-        projected = value.index_select(-1, chart.features).reshape(2, count)
-        weights = projected @ chart._reference_gram_inverse.to(value)
-        weights = weights / weights.abs().amax().clamp_min(1e-8)
-        return chart.expand(weights.flatten().clamp(0, 1))
+    def predicate_coordinates(self, point):
+        from IdentityRows import coordinates
+        # A predicate may carry stance. It is an exact cache key, never a
+        # region in the identity meet or a column of a second scorer.
+        return coordinates(self.components.owner, point, region=False)
 
-    def _coordinates(self, evidence):
-        chart = self.components._ready()
-        count = len(chart.rows)
-        if not count:
-            return torch.zeros_like(evidence)
-        weights = evidence.index_select(-1, chart.features).reshape(2, count)
-        gram = chart.basis @ chart.basis.T
-        return chart.expand((weights @ gram.to(evidence)).flatten())
+    @staticmethod
+    def absorb(signature, content, predicate=None):
+        return torch.maximum(signature, content)
 
-    def absorb(self, signature, content, predicate):
-        evidence = torch.maximum(self._evidence(signature), self._evidence(content))
-        return self._coordinates((evidence + .5 * self._evidence(predicate)).clamp_max(1))
-
-    def contradicts(self, left, right):
-        return any(self.seen.get(a, 0) >= 8 and self.seen.get(b, 0) >= 8 and
-            self.cooccurrence.get((min(a, b), max(a, b)), 0) == 0
-            for a in self.support(left) for b in self.support(right))
-
-    def support(self, value):
-        value = self._evidence(value)
+    @staticmethod
+    def support(value):
         return {int(i): float(value[i]) for i in (value >= .3).nonzero().flatten()}
 
-    def explanation(self, content, signature):
-        present = self.support(content)
-        if not present:
-            return signature.sum() * 0
-        evidence = self._evidence(signature)
-        values = []
-        for atom, strength in present.items():
-            excluded = [other for other in self.seen
-                if self.seen.get(atom, 0) >= 8 and self.seen[other] >= 8
-                and self.cooccurrence.get((min(atom, other), max(atom, other)), 0) == 0]
-            contrary = evidence[excluded].amax() if excluded else evidence.sum() * 0
-            values.append(strength * (evidence[atom] - contrary))
-        return torch.stack(values).sum() / sum(present.values())
+    def contradicts(self, left, right):
+        """Read retained evidence for exclusion; no learned count table."""
+        from ThoughtReferences import bindings
+        a, b = set(self.support(left)), set(self.support(right))
+        if not a or not b or a <= b or b <= a:
+            return False
+        observed = []
+        for row in range(len(self.store)):
+            if '_individual_context' in bindings(self.store.meaning_of(row)):
+                point = self.store.point_of_row(int(self.store.row_ids[row]))
+                if point is not None:
+                    observed.append((set(self.support(self.coordinates(point))),
+                                     int(self.store.witness_count[row])))
+        return any(sum(n for members,n in observed if x in members) >= 8
+                   and sum(n for members,n in observed if y in members) >= 8
+                   and not any(x in members and y in members for members,_ in observed)
+                   for x in a-b for y in b-a)
 
-    def prediction(self, signature, predicate):
-        atoms, heads = self.support(signature), self.support(predicate)
-        result = self.explanation(predicate, signature)
-        if not heads or not atoms:
-            return result
-        vocabulary = max(1, len(self.predicates))
-        for head, strength in heads.items():
-            base = (self.predicates.get(head, 0.) + 1.) / (self.total + vocabulary)
-            for atom, weight in atoms.items():
-                count = sum(self.associations.get((atom, head, role), 0.) for role in range(3))
-                if count:
-                    probability = (count + 10 * base) / (self.seen.get(atom, 0.) + 10)
-                    result = result + strength * weight * math.log(max(probability / base, 1e-8)) / sum(atoms.values())
-        return result
+    @staticmethod
+    def _predicate_key(point):
+        return hashlib.sha256(point.detach().float().cpu().contiguous().numpy().tobytes()).digest()
+
+    def _participants(self):
+        """Rebuildable address cache over the retained identity columns."""
+        from ThoughtReferences import bindings
+        store = self.store
+        if store is None:
+            return {}
+        version = (id(store),len(store),store.refs._version,store.slots._version,
+                   store.semantic_fingerprint._version,store.witness_count._version)
+        if self._participant_cache is None or self._participant_cache[0] != version:
+            rows = {}
+            for row in range(len(store)):
+                context = bindings(store.meaning_of(row)).get('_individual_context')
+                if context is None:
+                    continue
+                context = dict(context)
+                predicate = self._predicate(context)
+                if bool(predicate.any()) and int(store.refs[row,0]) not in (-1,0):
+                    rows.setdefault(self._predicate_key(predicate),[]).append((row,context['role']))
+            self._participant_cache = version, {key:tuple(value) for key,value in rows.items()}
+        return self._participant_cache[1]
+
+    def prediction(self, identity, predicate, role):
+        if isinstance(identity, tuple) and identity[:1] == ('new',):
+            return predicate.sum()*0
+        rows = [(row,r) for row,r in self._participants().get(self._predicate_key(predicate),())
+                if r == role]
+        total = sum(int(self.store.witness_count[row]) for row,_ in rows)
+        if not total:
+            return predicate.sum()*0
+        target = identity[-1] if isinstance(identity,tuple) else identity
+        count = sum(int(self.store.witness_count[row]) for row,_ in rows
+                    if int(self.store.refs[row,0]) == target)
+        return predicate.new_tensor(count/total)
 
     def expected_roles(self, predicate):
-        heads = self.support(self.coordinates(predicate))
-        return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in
-            self.associations.items() if r == role and head in heads) >= self.components.verbs.recurrence)
+        rows = self._participants().get(self._predicate_key(self.predicate_coordinates(predicate)),())
+        return tuple(role for role in (0,2) if sum(int(self.store.witness_count[row])
+            for row,r in rows if r == role) >= self.components.verbs.recurrence)
+
+    def prime(self, signature, stream):
+        if stream is None:
+            return signature.sum()*0
+        model = getattr(self.components.owner, '_model', None)
+        get_reducer = getattr(model, '_stm_reducer', None)
+        reducer = None if get_reducer is None else get_reducer()
+        value = getattr(reducer, '_expectation_prime', None)
+        if value is None or stream is None:
+            return signature.sum()*0
+        value = value[int(stream)].detach().to(signature).reshape(-1)
+        if value.numel() != signature.numel():
+            raise ValueError('expectation prime must use native concept coordinates')
+        return (signature*value).sum()/signature.sum().clamp_min(1e-12)
 
     def accessible(self, frames):
-        """Read only supplied STM/cued frames and their owned NP occurrences."""
-        store = self.store
-        records = {}
+        """Read only supplied recent/cued row addresses and their NP rows."""
+        from ThoughtReferences import bindings, open_slots
+        store, records = self.store, {}
         if store is None:
             return records
         for frame in frames:
             row = store.index_of_row(frame.row_id)
             if row is None:
                 continue
-            from ThoughtReferences import bindings
             for reference in self.occurrences(row):
                 address = self.address(reference)
-                if address is None:
-                    continue
-                index = store.index_of_row(address)
+                index = None if address is None else store.index_of_row(address)
                 if index is None or int(store.order[index]) != 1:
                     continue
-                data = bindings(store.meaning_of(index)).get('_individual_context')
-                identity = int(store.refs[index, 0])
-                if data is not None and identity in self.components.nouns.ids:
-                    records[int(address)] = (index, dict(data))
-        # Access is bounded by the frames, not a scan through all A columns.
+                meaning = store.meaning_of(index)
+                context = bindings(meaning).get('_individual_context')
+                point = store.point_of_row(address)
+                if point is None or (('referent',0) in open_slots(meaning)
+                                     and not bool(point.any())):
+                    continue
+                if context is None:
+                    context = dict(role=0,position=(int(store.sentence_index[index]),index),
+                                   predicate=None,mint=False,initial=None)
+                records[int(address)] = index,dict(context)
         return records
 
     def occurrences(self, row):
@@ -167,60 +178,89 @@ class ReferenceClose(nn.Module):
         data = bindings(meaning)
         owned = data.get('_individual_occurrences', ())
         return ((*owned, self.store.occurrence_of(row))
-                if '_individual_context' in data else owned)
+                if '_individual_context' in data or int(self.store.order[row]) == 1 else owned)
 
-    def logits(self, features, cue, *, supervised=False):
-        """One factored score for selection and mention-ranking credit.
-
-        Supervision updates the form and content terms. Prediction, recency
-        and roles still condition the distribution, with held weights.
-        """
+    def logits(self, features, cue=None, *, supervised=False):
+        """One factored score; known antecedents train content and form."""
         policy = self.policy.clone()
         if supervised:
-            policy = torch.cat((policy[:1], policy[1:].detach()))
-        content = features[:, 0] * policy[0]
-        expectation = features[:, 1] * policy[1]
-        salience = features[:, 2:] @ policy[2:]
-        form = (features[:, 2:] * (cue @ self.cue_policy.clone())).sum(-1)
-        return content + expectation + salience + form
+            train = torch.tensor([True,True,False,False,True,False,False,False],device=policy.device)
+            policy = torch.where(train,policy,policy.detach())
+        return features @ policy
 
     def cue(self, value):
-        return (self.cue_policy.new_zeros(self.cue_policy.shape[0]) if value is None else
-                F.normalize(value[:self.cue_policy.shape[0]].detach().to(self.policy), dim=0))
+        return self.coordinates(value)
 
     def individuals(self, records):
-        """The accessible occurrences' current columns, shared by both faces."""
+        from IdentityRows import point
         result = {}
-        for _address, (row, context) in records.items():
-            identity = int(self.store.refs[row, 0])
+        for address,(row,context) in records.items():
+            identity = int(self.store.refs[row,0])
+            if identity in self.components.individual_ids:
+                content = point(self.components.owner,identity)
+            else:
+                identity = self.store.occurrence_of(row)
+                content = self.store.point_of_row(address)
             position = context['position']
-            result[identity] = dict(signature=self.components.nouns.directions[str(identity)],
-                role=context['role'], position=position if isinstance(position, tuple) else (position, -1))
-        return result
+            result[identity] = dict(content=self.coordinates(content),value=content.detach(),role=context['role'],
+                position=position if isinstance(position,tuple) else (position,-1))
+        return dict(tuple(result.items())[-self.components.source_capacity:])
 
-    def score(self, content, predicate, cue, role, individuals):
-        """Score held individuals in the event chart's native coordinates."""
+    def score(self, content, predicate, cue, role, individuals, *, stream=None):
+        """Meet content and form, native expectation, then recency and roles."""
+        from IdentityRows import form_region
+        region = form_region(self.components.owner,cue)
         choices, features = [], []
-        for identity, candidate in individuals.items():
-            signature = candidate['signature'].to(content)
+        for identity,candidate in individuals.items():
+            value = candidate['content'].to(content)
+            candidate_coverage,request_coverage = meet_ratios(content,value)
+            form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
-            features.append(torch.stack((self.explanation(content, signature),
-                self.prediction(signature, predicate),
-                content.new_tensor(-recency / max(1, len(individuals))),
-                content.new_tensor(candidate['role'] / 2), content.new_tensor(role / 2))))
+            features.append(torch.stack((candidate_coverage,request_coverage,
+                self.prediction(identity,predicate,role),self.prime(value,stream),form,
+                content.new_tensor(-recency/max(1,len(individuals))),
+                content.new_tensor(candidate['role']/2),content.new_tensor(role/2))))
             choices.append(identity)
-        phi = torch.stack(features).to(self.policy) if features else self.policy.new_empty((0, 5))
-        return tuple(choices), phi, self.logits(phi, cue)
+        phi = torch.stack(features).to(self.policy) if features else self.policy.new_empty((0,8))
+        return tuple(choices),phi,self.logits(phi)
 
     @staticmethod
     def choice_cost(features, logits, selected):
-        credit = 6 * features[:, 0] + features[:, 1]
+        credit = 6*features[:,1]+features[:,2]+features[:,3]
         target = credit.detach().softmax(0)
-        return ((1 - features[selected, 0]).clamp_min(0) - features[selected, 1]
-                - (target * logits.log_softmax(0)).sum())
+        return ((1-features[selected,1]).clamp_min(0)-features[selected,2]
+                -(target*logits.log_softmax(0)).sum())
 
-    def bind_site(self, meaning, role, frames):
-        """The thought face reads the same held columns as the closing face."""
+    def acyclic_candidates(self, individuals, occurrences):
+        """An occurrence cannot be filled by itself or a containing row.
+
+        Read only the store's typed role edges for this structural check.
+        Binding/scoping metadata are retention roots, not constituent edges;
+        native concept identities cannot create an occurrence cycle.
+        """
+        store = self.store
+        targets = {ref for ref in occurrences if ref in store._index_occurrences}
+        if not targets:
+            return individuals
+        eligible = {}
+        for identity, candidate in individuals.items():
+            pending, seen = [identity], set()
+            while pending:
+                reference = pending.pop()
+                if reference in targets:
+                    break
+                if reference in seen or reference not in store._index_occurrences:
+                    continue
+                seen.add(reference)
+                context = store._semantic_rows.get(reference[2], {})
+                pending.extend(ref for _, ref in store._role_occurrence_references(
+                    context.get('role_refs', ())))
+            else:
+                eligible[identity] = candidate
+        return eligible
+
+    def bind_site(self, meaning, role, frames, *, stream=None):
+        """The thought and closing faces read the same native candidates."""
         from ThoughtReferences import bindings, fill, open_slots
         if ('referent', role) not in open_slots(meaning):
             raise ValueError('bind requires one open referent site')
@@ -228,29 +268,30 @@ class ReferenceClose(nn.Module):
         content = self.coordinates(meaning.roles[role] if site.get('content') is None else
                                    meaning.roles.new_tensor(site['content']))
         predicate = site.get('predicate')
-        predicate = self.coordinates(meaning.roles[1] if predicate is None else
+        predicate = self.predicate_coordinates(meaning.roles[1] if predicate is None else
                                     meaning.roles.new_tensor(predicate))
         cue = self.cue(None if site.get('cue') is None else meaning.roles.new_tensor(site['cue']))
         records = self.accessible(frames)
-        allowed = {identity for identity, _ in self.components.candidate_frames(frames)}
-        individuals = {identity: value for identity, value in self.individuals(records).items()
-                       if identity in allowed}
+        query_occurrence = bindings(meaning).get('_query_occurrence')
+        binding_occurrence = site.get('occurrence', query_occurrence)
+        individuals = self.acyclic_candidates(self.individuals(records),
+                                             (binding_occurrence, query_occurrence))
         choices, features, logits = self.score(content, predicate, cue,
-            site.get('role', role), individuals)
+            site.get('role', role), individuals, stream=stream)
         base = dict(binding_role=role, reverse_leaves=tuple(site.get('leaves', ())),
                     binding_candidates=choices, witnesses=(),
-                    binding_occurrence=site.get('occurrence',
-                        bindings(meaning).get('_query_occurrence')))
+                    binding_occurrence=binding_occurrence)
         if not choices:
             return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
                         reference_cost=1., incomplete=('no_accessible_individual',))
         index = int(logits.detach().argmax())
         identity = choices[index]
         probability = float(logits.softmax(0)[index].detach())
-        point = self.components.column_point(identity).detach().to(meaning.roles)
+        point = individuals[identity]['value'].detach().to(meaning.roles)
         witnesses = tuple(self.store.occurrence_of(row) for row, _ in records.values()
-                          if int(self.store.refs[row, 0]) == identity)
-        evidence = dict(base, reference=('sym', identity), binding_value=point,
+                          if (self.store.occurrence_of(row) == identity
+                              or int(self.store.refs[row, 0]) == identity))
+        evidence = dict(base, reference=identity if isinstance(identity,tuple) else ('sym', identity), binding_value=point,
             witnesses=witnesses,
             support_true=probability, support_false=1-probability,
             reference_cost=float(self.choice_cost(features, logits, index).detach()),
@@ -280,18 +321,17 @@ class ReferenceClose(nn.Module):
             original = store.meaning_of(row)
             if '_individual_context' not in bindings(original):
                 continue
-            identity = int(reference[1])
-            updated = fill(original, dict(reference=reference, binding_value=original.roles[0],
-                support_true=value.support_true, support_false=value.support_false),
-                witnesses=evidence.get('witnesses', ()), operation='bind', slots=(('referent', 0),))
-            store.upsert_resolved(row, updated)
-            store.refs[row, 0] = identity
-            address = int(store.row_ids[row])
-            dictionary = self.components.nouns
-            for held in dictionary._witnesses.values():
-                held.difference_update(witness for witness in tuple(held) if witness[0] == address)
-            dictionary._witnesses[identity].add((address, int(store.witness_count[row])))
+            identity = int(reference[-1])
+            previous = int(store.refs[row,0])
+            updated = fill(original, dict(reference=reference,binding_value=original.roles[0],
+                support_true=value.support_true,support_false=value.support_false),
+                witnesses=evidence.get('witnesses',()),operation='bind',slots=(('referent',0),))
+            store.upsert_resolved(row,updated)
+            store.refs[row,0] = identity
             store._update_semantic_fingerprint(row)
+            from IdentityRows import refold
+            for changed in {previous,identity}.intersection(self.components.individual_ids):
+                refold(self.components.owner,changed)
 
     def train_thought(self, result, errors):
         """Only the kept episode trains the resolver's existing evidence cost."""
@@ -335,8 +375,12 @@ class ReferenceClose(nn.Module):
         roles = {role for kind, role in (*data.get('_open_references', ()),
                  *data.get('_bound_roles', ())) if kind == 'referent'}
         correct = set(self.components.owner.word_concepts(word))
-        losses = [self.mention_loss(item, correct) for item in plan['items']
-                  if item['role'] in roles and item['features'] is not None]
+        losses = []
+        for item in plan['items']:
+            if item['role'] not in roles or item['features'] is None:
+                continue
+            item['correct'] = correct.intersection(item['candidates'])
+            losses.append(self.mention_loss(item, correct))
         losses = [value for value in losses if value is not None]
         return torch.stack(losses).sum() if losses else None
 
@@ -355,11 +399,16 @@ class ReferenceClose(nn.Module):
                     loss = self.mention_loss(dict(record), correct)
                     if loss is not None:
                         losses.append(loss)
+                        from IdentityRows import expose_form, point
+                        value = point(self.components.owner, reference)
+                        if value is not None:
+                            expose_form(self.components.owner,
+                                self.policy.new_tensor(dict(record)['cue']), value)
             if losses:
                 errors.add('expectation.reference_mentions', torch.stack(losses).sum(),
                            category='expectation', weight=self.components.weight)
 
-    def preview(self, clause, frames, *, document=None, position=None):
+    def preview(self, clause, frames, *, document=None, position=None, stream=None):
         """One decision per constituent; no allocation, writes or statistics."""
         if position is not None and frames:
             from ReferenceContext import exclude_replaced_occurrences
@@ -374,9 +423,9 @@ class ReferenceClose(nn.Module):
             request = node.reference_request
             mode, role = request['mode'], request.get('role', 0)
             content = self.coordinates(node.point)
-            predicate = self.coordinates(request.get('predicate'))
+            predicate = self.predicate_coordinates(request.get('predicate'))
             cue = self.cue(request.get('cue'))
-            choices, phi, logits = self.score(content, predicate, cue, role, individuals)
+            choices, phi, logits = self.score(content, predicate, cue, role, individuals, stream=stream)
             selected, probabilities = None, None
             if mode == 'mint':
                 # A trial-local handle is not a durable identity. It allows
@@ -384,12 +433,12 @@ class ReferenceClose(nn.Module):
                 selected = ('new', len(items))
                 signature = self.absorb(torch.zeros_like(content), content, predicate)
                 latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
-                individuals[selected] = dict(signature=signature, role=role, position=(latest[0]+1, len(items)))
+                individuals[selected] = dict(content=signature, role=role, position=(latest[0]+1, len(items)))
                 # A redundant mint has a cost; contradictory content does
                 # not. This credits the operation chooser without assigning
                 # a determiner word to either operation.
                 if choices:
-                    cost = cost + phi[:, 0].amax().clamp(0, 1)
+                    cost = cost + phi[:, 1].amax().clamp(0, 1)
             elif choices:
                 # Both trial graphs precede either optimizer step. Own the
                 # parameter values used by this graph, as the shared chooser
@@ -410,21 +459,8 @@ class ReferenceClose(nn.Module):
 
     @torch.no_grad()
     def _mint(self, signature):
-        dictionary = self.components.nouns
-        identity = self.components._allocate(signature)
-        if identity is None:
-            return None
-        key = str(identity)
-        dictionary.directions[key] = nn.Parameter(signature.detach().clone())
-        dictionary.relevance[key] = nn.Parameter(signature.new_tensor(1.))
-        dictionary._witnesses[identity] = set()
-        dictionary.admissions.append(identity)
-        dictionary._next_id = max(dictionary._next_id, identity + 1)
-        model = getattr(self.components.owner, '_model', None)
-        if model is not None:
-            model.__dict__.setdefault('_fresh_synthesis_params', []).extend(
-                (dictionary.directions[key], dictionary.relevance[key]))
-        return identity
+        from IdentityRows import mint
+        return mint(self.components.owner,signature)
 
     @torch.no_grad()
     def prepare(self, clause, plan):
@@ -435,7 +471,7 @@ class ReferenceClose(nn.Module):
         replacements = {}
         for index, item in enumerate(plan['items']):
             reference = item['selected']
-            if isinstance(reference, tuple):
+            if isinstance(reference, tuple) and reference[:1] == ('new',):
                 reference = None
             item['reference'] = reference
             node = item['node']
@@ -462,7 +498,7 @@ class ReferenceClose(nn.Module):
                 item['predicate_node'] = predicate_node
                 children = (*children, predicate_node)
             replacements[id(node)] = replace(node, meaning=meaning, children=children,
-                refs=(-1 if reference is None else reference, -1, -1))
+                refs=(-1 if reference is None else self.address(reference), -1, -1))
         rebuilt = {}
         def rewrite(node):
             if id(node) in rebuilt:
@@ -485,23 +521,7 @@ class ReferenceClose(nn.Module):
 
     def _predicate(self, context):
         address = self.address(context.get('predicate'))
-        return self.coordinates(None if address is None else self.store.point_of_row(address))
-
-    @torch.no_grad()
-    def _learn(self, content, predicate, role=0):
-        atoms, heads = self.support(content), self.support(predicate)
-        for atom in atoms:
-            self.seen[atom] = self.seen.get(atom, 0.) + 1
-            for other in atoms:
-                if atom <= other:
-                    key = atom, other
-                    self.cooccurrence[key] = self.cooccurrence.get(key, 0.) + 1
-            for head in heads:
-                key = atom, head, role
-                self.associations[key] = self.associations.get(key, 0.) + 1
-        for head in heads:
-            self.predicates[head] = self.predicates.get(head, 0.) + 1
-            self.total += 1
+        return self.predicate_coordinates(None if address is None else self.store.point_of_row(address))
 
     def _metadata(self, row, key, value):
         from ThoughtReferences import bindings
@@ -520,7 +540,7 @@ class ReferenceClose(nn.Module):
         if not plan['items']:
             self.last_audit = ()
             return
-        store, dictionary = self.store, self.components.nouns
+        store = self.store
         from Occurrence import document_digest
         document = document_digest(document).hex()
         addresses, audit, allocated, mentions = [], [], {}, []
@@ -535,10 +555,11 @@ class ReferenceClose(nn.Module):
             if item['mode'] == 'mint':
                 reference = self._mint(self.absorb(torch.zeros_like(item['content']), item['content'], item['predicate']))
                 allocated[('new', item_number)] = reference
-            elif isinstance(item['selected'], tuple):
+            elif isinstance(item['selected'], tuple) and item['selected'][:1] == ('new',):
                 reference = allocated.get(item['selected'])
             item['reference'] = reference
-            store.refs[index, 0] = -1 if reference is None else reference
+            store.refs[index, 0] = (-1 if reference is None else
+                                   reference[-1] if isinstance(reference, tuple) else reference)
             # Context is semantic membership evidence, not a derivation. The
             # NP's actual content remains exclusively in its occurrence row.
             predicate_row = written.get(id(item.get('predicate_node')))
@@ -565,13 +586,19 @@ class ReferenceClose(nn.Module):
                 self._metadata(index, '_reference_mentions', ((0, record),))
             plan['records'][address] = index, context
             addresses.append(store.occurrence_of(index))
-            if reference is not None:
-                key = str(reference)
-                old = dictionary.directions[key]
-                dictionary.directions[key].copy_(self.absorb(old, item['content'].to(old), item['predicate'].to(old)))
-                dictionary._witnesses[reference].add((address, int(store.witness_count[index])))
+            if reference in self.components.individual_ids:
+                from IdentityRows import absorb
+                absorb(self.components.owner,reference,item['content'])
             if training:
-                self._learn(item['content'], item['predicate'], item['role'])
+                from IdentityRows import expose_form, point
+                # A supplied label teaches exposure only at the kept write.
+                # Otherwise the selected occurrence supplies its own evidence.
+                for target in item.get('correct', (reference,)):
+                    value = (point(self.components.owner,target) if isinstance(target,int)
+                             else store.point_of_row(self.address(target))
+                             if target is not None else None)
+                    if value is not None:
+                        expose_form(self.components.owner,item['cue'],value)
             audit.append(dict(leaves=item['leaves'], occurrence=address, reference=reference,
                 operation=item['mode'], candidates=item['candidates'],
                 missing_reason=(None if reference is not None else
@@ -591,10 +618,11 @@ class ReferenceClose(nn.Module):
         Earlier ambiguous occurrences follow the predicate evidence of the
         resulting groups. No coordinates of a stored occurrence are edited.
         """
-        store, dictionary = self.store, self.components.nouns
+        store = self.store
+        changed = set()
         current = [(address, row, context, self.coordinates(store.point_of_row(address)))
             for address, (row, context) in records.items()
-            if int(store.refs[row, 0]) in dictionary.ids]
+            if int(store.refs[row, 0]) in self.components.individual_ids]
         groups = {}
         for record in current:
             groups.setdefault(int(store.refs[record[1], 0]), []).append(record)
@@ -614,9 +642,13 @@ class ReferenceClose(nn.Module):
                 continue
             for address, row, context, content in members:
                 predicate = self._predicate(context)
-                scores = [self.explanation(content, anchor[3]) +
-                    self.explanation(predicate, self._predicate(anchor[2])) for anchor in anchors]
+                scores = [meet_ratios(content, anchor[3])[1] +
+                    int(self._predicate_key(predicate) == self._predicate_key(self._predicate(anchor[2])))
+                    for anchor in anchors]
                 selected = references[int(torch.stack(scores).argmax())]
+                previous = int(store.refs[row, 0])
+                if previous != selected:
+                    changed.update((previous, selected))
                 store.refs[row, 0] = selected
                 store._update_semantic_fingerprint(row)
         # Merge only on new shared, distinguishing content with predicate
@@ -639,73 +671,30 @@ class ReferenceClose(nn.Module):
                 if not later_a or not later_b:
                     continue
                 contradiction = any(self.contradicts(x[3], y[3]) for x in a for y in b)
-                corroborated = any(float(self.explanation(x[3], y[3])) >= .9 and
-                    float(self.explanation(self._predicate(x[2]), self._predicate(y[2]))) >= .9
+                corroborated = any(float(meet_ratios(x[3], y[3])[1]) >= .9 and
+                    self._predicate_key(self._predicate(x[2])) == self._predicate_key(self._predicate(y[2]))
                     for x in later_a for y in later_b)
                 if corroborated and not contradiction:
+                    changed.update((left, right))
                     for _, row, _, _ in b:
                         store.refs[row, 0] = left
                         store._update_semantic_fingerprint(row)
                     groups[left].extend(groups.pop(right))
-        # The column is the current signature of its accessible membership.
-        # Reassignment moves witnesses; old occurrence content never changes.
-        touched = {int(store.refs[row, 0]) for _, row, _, _ in current} | set(ids)
-        for address, row, _, _ in current:
-            for witnesses in dictionary._witnesses.values():
-                witnesses.difference_update(w for w in tuple(witnesses) if w[0] == address)
-            identity = int(store.refs[row, 0])
-            dictionary._witnesses.setdefault(identity, set()).add((address, int(store.witness_count[row])))
-        for identity in touched:
-            # Retained historical members still contribute to this column's
-            # signature. Only the bounded records above can be re-tied.
-            from ThoughtReferences import bindings
-            members = []
-            for address, _ in dictionary._witnesses.get(identity, ()):
-                row = store.index_of_row(address)
-                if row is not None:
-                    context = bindings(store.meaning_of(row)).get('_individual_context')
-                    if context is not None:
-                        members.append((address, row, dict(context), self.coordinates(store.point_of_row(address))))
-            signature = torch.zeros_like(dictionary.directions[str(identity)])
-            for address, row, context, content in members:
-                signature = self.absorb(signature, content.to(signature), self._predicate(context).to(signature))
-            dictionary.directions[str(identity)].copy_(signature)
+        # Re-fold all retained members for each identity touched by revision.
+        # A forgetting event does not call this path or subtract lost content.
+        from IdentityRows import refold
+        for identity in changed:
+            refold(self.components.owner,identity)
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(version=2, seen=self.seen, cooccurrence=self.cooccurrence,
-            associations=self.associations, predicates=self.predicates, total=self.total))
+        return _pack_state(dict(version=3))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
-        values = _unpack_state(state)
-        for name in ('seen', 'cooccurrence', 'associations', 'predicates', 'total'):
-            setattr(self, name, values[name])
-        self._role_migration_pending = values.get('version', 1) < 2
-        if self._role_migration_pending:
-            # Old aggregate counts cannot identify a role. Rebuild once from
-            # retained occurrences when the common store finishes loading.
-            self.associations = {}
-
-    @torch.no_grad()
-    def migrate_role_associations(self):
-        if not self.__dict__.pop('_role_migration_pending', False):
-            return
-        from ThoughtReferences import bindings
-        store = self.store
-        if store is None:
-            return
-        for row in range(len(store)):
-            context = bindings(store.meaning_of(row)).get('_individual_context')
-            if context is None:
-                continue
-            context = dict(context)
-            atoms = self.support(self.coordinates(store.point_of_row(int(store.row_ids[row]))))
-            heads = self.support(self._predicate(context))
-            for atom in atoms:
-                for head in heads:
-                    key = atom, head, context['role']
-                    self.associations[key] = self.associations.get(key, 0.) + int(store.witness_count[row])
+        if _unpack_state(state).get('version') != 3:
+            raise ValueError('reference checkpoint requires the native-row migration')
+        self._participant_cache = None
 
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
         if not any(key.startswith(prefix) for key in state_dict):

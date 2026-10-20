@@ -17,10 +17,27 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Step 0's mechanism gates are complete at `bfc834d79`
-([receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md)).
-Both mains contain that source and its closing receipt: BasicModel `d6eb0cf3b`,
-WikiOracle `cb4d718be`. Work has started on `codex/item3-5-first-pass`.
+**Current:** Item 3.5 step 1 is published on both mains: BasicModel
+`204e1be55`, WikiOracle `a89c958`
+([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
+Step 1b's native identity migration is on `codex/item3-5-first-pass`;
+its [round receipt](doc/benchmarks/2026-10-20-item3-5-identity/README.md)
+records the gates and the landing sweep. **Publication is held** by Alec's
+2026-10-20 decision: keep strict rejection of signed legacy identity
+occurrences until a migration decision. The stage-3, NP-definite and
+NP-description artifact-load failures remain open; no lossy conversion,
+replacement training or artifact rewrite closes them.
+The [live cube counterexample](doc/benchmarks/2026-10-20-item3-5-identity/live-cube.md)
+also blocks step 1b: after an ordinary optimizer update, the learned `lift`
+maps native [0, 1] operands to signed output. Define its region/inverse
+contract before the strict meet can consume that path; do not clip, snap
+to a code, or count the fixed G0/G1–G3 probes as closure of this regression.
+The final §14 initialization-read certificate hits the strict cube check
+too; its earlier pass is not promoted. The latest row audit also carries
+`IntraSentenceLayer` / `intraLossWeight`: retire the surviving slot predictor
+and its loss/config/checkpoint plumbing, or obtain an accepted architectural
+justification before claiming one predictor. The per-dimension withheld
+mark belongs in concept content beside the lanes at the row conversion.
 Production keeps the prime ON and uncapped,
 P/S/R/D=0 and φ=.5.
 
@@ -43,7 +60,16 @@ has completed Claude's review, one full sweep (5,907/5,907 completed;
 48 failures repaired with scoped checks), and final native validation:
 72 passed, one copular prerequisite skip; both decomposition lengths pass
 in both gain arms with all eight questions correct. Publication to both
-mains precedes step 1b's G0 and identity migration; steps 2–6 have not started.
+mains preceded step 1b's G0 and identity migration. G1–G3, the 18 reference
+cases and both decomposition lengths in both arms now pass on the native
+scorer; step 1b's one full sweep completes all 5,926 cases with 15 failures,
+followed by scoped repairs of 11 failed cases. Three artifact loads and
+the native cube smoke remain failed; final validation adds the §14 cube
+failure. The [disposition](doc/benchmarks/2026-10-20-item3-5-identity/landing-disposition.md)
+records each case. Its
+[row audit](doc/benchmarks/2026-10-20-item3-5-identity/row-audit.md) explicitly
+carries the physical LTM1/LTM3 split, context wholes, spatial extent and
+situated occurrence lowering into step 2. Steps 2–6 have not started.
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns.
 *Status (Claude, 2026-10-20):* step 0 round 2 is accepted and published on
@@ -484,7 +510,7 @@ not by a passing identity lesson.
    and [one receipt](doc/benchmarks/2026-10-17-stage4e/). Stop at a failed gate.
    The separate mechanism round retires the legacy clock timestamp and
    `Clause.eternal`, replaces recency with the row's source-addressed chain,
-   and replaces the English analyzer with four learned surface transformations
+   and replaces the analyzer with learned surface transformations (two faces remain in the grammar: absorb and transpose — occurrence §13.1)
    and their inverses. Measure the spec's clock-independence,
    offset-independence, addressed-chain, interleaving, preposition and
    surface-inverse certificates. Tense/aspect on VP phases waits for the
@@ -550,30 +576,32 @@ not by a passing identity lesson.
      ([§8](doc/specs/2026-10-18-parts-of-speech.md#8-open)); no perceptual
      grounding stage. Then the NP continuation: adjective and
      definite-adjective lessons, final evaluation, default sweep.
-   - **Identity lessons** (mint per singular NP, matching at the close,
+   - **Identity lessons** (a singular NP is a short-term concept, minted by recurrence in LTM1 — bind plan §6; matching at the close,
      revision); no native identity run before 4e passes. **`bind` as a
      thought operation (Alec, 2026-10-19, decided):** one operation named
      `bind` in the thought grammar, called once per referent, so the
      primary thought process sees binding as a step it chooses; its
      forward is the existing close-time resolver (`ReferenceClose`:
-     STM individuals or a new one, by signature, follow-up credit and
+     native concept/occurrence candidates, follow-up credit and
      salience — the evidence still chooses whom), its reverse re-emits the
      description or determiner. **A site** (Claude's reading of the code,
      2026-10-19, confirmed by Alec) is any of three, none a word class:
-     (1) an **open role** in the verb's frame — the verb column fired and
-     an expected participant (the resolver's predicate-association counts)
+     (1) an **open role** in the verb's frame — the verb (a group element, occurrence §14.1) applied and
+     an expected participant (the rebuildable cache of retained LTM participants)
      unfilled — which is the elided subject or object, with no word at
      all; (2) an operand that interprets to **no object of its own** (two
      truths §3.5's pronoun: empty explanation, resolved by prediction,
      recency, role and the learned surface cue); (3) a **definite** phrase,
      today's only cue, kept as one source among three. The vestigial
-     `ContextualBindLayer` is deleted only once source (2) replaces its
-     pronoun route. Called once per site; `bind` adds no scorer — the
-     resolver's five features (explanation, prediction, recency, the two
-     roles) and cue policy are its forward. **Concrete design:**
+     `ContextualBindLayer` was deleted when source (2) replaced its
+     pronoun route. Called once per site; `bind` adds no scorer. Step 1b
+     replaces the shared resolver's features with two native meet ratios,
+     participant prediction, prime, form-region containment, recency and
+     the two roles; the cue matrix and identity dictionary are retired.
+     **Concrete design:**
      [bind thought operation plan](doc/plans/2026-10-19-bind-thought-operation.md)
      (declaration, executor over a `ReferenceClose.score` refactor, the
-     three sites in code terms incl. role-keyed associations and
+     three sites in code terms, with the native participant cache and
      `expected_roles` for elision, order of work, gates G1–G3); the vestigial binary `bind` layer in
      `Language.py` (left operand returned, reverse raises; the retired
      nearest-left rule of [catalogue §3.3](doc/specs/2026-09-29-operator-catalogue.md#33-bind))
@@ -588,8 +616,13 @@ not by a passing identity lesson.
      their slots — **LTM1** (one concept per row, possibly unminted; ideas
      and their addresses; retention by surprise) and **LTM3** (three
      symbol references: argument, kind, argument; only minted concepts) —
-     with STM at three concept slots; a concept is minted by recurrence in
-     LTM1 (the re-witnessing count, the type criterion again) and `bind`
+     with STM as **STM1** — one wide, invertible concept vector per entry
+     at item 3's content width (derived in step 1b for STM only) plus the
+     index of recent rows and the activation field (bind plan §6.1, §6.4);
+     the three signed-chart phase artifacts are retired and regenerated
+     only when their lessons are next needed, strict rejection permanent; a concept is
+     minted by recurrence in LTM1 (the access count, the type criterion
+     again) and `bind`
      resolves references among minted individuals;
      the definitions index becomes a rebuildable cache over the DEF rows
      (verify item 5's forgetting clears it). **Row shape decided
@@ -612,17 +645,19 @@ not by a passing identity lesson.
      occurrence rows; states are relations, not group elements (§14.1,
      Claude's reading to confirm); and the **second difference** —
      modals and counterfactuals extend the event into possibility space, a
-     whole of which the actual is a part, written as a part relation
-     between situations (§14.2 Alec's, §14.3 the minimal mechanism
-     the minimal mechanism decided, §14.4 defaults NP=everything /
-     VP=exists (read "occurs") / MP=all worlds, §14.5 open).
+     whole of which the actual is a part — *de re* as membership evidence
+     in the taxonomy, *de dicto* as an S located in a world that is a
+     context whole (§14.2 Alec's, §14.3 the minimal mechanism decided,
+     §14.4 defaults NP=everything / VP=exists (read "occurs") / MP=all
+     worlds, §14.5 open).
    - **The second difference: the modal as the verb phrase's preposition
      over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
      after the tense pass: `position` called with a world as object,
      test part-of; worlds minted as individuals like §12's document; the
-     *de re* reading writes `S REL S` (`[Alec] part-of [running things
-     PP(W)]`, a relative truth) and the *de dicto* reading writes `S`
-     (`[Alec runs] PP(W)`, the sentence's row located in the world, an
+     *de re* reading is `S REL S` written as membership evidence in the
+     taxonomy (`[Alec]` in `[running things PP(W)]`, a relative truth, a
+     fold not a row) and the *de dicto* reading writes `S` (`[Alec runs]`,
+     an LTM1 row whose concept carries the world as a context whole, an
      absolute truth) — Alec's two-truths syntax, 2026-10-19; the bracketing is learned by exposure; the teacher is the
      extension itself. No `MP` rule. Needs the world individual and
      nothing from item 3. Gate: generated corpora with a modal marker as
@@ -634,11 +669,13 @@ not by a passing identity lesson.
    - **Order-2 kinds** (§15 item 5).
 
    *From item 5.5* (its entry above; [mechanism-round review and follow-ups](doc/plans/2026-10-17-item5-5-start.md#review-of-the-55-mechanism-round-claude-2026-10-17-evening--approve-to-sweep-and-land-with-four-disclosures-and-one-decision)):
-   - Retire the legacy clock `timestamp` column and `Clause.eternal`;
+   - Retire the legacy clock `timestamp` column and `Clause.eternal`
+     (2026-10-20: `.when` is model time in the row's column; the stream is a
+     context whole — two truths §1 row table);
      recency by the row's source-addressed chain, replacing `get_stm_chain`
      across batch rows (two truths §21); decide the `timestamp` column's
      fate with the recency use.
-   - The **four learned surface transformations and their inverses**
+   - The **learned surface transformations and their inverses** (absorb and transpose; split and insert left the grammar, occurrence §12/§13.1)
      replacing the English analyzer, `surface` as one operator with four
      suboperations trained by reconstruction under parsimony; removes the
      old tense, aspect and morphology code and its table of English forms.
@@ -664,7 +701,7 @@ not by a passing identity lesson.
    - The **nested-admission criterion** and its performance: the landed
      shared-run criterion carves 7 of the 17 4e words at shared letter
      pairs (plan, "Before the 4e pass"); scoped to one named marker today.
-   - **Documents as situation codes** in content; learned before/after.
+   - **Documents (and streams) as context wholes** in WholeSpace, their trace in content (two truths §1 row table, 2026-10-20); learned before/after.
    - The spec's certificates, measured: clock-independence,
      offset-independence, addressed-chain, interleaving, preposition and
      surface-inverse ([spec §8](doc/specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).

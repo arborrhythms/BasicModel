@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_bind_cost_trains_existing_form_and_content_only_after_kept_commit ____
+test/test_bind_thought.py:271: in test_bind_cost_trains_existing_form_and_content_only_after_kept_commit
+    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
+test/test_reference_close.py:32: in form_exposure
+    owner.similarity_codebook.W[row].copy_(cue)
+E   RuntimeError: a view of a leaf Variable that requires grad is being used in an in-place operation.
+=============================== warnings summary ===============================
+test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit
+1 failed, 1 warning in 2.43s

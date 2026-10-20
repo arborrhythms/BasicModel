@@ -1,0 +1,49 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+  ],
+  "completed": [
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.004199791932478547,
+      "message": "test/test_expectation_retention.py:61: in test_retained_estimate_links_its_external_observation_and_restores\n    _observe(discourse, observed, document)\ntest/test_expectation_retention.py:36: in _observe\n    discourse.predict_and_observe_stm_end_state(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10811: in predict_and_observe_stm_end_state\n    self.expect_next_meaning(b)\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10699: in expect_next_meaning\n    chain, lanes, identities, occurrences = self._read_context(b)\n                                            ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:10942: in _read_context\n    value, lane, ids = frame, meaning.evidence, symbol_identities(meaning)\n                              ^^^^^^^^^^^^^^^^\nE   AttributeError: 'ConceptualMeaning' object has no attribute 'evidence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0019885830115526915,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021118749864399433,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

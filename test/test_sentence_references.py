@@ -87,7 +87,7 @@ def test_two_individuals_and_cold_situation_keep_distinct_choices():
         resolve_occurrences(language, program, forced={0: 12345})
 
 
-def test_predictor_context_carries_owned_reference_without_a_memory_read():
+def test_predictor_context_carries_address_and_reads_only_that_retained_row():
     store, _ = clause_store()
     row = store.write_clause(idea_clause())
     discourse = layer()
@@ -95,10 +95,12 @@ def test_predictor_context_carries_owned_reference_without_a_memory_read():
     observe(discourse, store.meaning_of(row).roles)
     discourse.bind_observation_occurrence(0, store.occurrence_of(row))
     discourse.detach_prediction_context()
-    discourse._ltm_store = None
     anchors = discourse.situation_references(0)
     assert len(anchors) == 1 and anchors[0].row_id == int(store.row_ids[row])
     torch.testing.assert_close(anchors[0].point, store.slots[row, 0])
+    discourse._ltm_store = None
+    assert discourse.situation_references(0) == ()
+    discourse._ltm_store = store
     discourse.begin_document(0, 'new')
     assert discourse.situation_references(0) == ()
 

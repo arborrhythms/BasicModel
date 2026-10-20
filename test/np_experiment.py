@@ -72,7 +72,7 @@ def tables(model, forms):
         word = owner.definitions.word(form=form)
         word = -1 if word is None else int(word)
         concepts = [] if word < 0 else list(map(int,owner.definitions.objects(word)))
-        individuals = [cid for cid in concepts if cid in owner.components.nouns.ids]
+        individuals = [cid for cid in concepts if cid in owner.components.individual_ids]
         word_rows.append(dict(word=form, identity=word, part_of_speech=parts.part_of_speech(word),
                               counts=dict(parts.counts.get(word,{})),observed=word in parts.counts))
         noun_rows.append(dict(word=form, identity=word, concepts=concepts,

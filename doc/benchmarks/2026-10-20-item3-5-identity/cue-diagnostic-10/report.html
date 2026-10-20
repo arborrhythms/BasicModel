@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>67.33292712504044</pre></td><td><pre>test/test_math_chain.py:194: in test_native_worked_document_trains_unforced_without_numeric_oracles
+    report = present(model, split=&#x27;train&#x27;, optimizer=model.getOptimizer(lr=.001))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+bin/Models.py:13495: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13651: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14031: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8746: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10113: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8431: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8209: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23874: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17102: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22426: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21978: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20937: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:143: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20853: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19838: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19627: in _sentence_observation
+    plans.append(resolver.preview(clause,
+bin/ReferenceClose.py:420: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:205: in individuals
+    result[identity] = dict(content=self.coordinates(content),value=content.detach(),role=context[&#x27;role&#x27;],
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:55: in coordinates
+    return coordinates(self.components.owner, point)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:36: in coordinates
+    raise ValueError(&#x27;identity content requires native concept coordinates in [0, 1]&#x27;)
+E   ValueError: identity content requires native concept coordinates in [0, 1]</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 1 (Δ=4.051s)
+batch = 2 (Δ=5.361s)
+batch = 3 (Δ=1.006s)
+batch = 4 (Δ=5.446s)
+batch = 5 (Δ=19.460s)
+batch = 6 (Δ=12.007s)
+batch = 7 (Δ=14.293s)
+</pre></td></tr></table></body></html>

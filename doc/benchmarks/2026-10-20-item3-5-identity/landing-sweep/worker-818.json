@@ -1,0 +1,104 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[None]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[rows1]",
+    "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+    "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+    "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]"
+  ],
+  "completed": [
+    "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[None]",
+    "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[rows1]",
+    "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+    "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+    "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+    "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0025042921770364046,
+      "message": "test/test_stream_state_shapes.py:38: in test_attention_gist_is_invariant_to_other_batch_rows\n    ModelAttention.stage_input(batched)\nbin/ModelAttention.py:195: in stage_input\n    seen.append(bool(surface) and owner.interpret.word_for_form(form) is not None)\n                                  ^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'interpret'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[None]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013733790954574943,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_document_reset_clears_completed_field_recall[rows1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010566692799329758,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004938330966979265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_word_reference_reader_rejects_reshaped_stale_presences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026729190722107887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003218750935047865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021837512031197548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[3-_recall_sentence_history]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015700003132224083,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

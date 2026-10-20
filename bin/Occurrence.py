@@ -315,7 +315,7 @@ class OccurrenceRows:
             grown = old.new_full((self.capacity,), -1)
             grown[:count] = old[:count]
             state[prefix + 'occurrence_id'] = grown
-        if prefix + 'address_keys' in state and count:
+        if prefix + 'address_keys' in state and count and prefix + 'model_clock' not in state:
             # The address is unchanged; its coordinate carrier uses the new
             # configured period, just as a newly written row would.
             from Spaces import WhenEncoding

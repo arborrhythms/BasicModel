@@ -29,6 +29,7 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
     before = alloc.next_id, len(alloc.layer()._tensor_rows), len(store)
+    learned_at = m.present()
     word, obj = admit(m, 'hello')
     assert word != obj
     assert (alloc.next_id, len(alloc.layer()._tensor_rows), len(store)) == (
@@ -38,7 +39,8 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     row = cs.definitions.row(word, obj)
     assert int(store.rel_type[row]) == store.REL_DEF
     assert store.refs[row, [0, 2]].tolist() == [word, obj]
-    assert store.when[row].count_nonzero() == 0  # DEF is not a located sentence
+    from RowTime import encoder
+    assert int(encoder().decode_index(store.when[row])) == learned_at
     assert ('sym', word) not in cs.concept_parts(obj)
     assert all(not hasattr(cs, name) for name in ('bind_meta', 'meta_members'))
     assert all(not hasattr(alloc, name) for name in ('interpretations', 'word_obj_meta'))
