@@ -7,6 +7,22 @@ def pair(value=None, positive=0., negative=0., *, witnesses=(), **metadata):
                 witnesses=tuple(witnesses), **metadata)
 
 
+def bind(context, arguments):
+    from ThoughtReferences import bindings
+    meaning = arguments['argin1']
+    role = bindings(meaning).get('_bind_role')
+    if role not in (0, 1, 2):
+        raise ValueError('bind requires a selected reference site')
+    return context.ltm.bind_reference(meaning, role, max_records=context.max_records, work=context.work)
+
+
+def reverse_bind(result, leaves):
+    indices = tuple(result.evidence.get('reverse_leaves', ()))
+    if any(type(index) is not int or not 0 <= index < len(leaves) for index in indices):
+        raise ValueError('bind reverse requires its request leaves in the open reading')
+    return leaves[list(indices)]
+
+
 def part(context, arguments):
     from Queries import _vector
     from Layers import Ops

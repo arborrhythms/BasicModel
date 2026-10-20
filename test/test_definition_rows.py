@@ -2,6 +2,7 @@
 from pathlib import Path
 import pytest
 import torch
+from definition_fixtures import witness_object
 
 
 def model():
@@ -14,10 +15,15 @@ def admit(m, text):
     native = getattr(ps, 'percept_store', None)
     parts = native.spell_out(text.encode()) if native is not None else list(text.encode())
     pair = cs.interpret_word(parts, ws.property_rows_for_bytes(text), key=text)
-    return None if pair is None else pair[:2]
+    if pair is None:
+        return None
+    word, obj = pair[:2]
+    if cs.interpret.no_object(word):
+        obj = witness_object(cs, word)
+    return word, obj
 
 
-def test_22_new_word_replaces_one_inventory_row_and_writes_one_definition():
+def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     m = model()
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     from Spaces import _concept_alloc_of
@@ -26,8 +32,8 @@ def test_22_new_word_replaces_one_inventory_row_and_writes_one_definition():
     word, obj = admit(m, 'hello')
     assert word != obj
     assert (alloc.next_id, len(alloc.layer()._tensor_rows), len(store)) == (
-        before[0] + 2, before[1] + 1, before[2] + 1)
-    assert cs._csw_row_of(word) is None
+        before[0] + 2, before[1] + 2, before[2] + 1)
+    assert cs._csw_row_of(word) is not None
     assert cs._csw_row_of(obj) is not None
     row = cs.definitions.row(word, obj)
     assert int(store.rel_type[row]) == store.REL_DEF
@@ -127,7 +133,7 @@ def test_28_forgotten_definition_does_not_survive_in_any_lookup():
 
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('configuration', ['MM_xor.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
-def test_31_read_words_have_definition_rows_without_changing_the_configuration(configuration):
+def test_31_read_forms_wait_for_object_testimony_without_changing_the_configuration(configuration):
     from test_mm_xor import _fresh_model, _PROJECT
     path = Path(_PROJECT) / 'data' / configuration
     before = path.read_bytes()
@@ -137,10 +143,16 @@ def test_31_read_words_have_definition_rows_without_changing_the_configuration(c
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     for form in ('hi', 'no', 'we', 'go'):
         word = cs.definitions.word(form=form)
-        assert word is not None
-        obj, = cs.definitions.objects(word)
-        assert int(store.rel_type[cs.definitions.row(word, obj)]) == store.REL_DEF
-        assert cs._csw_row_of(obj) is not None
+        if word is None:
+            word, = (word for word, value in cs.interpret._pending.items()
+                     if form in value['forms'])
+            assert cs.interpret.no_object(word)
+            assert cs.interpret.forward(word) == word
+            assert cs._csw_row_of(word) is not None
+        else:
+            obj, = cs.definitions.objects(word)
+            assert int(store.rel_type[cs.definitions.row(word, obj)]) == store.REL_DEF
+            assert cs._csw_row_of(obj) is not None
     assert path.read_bytes() == before
 
 

@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
+    "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+    "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-False]",
+    "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[True-True]",
+    "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
+    "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
+    "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
+    "test/test_math_chain_repair2.py::test_determiner_scope_cannot_reopen_at_an_enclosing_bare_operation"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/final-scoped/worker-007.recycle.json"
+}

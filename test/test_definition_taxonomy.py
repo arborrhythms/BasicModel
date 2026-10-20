@@ -9,14 +9,15 @@ from Spaces import _concept_alloc_of
 from test_word_interpretation import _operator
 from reading_fixtures import finish_reading
 from test_clause_acceptance import SentenceFixture
+from definition_fixtures import witness_object
 
 
 def test_part_testimony_symbols_the_parent_one_order_above_the_object():
     cs, interpret = _operator()
     word_cat = interpret.lookup_word([7], [1], form='cat')
-    cat = interpret.forward(word_cat, order=1)
+    cat = witness_object(cs, word_cat)
     word_animal = interpret.lookup_word([8], [1], form='animal')
-    animal = interpret.forward(word_animal, order=1)
+    animal = witness_object(cs, word_animal)
     parent = cs.index_part_row(cat, animal)
     assert parent != animal
     assert cs._concept_source_order(parent) == cs._concept_source_order(cat) + 1
@@ -31,9 +32,9 @@ def test_part_testimony_symbols_the_parent_one_order_above_the_object():
 def test_definition_rows_generalize_over_several_words_and_objects():
     cs, interpret = _operator()
     first = interpret.lookup_word([7], [1], form='bank')
-    river = interpret.forward(first)
+    river = witness_object(cs, first)
     second = interpret.lookup_word([8], [1], form='shore')
-    money = interpret.forward(second)
+    money = witness_object(cs, second)
     interpret.define(first, money)
     interpret.define(second, river)
     assert cs.definitions.objects(first) == (river, money)
@@ -46,7 +47,7 @@ def test_definition_rows_generalize_over_several_words_and_objects():
 def test_definition_binding_preserves_ambiguous_objects_until_selection():
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [1], form='bank')
-    first = interpret.forward(word)
+    first = witness_object(cs, word)
     second = cs.new_concept()
     _concept_alloc_of(cs).reference_orders[second] = 1
     interpret.define(word, second)

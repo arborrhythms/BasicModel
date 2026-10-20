@@ -1,0 +1,170 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+  ],
+  "completed": [
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.09654449997469783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.15045487508177757,
+      "message": "test/test_word_interpretation.py:27: in test_every_read_word_has_a_concept_and_symbol\n    _, symbols, _, _ = model(inputs)\n                       ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8207: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23877: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17107: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22429: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21981: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20940: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20856: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19843: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19607: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:220: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:661: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:556: in recover\n    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:134: in expected_roles\n    return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in\nbin/ReferenceClose.py:135: in <genexpr>\n    self.associations.items() if r == role and head in heads) >= self.components.nouns.recurrence)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ColumnDictionary' object has no attribute 'recurrence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.3047620828729123,
+      "message": "test/test_word_interpretation.py:27: in test_every_read_word_has_a_concept_and_symbol\n    _, symbols, _, _ = model(inputs)\n                       ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8207: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23877: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17107: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22429: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21981: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20940: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20856: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19843: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19607: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:220: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:661: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:556: in recover\n    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:134: in expected_roles\n    return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in\nbin/ReferenceClose.py:135: in <genexpr>\n    self.associations.items() if r == role and head in heads) >= self.components.nouns.recurrence)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ColumnDictionary' object has no attribute 'recurrence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002908341120928526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002470624865964055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002474874956533313,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0021323328837752342,
+      "message": "test/test_word_interpretation.py:117: in test_interpret_reuses_definition_and_reverses_by_identity\n    assert obj != word\nE   assert 1 != 1",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.002550791949033737,
+      "message": "test/test_word_interpretation.py:143: in test_grammar_resolution_distinguishes_particular_and_kind\n    assert interpret.reverse(particular) == interpret.reverse(kind) == word\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:414: in reverse\n    raise ValueError('object requires a lexical selection')\nE   ValueError: object requires a lexical selection",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002071249997243285,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020881250966340303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.42819545790553093,
+      "message": "test/test_word_interpretation.py:198: in test_every_serial_word_runs_interpret_before_composition\n    model.understand(model.inputSpace.prepInput(['the wug sat']))\nbin/Models.py:8433: in understand\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8429: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8207: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23877: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17107: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22429: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21981: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20940: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20856: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19843: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19607: in _sentence_observation\n    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(\nbin/Models.py:220: in _boundary_observation_view\n    clause = finish_clause(language, entry, meaning=meaning,\nbin/ClauseJournal.py:661: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:556: in recover\n    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:134: in expected_roles\n    return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in\nbin/ReferenceClose.py:135: in <genexpr>\n    self.associations.items() if r == role and head in heads) >= self.components.nouns.recurrence)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ColumnDictionary' object has no attribute 'recurrence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.00924325012601912,
+      "message": "test/test_word_interpretation.py:231: in test_selected_generic_grammar_ends_the_interpreted_kinds\n    cs.interpret.define(cs.definitions.word(form=form), kind)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:249: in define\n    cs, word, obj = self.owner, int(word), int(obj)\n                                ^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009244292043149471,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031351670622825623,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

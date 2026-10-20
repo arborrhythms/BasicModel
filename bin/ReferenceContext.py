@@ -109,7 +109,7 @@ def operation_modes(rule):
     return modes
 
 
-def reference_requests(language, actions, *, leaf_orders=None, operation_refs=None):
+def reference_requests(language, actions, *, leaf_orders=None, operation_refs=None, no_object=None):
     """Resolve a selected role at its head; the enclosing scope owns its kind.
 
     A kept numerical journal optionally adds the selected native reference
@@ -122,6 +122,8 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
         if kind < 0:
             break
         if kind == 0:
+            if no_object is not None and bool(no_object[word]):
+                requests[word] = (1, 'pronoun') if references is None else (1, 'pronoun', 0)
             stack.append(((word,), -1 if stamps is None else int(stamps[word])))
             continue
         if kind == 3:

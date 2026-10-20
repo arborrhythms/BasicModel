@@ -1,13 +1,27 @@
 # Bounded development tests
 
-The [outstanding Item 4 gates candidate](benchmarks/2026-10-19-item4-step0/README.md)
-repairs the .0517 paired inverse defect and initial binding distribution;
-the whole §14 file completes with its copular-artifact skip retained. All
-16 standing XOR cases pass in matched zero-gain and all-gains-.5 configurations,
-prime on and φ=.5. The repaired decomposition cases complete below 2.2 GiB,
-but the one-successor certificate fails in both configurations; the two-successor
-certificate passes. This blocker and Claude's candidate review precede the
-single full landing sweep. No candidate landing or new learning result is claimed.
+Step 0 is published on both mains: BasicModel `d6eb0cf3b`
+(source `bfc834d79`), WikiOracle `cb4d718be`. The
+[round-2 receipt](benchmarks/2026-10-19-item4-step0-round2/README.md)
+records the unchanged decomposition certificates passing in both gain arms,
+the repaired .0517 invariant and the scoped initial-content neutrality bound.
+The accepted first-round 16/16 standing XOR cases in each arm remain their
+original measurement. One full sweep completed 5,861 cases with one failure;
+the empty-menu repair then passed the affected checks, whole §14 file and
+both decomposition arms. The receipt reports those results separately.
+The copular-artifact prerequisite skip and the Item 0 / 5.5 learning gates
+remain explicit.
+
+Item 3.5 step 1 is now a separate
+[bind-as-thought candidate](benchmarks/2026-10-19-item3-5-bind/README.md).
+Its final affected scope completes all 335 cases: **334 passed, one copular
+prerequisite skip**. The whole §14 file, paired reconstruction and generated
+site gates pass. The unchanged one-/two-successor decomposition certificates
+pass under both gains-0 and all-gains-.5, with prime on and φ=.5 in both;
+all eight companion questions have the correct binding and chain length.
+The initial parameters match across these two new-catalogue arms. Earlier
+failed runs and their causes remain in the receipt. Claude's review, the
+one landing sweep and publication remain pending.
 
 Item 4's source `fdeef42b8` and October 19 [repair receipt](benchmarks/2026-10-19-item4-repair/README.md)
 records each §9 gate, the review of record, and close-out measurements.

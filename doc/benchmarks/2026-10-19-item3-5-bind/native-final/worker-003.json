@@ -1,0 +1,163 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009798749815672636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007360419258475304,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021269170101732016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021375125041231513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010976749937981367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002827499993145466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023905874928459525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012532919645309448,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 78.8795754169114,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=4.280s)\r\nbatch = 16 (\u0394=3.693s)\r\nbatch = 24 (\u0394=4.181s)\r\nbatch = 32 (\u0394=5.649s)\r\nbatch = 40 (\u0394=3.706s)\r\nbatch = 48 (\u0394=4.214s)\r\nbatch = 56 (\u0394=5.730s)\r\nbatch = 64 (\u0394=5.735s)\r\nbatch = 72 (\u0394=3.554s)\r\nbatch = 80 (\u0394=4.192s)\r\nbatch = 88 (\u0394=5.594s)\r\nbatch = 96 (\u0394=5.615s)\r\nbatch = 104 (\u0394=5.730s)\r\nbatch = 0 (\u0394=12.372s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "copular_identity",
+      "duration": 0.00039166701026260853,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 234, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 5.925116041908041,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 25.991031124955043,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=12.708s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 26.45976774999872,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=15.323s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

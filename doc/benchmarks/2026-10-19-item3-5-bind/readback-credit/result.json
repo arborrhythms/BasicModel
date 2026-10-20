@@ -1,0 +1,683 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+    "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+    "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+    "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+    "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+    "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+    "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+    "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
+    "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading"
+  ],
+  "completed": [
+    "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
+    "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+    "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+    "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+    "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+    "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+    "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+    "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+    "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+    "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-002.json"
+      ],
+      "pid": 81038,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 724944408,
+      "elapsed_seconds": 8.067253167042509,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+        "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+        "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+        "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+        "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+        "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+        "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+        "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
+        "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+        "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+        "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+        "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities"
+      ],
+      "completed": [
+        "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+        "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+        "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+        "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+        "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+        "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+        "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+        "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
+        "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+        "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+        "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+        "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.19198191701434553,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.18669145903550088,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.2388163339346647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006201625103130937,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03831900004297495,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.038426792016252875,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003012250177562237,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004534542094916105,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.11403320915997028,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03612774983048439,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03685554210096598,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03658687509596348,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.1303817499428988,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.7787103750742972,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-003.json"
+      ],
+      "pid": 81069,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434292032,
+      "elapsed_seconds": 4.091457583010197,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "completed": [
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02382470783777535,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-004.json"
+      ],
+      "pid": 81085,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430916904,
+      "elapsed_seconds": 4.1964477088768035,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading"
+      ],
+      "completed": [
+        "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.015276917023584247,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-000.json"
+      ],
+      "pid": 81036,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1653360944,
+      "elapsed_seconds": 17.530064957914874,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+        "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+        "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+        "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+        "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]"
+      ],
+      "completed": [
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+        "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+        "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+        "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+        "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002649170346558094,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00020637502893805504,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001883339136838913,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.037906582932919264,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017532079946249723,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.05433050007559359,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.37569175008684397,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 6.13207216700539,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.832568750018254,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-001.json"
+      ],
+      "pid": 81037,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 916654240,
+      "elapsed_seconds": 42.76941816601902,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+        "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+        "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+        "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+        "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [
+        "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+        "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+        "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+        "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+        "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013670834014192224,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00037041609175503254,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001521250233054161,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00013049994595348835,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012733391486108303,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012325006537139416,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001224589068442583,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003695411141961813,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00018087495118379593,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 9.614144332939759,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.188s)\r\n"
+        },
+        {
+          "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 28.402568916790187,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 27.767s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.305s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.307s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 300.0,
+    "suite_seconds": 600.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit",
+  "elapsed_seconds": 47.18263970804401,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2879706800,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/collect.json"
+    ],
+    "pid": 81026,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 428279080,
+    "elapsed_seconds": 3.6970221248921007,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+        "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+        "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
+        "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+        "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+        "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+        "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+        "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair1]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair2]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair3]",
+        "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair4]",
+        "test/test_operators_final_b.py::test_reader_block_scales_are_shared_and_preserve_additivity",
+        "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
+        "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+        "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+        "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+        "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+        "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+        "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+        "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+        "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+        "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+        "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+        "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
+        "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+        "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+        "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+        "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+        "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

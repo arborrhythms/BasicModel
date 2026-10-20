@@ -1,0 +1,45 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content ____
+test/test_bind_thought.py:206: in test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+    result = run(f.model, meaning, work_budget=128)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5964: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6395: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6381: in run_context
+    outcome = execute(value, actions=actions, evidence_context=evidence_context, action=action)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6281: in execute
+    record = event("thought", current, evidence,
+bin/Models.py:6096: in event
+    record = memory.commit_thought(
+bin/Thoughts.py:629: in commit_thought
+    return self._thought_event("thought", meaning, operation=operation, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Thoughts.py:591: in _thought_event
+    record = ThoughtRecord(
+<string>:21: in __init__
+    ???
+bin/Thoughts.py:90: in __post_init__
+    raise ValueError("unknown thought evidence kind")
+E   ValueError: unknown thought evidence kind
+=============================== warnings summary ===============================
+test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+  /Users/arogers/github/WikiOracle/basicmodel/bin/ReferenceClose.py:101: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return {int(i): float(value[i]) for i in (value >= .3).nonzero().flatten()}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content
+1 failed, 1 passed, 2 warnings in 3.00s

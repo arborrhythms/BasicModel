@@ -3674,28 +3674,6 @@ class TransposeLayer(GrammarLayer):
     forward = reverse = generate = compose
 
 
-class ContextualBindLayer(GrammarLayer):
-    """Carry a binding marker; individual selection belongs to the close."""
-    inverse_kind = 'left'
-    head_role = 2
-    reference_modes = (('argin2', 'pronoun'),)
-    reconstructs_left = True
-    rule_name = "bind"; arity = 2
-    predicate_identity = 'bind'
-    invertible = False; lossy = True; space_role = 'CS'; reads_activation = False
-
-    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
-        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
-    def forward(self, left, right):
-        return left
-    def reverse(self, parent):
-        # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
-        self.raise_no_inverse("contextual binding is not recoverable")
-    def compose(self, left, right):
-        return self.forward(left, right)
-    def generate(self, parent):
-        return self.reverse(parent)
-
 class _SearchedBinaryLayer(GrammarLayer):
     """Three faces of a commutative code operation with a searched inverse."""
     inverse_kind = 'search'
@@ -4359,7 +4337,6 @@ GRAMMAR_LAYER_CLASSES = {
     'surface_unary': SurfaceUnaryLayer,
     'surface':      SurfaceLayer,
     'preposition':  PrepositionLayer,
-    'bind':         ContextualBindLayer,
     'conjunction':  ConjunctionLayer,
     'disjunction':  DisjunctionLayer,
     'min':          MinLayer,
@@ -12563,7 +12540,8 @@ class LanguageSpace(nn.Module):
         if leaf_orders is None:
             leaf_orders = concept_ids.new_tensor([
                 owner._concept_source_order(int(identity)) for identity in concept_ids])
-        selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders)
+        selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders,
+            no_object=[owner.interpret.no_object(int(identity)) for identity in concept_ids])
         for leaf, (order, mode) in selected_requests.items():
             if order < 0:
                 continue

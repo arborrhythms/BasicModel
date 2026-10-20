@@ -800,6 +800,9 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         def extent(self, value): return dict(value=value, support_true=1., support_false=0.)
         def negate(self, value): return value
     class LTMRead:
+        def bind_reference(self, meaning, role, **limits):
+            return dict(value=meaning, meaning=meaning, binding_role=role,
+                        support_true=0., support_false=0.)
         def best_match(self, meaning, **limits):
             return dict(value=None, frames=(), witnesses=(), support_true=0., support_false=0.)
         def truth_evidence(self, meaning, **limits):
@@ -817,6 +820,8 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     arguments.update({name: {'argin1':value, 'argin2':value} for name in ('part','equal','implies')})
     arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not')})
     arguments.update({name: {'argin1':value} for name in ('exist','gain')})
+    from dataclasses import replace
+    arguments['bind'] = {'argin1': replace(meaning, bindings={'_bind_role': 0})}
     assert set(arguments) == set(THOUGHT_EXECUTORS)
     assert {'what','lookup','quantize','arma','expect','true'}.isdisjoint(THOUGHT_EXECUTORS)
     results = {name:THOUGHT_EXECUTORS[name].executor(context,args) for name,args in arguments.items()}

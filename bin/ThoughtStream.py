@@ -69,6 +69,15 @@ def candidates(registry, root, active, current, records, descriptions=()):
     # Existing grammatical alternatives also bind to each result slot.
     requests = list(registry.controller_candidates(root, active, current,
         descriptions=descriptions, result_meanings=meanings))
+    if 'bind' in registry.executable_operation_ids:
+        attempted = {result.evidence.get('binding_role') for result in results
+                     if result.semantic_id == 'bind'}
+        for kind, role in open_slots(current):
+            if kind != 'referent' or role in attempted:
+                continue
+            operand = replace(current, bindings=dict(bindings(current), _bind_role=role))
+            requests.append(ThoughtOperationCandidate(registry.operation_spec('bind'),
+                registry.form('bind', operand), (role,)))
     if 'query' not in registry.executable_operation_ids:
         return tuple(requests)
     kind = relation(registry, root)
@@ -115,6 +124,8 @@ def integrate(registry, goal, result, records):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
+    if result.semantic_id == 'bind' and result.evidence.get('meaning') is not None:
+        return result.evidence['meaning']
     witnesses = result.evidence.get('witnesses', ())
     try:
         signature = registry.signature_for(goal, verify_reference=False)
@@ -260,6 +271,11 @@ def write(model, meaning, *, row, _active=None, _bound=None, replace_row=None):
 
 def commit(model, result, *, row):
     """Publish only the kept walk, after both complete trials were compared."""
+    components = getattr(model._concept_owner(), 'components', None)
+    if components is not None:
+        components.reference_close.commit_bindings(result)
+        if model.training and torch.is_grad_enabled():
+            components.reference_close.train_thought(result, model.errors)
     derived = {}
     def resolved_witnesses(meaning):
         data = bindings(meaning)

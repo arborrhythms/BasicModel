@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/definition-boundary/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/definition-boundary/collect.json"
+  ],
+  "pid": 79632,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 435373256,
+  "elapsed_seconds": 3.7628669578116387,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/definition-boundary/collect.log"
+}

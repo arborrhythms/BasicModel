@@ -1,0 +1,14 @@
+[collect] 5 selectors; limit 300s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.40 GiB
+[worker-000] 9 selectors; limit 300s, 8.0 GiB
+[worker-001] 11 selectors; limit 300s, 8.0 GiB
+[worker-002] 14 selectors; limit 300s, 8.0 GiB
+[worker-002] exit 0; 8.1s; peak 0.68 GiB
+[worker-003] 1 selectors; limit 300s, 8.0 GiB
+[worker-003] exit 0; 4.1s; peak 0.40 GiB
+[worker-004] 1 selectors; limit 300s, 8.0 GiB
+[worker-004] exit 0; 4.2s; peak 0.40 GiB
+[worker-000] exit 0; 17.5s; peak 1.54 GiB
+[worker-001] exit 0; 42.8s; peak 0.85 GiB
+Result: passed, exit 0; 36/36 cases completed.
+doc/benchmarks/2026-10-19-item3-5-bind/readback-credit/result.json

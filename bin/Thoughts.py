@@ -85,7 +85,7 @@ class ThoughtRecord:
             "concept-codebook",
             "conceptual-identity",
             "subgoal", "definition", "implication", "containment", "truth",
-            "presence", "conceptual-presence", "gain",
+            "presence", "conceptual-presence", "gain", "reference",
         ):
             raise ValueError("unknown thought evidence kind")
         if self.result is not None:

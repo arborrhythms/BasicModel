@@ -113,12 +113,17 @@ def _operator():
 def test_interpret_reuses_definition_and_reverses_by_identity():
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [1], form='wug')
+    assert interpret.forward(word) == interpret.reverse(word) == word
+    assert interpret.no_object(word)
+    supplied = cs.new_concept()
+    cs._csw_concept_row(0, supplied)
+    interpret.define(word, supplied)
     obj = interpret.forward(word, occurrence=(0, 1))
     assert obj != word
     assert ('sym', word) not in cs.concept_parts(obj)
     assert cs._concept_source_order(obj) == 0
     row = cs._csw_row_of(obj)
-    assert cs._csw_row_of(word) is None
+    assert not interpret.no_object(word)
     before = len(cs.definitions._store())
     for sentence in range(1, 20):
         assert interpret.forward(word, occurrence=(sentence, 1)) == obj
@@ -131,6 +136,9 @@ def test_interpret_reuses_definition_and_reverses_by_identity():
 def test_grammar_resolution_distinguishes_particular_and_kind():
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [1], form='cat')
+    supplied = cs.new_concept()
+    cs._csw_concept_row(0, supplied)
+    interpret.define(word, supplied)
     particular = interpret.forward(word, order=1)
     kind = cs.new_concept()
     _concept_alloc_of(cs).reference_orders[kind] = 2
@@ -200,8 +208,11 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
     objects = model.inputSpace._ar_word_object_ids
     active = model.inputSpace._ar_grammar_leaf_mask
     assert len(calls) >= int(active.sum())
-    assert (ids[active] != objects[active]).all()
     for word, obj in zip(ids[active].tolist(), objects[active].tolist()):
+        if operator.no_object(word):
+            assert obj == word
+        else:
+            assert obj in owner.definitions.objects(word)
         assert operator.reverse(obj) == word
     model.End()
 
@@ -221,6 +232,10 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch)
     words = [cs.interpret.lookup_word([part], [], form=form)
              for part, form in ((7, 'cats'), (8, 'animals'))]
+    for word in words:
+        obj = cs.new_concept()
+        cs._csw_concept_row(0, obj)
+        cs.interpret.define(word, obj)
     objects = [cs.interpret.forward(word, order=1) for word in words]
     # Grammar resolves existing associations; it cannot mint a second object
     # merely because the first has a different order.

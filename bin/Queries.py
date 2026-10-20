@@ -305,8 +305,9 @@ class ThoughtOperationCandidate:
         if not isinstance(self.request, ConceptualMeaning):
             raise TypeError('thought candidate requires a complete request')
         open_roles = tuple(self.open_roles)
+        allowed = (0, 1, 2) if semantic_id == 'bind' else roles
         if (len(set(open_roles)) != len(open_roles)
-                or not set(open_roles).issubset(roles)):
+                or not set(open_roles).issubset(allowed)):
             raise ValueError('thought candidate has invalid open roles')
         object.__setattr__(self, 'open_roles', open_roles)
 
@@ -827,10 +828,10 @@ class ThoughtLTMCapability:
     """Narrow LTM/episode/prediction reader used only at a thought boundary."""
 
     __slots__ = ('__store', '__equal', '__tau', '__memory',
-                 '__discourse', '__row', '__primed')
+                 '__discourse', '__row', '__primed', '__reference_close')
 
     def __init__(self, *, store, equal, tau_id,
-                 memory=None, discourse=None, row=0, primed=()):
+                 memory=None, discourse=None, row=0, primed=(), reference_close=None):
         if not callable(store) or not callable(equal):
             raise TypeError('thought LTM capability requires bounded reader callables')
         object.__setattr__(self, '_ThoughtLTMCapability__store', store)
@@ -840,6 +841,37 @@ class ThoughtLTMCapability:
         object.__setattr__(self, '_ThoughtLTMCapability__discourse', discourse)
         object.__setattr__(self, '_ThoughtLTMCapability__row', int(row))
         object.__setattr__(self, '_ThoughtLTMCapability__primed', tuple(primed))
+        object.__setattr__(self, '_ThoughtLTMCapability__reference_close', reference_close)
+
+    def bind_reference(self, meaning, role, *, max_records, work):
+        """Read only situated frames and this episode's already held rows."""
+        resolver = object.__getattribute__(self, '_ThoughtLTMCapability__reference_close')
+        if resolver is None:
+            return dict(value=meaning, meaning=meaning, binding_role=role,
+                support_true=0., support_false=0., incomplete=('no_accessible_individual',))
+        from ReferenceContext import SituationFrame
+        from ThoughtReferences import bindings
+        discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
+        row = object.__getattribute__(self, '_ThoughtLTMCapability__row')
+        frames = []
+        for frame in (() if discourse is None else discourse.situation_references(row))[:max_records]:
+            work.require('record')
+            frames.append(frame)
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        references = [frame['occurrence'] for frame in self.held_frames()]
+        own = bindings(meaning).get('_query_occurrence')
+        if own is not None:
+            references.append(own)
+        seen = {frame.row_id for frame in frames}
+        for occurrence in references:
+            if len(frames) >= max_records:
+                break
+            index = store._index_occurrences.get(occurrence) if store is not None else None
+            if index is not None and int(store.row_ids[index]) not in seen:
+                work.require('record')
+                frames.append(SituationFrame.from_row(store.row(index)))
+                seen.add(int(store.row_ids[index]))
+        return resolver.bind_site(meaning, role, tuple(frames))
 
     def held_frames(self, limit=32):
         memory = object.__getattribute__(self, '_ThoughtLTMCapability__memory')
@@ -1355,6 +1387,7 @@ class ThoughtExecutorDescriptor:
     predicate_name: str | None = None
     relation_directions: tuple = ()
     taxonomy_by_order: bool = False
+    reverse_executor: Callable | None = None
 
     def __post_init__(self):
         if (not isinstance(self.semantic_id, str)
@@ -1395,10 +1428,15 @@ class ThoughtExecutorDescriptor:
 from ThoughtFaces import (part as _conceptual_part, is_part as _symbolic_part,
     equal as _conceptual_equal, is_equal as _symbolic_equal, implies as _implies,
     is_implied as _is_implied, is_true as _is_true, exist as _exist,
-    query as _query, ask as _ask, negate as _negate, gain as _gain)
+    query as _query, ask as _ask, negate as _negate, gain as _gain, bind as _bind,
+    reverse_bind as _reverse_bind)
 
 
 _thought_executors = (
+    ThoughtExecutorDescriptor('bind', 'situated-reference', ('meaning',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.EXPECTATION, Mind.LTM, Mind.BUDGET),
+        (Mind.SERIAL,), 'reference', _bind, evidence_pair=True,
+        method_grants=(('ltm', ('bind_reference',)),), reverse_executor=_reverse_bind),
     ThoughtExecutorDescriptor('not', 'serial-negation', ('meaning',), Mind.SERIAL,
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'inference', _negate,
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
@@ -1461,7 +1499,7 @@ def _descriptor_context(context, descriptor):
     fallback = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
     methods = {
         Mind.SERIAL: ('ltm', ('query', 'resolve_held_description')),
-        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence')),
+        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence', 'bind_reference')),
         Mind.EXPECTATION: ('ltm', ('expectation',)),
         Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
         Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
@@ -2180,7 +2218,7 @@ class GrammaticalThoughtRegistry:
             signature = self.signature_for(candidate)
         except (TypeError, ValueError):
             signature = None
-        if signature is not None:
+        if signature is not None and signature.operation.semantic_id != 'bind':
             requests.append(ThoughtOperationCandidate(
                 signature.operation, candidate, signature.open_roles))
         seen = {(item.semantic_id, item.open_roles) for item in requests}
@@ -2188,6 +2226,9 @@ class GrammaticalThoughtRegistry:
         def append_form(operation, descriptor, open_roles):
             key = (operation.semantic_id, tuple(open_roles))
             if key in seen:
+                return
+            if operation.semantic_id == 'bind':
+                # The serial owner offers one full-meaning request per site.
                 return
             if descriptor.continues:
                 # A generic description reference can name an observation.
@@ -2228,7 +2269,7 @@ class GrammaticalThoughtRegistry:
             for semantic_id in self.executable_operation_ids:
                 operation = self._operations_by_id[semantic_id]
                 descriptor = self.descriptors[semantic_id]
-                if descriptor.continues:
+                if descriptor.continues or semantic_id == 'bind':
                     continue
                 bound = {role: self._candidate_operand((source,), role, kind)
                          for role, kind in zip(operation.operand_roles, descriptor.kinds_for(()))}
@@ -2324,6 +2365,13 @@ class GrammaticalThoughtRegistry:
         if not meaning.polarity and not signature.descriptor.evidence_pair:
             raise ValueError('negated thought requires a truth-valued operation')
         return signature
+
+    def reverse(self, result, leaves):
+        """Re-emit an operation's request from the caller's open reading."""
+        descriptor = self.descriptors[result.semantic_id]
+        if descriptor.reverse_executor is None:
+            raise ValueError('thought operation has no declared leaf reverse')
+        return descriptor.reverse_executor(result, leaves)
 
     def execute(self, meaning, context):
         """Execute one completed request through its descriptor-scoped context."""

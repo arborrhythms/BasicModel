@@ -150,6 +150,12 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
             reconstruction, answer = error['reconstruction'], error['answer']
         else:
             reconstruction, answer = 0., error
+        components = getattr(model._concept_owner(), 'components', None)
+        if components is not None:
+            answer = answer + components.weight * sum(
+                record.result.evidence.get('reference_cost', 0.)
+                for record in result.records if record.kind == 'thought'
+                and record.result is not None and record.result.semantic_id == 'bind')
         def number(value):
             return float(value.detach() if torch.is_tensor(value) else value)
         return result, (number(reconstruction), number(answer)), ThoughtTrialState(model)

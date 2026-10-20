@@ -94,12 +94,12 @@ def test_large_menu_exact_representatives_match_pairwise_contract(monkeypatch, r
 
 
 def test_deferred_reference_variant_batching_preserves_operand_gradients():
-    from Language import OperationSelectionLayer, ContextualBindLayer, _BinaryGrammarOpAdapter
+    from Language import OperationSelectionLayer, PartLayer, _BinaryGrammarOpAdapter
     class Product(torch.nn.Module):
         def forward(self, left, right):
             return left * right
     layer = OperationSelectionLayer(d_model=4,
-        ops=[Product(), _BinaryGrammarOpAdapter(ContextualBindLayer(4, 4))])
+        ops=[Product(), _BinaryGrammarOpAdapter(PartLayer())])
     x = torch.randn(2, 3, 4, requires_grad=True)
     left, right = [torch.randn(2, 2, 6, 4, requires_grad=True) for _ in range(2)]
     operations = (0, 1, 0, 1, 0, 1)

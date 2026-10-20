@@ -1,0 +1,94 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>5.190859541995451</pre></td><td><pre>test/test_grammar_word_learning.py:210: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    result, _ = model.runBatch(
+bin/Models.py:13506: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13662: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14042: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8747: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10114: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8432: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8210: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23883: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17113: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22435: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21987: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20946: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:160: in sentence_pair
+    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20940: in train_trial
+    self._sentence_train_step(loss)
+test/compose_score_probe.py:158: in stepped
+    assert scale==walks*rounds*alternatives
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.853287750156596</pre></td><td><pre>test/test_grammar_word_learning.py:210: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    result, _ = model.runBatch(
+bin/Models.py:13506: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13662: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14042: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8747: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10114: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8432: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8210: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23883: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17113: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22435: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21987: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20946: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:160: in sentence_pair
+    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20940: in train_trial
+    self._sentence_train_step(loss)
+test/compose_score_probe.py:158: in stepped
+    assert scale==walks*rounds*alternatives
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError</pre></td><td><pre></pre></td></tr></table></body></html>

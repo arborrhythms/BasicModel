@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03137191594578326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016234667040407658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015207499964162707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03074354096315801,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

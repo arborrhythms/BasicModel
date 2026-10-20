@@ -4446,6 +4446,9 @@ class BaseModel(Mereology, nn.Module):
             legacy = cs.__dict__.pop('_legacy_definition_bindings', None)
             if legacy is not None:
                 migrate_meta_definitions(cs, legacy)
+            components = getattr(cs, 'components', None)
+            if components is not None:
+                components.reference_close.migrate_role_associations()
 
         what_history = extras.get("what_history")
         if what_history is not None:
@@ -5669,6 +5672,7 @@ class BasicModel(BaseModel):
                 store=reasoner.reasoning_store,
                 equal=TruthGroundedReasoner.equal, tau_id=reasoner.tau_id,
                 memory=self._what_memory(), discourse=discourse, row=row,
+                reference_close=getattr(getattr(concept_owner, 'components', None), 'reference_close', None),
                 primed=((primed.reshape(-1) > 1.).nonzero().reshape(-1).tolist()
                         if torch.is_tensor(primed) else ())),
             taxonomy=ThoughtTaxonomyCapability(concept_owner),
@@ -13399,7 +13403,7 @@ class BasicModel(BaseModel):
             return tuple(b' '.join(owner.word_surface_for_row(rows[b][i]) or b''
                 for i in indices[:counts[b]]).decode('utf8') if bool(valid[b].any()) else None
                 for b, indices in enumerate(chosen))
-        vocabulary = sorted({row for cid in owner.definitions.object_ids
+        vocabulary = sorted({row for cid in owner.interpret.lexical_identities()
                              if (row := owner._csw_row_of(cid)) is not None})
         spellings = {row: owner.word_surface_for_row(row) for row in vocabulary}
         vocabulary = [row for row in vocabulary if spellings[row] is not None]
@@ -13431,10 +13435,13 @@ class BasicModel(BaseModel):
     def _grammar_target_word(self, word, *, stream=0):
         """Teacher-side full concept of a word already in the live vocabulary."""
         owner = self._concept_owner()
-        word_id = owner.definitions.word(form=word)
+        word_id = owner.interpret.word_for_form(word)
         if word_id is None:
             return None
-        row = owner._csw_row_of(owner.definitions.deref(word_id))
+        identity = word_id if owner.interpret.no_object(word_id) else owner.definitions.deref(word_id)
+        if identity is None:
+            return None
+        row = owner._csw_row_of(identity)
         if row is None:
             raise ValueError("grammar target word has no live conceptual row")
         reference = owner.similarity_codebook.W
@@ -19461,9 +19468,9 @@ class BasicModel(BaseModel):
     def _compose_score_function_loss(self, path, costs):
         """§16.3: p(departure) times its detached paired cost difference.
 
-        Both trials were costed at one parameter version. The uniform
-        departure draw is independent of the chooser's probability; this is
-        the correction K*R_walk*W for uniform walk, round and action draws.
+        Both trials were costed at one parameter version. Walk and eligible
+        round draws are uniform; the action uses the declared proposal q.
+        The correction is R_walk*W/q(a), reducing to K*R_walk*W at φ=1.
         The scorer's features are detached, so the ordinary reconstruction
         owner can train the chooser without writing perception or operators.
         Exact ties register no term and supply no momentum-only update.

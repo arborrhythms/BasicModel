@@ -82,13 +82,6 @@ try:
     line(f"symbolize:  cold fwd=(a+b)/2? Δ={mx(parent, (a+b)/2):.2e}   rev=balanced (parent/2)? Δ(l,parent/2)={mx(l, parent/2):.2e}")
 except Exception as e: line(f"symbolize: ERR {e}")
 
-# contextualBind — reverse = (parent,parent) stub
-try:
-    cb = L.ContextualBindLayer(); a, b = ev(), ev()
-    parent = cb.forward(a, b); l, r = cb.reverse(parent)
-    line(f"contextualBind: reverse=(parent,parent)? {is_stub(l, r, parent)}   (binding irrecoverable; needs parse context)")
-except Exception as e: line(f"contextualBind: ERR {e}")
-
 print(); print("="*72); print("LEGACY (Layers.py, dormant — not in complete.grammar)"); print("="*72)
 try:
     from Layers import EqualLayer

@@ -17113,16 +17113,12 @@ class ConceptualSpace(Space):
         return candidates[0] if len(candidates) == 1 else None
 
     def word_surface_for_row(self, row):
-        """Resolve an object's spelling through the surviving DEF rows."""
-        obj = self.concept_id_at_row(int(row))
-        index = self._definition_index()
-        if obj is None or index is None:
+        """Spell a witnessed object or a form still waiting for its object."""
+        identity = self.concept_id_at_row(int(row))
+        if identity is None or self._definition_index() is None:
             return None
-        words = index.words(obj)
-        if len(words) != 1:
-            return None  # grammar must select an ambiguous lexicalization
-        forms = index.description(words[0])['forms']
-        return forms[0].encode('utf-8', errors='surrogateescape') if len(forms) == 1 else None
+        form = self.interpret.lexical_form(identity)
+        return None if form is None else form.encode('utf-8', errors='surrogateescape')
 
     def concept_codebook_row_of_percept(self, pid):
         """The order-0 ``similarity_codebook`` row of percept ``pid``'s

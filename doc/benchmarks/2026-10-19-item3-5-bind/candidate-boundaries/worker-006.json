@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+    "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+    "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+    "test/test_thought_operation_catalog.py::test_thought_only_operators_have_no_structural_noop_faces",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+    "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+    "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+    "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+    "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+    "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views"
+  ],
+  "completed": [
+    "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+    "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+    "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+    "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+    "test/test_thought_operation_catalog.py::test_thought_only_operators_have_no_structural_noop_faces",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+    "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+    "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+    "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+    "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+    "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+    "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+    "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005070917075499892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0036392919719219208,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002734790788963437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004792332882061601,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[default.grammar-required1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021333328913897276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028184170369058847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_thought_only_operators_have_no_structural_noop_faces",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019408296793699265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025435839779675007,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024345831479877234,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005849041044712067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003790420014411211,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006234790896996856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002969589550048113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002591249067336321,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_live_tree_choice_keeps_the_same_structural_context_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016870840918272734,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00042062485590577126,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

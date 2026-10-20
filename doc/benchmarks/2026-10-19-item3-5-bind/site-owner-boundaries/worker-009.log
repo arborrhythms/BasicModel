@@ -1,0 +1,37 @@
+FFF.......                                                               [100%]
+=================================== FAILURES ===================================
+______ test_part_testimony_symbols_the_parent_one_order_above_the_object _______
+test/test_definition_taxonomy.py:28: in test_part_testimony_symbols_the_parent_one_order_above_the_object
+    assert word_cat not in cs.taxonomy_children(parent)
+E   assert 1 not in [1, 2]
+E    +  where [1, 2] = taxonomy_children(3)
+E    +    where taxonomy_children = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).taxonomy_children
+________ test_definition_rows_generalize_over_several_words_and_objects ________
+test/test_definition_taxonomy.py:39: in test_definition_rows_generalize_over_several_words_and_objects
+    assert cs.definitions.objects(first) == (river, money)
+E   assert (2,) == (1, 2)
+E
+E     At index 0 diff: 2 != 1
+E     Right contains one more item: 2
+E     Use -v to get more diff
+_____ test_definition_binding_preserves_ambiguous_objects_until_selection ______
+test/test_definition_taxonomy.py:54: in test_definition_binding_preserves_ambiguous_objects_until_selection
+    assert interpret.forward(word, selected=first) == first
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:355: in forward
+    obj = index.deref(word, selected=selected)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:103: in deref
+    raise ValueError('selection is not a defined object')
+E   ValueError: selection is not a defined object
+=============================== warnings summary ===============================
+test/test_definition_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_definition_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object
+FAILED test/test_definition_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects
+FAILED test/test_definition_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection
+3 failed, 7 passed, 1 warning in 2.60s

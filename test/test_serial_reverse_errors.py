@@ -47,11 +47,11 @@ def test_non_invertible_rule_reverse_raises_with_inventory_row():
 def test_all_converted_stubs_raise():
     """The full converted set fails loud (no fabricated splits left)."""
     from Language import (IsPartLayer, PartLayer,
-                          ContextualBindLayer, UnionLayer,
+                          UnionLayer,
                           IntersectionLayer, ConjunctionLayer,
                           DisjunctionLayer)
     parent = torch.rand(1, 2, 6)
-    for layer in (IsPartLayer(), PartLayer(), ContextualBindLayer(),
+    for layer in (IsPartLayer(), PartLayer(),
                   UnionLayer(), IntersectionLayer(),
                   ConjunctionLayer(), DisjunctionLayer()):
         with pytest.raises(NotImplementedError):

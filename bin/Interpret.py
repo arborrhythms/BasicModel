@@ -44,6 +44,37 @@ class InterpretLayer(GrammarLayer):
             raise RuntimeError('interpret requires its shared ConceptualSpace')
         return self._conceptual_space
 
+    def no_object(self, word):
+        """An admitted form can request a referent without inventing an object."""
+        word = int(word)
+        return (word in self._pending and word not in self._field_pending
+                and not self.owner.definitions.objects(word))
+
+    def word_for_form(self, form):
+        """Read an admitted form, including one still waiting for an object."""
+        form = form_key(form)
+        word = self.owner.definitions.word(form=form)
+        if word is not None:
+            return word
+        return next((word for word, value in self._pending.items()
+                     if form in value['forms']), None)
+
+    def lexical_identities(self):
+        """The current object meanings and objectless forms that can emit."""
+        return tuple(dict.fromkeys((*self.owner.definitions.object_ids,
+            *(word for word in self._pending if self.no_object(word)))))
+
+    def lexical_form(self, identity):
+        if self.no_object(identity):
+            value = self._pending[int(identity)]
+        else:
+            words = self.owner.definitions.words(int(identity))
+            if len(words) != 1:
+                return None
+            value = self.owner.definitions.description(words[0])
+        forms = value['forms']
+        return forms[0] if len(forms) == 1 else None
+
     def _preflight(self, *, inventory=True, word=None):
         store = self.owner.definitions._store()
         reserved = sum(cid != word for cid in self._pending)
@@ -88,6 +119,8 @@ class InterpretLayer(GrammarLayer):
                 word = cid
                 break
         if word is not None:
+            if form is not None:
+                cs.bind_word_concept(form, word)
             definition = index.description(word) or self._pending[word]
             previous = definition['parts']
             if any(tuple(ps.fuse_parts(p) if native is not None else p) == parts for p in previous):
@@ -152,6 +185,8 @@ class InterpretLayer(GrammarLayer):
             for whole in wholes:
                 cs.add_whole(word, whole)
             self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+            if form is not None:
+                cs.bind_word_concept(form, word)
             if obj is None:
                 # The field has not admitted this object's case yet. The word
                 # is a native concept; its reserved interpretation completes
@@ -166,8 +201,8 @@ class InterpretLayer(GrammarLayer):
             if word_reading:
                 return None
             raise
-        # Two native identities share one physical row through the unary.
-        # The second identity is allocated by forward, after this reservation.
+        # The form owns a row before it has an object. A later witnessed
+        # definition may supply one; interpretation cannot invent it.
         word = alloc.new_concept()
         for part in parts:
             cs.add_part(word, part)
@@ -177,6 +212,8 @@ class InterpretLayer(GrammarLayer):
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
         self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+        if form is not None:
+            cs.bind_word_concept(form, word)
         if identity_key is not None:
             self._pending[word]['identity_key'] = identity_key
         return word
@@ -333,6 +370,8 @@ class InterpretLayer(GrammarLayer):
         alloc, index = _concept_alloc_of(cs), cs.definitions
         candidates = index.objects(word)
         frozen = getattr(cs, '_online_learning_frozen', False)
+        if self.no_object(word):
+            return word
         if frozen and not candidates:
             return None
         if word in self._field_pending:
@@ -347,25 +386,7 @@ class InterpretLayer(GrammarLayer):
                 return None  # Enumerate associations; the grammar chooses.
             obj = choices[0]
         else:
-            if word not in self._pending:
-                raise ValueError('interpret requires an admitted word')
-            self._preflight(inventory=False, word=word)
-            obj = alloc.new_concept()
-            layer = alloc.layer()
-            row = cs._csw_row_of(word)
-            if row is None:
-                raise ValueError('unary interpretation requires the word inventory row')
-            key = layer._tensor_row_keys[row]
-            new_key = (*key[:-1], obj) if isinstance(key, tuple) else obj
-            del layer._tensor_rows[key]
-            layer._tensor_rows[new_key] = row
-            layer._tensor_row_keys[row] = new_key
-            # The object retains that row's native definition, not an edge to
-            # its word or an extra raised singleton/META fold.
-            for role, ref in alloc.records(word):
-                alloc.add(obj, role, ref)
-            alloc.singletons.add(obj)
-            alloc.reference_orders[obj] = cs._concept_source_order(word)
+            raise ValueError('interpret requires an admitted word')
         if frozen:
             return obj
         self.define(word, obj)
@@ -417,6 +438,8 @@ class InterpretLayer(GrammarLayer):
                 raise ValueError('interpret reverse requires the owned word bank')
             width = word_atoms.shape[-1]
             return torch.cat((self.activate(word_atoms, presence, evidence=evidence), obj[..., width:]), -1)
+        if self.no_object(obj):
+            return int(obj)
         words = self.owner.definitions.words(int(obj))
         if len(words) != 1:
             raise ValueError('object requires a lexical selection')

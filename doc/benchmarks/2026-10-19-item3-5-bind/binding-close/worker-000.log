@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_forced_native_decomposition_through_training_driver[1] __________
+test/test_math_chain_decomposition.py:23: in test_forced_native_decomposition_through_training_driver
+    assert proved, questions
+E   AssertionError: [{'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '0', ...}, {'epoch': 1, 'phase': 'ordinary_certificate', 'split': 'train', 'document': '1', ...}]
+E   assert []
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 2 (Δ=6.022s)
+batch = 4 (Δ=6.474s)
+batch = 6 (Δ=10.155s)
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "0", "pair": [3, 1], "question_source": 3, "episode": true, "work": 173, "answer": "four", "bound_correct": false, "committed_binding": ["ltm", "address-v1", -6467228716660333910], "open": [], "expected_chain_length": 1, "inference_count": 1, "chain_correct": false, "inferences": [{"occurrence": ["ltm", "address-v1", -6467228716660333910], "refs": [["ltm", "address-v1", 7379519654889984640], ["sym", 4010033338316264258], ["ltm", "address-v1", -8596787948646410369]], "open": [], "operation": "query", "witnesses": [["ltm", "address-v1", -2945710636907136273]], "known_witnesses": true, "witness_texts": ["y is x plus one."], "bound_words": []}], "operations": ["query", "ask", "query", "conclude", "query", "conclude"]}
+{"epoch": 1, "phase": "ordinary_certificate", "split": "train", "document": "1", "pair": [3, 1], "question_source": 7, "episode": true, "work": 176, "answer": "four", "bound_correct": false, "committed_binding": ["ltm", "address-v1", 7100138206828593023], "open": [], "expected_chain_length": 1, "inference_count": 1, "chain_correct": false, "inferences": [{"occurrence": ["ltm", "address-v1", 7100138206828593023], "refs": [["ltm", "address-v1", 732098851091866267], ["sym", 4010033338316264258], ["ltm", "address-v1", -7426422534854820532]], "open": [], "operation": "query", "witnesses": [["ltm", "address-v1", -1748812248797312477]], "known_witnesses": true, "witness_texts": ["y is x plus one."], "bound_words": []}], "operations": ["query", "ask", "query", "conclude", "query", "conclude"]}
+
+=============================== warnings summary ===============================
+test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]
+1 failed, 1 warning in 28.63s

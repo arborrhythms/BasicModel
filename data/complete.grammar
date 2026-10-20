@@ -6,9 +6,7 @@
   structural family with a registered descriptor also supplies one checked
   thought operator at a completed boundary; it is never executed while parsing
   or generating. Refined per owner notes:
-    - bind (contextualBind): KEPT (re-introduced - necessary). Resolves a missing
-      / controlled NP in a LIFT(BIND, VP) construction (subject/object control,
-      nearest-left / licensing); the binding is re-derived from context at decode.
+    - bind is a thought operation, once per open reference site.
     - symbolize: NOT a parse op. It is EXPLICIT LEARNING - reading a trusted
       sentence that expresses a relation adds an entry to the CS Symbol table.
       (Mentioned here, never a rule.)
@@ -166,10 +164,8 @@
       <rule implementation="lower" reference="argin2" head="argin2" referent="bind">definite_argout1 = definite.forward(definite_argin1, definite_argin2)</rule>
       <rule implementation="lower" reference="argin2" head="argin2" referent="kind">universal_argout1 = universal.forward(universal_argin1, universal_argin2)</rule>
 
-      <!-- Preposition (PP): refines the NP or VP via a .where relation.
-           Bind: contextual missing/controlled-NP resolution (control/raising). -->
+      <!-- Preposition (PP): refines the NP or VP via a .where relation. -->
       <rule>preposition_argout1 = preposition.forward(preposition_argin1, preposition_argin2)</rule>
-      <rule reference="argin2" head="argin2">bind_argout1 = bind.forward(bind_argin1, bind_argin2)</rule>
 
       <!-- .when / surface ops: tense (phase rotation of the .when key);
            morphology (surface inflection -> .when). aspect is REPURPOSED as
@@ -197,6 +193,7 @@
       <rule family="part" permutation="argin2,argin1">whole_argout1 = whole.thought(whole_argin1, whole_argin2)</rule>
       <rule>equal_argout1 = equal.thought(equal_argin1, equal_argin2)</rule>
       <rule>not_argout1 = not.thought(not_argin1)</rule>
+      <rule>bind_argout1 = bind.thought(bind_argin1)</rule>
       <rule>isTrue_argout1 = isTrue.thought(isTrue_argin1)</rule>
       <rule>exist_argout1 = exist.thought(exist_argin1)</rule>
       <rule>isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)</rule>
@@ -237,7 +234,6 @@
       <rule implementation="lower" referent="bind">definite_argin1, definite_argin2 = definite.reverse(definite_argout1)</rule>
 
       <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>
-      <rule>bind_argin1, bind_argin2 = bind.reverse(bind_argout1)</rule>
 
       <rule>surface_argin1, surface_argin2 = surface.reverse(surface_argout1)</rule>
       <rule>transpose_argin1, transpose_argin2 = transpose.reverse(transpose_argout1, transpose_argout2)</rule>

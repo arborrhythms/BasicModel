@@ -218,8 +218,12 @@ class ClauseTaxonomyPlan:
         if clause.slots.shape[0] != 1:
             return
         from ThoughtReferences import open_slots
-        if open_slots(clause.meaning):
-            return
+        pending = [clause]
+        while pending:
+            current = pending.pop()
+            if open_slots(current.meaning):
+                return
+            pending.extend((*current.children, *current.companions))
         sources = {clause.refs[0]} if type(clause.refs[0]) is int else set()
         if clause.subject_word_id > 0:
             sources.add(clause.subject_word_id)

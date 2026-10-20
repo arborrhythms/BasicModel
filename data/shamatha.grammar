@@ -58,6 +58,7 @@
       <rule family="part" permutation="argin2,argin1">whole_argout1 = whole.thought(whole_argin1, whole_argin2)</rule>
       <rule>equal_argout1 = equal.thought(equal_argin1, equal_argin2)</rule>
       <rule>not_argout1 = not.thought(not_argin1)</rule>
+      <rule>bind_argout1 = bind.thought(bind_argin1)</rule>
       <rule>isTrue_argout1 = isTrue.thought(isTrue_argin1)</rule>
       <rule>exist_argout1 = exist.thought(exist_argin1)</rule>
       <rule>isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)</rule>

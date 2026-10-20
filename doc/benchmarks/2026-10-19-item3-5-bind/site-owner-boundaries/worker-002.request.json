@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+    "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/site-owner-boundaries/worker-002.recycle.json"
+}

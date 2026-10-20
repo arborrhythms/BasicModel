@@ -3,6 +3,7 @@ import copy
 import pytest
 import torch
 from test_definition_rows import model, admit
+from definition_fixtures import witness_object
 
 
 def test_copied_definition_index_is_owned_by_the_copied_store():
@@ -23,7 +24,8 @@ def test_two_pending_words_cannot_overbook_the_last_definition_row():
     with pytest.raises(RuntimeError,match='capacity'):
         cs.interpret.lookup_word([8],[],form='second')
     assert before==(alloc.next_id,dict(alloc.placement),dict(alloc.layer()._tensor_rows))
-    obj=cs.interpret.forward(first)
+    obj=witness_object(cs, first)
+    assert cs.interpret.forward(first)==obj
     assert cs.definitions.deref(first)==obj
 
 
@@ -122,6 +124,21 @@ def test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache(
     assert m._generated_word_text(point[None, None], torch.tensor([1])) == ('hello',)
 
 
+def test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition():
+    m = model()
+    cs, store = m._concept_owner(), m.symbolSpace.ltm_store
+    word = cs.interpret.lookup_word([7], [], form='m')
+    row = cs._csw_row_of(word)
+    before = len(store), cs._concept_allocator.next_id
+    assert cs.interpret.no_object(word)
+    assert cs.word_surface_for_row(row) == b'm'
+    point = cs.similarity_codebook.getW()[row].detach()
+    assert m._generated_word_text(point[None, None], torch.tensor([1])) == ('m',)
+    torch.testing.assert_close(m._grammar_target_word('m'), point, rtol=0, atol=0)
+    assert cs.definitions.objects(word) == ()
+    assert before == (len(store), cs._concept_allocator.next_id)
+
+
 def test_reference_update_law_uses_the_definition_index():
     from Spaces import Space, reference_update_mask
     from test_codebook_update_law import _knob
@@ -161,4 +178,3 @@ def test_new_definitions_do_not_alias_later_sentence_identities():
     symbols = set(store.refs[store.relations(store.REL_DEF)][:, (0, 2)].reshape(-1).tolist())
     rows = store.rows_of_origin(store.ORIGIN_PROVISIONED)
     assert symbols.isdisjoint(store.row_ids[rows].tolist())
-

@@ -1,0 +1,137 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_definition_rows.py::test_27_definition_rewitness_keeps_its_when_and_store_position",
+    "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+  ],
+  "completed": [
+    "test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_definition_rows.py::test_27_definition_rewitness_keeps_its_when_and_store_position",
+    "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.061716374941170216,
+      "message": "test/test_definition_rows.py:27: in test_22_new_word_replaces_one_inventory_row_and_writes_one_definition\n    assert word != obj\nE   assert 1 != 1",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.039120875066146255,
+      "message": "test/test_definition_rows.py:51: in test_24_index_is_bidirectional_and_rebuilds_from_saved_rows\n    assert restored.definitions.word(form='hello') == word\nE   AssertionError: assert None == 1\nE    +  where None = word(form='hello')\nE    +    where word = <Definitions.DefinitionIndex object at 0x12819b230>.word\nE    +      where <Definitions.DefinitionIndex object at 0x12819b230> = TernaryTruthStore().definitions",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.03931849985383451,
+      "message": "test/test_definition_rows.py:70: in test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index\n    assert cs.interpret.forward(word) is None\nE   assert 2 is None\nE    +  where 2 = forward(1)\nE    +    where forward = InterpretLayer().forward\nE    +      where InterpretLayer() = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).interpret",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.18642245908267796,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_27_definition_rewitness_keeps_its_when_and_store_position",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.03838100004941225,
+      "message": "test/test_definition_rows.py:102: in test_27_definition_rewitness_keeps_its_when_and_store_position\n    witness = int(store.witness_count[r0])\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ValueError: only one element tensors can be converted to Python scalars",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.03868362493813038,
+      "message": "test/test_definition_rows.py:119: in test_28_forgotten_definition_does_not_survive_in_any_lookup\n    assert int(store.origin[row]) == store.ORIGIN_CONVERSATION\n           ^^^^^^^^^^^^^^^^^^^^^^\nE   ValueError: only one element tensors can be converted to Python scalars",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.08818633388727903,
+      "message": "test/test_definition_rows.py:140: in test_31_read_words_have_definition_rows_without_changing_the_configuration\n    assert word is not None\nE   assert None is not None",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.7716712078545243,
+      "message": "test/test_definition_rows.py:140: in test_31_read_words_have_definition_rows_without_changing_the_configuration\n    assert word is not None\nE   assert None is not None",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.31156850000843406,
+      "message": "test/test_definition_rows.py:140: in test_31_read_words_have_definition_rows_without_changing_the_configuration\n    assert word is not None\nE   assert None is not None",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0383907922077924,
+      "message": "test/test_definition_rows.py:155: in test_34_learning_codes_cannot_change_definition_identity\n    assert cs.definitions.objects(word) == (obj,)\nE   assert () == (1,)\nE     \nE     Right contains one more item: 1\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008005084004253149,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

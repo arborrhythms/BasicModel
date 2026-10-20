@@ -1,0 +1,170 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014663957990705967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03647837485186756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.035423916997388005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03592491685412824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.035166542045772076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004681040998548269,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001170458970591426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012887957971543074,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02006241586059332,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0066723329946398735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000777499983087182,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.030102541903033853,
+      "message": "test/test_reference_close.py:221: in test_deferred_reference_request_survives_kept_trial_detachment\n    scored = finish_clause(f.language, program, registry=f.registry)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:661: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:556: in recover\n    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:134: in expected_roles\n    return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in\nbin/ReferenceClose.py:135: in <genexpr>\n    self.associations.items() if r == role and head in heads) >= self.components.nouns.recurrence)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ColumnDictionary' object has no attribute 'recurrence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009704250143840909,
+      "message": "test/test_reference_close.py:251: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n    clause = finish_clause(f.language, program, registry=f.registry)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:661: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:556: in recover\n    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:134: in expected_roles\n    return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in\nbin/ReferenceClose.py:135: in <genexpr>\n    self.associations.items() if r == role and head in heads) >= self.components.nouns.recurrence)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ColumnDictionary' object has no attribute 'recurrence'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009147207951173186,
+      "message": "test/test_reference_close.py:251: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n    clause = finish_clause(f.language, program, registry=f.registry)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:661: in finish_clause\n    return recover(stack[0], top=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseJournal.py:556: in recover\n    resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:134: in expected_roles\n    return tuple(role for role in (0, 2) if sum(count for (atom, head, r), count in\nbin/ReferenceClose.py:135: in <genexpr>\n    self.associations.items() if r == role and head in heads) >= self.components.nouns.recurrence)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ColumnDictionary' object has no attribute 'recurrence'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

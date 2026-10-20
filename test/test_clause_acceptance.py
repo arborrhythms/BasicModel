@@ -30,7 +30,11 @@ class SentenceFixture:
             name = rule.method_name
             if name not in self.ops:
                 cls = Language.GRAMMAR_LAYER_CLASSES[name]
-                self.ops[name] = cls(8, 8) if name in ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
+                if issubclass(cls, Language.MarkerUnaryLayer):
+                    base = Language.GRAMMAR_LAYER_CLASSES[cls.marker_base](8, 8)
+                    self.ops[name] = cls(base)
+                else:
+                    self.ops[name] = cls(8, 8) if name in ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
             return self.ops[name]
         self.operation = operation
         self.language = SimpleNamespace(_compose_binary_rules=self.binary, _compose_unary_rules=self.unary,
@@ -48,6 +52,11 @@ class SentenceFixture:
     def noun(self, word):
         if word not in self.words:
             wid = self.cs.interpret.lookup_word([len(self.words) + 1], [], form=word)
+            # These certificates supply object meanings. A bare new form
+            # alone now deliberately remains an unbound reference site.
+            obj = self.cs.new_concept()
+            self.cs._csw_concept_row(0, obj)
+            self.cs.interpret.define(wid, obj)
             self.words[word] = wid, self.cs.interpret.forward(wid)
         return self.words[word][1]
 

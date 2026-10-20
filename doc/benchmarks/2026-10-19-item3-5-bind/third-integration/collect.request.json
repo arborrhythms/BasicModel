@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_bind_thought.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_thought_operation_catalog.py",
+    "test/test_grammatical_query_vps.py",
+    "test/test_word_interpretation.py",
+    "test/test_when_grammar_rules.py",
+    "test/test_operator_catalogue.py",
+    "test/test_item6_2_thinking.py",
+    "test/test_walk_trials.py",
+    "test/test_clause_acceptance.py",
+    "test/test_math_chain_repair2.py",
+    "test/test_serial_reverse_errors.py",
+    "test/test_tied_operator_reconstruction.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

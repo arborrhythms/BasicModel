@@ -1,0 +1,1228 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+    "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+    "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+    "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+    "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+    "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+    "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+    "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+    "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+    "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+    "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+    "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+    "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+    "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+    "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+    "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+    "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+    "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-002.json"
+      ],
+      "pid": 81174,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 444138792,
+      "elapsed_seconds": 4.405611666850746,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+        "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+        "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+        "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+        "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+      ],
+      "completed": [
+        "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+        "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+        "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+        "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+        "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03218779107555747,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0161384588573128,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014594540931284428,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0309644581284374,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03565225005149841,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.015095582930371165,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01614062488079071,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-000.json"
+      ],
+      "pid": 81172,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 454395248,
+      "elapsed_seconds": 5.5633579168934375,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]"
+      ],
+      "completed": [
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.030057499883696437,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.022181875072419643,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02176379202865064,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02258533309213817,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021948333829641342,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021398541983217,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021848791977390647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02183541702106595,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02193779102526605,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.023325582966208458,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.022800792008638382,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021790582919493318,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.024791582953184843,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.024770541116595268,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02572454116307199,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.025381166953593493,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-001.json"
+      ],
+      "pid": 81173,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 453592384,
+      "elapsed_seconds": 6.52606475003995,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
+      ],
+      "completed": [
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03276470908895135,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.025172749999910593,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.025477916933596134,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.024878624826669693,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02495683403685689,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.025009749922901392,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02443604194559157,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.024289957946166396,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02985520800575614,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.027996249962598085,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02870979206636548,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.027574041858315468,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02968850010074675,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02831904194317758,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.030487583950161934,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.028470916906371713,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-005.json"
+      ],
+      "pid": 81199,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434701656,
+      "elapsed_seconds": 4.257542624836788,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+        "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+        "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+        "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature"
+      ],
+      "completed": [
+        "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+        "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+        "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+        "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.022853082977235317,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010922875022515655,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01414495799690485,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000677207950502634,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-004.json"
+      ],
+      "pid": 81198,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438666536,
+      "elapsed_seconds": 5.348460042150691,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+        "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+        "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+        "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+        "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+        "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+        "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+      ],
+      "completed": [
+        "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+        "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+        "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+        "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+        "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+        "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+        "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014289375161752105,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03803345910273492,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03744033304974437,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03786633303388953,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0368363750167191,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004802583949640393,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007620409596711397,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01255066692829132,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02070174994878471,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007508917013183236,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009374159853905439,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017750500002875924,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013849542010575533,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.012680709129199386,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-006.json"
+      ],
+      "pid": 81211,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 868780120,
+      "elapsed_seconds": 35.520868166117,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 30.916382832918316,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 30.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.320s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.319s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.316s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.316s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-003.json"
+      ],
+      "pid": 81189,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2580499600,
+      "elapsed_seconds": 141.17651408305392,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009798749815672636,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007360419258475304,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021269170101732016,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021375125041231513,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010976749937981367,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0002827499993145466,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.023905874928459525,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0012532919645309448,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 78.8795754169114,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=4.280s)\r\nbatch = 16 (\u0394=3.693s)\r\nbatch = 24 (\u0394=4.181s)\r\nbatch = 32 (\u0394=5.649s)\r\nbatch = 40 (\u0394=3.706s)\r\nbatch = 48 (\u0394=4.214s)\r\nbatch = 56 (\u0394=5.730s)\r\nbatch = 64 (\u0394=5.735s)\r\nbatch = 72 (\u0394=3.554s)\r\nbatch = 80 (\u0394=4.192s)\r\nbatch = 88 (\u0394=5.594s)\r\nbatch = 96 (\u0394=5.615s)\r\nbatch = 104 (\u0394=5.730s)\r\nbatch = 0 (\u0394=12.372s)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": "copular_identity",
+          "duration": 0.00039166701026260853,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 234, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.925116041908041,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 25.991031124955043,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=12.708s)\r\n"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 26.45976774999872,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 8 (\u0394=15.323s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final",
+  "elapsed_seconds": 150.06912708305754,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {
+    "copular_identity": [
+      {
+        "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 234, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')"
+      }
+    ]
+  },
+  "peak_aggregate_memory_bytes": 2580499600,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/collect.json"
+    ],
+    "pid": 81161,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431588552,
+    "elapsed_seconds": 3.66713700001128,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/native-final/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+        "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+        "test/test_bind_thought.py::test_role_association_load_migration_is_once_from_retained_occurrences",
+        "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+        "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit",
+        "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+        "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+        "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+        "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+        "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+        "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+        "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+        "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+        "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+        "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+        "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+        "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "copular_identity"
+  }
+}

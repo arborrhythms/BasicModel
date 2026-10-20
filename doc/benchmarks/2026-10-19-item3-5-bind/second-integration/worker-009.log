@@ -1,0 +1,17 @@
+..........F...                                                           [100%]
+=================================== FAILURES ===================================
+___________ test_every_serial_word_runs_interpret_before_composition ___________
+test/test_word_interpretation.py:211: in test_every_serial_word_runs_interpret_before_composition
+    assert (ids[active] != objects[active]).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x11fea54a0>()
+E    +    where <built-in method all of Tensor object at 0x11fea54a0> = tensor([12, 14, 15]) != tensor([12, 14, 15]).all
+=============================== warnings summary ===============================
+test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5360: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition
+1 failed, 13 passed, 1 warning in 4.47s

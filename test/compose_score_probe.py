@@ -26,6 +26,7 @@ def observe_score_function(result):
         for name in ('score_binary', 'score_unary')}
     attend = OperationSelectionLayer.attend
     forward = OperationSelectionLayer.forward
+    select_logits = OperationSelectionLayer.select_logits
     surrogate = BasicModel._compose_score_function_loss
     train = BasicModel._sentence_train_step
     current, pending, selected = [], [], []
@@ -33,6 +34,11 @@ def observe_score_function(result):
     ranges = result.setdefault('chooser_logit_ranges', {})
     batch = {}
     owner_step = 0
+
+    def selection(module, logits, **kwargs):
+        if current and current[-1]['module'] is module:
+            current[-1]['proposal_logits'] = frozen(kwargs.get('alternative_logits', logits))
+        return select_logits(module, logits, **kwargs)
 
     def scorer(cls, name):
         def observed(chooser, *args, **kwargs):
@@ -70,16 +76,23 @@ def observe_score_function(result):
         return value
 
     def attention(module, keys, legal, space, **kwargs):
-        value=attend(module,keys,legal,space,**kwargs)
+        mask=kwargs.get('masked_action')
+        capture=torch.is_tensor(mask) and bool(mask.ge(0).any())
+        entry=dict(walk='narrowing',module=module,keys=frozen(keys),legal=frozen(legal),
+            space=frozen(space),prior=frozen(kwargs.get('prior')))
+        if capture: current.append(entry)
+        try:
+            value=attend(module,keys,legal,space,**kwargs)
+        finally:
+            if capture: current.pop()
         if not kwargs.get('return_details'): return value
         logits=value[3]['logits']
         record_logits(ranges, 'narrowing:'+str(result.get('_active_epoch', 0)), logits)
-        mask=kwargs.get('masked_action')
-        if torch.is_tensor(mask) and bool(mask.ge(0).any()):
+        if capture:
             eligible=torch.isfinite(logits)&(torch.arange(logits.shape[-1],device=logits.device)[None]!=mask[:,None])
-            pending.append(dict(walk='narrowing',module=module,keys=frozen(keys),legal=frozen(legal),
-                space=frozen(space),prior=frozen(kwargs.get('prior')),forced=mask.ge(0),
-                logits=logits,actions=value[0].detach(),original=logits.detach().clone(),eligible=eligible))
+            entry.update(forced=mask.ge(0), logits=logits,actions=value[0].detach(),
+                         original=logits.detach().clone(),eligible=eligible)
+            pending.append(entry)
         return value
 
     @torch.no_grad()
@@ -155,7 +168,18 @@ def observe_score_function(result):
                 draw=batch['departure']
                 walks=int(draw['walk_count'][row]);rounds=int(draw['walk_rounds'][row])
                 alternatives=int(entry['eligible'][row].sum())
-                assert scale==walks*rounds*alternatives
+                # The production proposal mixes a uniform floor with the
+                # expectation-free policy. K is its inverse only at φ=1
+                # (or when that policy happens to be uniform).
+                eligible = entry['eligible'][row]
+                free = entry['proposal_logits'][row].masked_fill(~eligible, -torch.inf)
+                fraction = entry['module'].exploration_fraction
+                temperature = entry['module'].exploration_temperature
+                proposal = (fraction * eligible.to(free) / alternatives
+                            + (1-fraction) * (free / temperature).softmax(-1))
+                expected_scale = walks * rounds * proposal[action].reciprocal()
+                torch.testing.assert_close(expected_scale.new_tensor(scale), expected_scale,
+                                           rtol=1e-6, atol=1e-6)
                 assert int(draw['walk'][row])==(0 if entry['walk']=='narrowing' else 1)
                 expected *= scale * advantage / batch['active'].sum()
                 actual = (torch.zeros_like(expected) if entry['gradient'] is None
@@ -174,6 +198,7 @@ def observe_score_function(result):
                 record.update(walk=entry['walk'], action=action, action_name=names[action], sampling_scale=scale,
                     W=walks,R_walk=rounds,K=alternatives,
                     eligible_rounds=rounds,total_eligible_rounds=int(draw['rounds'][row]),
+                    proposal_probability=float(proposal[action]), uniform_fraction=fraction,
                     round=int(torch.nonzero(batch['mask'][row], as_tuple=False)[0]),
                     p_forward=float(p[action]), p_before=float(before.softmax(-1)[action]),
                     p_after=float(after.softmax(-1)[action]),
@@ -197,6 +222,7 @@ def observe_score_function(result):
         for cls, name in methods: stack.enter_context(patch.object(cls, name, scorer(cls, name)))
         stack.enter_context(patch.object(OperationSelectionLayer, 'forward', operation))
         stack.enter_context(patch.object(OperationSelectionLayer, 'attend', attention))
+        stack.enter_context(patch.object(OperationSelectionLayer, 'select_logits', selection))
         stack.enter_context(patch.object(BasicModel, '_compose_score_function_loss', compared))
         stack.enter_context(patch.object(BasicModel, '_sentence_train_step', stepped))
         yield

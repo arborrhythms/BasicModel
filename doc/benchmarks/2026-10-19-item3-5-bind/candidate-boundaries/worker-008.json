@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+    "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+    "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+    "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+    "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+    "test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence",
+    "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation"
+  ],
+  "completed": [
+    "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+    "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+    "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+    "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+    "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+    "test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence",
+    "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011300334008410573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007738541113212705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006261874921619892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007244917098432779,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006957500008866191,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008262791903689504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007034500129520893,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

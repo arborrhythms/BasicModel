@@ -145,13 +145,13 @@ def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
 
 
 def test_absorbed_marker_uses_its_own_reference(tmp_path):
-    from Language import PartLayer, WholeLayer, PrepositionLayer, ContextualBindLayer, LowerLayer
+    from Language import PartLayer, WholeLayer, PrepositionLayer, LowerLayer
     model = _model(tmp_path)
     try:
         parent = torch.tensor([[.2, .7]])
         marker = torch.tensor([[-.1, .3]])
         for op, side in ((LowerLayer(), "left"), (PartLayer(), "left"), (PrepositionLayer(), "left"),
-                         (WholeLayer(), "right"), (ContextualBindLayer(), "right")):
+                         (WholeLayer(), "right")):
             left, right = model.languageSpace.reverse_binary_step(
                 parent, torch.tensor([0]), torch.tensor([True]), marker,
                 reference_side=side, ops=[op])

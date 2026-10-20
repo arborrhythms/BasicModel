@@ -48,23 +48,23 @@ class TestPrepositionGrammarRules(unittest.TestCase):
 
 
 class TestBindGrammarRules(unittest.TestCase):
-    """Phase 2, Task 2.3: the broad role-only grammar declares a ``bind`` rule
-    (contextual missing-NP marker). Same auto-fire contract as preposition:
-    registered class + ``cls()`` + a ``<rule>`` naming it. Role-only (no POS)."""
+    """Binding is a unary thought operation with no compose/generate rule."""
 
     def test_bind_rule_present(self):
         g = _load_complete()
-        names = {r.method_name for r in g.rules_upward if r.method_name}
+        names = {r.semantic_id for r in g.thought_operations}
         self.assertIn("bind", names)
 
-    def test_bind_forward_reverse_pairing(self):
+    def test_bind_has_no_chart_rule_ids(self):
         g = _load_complete()
         up = [r for r in g.rules_upward if r.method_name == "bind"]
         dn = [r for r in g.rules_downward if r.method_name == "bind"]
-        self.assertTrue(up, "no forward bind rule")
-        self.assertTrue(dn, "no reverse bind rule")
-        self.assertEqual(up[0].lhs, "bind_argout1")
-        self.assertEqual(up[0].rhs_symbols, ("bind_argin1", "bind_argin2"))
+        self.assertFalse(up)
+        self.assertFalse(dn)
+        op = next(op for op in g.thought_operations if op.semantic_id == 'bind')
+        self.assertEqual(op.operand_roles, ('argin1',))
+        self.assertEqual(op.result_role, 'argout1')
+        self.assertFalse(op.forward_rule_ids or op.reverse_rule_ids)
 
 
 class TestPrepositionSignalRouterBinding(unittest.TestCase):

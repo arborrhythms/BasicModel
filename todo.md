@@ -19,8 +19,9 @@ lines below keep the numbers their items had when they landed.
 
 **Current:** Step 0's mechanism gates are complete at `bfc834d79`
 ([receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md)).
-Both mains receive that source and its closing receipt before work starts
-on `codex/item3-5-first-pass`. Production keeps the prime ON and uncapped,
+Both mains contain that source and its closing receipt: BasicModel `d6eb0cf3b`,
+WikiOracle `cb4d718be`. Work has started on `codex/item3-5-first-pass`.
+Production keeps the prime ON and uncapped,
 P/S/R/D=0 and φ=.5.
 
 **Necessary deferral, accepted after evaluation:** the copular-identity
@@ -32,11 +33,16 @@ Graded versus shuffled (§9.6), derivation-optimality, long-run collapse and
 the original failed native learning run remain at Item 0. Independent 5.5
 learning gates remain separate. No extra training or regrade closes them.
 
-**Next mechanism:** Item **3.5**, on a new branch after Item 4 publication,
+**Active mechanism:** Item **3.5**, on a separate branch after Item 4 publication,
 in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
 gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
 continuation before identity; verb group element; tense/aspect and second
 difference; then the remaining 5.5 mechanisms. Each has its own receipt.
+The [bind candidate](doc/benchmarks/2026-10-19-item3-5-bind/README.md)
+has completed scoped validation: 334 passed, one copular prerequisite skip,
+and both decomposition lengths pass in both gain arms (all eight questions
+correct). Its next gate is Claude's review, then the one landing sweep;
+steps 2–6 have not started.
 There is no identity-learning claim: the native reference-close lesson remains
 0/146 bindings, 0/20 row pairs and zero A columns.
 
