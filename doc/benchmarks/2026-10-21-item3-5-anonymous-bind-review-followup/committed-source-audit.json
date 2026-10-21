@@ -1,0 +1,14 @@
+{
+  "source": "a93f93c0e0f74a7fa51cc2b656a1c337be17ebfb",
+  "gate_source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "run": "mtm-06",
+  "validated_source_files": 826,
+  "mismatches": [],
+  "changed_code_and_tests_from_gate_source": [
+    "bin/Models.py",
+    "bin/ReferenceClose.py",
+    "test/test_reference_arrival_review.py",
+    "test/test_reference_arrivals.py"
+  ],
+  "note": "Development verification only. No earlier frozen gate result is promoted to this source."
+}

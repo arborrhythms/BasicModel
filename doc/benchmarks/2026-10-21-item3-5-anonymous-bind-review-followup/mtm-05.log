@@ -1,0 +1,4 @@
+[collect] 2 selectors; limit 600s, 8.0 GiB
+[collect] exit 4; 2.3s; peak 0.24 GiB
+Result: collection_exit, exit 4; 0/0 cases completed.
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/mtm-05/result.json

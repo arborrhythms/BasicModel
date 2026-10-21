@@ -1,5 +1,7 @@
 # Development after Claude's review of 3d453e6bb
 
+Intermediate repair source: `a93f93c0e0f74a7fa51cc2b656a1c337be17ebfb`.
+
 This is not the next frozen gate source. The complete twelve-draw,
 eight-file, decomposition and MM evidence remains attributed to
 [3d453e6bb](../2026-10-21-item3-5-anonymous-bind-v3/README.md), whose review
@@ -49,8 +51,12 @@ forced-scope extension or objective change is made here.
 | `remaining-02` | 2 failed | Both the pooled-candidate ownership loss and uncued cross-document refinement reproduced before the guard. |
 | `scope-03` | 20 passed | All 16 arrival cases plus four review regressions, with the frame-access guard. |
 | `remaining-04` | 1 passed, 1 failed | The unchanged cross-document reproduction passes; the pooled candidate's earlier use still loses its token. |
+| `mtm-05` | Collection error; no cases ran | The occurrence selector named the wrong test file. The failed invocation is retained. |
+| `mtm-06` | 18 passed on `a93f93c0e` | All 14 MTM cases, including eager/compiled isolation, and all four occurrence views. The corrected selector changes no source. |
 
 These bounded runs retain their logs and source manifests, including both
-red runs. They are development checks, not substitutes for gates on the
+red runs and the collection error. The [committed source audit](committed-source-audit.json)
+matches all 826 validated source files to `a93f93c0e` for `mtm-06`.
+They are development checks, not substitutes for gates on the
 next final frozen source. The [review handoff](review-handoff.md) carries
 the remaining questions and the exact source/evidence boundaries.

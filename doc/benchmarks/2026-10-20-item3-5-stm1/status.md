@@ -1,5 +1,21 @@
 # Step 1b: current gates and carry ledger
 
+**Review follow-up, 2026-10-21.** Intermediate source `a93f93c0e`
+repairs the occurrence witness, native-arrival synthetic row, missing
+selection audit, scored-arrival alias and historical-site frame access.
+Its [development receipt](../2026-10-21-item3-5-anonymous-bind-review-followup/README.md)
+retains the checks and both before/after regressions: 20 arrival/review cases
+pass, followed by all 14 MTM and four occurrence cases on the committed
+source (826 source files verified). All existing arrival
+assertions remain unchanged. The pooled-candidate regression remains red:
+refinement deletes the selected token's earlier uses; preserving kind alone
+would lose its distinguishing content. At Alec's request, the named-site
+forcing/objective question is deferred to review time. It and the pooled
+ownership question, plus the unchanged bootstrap zero-R failure, are in the
+[review handoff](../2026-10-21-item3-5-anonymous-bind-review-followup/review-handoff.md).
+This is not the next final frozen gate source, and none of the completed
+`3d453e6bb` gates below is promoted to it. Publication remains pending.
+
 **Active §18 / §10.4 round, 2026-10-21.** Accepted MTM remains
 `eac2fe87b`. All requested gates have completed on frozen `3d453e6bb`:
 10/12 fresh first draws pass, with reverse 2 and 3 failing unchanged D2
@@ -14,8 +30,8 @@ seat requests. All 23 run manifests match the frozen source. The
 [full receipt](../2026-10-21-item3-5-anonymous-bind-v3/README.md) retains
 every failure and probe. No earlier pass is promoted. Claude's completed
 review says not to land. The A decomposition confirms that reference credit
-keeps the nameless first reading; the forcing/objective decision is with
-Alec. Review findings and failures must be resolved before publication. No second full sweep, assertion
+keeps the nameless first reading; Alec deferred the forcing/objective
+decision to review time. Review findings and failures must be resolved before publication. No second full sweep, assertion
 or objective change, or learning claim.
 
 **Historical §17 evidence follows.**

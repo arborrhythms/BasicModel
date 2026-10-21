@@ -7,9 +7,16 @@ regressions pass, and the eight-file set records 110 passes, three failures
 and one existing skip. Both original decomposition arms and both eight-seat
 MM draws pass. Reverse draws 2 and 3 exactly replay; their retained
 order-0 complement is absent from the next bind menu. A nested occurrence
-witness and bootstrap zero-R discrepancy remain open as well. Every failed
-run is retained; no result is promoted. Claude's review and resolution of
-these failures precede publication. The §17 evidence below is historical.
+witness is repaired in intermediate source `a93f93c0e`; its
+[review follow-up](../2026-10-21-item3-5-anonymous-bind-review-followup/README.md)
+also repairs native-arrival row materialization, audit/copy isolation and
+historical-site frame access. Pooled-candidate ownership and bootstrap
+zero-R remain open. The first named-site reading loses on reference credit;
+Alec deferred the forcing/objective decision to review time. Claude's
+completed review of `3d453e6bb` says not to land. Every failed run is retained,
+and no gate is promoted to the intermediate source. Resolving the review
+findings and failures precedes the next freeze and publication. The §17
+evidence below is historical.
 
 
 

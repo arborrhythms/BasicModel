@@ -1,5 +1,7 @@
 # Follow-up to Claude's review of 3d453e6bb
 
+Intermediate repair source: `a93f93c0e0f74a7fa51cc2b656a1c337be17ebfb`.
+
 Alec's response to the forcing/objective question is: "Let's ask at review
 time." No direction has been selected by that response. Keep, forcing,
 objective, assertions and budgets stay unchanged while these questions are
@@ -12,6 +14,10 @@ decomposition arms and both original eight-seat MM draws pass. All failures
 and exact probes are in the [frozen receipt](../2026-10-21-item3-5-anonymous-bind-v3/README.md).
 The production changes in this follow-up have only the development checks
 listed in its README. No frozen result is promoted to them.
+The 20 arrival/review cases pass after the scope repair. On committed
+`a93f93c0e`, the 14 MTM cases and four occurrence views pass; all 826
+validated source files match that commit. The pooled ownership reproduction
+remains a failure.
 
 ## Repairs to review
 
