@@ -1,0 +1,24 @@
+{
+  "case": "3-1",
+  "text": "cat chases",
+  "expected": [
+    "ltm",
+    "address-v1",
+    6661743618885205201
+  ],
+  "chosen": "address-v1",
+  "open_roles": [
+    [
+      "referent",
+      0
+    ],
+    [
+      "relation",
+      1
+    ]
+  ],
+  "pair": [
+    0.40460968017578125,
+    0.5953903198242188
+  ]
+}

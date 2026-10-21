@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item35-bootstrap-base-jki4nk17/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-baseline-03/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-baseline-03/worker-000.json"
+  ],
+  "pid": 60195,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 890161288,
+  "elapsed_seconds": 39.72616712492891,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-baseline-03/worker-000.log"
+}

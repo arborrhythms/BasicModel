@@ -1,0 +1,11 @@
+{
+  "source": "823f157cda4ef6b08744591ade7897476f8551b6",
+  "receipt": "regressions-final",
+  "selectors": [
+    "test/test_medium_term_memory.py",
+    "test/test_reference_arrivals.py",
+    "test/test_part_closing.py",
+    "test/test_reference_occurrence_views.py"
+  ],
+  "exit": 0
+}

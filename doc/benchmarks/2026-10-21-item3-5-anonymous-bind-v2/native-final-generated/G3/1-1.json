@@ -1,0 +1,24 @@
+{
+  "case": "1-1",
+  "text": "bird chases",
+  "expected": [
+    "ltm",
+    "address-v1",
+    1535895573449137220
+  ],
+  "chosen": "address-v1",
+  "open_roles": [
+    [
+      "referent",
+      0
+    ],
+    [
+      "relation",
+      1
+    ]
+  ],
+  "pair": [
+    0.40460968017578125,
+    0.5953903198242188
+  ]
+}

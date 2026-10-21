@@ -1,11 +1,13 @@
 # Step 1b §10.3: medium-term token identity
 
-**§18 update:** Claude accepts the frozen MTM repair and ports. Alec's
-§10.4 decision is implemented in the [anonymous-bind round](../2026-10-21-item3-5-anonymous-bind/README.md).
-Its first freeze `51cce2005` retained a captured reverse failure and a
-native-arrival failure; the repairs and all new gates belong to the
-[second freeze](../2026-10-21-item3-5-anonymous-bind-v2/README.md). No result
-is promoted from `eac2fe87b` or `51cce2005`. Every failed run stays retained.
+**§18 update:** accepted MTM remains `eac2fe87b`. Anonymous-bind source
+`823f157cd` passes twelve fresh arrival draws and 48 regressions. Its
+[full ledger](../2026-10-21-item3-5-anonymous-bind-v2/README.md) retains the
+bootstrap zero-R failure and four decomposition failures. The latter's
+open-name fixture seam is repaired; the [third freeze](../2026-10-21-item3-5-anonymous-bind-v3/README.md)
+owns all new gates. The bootstrap discrepancy also fails on accepted MTM
+under identical replay and remains open. No earlier result is promoted.
+
 
 
 Current: Claude's seventh review (bind plan §17) accepts the MTM

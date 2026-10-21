@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/decomposition-open-repair-05/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/decomposition-open-repair-05/collect.json"
+  ],
+  "pid": 60745,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 435274976,
+  "elapsed_seconds": 3.5978612501639873,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/decomposition-open-repair-05/collect.log"
+}

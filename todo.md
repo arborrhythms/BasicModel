@@ -20,19 +20,19 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §18 / §10.4 round:** Claude accepts frozen MTM `eac2fe87b`;
-Alec decides that bind alone owns anonymous names and arrival refinement.
-The first anonymous-bind source `51cce2005` passed six forward and two
-reverse first draws, then failed reverse draw 3: cached lexical x bypassed
-binding the next occurrence. Its exact replay, both-trial keep probe and a
-separate native-arrival failure are retained in the [first receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind/README.md).
-Both paths are repaired; the captured reverse failure now passes. The
-[second freeze](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/README.md)
-must pass all twelve fresh draws, the eight-file set, both original
-decomposition arms and both original eight-seat MM draws. Nothing is
-promoted from an earlier source. Claude's review precedes both-main
-publication, the WikiOracle bump and October 20 docs. No second full sweep
-or learning claim; assertions, objective, budget and keep law stay.
+**Active §18 / §10.4 round:** source `823f157cd` passes all twelve fresh
+arrival draws and 48 MTM/anonymous/PartClosing/occurrence cases. The
+eight-file set is 112 passed, one failed, one copular prerequisite skip;
+the unchanged bootstrap zero-R assertion also fails identically on accepted
+`eac2fe87b` under captured replay. All four decomposition cases fail because
+their fixture's open-name rule did not reach closing bind. That seam is
+repaired, preserving its scope; the original length-1 zero-arm replay passes.
+The [third freeze receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/README.md)
+owns the next complete gate round. Nothing is promoted from earlier
+sources, and every failure remains. The bootstrap discrepancy still needs
+disposition; no assertion or objective change is applied. Claude's review
+precedes both-main publication, the WikiOracle bump and October 20 docs.
+No second full sweep or learning claim.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on

@@ -1,18 +1,19 @@
 # Step 1b: current gates and carry ledger
 
 **Active §18 / §10.4 round, 2026-10-21.** Accepted MTM remains
-`eac2fe87b`. First anonymous-bind source `51cce2005` passed six forward and
-two reverse first draws, then failed reverse draw 3: the next x occurrence
-used a cached lexical object without binding to its already-refined token.
-The [first receipt](../2026-10-21-item3-5-anonymous-bind/README.md) retains
-all captures, both-trial keep tables, its exact replay, a native-arrival
-failure and the 825-file source audit. Both mechanisms are repaired and
-the captured reverse failure passes on the development tree. Every landing
-gate moves to the [second freeze](../2026-10-21-item3-5-anonymous-bind-v2/README.md):
-twelve fresh first draws, the eight-file set, both original decomposition
-arms and both original eight-seat MM draws. No earlier result is promoted.
-Claude's review and publication follow those gates; no second full sweep
-or learning claim.
+`eac2fe87b`. Anonymous-bind source `823f157cd` passes all twelve fresh
+first draws and 48 additional regression cases. Its eight-file set is
+112 passed, one failed, one existing copular prerequisite skip. The
+[bootstrap probe](../2026-10-21-item3-5-anonymous-bind-v2/bootstrap-failure.md)
+reproduces the unchanged zero-R assertion failure identically on accepted
+`eac2fe87b`; no assertion, objective or production change follows it.
+Both decomposition lengths fail in both arms because the separate fixture
+forces `what` open only during composition. Connecting that same open-name
+rule to closing bind restores the original length-1 zero-arm replay.
+The [third freeze](../2026-10-21-item3-5-anonymous-bind-v3/README.md) owns
+all new gate evidence. No result is promoted, all failures remain, and the
+bootstrap discrepancy is still open. Claude's review and publication
+remain pending. No second full sweep or learning claim.
 
 **Historical §17 evidence follows.**
 

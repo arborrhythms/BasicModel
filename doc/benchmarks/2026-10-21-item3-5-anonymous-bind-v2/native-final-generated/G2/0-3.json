@@ -1,0 +1,15 @@
+{
+  "case": "0-3",
+  "text": "a cat ; a horse ; m03 chases",
+  "expected": [
+    "ltm",
+    "address-v1",
+    6978180173476468647
+  ],
+  "chosen": "address-v1",
+  "pair": [
+    0.40460968017578125,
+    0.5953903198242188
+  ],
+  "emitted": 1
+}

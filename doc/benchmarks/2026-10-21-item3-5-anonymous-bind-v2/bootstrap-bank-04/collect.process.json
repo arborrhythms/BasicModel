@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-bank-04/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-bank-04/collect.json"
+  ],
+  "pid": 60548,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 179290928,
+  "elapsed_seconds": 1.8246298329904675,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-bank-04/collect.log"
+}

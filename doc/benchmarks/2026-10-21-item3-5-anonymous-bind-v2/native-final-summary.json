@@ -1,0 +1,17 @@
+[
+  {
+    "receipt": "native-final",
+    "source": "823f157cda4ef6b08744591ade7897476f8551b6",
+    "selectors": [
+      "test/test_math_chain_section14.py",
+      "test/test_reference_close.py",
+      "test/test_reference_mentions.py",
+      "test/test_bind_thought.py",
+      "test/test_identity_rows.py",
+      "test/test_identity_cube.py",
+      "test/test_part_store.py",
+      "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+    ],
+    "exit": 1
+  }
+]

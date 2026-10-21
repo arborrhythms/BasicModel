@@ -28,6 +28,24 @@ class ForcedDecompositionGrammar:
         layer = language.language_layer.operation_layer
         begin, batch = SentenceFork.begin_word, BasicModel.runBatch
         choose, forward, select = language.choose_operation, layer.forward, layer.select_logits
+        resolver = self.model._concept_owner().components.reference_close
+        select_reference = resolver.select
+        def reference_choice(choices, logits, *, forward_identity=None, individuals=None):
+            # The same declared open-name choice applies when the closing
+            # owner calls bind. In particular, the question's "what" must
+            # remain anonymous until the checked thought episode fills it.
+            owner = self.model._concept_owner()
+            labels = {word for word in self.open_names
+                      if forward_identity in owner.word_concepts(word)}
+            from Spaces import _concept_alloc_of
+            for word, identities in _concept_alloc_of(owner).word_forms.items():
+                word = word.decode() if isinstance(word, bytes) else str(word)
+                if forward_identity in identities:
+                    labels.add(word.lower())
+            if labels.intersection(self.open_names):
+                return None
+            return select_reference(choices, logits, forward_identity=forward_identity,
+                                    individuals=individuals)
         def begin_word(fork, word, latches):
             self.word = int(word)
             return begin(fork, word, latches)
@@ -171,7 +189,8 @@ class ForcedDecompositionGrammar:
         for owner,name,value in ((SentenceFork,'begin_word',begin_word),
                                  (BasicModel,'runBatch',run_batch),
                                  (language,'choose_operation',choose_operation),
-                                 (layer,'forward',operation), (layer,'select_logits',choose_logits)):
+                                 (layer,'forward',operation), (layer,'select_logits',choose_logits),
+                                 (resolver,'select',reference_choice)):
             self.stack.enter_context(patch.object(owner,name,value))
         return self
 
