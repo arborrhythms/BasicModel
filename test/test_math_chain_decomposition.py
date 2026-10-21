@@ -24,7 +24,11 @@ def test_forced_native_decomposition_through_training_driver(tmp_path, successor
     assert len(questions) >= 2
     assert len({row['departure'] for row in report['rows'] if row['departure'] >= 0}) > 1
     for question in proved:
-        episode = report['episodes'][int(question['document'])]
+        # A zero-budget premise may have an episode too. Identify the
+        # question's own occurrence, preserving every recorded episode.
+        source = next(row for row in report['rows'] if row['source'] == question['question_source'])
+        episode, = (item for item in report['episodes']
+                    if item['metadata'].get('_query_occurrence') == source['address'])
         assert question['bound_correct'] and question['inference_count'] == successors
         assert sum(record['kind'] == 'descend' for record in episode['trace']) == successors
         assert sum(record['kind'] == 'return' for record in episode['trace']) == successors

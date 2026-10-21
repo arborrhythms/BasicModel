@@ -1,5 +1,15 @@
 # Step 1b §21: frozen participant and object menus
 
+**Superseded frozen source `bedbea855`:** all gates completed; the two
+successor decomposition case fails in both arms because a zero-budget
+premise episode shifts the certificate's document-index lookup. The full
+[diagnosis](decomposition-diagnosis.json) and unchanged-source
+`decomposition-failure-probe` retain both readings and R/A keep evidence.
+The [next frozen receipt](../2026-10-21-item3-5-review11-landing/README.md)
+owns the occurrence-addressed lookup repair. Every assertion and every
+recorded episode is preserved. These two gates remain failed, with no
+promotion of any result to the next source.
+
 The exact source hash and 830-file manifest are in `frozen-source.json`.
 Accepted base: `f56fdf8ff337021ef744070cb3238c9c4fc7e8fa`.
 Intermediate participant source: `0b25619146fa3c398ae9228e16126252ef963a8f`.

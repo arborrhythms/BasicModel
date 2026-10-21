@@ -1,0 +1,891 @@
+{
+  "source": "bedbea855a5701c4802a58142c6ccb08ef7b9097",
+  "gates_remain_failed": true,
+  "cause": "An earlier zero-budget premise episode shifts the list; document-number indexing selects that episode for the first question.",
+  "cases": [
+    {
+      "arm": "zero",
+      "successors": 1,
+      "episodes": [
+        {
+          "index": 0,
+          "row": 0,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            7196716969522295445
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference"
+          ]
+        },
+        {
+          "index": 1,
+          "row": 1,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -4697225065375625354
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference"
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "document": "0",
+          "question_source": 3,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            7196716969522295445
+          ],
+          "old_index": 0,
+          "matching_episode": 0,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 0,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.0
+            ],
+            "graph": false,
+            "surrogate": null,
+            "raw_chooser_gradient_l2": 0.0
+          }
+        },
+        {
+          "document": "1",
+          "question_source": 7,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -4697225065375625354
+          ],
+          "old_index": 1,
+          "matching_episode": 1,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 1,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.5002879500389099
+            ],
+            "graph": true,
+            "surrogate": 1.0957381472070619e-21,
+            "raw_chooser_gradient_l2": 4.0736570512622113e-22
+          }
+        }
+      ]
+    },
+    {
+      "arm": "zero",
+      "successors": 2,
+      "episodes": [
+        {
+          "index": 0,
+          "row": 1,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -3910705128145342231
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "cutoff",
+              ""
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": []
+        },
+        {
+          "index": 1,
+          "row": 0,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -6826000405971520811
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference",
+            "inference"
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -7322519063517594353
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference",
+            "inference"
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "document": "0",
+          "question_source": 5,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -6826000405971520811
+          ],
+          "old_index": 0,
+          "matching_episode": 1,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 0,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.5027737021446228
+            ],
+            "graph": true,
+            "surrogate": 1.8416229200535917e-21,
+            "raw_chooser_gradient_l2": 6.694487501973233e-22
+          }
+        },
+        {
+          "document": "1",
+          "question_source": 11,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            -7322519063517594353
+          ],
+          "old_index": 1,
+          "matching_episode": 2,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 1,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.5027737021446228
+            ],
+            "graph": true,
+            "surrogate": 1.8936353341905228e-21,
+            "raw_chooser_gradient_l2": 6.902307906080342e-22
+          }
+        }
+      ]
+    },
+    {
+      "arm": "enabled",
+      "successors": 1,
+      "episodes": [
+        {
+          "index": 0,
+          "row": 0,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            8628520290140121326
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference"
+          ]
+        },
+        {
+          "index": 1,
+          "row": 1,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            5174191532277122325
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference"
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "document": "0",
+          "question_source": 3,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            8628520290140121326
+          ],
+          "old_index": 0,
+          "matching_episode": 0,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 0,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.0
+            ],
+            "graph": false,
+            "surrogate": null,
+            "raw_chooser_gradient_l2": 0.0
+          }
+        },
+        {
+          "document": "1",
+          "question_source": 7,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            5174191532277122325
+          ],
+          "old_index": 1,
+          "matching_episode": 1,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 1,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.5002879500389099
+            ],
+            "graph": true,
+            "surrogate": 1.0957673287496678e-21,
+            "raw_chooser_gradient_l2": 4.072508578949353e-22
+          }
+        }
+      ]
+    },
+    {
+      "arm": "enabled",
+      "successors": 2,
+      "episodes": [
+        {
+          "index": 0,
+          "row": 1,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            740130602260518819
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "cutoff",
+              ""
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": []
+        },
+        {
+          "index": 1,
+          "row": 0,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            2685861236476268525
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference",
+            "inference"
+          ]
+        },
+        {
+          "index": 2,
+          "row": 1,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            2445604302333579886
+          ],
+          "trace": [
+            [
+              "begin",
+              ""
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "ask"
+            ],
+            [
+              "descend",
+              "descend"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "return",
+              "return"
+            ],
+            [
+              "thought",
+              "query"
+            ],
+            [
+              "thought",
+              "conclude"
+            ],
+            [
+              "finish",
+              "finish"
+            ]
+          ],
+          "added": [
+            "inference",
+            "inference"
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "document": "0",
+          "question_source": 5,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            2685861236476268525
+          ],
+          "old_index": 0,
+          "matching_episode": 1,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 0,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.5027737021446228
+            ],
+            "graph": true,
+            "surrogate": 1.8417075364297293e-21,
+            "raw_chooser_gradient_l2": 6.694495163547404e-22
+          }
+        },
+        {
+          "document": "1",
+          "question_source": 11,
+          "query_occurrence": [
+            "ltm",
+            "address-v1",
+            2445604302333579886
+          ],
+          "old_index": 1,
+          "matching_episode": 2,
+          "checks": {
+            "bound_correct": true,
+            "inference_count": true,
+            "descents": true,
+            "returns": true,
+            "conclude": true,
+            "no_unexpected": true,
+            "inference_rows": true
+          },
+          "paired_credit": {
+            "epoch": 1,
+            "phase": "ordinary_certificate",
+            "source": "reconstruction_and_answer",
+            "row": 1,
+            "category": "reconstruction",
+            "costs": [
+              0.0,
+              0.5027737021446228
+            ],
+            "graph": true,
+            "surrogate": 1.8935268879041603e-21,
+            "raw_chooser_gradient_l2": 6.90130693596102e-22
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "completed": [
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final/worker-000.json"
+      ],
+      "pid": 94428,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 840779864,
+      "elapsed_seconds": 41.82508770888671,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 36.73880058294162,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 35.859s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.420s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.419s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.422s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.422s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 300.0,
+    "suite_seconds": 360.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final",
+  "elapsed_seconds": 44.71050012484193,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 840779864,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final/collect.json"
+    ],
+    "pid": 94384,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181273440,
+    "elapsed_seconds": 1.9465167908929288,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/bootstrap-final/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

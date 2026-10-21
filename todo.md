@@ -25,7 +25,7 @@ participant positions govern word sites, arrival constituents and ordinary
 menus. Draw 5’s complete captured initialization replays with 0 bound / 14
 open reads; its assertions are unchanged. The seven retained checks have
 Alec’s authorized dispositions, including four prerequisite-skipped
-re-identification certificates. The [§21 receipt](doc/benchmarks/2026-10-21-item3-5-review11-final/README.md)
+re-identification certificates. The [§21 receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)
 owns the new source audit and gates. Fresh gates, Claude’s review,
 both-main publication and the WikiOracle bump remain pending. All earlier
 failures and their source attribution are retained; no earlier-source pass

@@ -1,0 +1,13 @@
+{
+  "base": "f56fdf8ff337021ef744070cb3238c9c4fc7e8fa",
+  "source": null,
+  "ports": {
+    "test/test_reference_arrivals.py": "one count: 2 to 1; all other bytes unchanged",
+    "test/test_reference_close.py": "all assertion ASTs unchanged, including the four carried partition cases",
+    "test/test_bind_thought.py": "only the two superseded local-cost tests ported to episode-advantage credit",
+    "test/test_math_chain_section14.py": "both pending-premise certificates byte-identical",
+    "test/test_math_chain_decomposition.py": "all assertions unchanged; select the episode by its question occurrence, not list position"
+  },
+  "runs": [],
+  "source_files": 830
+}
